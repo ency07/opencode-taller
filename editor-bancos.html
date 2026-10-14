@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor de Bancos — Taller POD</title>
+  <style>
+    :root {
+      --bg: #0E1016;
+      --panel: #161920;
+      --panel-alt: #1A1E26;
+      --line: #2A2E38;
+      --line2: #3A3E48;
+      --text: #E0E4EC;
+      --mut: #8A90A0;
+      --mut2: #5A6070;
+      --acc: #5B8DEF;
+      --acc-dim: rgba(91, 141, 239, 0.12);
+      --good: #34D399;
+      --bad: #F87171;
+      --warn: #FBBF24;
+      --r: 6px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .shell {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--mut);
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mut);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    select, input, textarea {
+      width: 100%;
+      min-height: 40px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13.5px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--acc);
+    }
+
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 32px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%238A90A0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 5 3 3 3-3'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      cursor: pointer;
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+      font-family: "SFMono-Regular", "Fira Code", ui-monospace, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.3;
+      color: var(--text);
+      background: var(--panel);
+      border: 1px solid var(--line2);
+      border-radius: var(--r);
+      padding: 9px 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    button:hover { border-color: var(--acc); }
+
+    button.primary {
+      background: var(--acc);
+      border-color: var(--acc);
+      color: #FFFFFF;
+      font-weight: 600;
+    }
+
+    button.primary:hover { background: #4A7DE0; }
+
+    button.ghost {
+      background: transparent;
+      border-color: var(--line2);
+      color: var(--mut);
+    }
+
+    button.ghost:hover {
+      color: var(--text);
+      background: var(--panel);
+      border-color: var(--acc);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--mut2);
+      margin-top: 6px;
+      line-height: 1.45;
+    }
+
+    .status {
+      padding: 10px 12px;
+      border-radius: var(--r);
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--mut);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-top: 12px;
+    }
+
+    .status.good {
+      background: rgba(52, 211, 153, 0.08);
+      border-color: rgba(52, 211, 153, 0.22);
+      color: var(--good);
+    }
+
+    .status.bad {
+      background: rgba(248, 113, 113, 0.08);
+      border-color: rgba(248, 113, 113, 0.22);
+      color: var(--bad);
+    }
+
+    .status.info {
+      background: rgba(91, 141, 239, 0.08);
+      border-color: rgba(91, 141, 239, 0.22);
+      color: var(--acc);
+    }
+
+    .bank-display {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      padding: 14px;
+      font-family: "SFMono-Regular", "Fira Code", ui-monospace, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--mut);
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 26px;
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--mut);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .count-badge.good {
+      color: var(--good);
+      border-color: rgba(52, 211, 153, 0.3);
+      background: rgba(52, 211, 153, 0.06);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .back-link {
+      font-size: 13px;
+      color: var(--acc);
+      text-decoration: none;
+    }
+
+    .back-link:hover { text-decoration: underline; }
+
+    @media (max-width: 700px) {
+      .field-row { grid-template-columns: 1fr; }
+      .shell { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <style>
+    .pod-nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:#0E1016;border-bottom:1px solid #2A2E38;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px}
+    .pod-nav .pod-nav-title{color:#8A90A0;margin-right:4px}
+    .pod-nav a{color:#B9C0CF;text-decoration:none;padding:6px 12px;border:1px solid #2A2E38;border-radius:6px;background:#161920}
+    .pod-nav a:hover{color:#fff;border-color:#5B8DEF}
+    .pod-nav a[aria-current="page"]{color:#fff;background:rgba(91,141,239,.16);border-color:#5B8DEF}
+  </style>
+  <nav class="pod-nav" aria-label="Herramientas POD">
+    <span class="pod-nav-title">Taller POD ·</span>
+    <a href="index.html">Taller</a>
+    <a href="editor-bancos.html" aria-current="page">Editor de bancos</a>
+    <a href="motor-lenguajes-visuales.html">Motor de lenguajes</a>
+    <a href="sistema_matriz.html">Sistema matriz</a>
+  </nav>
+
+  <div class="shell">
+    <div class="topbar">
+      <h1>Editor de Bancos</h1>
+    </div>
+    <p class="subtitle">
+      Amplía bancos personales de objetos y frases por mercado y subnicho, sin tocar código. Los objetos alimentan las ilustraciones y las frases se pueden cargar en Mensaje visible.
+    </p>
+
+    <div class="card">
+      <div class="field-row">
+        <div class="field">
+          <label for="selMarket">Mercado</label>
+          <select id="selMarket"></select>
+        </div>
+        <div class="field">
+          <label for="selSubniche">Subnicho</label>
+          <select id="selSubniche"></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label id="bankDisplayLabel">Objetos del subnicho seleccionado</label>
+        <div id="bankDisplay" class="bank-display">Selecciona un mercado y subnicho para ver el contenido.</div>
+        <div style="margin-top: 8px;">
+          <span id="objCount" class="count-badge">0 entradas</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label for="entryType">Tipo de entrada</label>
+        <select id="entryType">
+          <option value="objects">Objeto o metáfora visual</option>
+          <option value="phrases">Frase para usar como texto visible</option>
+        </select>
+        <div class="hint">Objetos describen qué ilustrar. Frases son palabras que podrían aparecer impresas en el diseño.</div>
+      </div>
+      <div class="field">
+        <label id="entryLabel" for="newObjects">Agregar objetos (uno por línea)</label>
+        <textarea id="newObjects" placeholder="Ej: hamaca que sostiene tres generaciones y una mentira"></textarea>
+        <div id="entryHint" class="hint">Una entrada por línea. Se detectan duplicados exactos normalizados en este subnicho.</div>
+      </div>
+      <div class="field">
+        <label for="nbTarget">Guardar en</label>
+        <select id="nbTarget"></select>
+        <div class="hint">Banco general del subnicho o uno de tus bancos con nombre.</div>
+      </div>
+      <div class="actions">
+        <button id="btnSave" class="primary">Guardar en este mercado y subnicho</button>
+        <button id="btnClearInput" class="ghost">Limpiar campo</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Bancos personales con nombre</label>
+      <div class="hint" style="margin-top: 0; margin-bottom: 12px;">Crea bancos con nombre propio para diferenciarlos. El banco activo por subnicho alimenta al motor junto al banco general.</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="nbName">Nombre del banco</label>
+          <input id="nbName" placeholder="Ej: Frases mamá 2026" />
+        </div>
+        <div class="field">
+          <label for="nbSubniche">Subnicho del banco</label>
+          <select id="nbSubniche"></select>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="btnCreateBank" class="primary">Crear banco</button>
+      </div>
+      <div class="field" style="margin-top: 14px;">
+        <label>Tus bancos (clic en activar para que alimente al motor)</label>
+        <div id="nbList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Importar / Exportar</label>
+      <div class="actions" style="margin-top: 0;">
+        <button id="btnExport" class="ghost">Descargar JSON del banco personal</button>
+        <button id="btnCopyJSON" class="ghost">Copiar JSON</button>
+      </div>
+
+      <div class="field" style="margin-top: 14px;">
+        <label for="importTxt">Pega un JSON para importar y fusionar</label>
+        <textarea id="importTxt" rows="4" placeholder='{"humor_costeno": ["objeto"], "__phrase__humor_costeno": ["frase"]}'></textarea>
+      </div>
+
+      <div class="actions">
+        <button id="btnImport" class="primary">Importar y fusionar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Banco de templates — patrón repetido (solo mochila, bolso, funda)</label>
+      <div class="hint" style="margin-top: 0; margin-bottom: 12px;">Sube la plantilla plana de cada producto para saber dónde cae el patrón. Una plantilla activa por producto; el motor la cita en el prompt.</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="tplProduct">Producto</label>
+          <select id="tplProduct">
+            <option value="MOCHILA">MOCHILA</option>
+            <option value="TOTE BAG">TOTE BAG</option>
+            <option value="FUNDA MÓVIL">FUNDA MÓVIL</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="tplName">Nombre del template</label>
+          <input id="tplName" placeholder="Ej: Mochila urbana frente 2026" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="tplFile">Plantilla (imagen: plano, outline o foto del producto)</label>
+        <input id="tplFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+        <div class="hint">Se reduce sola a 800px para no llenar el almacenamiento.</div>
+      </div>
+      <div class="field">
+        <label>Vista previa</label>
+        <img id="tplPreview" alt="" style="display:none;max-width:100%;max-height:220px;border:1px solid var(--line);border-radius:var(--r);" />
+      </div>
+      <div class="field">
+        <label>Zonas de este producto</label>
+        <div id="tplZones" class="bank-display" style="max-height:150px;"></div>
+      </div>
+      <div class="field">
+        <label for="tplNotes">Notas (opcional)</label>
+        <textarea id="tplNotes" rows="2" placeholder="Ej: el bolsillo es pequeño; el motivo va solo al frente"></textarea>
+      </div>
+      <div class="actions">
+        <button id="btnSaveTpl" class="primary">Guardar template</button>
+        <button id="btnClearTpl" class="ghost">Limpiar</button>
+      </div>
+      <div class="field" style="margin-top: 14px;">
+        <label>Templates guardados (clic en activar para usarlo en el taller)</label>
+        <div id="tplList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Zona de peligro</label>
+      <div class="actions" style="margin-top: 0;">
+        <button id="btnClearSubniche" class="ghost" style="color: var(--bad); border-color: rgba(248,113,113,0.3);">Vaciar banco de este subnicho</button>
+        <button id="btnClearAll" class="ghost" style="color: var(--bad); border-color: rgba(248,113,113,0.3);">Vaciar todo el banco personal</button>
+      </div>
+      <div class="hint" style="margin-top: 8px;">
+Estas acciones eliminan objetos y frases personales de LocalStorage. No afectan al banco base de objetos.
+      </div>
+    </div>
+
+    <div id="status" class="status">Listo. Selecciona mercado y subnicho para empezar.</div>
+  </div>
+
+  <script src="js/data-mercados.js"></script>
+  <script src="js/data-bancos.js"></script>
+  <script src="js/memoria-local.js"></script>
+  <script src="js/pod-nav.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var LS = window.POD_LS || {
+        getItem: function () { return null; },
+        setItem: function () { },
+        removeItem: function () { }
+      };
+
+      var PB_KEY_PREFIX = 'POD2|personalBank|';
+
+      function $(id) { return document.getElementById(id); }
+
+      function escHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      function safeTemplateImage(value) {
+        return /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(String(value || ''))
+          ? String(value) : '';
+      }
+
+      function tell(msg, type) {
+        var el = $('status');
+        if (el) {
+          el.textContent = msg;
+          el.className = 'status' + (type ? ' ' + type : '');
+        }
+      }
+
+      /* --- Cargar mercados --- */
+      function fillMarkets() {
+        var sel = $('selMarket');
+        if (!sel) return;
+
+        var markets = (typeof POD_MARKETS !== 'undefined') ? POD_MARKETS : {};
+        var order = (typeof POD_MARKET_ORDER !== 'undefined') ? POD_MARKET_ORDER : Object.keys(markets);
+
+        var html = '';
+        order.forEach(function (id) {
+          if (markets[id]) {
+            html += '<option value="' + escHtml(id) + '">' + escHtml(markets[id].label) + '</option>';
+          }
+        });
+        sel.innerHTML = html;
+      }
+
+      /* --- Cargar subnichos según mercado --- */
+      function fillSubniches() {
+        var marketId = $('selMarket') ? $('selMarket').value : 'global_en';
+        var sel = $('selSubniche');
+        if (!sel) return;
+
+        var html = '<option value="comun">Común (todos los subnichos)</option>';
+
+        if (typeof getSubnicheIdsForMarket === 'function') {
+          var ids = getSubnicheIdsForMarket(marketId, 'evergreen', 'todas');
+          ids.forEach(function (id) {
+            var label = (typeof getSubnicheLabel === 'function')
+              ? getSubnicheLabel(id, marketId)
+              : id;
+            html += '<option value="' + escHtml(id) + '">' + escHtml(label) + '</option>';
+          });
+
+          var tempIds = getSubnicheIdsForMarket(marketId, 'temporada', 'todas');
+          tempIds.forEach(function (id) {
+            var label = (typeof getSubnicheLabel === 'function')
+              ? getSubnicheLabel(id, marketId)
+              : id;
+            html += '<option value="' + escHtml(id) + '">' + escHtml(label) + '</option>';
+          });
+        }
+
+        sel.innerHTML = html;
+      }
+
+      /* --- Banco personal: lectura/escritura --- */
+      function loadPersonalBank(market) {
+        try {
+          var raw = LS.getItem(PB_KEY_PREFIX + market);
+          return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function savePersonalBank(market, bank) {
+        LS.setItem(PB_KEY_PREFIX + market, JSON.stringify(bank || {}));
+      }
+
+      function entryKey(subniche, type) {
+        return type === 'phrases' ? '__phrase__' + subniche : subniche;
+      }
+
+      function getPersonalEntries(market, subniche, type) {
+        var bank = loadPersonalBank(market);
+        var key = entryKey(subniche, type);
+        return Array.isArray(bank[key]) ? bank[key] : [];
+      }
+
+      function getBaseObjects(market, subniche) {
+        try {
+          if (typeof window.getBankForSubniche === 'function') {
+            return window.getBankForSubniche(subniche, 'todas', market) || [];
+          }
+        } catch (e) {}
+        return [];
+      }
+
+      function normalizeEntry(value) {
+        return String(value || '').normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, ' ')
+          .trim()
+          .replace(/\s+/g, ' ');
+      }
+
+      function currentType() {
+        return $('entryType') ? $('entryType').value : 'objects';
+      }
+
+      function updateEntryUI() {
+        var isPhrase = currentType() === 'phrases';
+        var label = $('entryLabel');
+        var input = $('newObjects');
+        var hint = $('entryHint');
+        var bankLabel = $('bankDisplayLabel');
+        if (label) label.textContent = isPhrase ? 'Agregar frases visibles (una por línea)' : 'Agregar objetos o metáforas visuales (uno por línea)';
+        if (input) input.placeholder = isPhrase ? 'Ej: La brisa también sabe llegar tarde' : 'Ej: hamaca que sostiene tres generaciones y una mentira';
+        if (hint) hint.textContent = isPhrase
+          ? 'Escribe texto que sí podría imprimirse en el diseño. Se guardará separado de los objetos.'
+          : 'Describe algo que se pueda ilustrar. No escribas aquí el slogan que irá impreso.';
+        if (bankLabel) bankLabel.textContent = isPhrase ? 'Frases guardadas en este subnicho' : 'Objetos del subnicho (banco base y aportes personales)';
+      }
+
+      function displayBank() {
+        var market = $('selMarket') ? $('selMarket').value : 'global_en';
+        var subniche = $('selSubniche') ? $('selSubniche').value : 'comun';
+        var type = currentType();
+        var personal = getPersonalEntries(market, subniche, type);
+        var base = type === 'objects' ? getBaseObjects(market, subniche) : [];
+        var display = $('bankDisplay');
+        var count = $('objCount');
+
+        if (display) {
+          var lines = [];
+          if (base.length) {
+            lines.push('BANCO BASE · solo lectura');
+            base.forEach(function (entry, i) { lines.push((i + 1) + '. ' + entry); });
+          }
+          if (personal.length) {
+            if (lines.length) lines.push('');
+            lines.push(type === 'phrases' ? 'TUS FRASES' : 'TUS OBJETOS');
+            personal.forEach(function (entry, i) { lines.push((i + 1) + '. ' + entry); });
+          }
+          display.textContent = lines.length ? lines.join('\n')
+            : (type === 'phrases' ? '(todavía no hay frases guardadas aquí)' : '(todavía no hay objetos para este subnicho)');
+        }
+        if (count) {
+          count.textContent = type === 'phrases'
+            ? personal.length + ' frase' + (personal.length !== 1 ? 's' : '')
+            : base.length + ' de base · ' + personal.length + ' tuyos';
+          count.className = 'count-badge' + (personal.length > 0 ? ' good' : '');
+        }
+      }
+
+      function saveNewObjects() {
+        var market = $('selMarket') ? $('selMarket').value : 'global_en';
+        var subniche = $('selSubniche') ? $('selSubniche').value : 'comun';
+        var type = currentType();
+        var textarea = $('newObjects');
+        if (!textarea || !textarea.value.trim()) {
+          tell('Escribe al menos una entrada antes de guardar.', 'bad');
+          return;
+        }
+        var lines = textarea.value.split('\n').map(function (line) { return line.trim(); }).filter(function (line) { return line.length >= 2; });
+        if (!lines.length) {
+          tell('Ninguna entrada válida. Escribe al menos 2 caracteres.', 'bad');
+          return;
+        }
+
+        // Destino: banco nombrado (Fase 2) o banco general del subnicho.
+        var target = $('nbTarget') ? $('nbTarget').value : '';
+        if (target && target.indexOf('nb:') === 0 && typeof saveToPersonalBank === 'function') {
+          var bid = target.slice(3);
+          var payload = type === 'phrases' ? { phrases: lines } : { objects: lines };
+          var rr = saveToPersonalBank(market, bid, payload);
+          if (!rr.ok) { tell(rr.error || 'No se pudo guardar.', 'bad'); return; }
+          textarea.value = '';
+          displayBank();
+          renderNbanks();
+          var noun2 = type === 'phrases' ? 'frase(s)' : 'objeto(s)';
+          var bname = (typeof getPersonalBank === 'function' && getPersonalBank(market, bid) || {}).name || 'banco';
+          tell(rr.added + ' ' + noun2 + ' guardado(s) en "' + bname + '".' + (rr.duplicates ? ' ' + rr.duplicates + ' repetida(s).' : ''), 'good');
+          return;
+        }
+
+        var bank = loadPersonalBank(market);
+        var key = entryKey(subniche, type);
+        var current = Array.isArray(bank[key]) ? bank[key] : [];
+        var known = type === 'objects' ? getBaseObjects(market, subniche).concat(current) : current.slice();
+        var signatures = new Set(known.map(normalizeEntry).filter(Boolean));
+        var added = 0;
+        var duplicates = 0;
+        lines.forEach(function (line) {
+          var signature = normalizeEntry(line);
+          if (!signature || signatures.has(signature)) { duplicates++; return; }
+          current.push(line);
+          signatures.add(signature);
+          added++;
+        });
+        if (added > 0) {
+          bank[key] = current;
+          savePersonalBank(market, bank);
+        }
+        textarea.value = '';
+        displayBank();
+        var noun = type === 'phrases' ? 'frase(s)' : 'objeto(s)';
+        var msg = added + ' ' + noun + ' guardado(s) en ' + subniche + '.';
+        if (duplicates > 0) msg += ' ' + duplicates + ' repetida(s) descartada(s).';
+        tell(msg, added > 0 ? 'good' : 'info');
+      }
+
+      /* --- Exportar --- */
+      function exportBank() {
+        var market = $('selMarket') ? $('selMarket').value : 'global_en';
+        var bank = loadPersonalBank(market);
+        var json = JSON.stringify(bank, null, 2);
+
+        try {
+          var blob = new Blob([json], { type: 'application/json' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'banco-personal-' + market + '.json';
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 800);
+          tell('Archivo descargado.', 'good');
+        } catch (e) {
+          tell('Error al descargar: ' + e.message, 'bad');
+        }
+      }
+
+      function copyBankJSON() {
+        var market = $('selMarket') ? $('selMarket').value : 'global_en';
+        var bank = loadPersonalBank(market);
+        var json = JSON.stringify(bank, null, 2);
+
+        try {
+          navigator.clipboard.writeText(json).then(function () {
+            tell('JSON copiado al portapapeles.', 'good');
+          });
+        } catch (e) {
+          tell('No se pudo copiar. Usa descargar.', 'bad');
+        }
+      }
+
+      /* --- Importar --- */
+      function importBank() {
+        var market = $('selMarket') ? $('selMarket').value : 'global_en';
+        var textarea = $('importTxt');
+        if (!textarea || !textarea.value.trim()) {
+          tell('Pega un JSON antes de importar.', 'bad');
+          return;
+        }
+        try {
+          var incoming = JSON.parse(textarea.value);
+          var bank = loadPersonalBank(market);
+          var totalAdded = 0;
+          var duplicates = 0;
+
+          function mergeEntries(subniche, type, values) {
+            if (!Array.isArray(values)) return;
+            var key = entryKey(subniche, type);
+            var current = Array.isArray(bank[key]) ? bank[key] : [];
+            var known = type === 'objects' ? getBaseObjects(market, subniche).concat(current) : current.slice();
+            var signatures = new Set(known.map(normalizeEntry).filter(Boolean));
+            values.forEach(function (value) {
+              if (typeof value !== 'string' || value.trim().length < 2) return;
+              var clean = value.trim();
+              var signature = normalizeEntry(clean);
+              if (!signature || signatures.has(signature)) { duplicates++; return; }
+              current.push(clean);
+              signatures.add(signature);
+              totalAdded++;
+            });
+            if (current.length) bank[key] = current;
+          }
+
+          Object.keys(incoming).forEach(function (subniche) {
+            if (subniche.indexOf('__phrase__') === 0) {
+              mergeEntries(subniche.slice('__phrase__'.length), 'phrases', incoming[subniche]);
+            } else {
+              mergeEntries(subniche, 'objects', incoming[subniche]);
+            }
+          });
+          if (totalAdded > 0) {
+            savePersonalBank(market, bank);
+            displayBank();
+            tell(totalAdded + ' entrada(s) importada(s) y fusionada(s).' + (duplicates ? ' ' + duplicates + ' repetida(s) descartada(s).' : ''), 'good');
+          } else {
+            tell('No se añadieron entradas nuevas.' + (duplicates ? ' Se descartaron ' + duplicates + ' repetidas.' : ''), 'info');
+          }
+          textarea.value = '';
+        } catch (e) {
+          tell('JSON inválido: ' + e.message, 'bad');
+        }
+      }
+      /* --- Zona de peligro --- */
+      function clearSubnicheBank() {
+        var market = $('selMarket') ? $('selMarket').value : 'global_en';
+        var subniche = $('selSubniche') ? $('selSubniche').value : 'comun';
+        if (!confirm('¿Vaciar el banco personal de objetos y frases del subnicho "' + subniche + '" en el mercado "' + market + '"?')) return;
+        var bank = loadPersonalBank(market);
+        delete bank[subniche];
+        delete bank['__phrase__' + subniche];
+        savePersonalBank(market, bank);
+        displayBank();
+        tell('Entradas personales del subnicho eliminadas.', 'info');
+      }
+      function clearAllBank() {
+        var market = $('selMarket') ? $('selMarket').value : 'global_en';
+
+        if (!confirm('¿Vaciar TODO el banco personal del mercado "' + market + '"? Esta acción no se puede deshacer.')) return;
+        if (!confirm('Confirmación final: se eliminarán todos los objetos y frases personales de este mercado. ¿Continuar?')) return;
+
+        LS.removeItem(PB_KEY_PREFIX + market);
+        displayBank();
+        tell('Todo el banco personal del mercado fue vaciado.', 'info');
+      }
+
+      /* ============================================================
+         BANCO DE TEMPLATES — patrón repetido (mochila/bolso/funda)
+         ============================================================ */
+      var tplDataUrl = '';
+
+      function tplProduct() {
+        return $('tplProduct') ? $('tplProduct').value : 'MOCHILA';
+      }
+
+      function renderTplZones() {
+        var el = $('tplZones');
+        if (!el) return;
+        var zones = (typeof defaultTemplateZones === 'function')
+          ? defaultTemplateZones(tplProduct()) : [];
+        if (!zones.length) { el.textContent = '(sin zonas para este producto)'; return; }
+        el.textContent = zones.map(function (z) {
+          return '• ' + z.label + ' — ' + z.uso.toUpperCase();
+        }).join('\n');
+      }
+
+      function downscaleImage(file, cb) {
+        try {
+          var img = new Image();
+          var url = URL.createObjectURL(file);
+          img.onload = function () {
+            try {
+              var max = 800;
+              var w = img.naturalWidth || img.width;
+              var h = img.naturalHeight || img.height;
+              var scale = Math.min(1, max / Math.max(w, h));
+              var cw = Math.max(1, Math.round(w * scale));
+              var ch = Math.max(1, Math.round(h * scale));
+              var canvas = document.createElement('canvas');
+              canvas.width = cw; canvas.height = ch;
+              canvas.getContext('2d').drawImage(img, 0, 0, cw, ch);
+              URL.revokeObjectURL(url);
+              cb(canvas.toDataURL('image/jpeg', 0.75));
+            } catch (e) { cb(null); }
+          };
+          img.onerror = function () { URL.revokeObjectURL(url); cb(null); };
+          img.src = url;
+        } catch (e) { cb(null); }
+      }
+
+      function renderTplList() {
+        var el = $('tplList');
+        if (!el || typeof listTemplates !== 'function') return;
+        var items = listTemplates();
+        if (!items.length) { el.textContent = 'Todavía no hay templates. Sube la plantilla plana de tu mochila, bolso o funda.'; el.className = 'hint'; return; }
+        var html = '';
+        items.forEach(function (t) {
+          var active = (typeof getActiveTemplate === 'function' && getActiveTemplate(t.producto) && getActiveTemplate(t.producto).id === t.id);
+          html += '<div style="display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:var(--r);padding:8px;margin-bottom:8px;">'
+            + (safeTemplateImage(t.imagen) ? '<img src="' + safeTemplateImage(t.imagen) + '" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:4px;" />' : '')
+            + '<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;">' + escHtml(t.nombre) + '</div>'
+            + '<div class="hint" style="margin:0;">' + escHtml(t.producto) + (active ? ' · <b>ACTIVO</b>' : '') + '</div></div>'
+            + '<button class="ghost" data-tpl-act="' + escHtml(t.id) + '">' + (active ? 'Quitar' : 'Activar') + '</button>'
+            + '<button class="ghost" data-tpl-del="' + escHtml(t.id) + '" style="color:var(--bad);">Borrar</button>'
+            + '</div>';
+        });
+        el.innerHTML = html;
+        Array.prototype.forEach.call(el.querySelectorAll('[data-tpl-act]'), function (b) {
+          b.addEventListener('click', function () {
+            var id = b.getAttribute('data-tpl-act');
+            var cur = getActiveTemplate(tplProductOf(id));
+            if (cur && cur.id === id) setActiveTemplate(tplProductOf(id), null);
+            else setActiveTemplate(tplProductOf(id), id);
+            renderTplList();
+          });
+        });
+        Array.prototype.forEach.call(el.querySelectorAll('[data-tpl-del]'), function (b) {
+          b.addEventListener('click', function () {
+            if (!confirm('¿Borrar este template?')) return;
+            deleteTemplate(b.getAttribute('data-tpl-del'));
+            renderTplList();
+          });
+        });
+      }
+
+      function tplProductOf(id) {
+        var t = (typeof getTemplate === 'function') ? getTemplate(id) : null;
+        return t ? t.producto : tplProduct();
+      }
+
+      function saveTpl() {
+        var name = $('tplName') ? $('tplName').value.trim() : '';
+        var notes = $('tplNotes') ? $('tplNotes').value.trim() : '';
+        if (name.length < 2) { tell('Ponle un nombre al template (mínimo 2 caracteres).', 'bad'); return; }
+        if (!tplDataUrl) { tell('Elige la imagen de la plantilla primero.', 'bad'); return; }
+        var r = saveTemplate({ nombre: name, producto: tplProduct(), imagen: tplDataUrl, notas: notes });
+        if (!r.ok) { tell(r.error || 'No se pudo guardar.', 'bad'); return; }
+        setActiveTemplate(tplProduct(), r.id);
+        tplDataUrl = '';
+        if ($('tplName')) $('tplName').value = '';
+        if ($('tplNotes')) $('tplNotes').value = '';
+        if ($('tplFile')) $('tplFile').value = '';
+        var pv = $('tplPreview'); if (pv) { pv.src = ''; pv.style.display = 'none'; }
+        renderTplList();
+        tell('Template guardado y activado para ' + tplProduct() + '.', 'good');
+      }
+
+      /* ============================================================
+         BANCOS PERSONALES NOMBRADOS (Fase 2)
+         ============================================================ */
+      function nbMarket() { return $('selMarket') ? $('selMarket').value : 'global_en'; }
+      function nbSubniche() { return $('selSubniche') ? $('selSubniche').value : 'comun'; }
+
+      function renderNbanks() {
+        var market = nbMarket();
+        // Subnichos del banco nuevo (copia del selector principal)
+        var ns = $('nbSubniche'), ss = $('selSubniche');
+        if (ns && ss && ns.options.length !== ss.options.length) {
+          ns.innerHTML = ss.innerHTML;
+          ns.value = ss.value;
+        }
+        // Destinos de guardado
+        var tgt = $('nbTarget');
+        if (tgt && typeof listPersonalBanks === 'function') {
+          const prev = tgt.value;
+          let html = '<option value="">Banco general del subnicho</option>';
+          listPersonalBanks(market).forEach(function (b) {
+            html += '<option value="nb:' + escHtml(b.id) + '">' + escHtml(b.name) +
+              ' (' + (b.objects.length + b.phrases.length) + ')</option>';
+          });
+          tgt.innerHTML = html;
+          const still = Array.prototype.some.call(tgt.options, function (o) { return o.value === prev; });
+          if (still) tgt.value = prev;
+        }
+        // Lista con acciones
+        var el = $('nbList');
+        if (!el || typeof listPersonalBanks !== 'function') return;
+        var items = listPersonalBanks(market);
+        if (!items.length) {
+          el.textContent = 'Sin bancos con nombre. Crea uno arriba para diferenciar tus colecciones.'; el.className = 'hint';
+          return;
+        }
+        const sub = nbSubniche();
+        let html = '';
+        items.forEach(function (b) {
+          const isActive = (typeof getActivePersonalBank === 'function' &&
+            getActivePersonalBank(market, sub) && getActivePersonalBank(market, sub).id === b.id);
+          html += '<div style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:var(--r);padding:8px;margin-bottom:8px;">'
+            + '<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;">' + escHtml(b.name) + '</div>'
+            + '<div class="hint" style="margin:0;">' + escHtml(b.subniche) + ' · ' + b.objects.length + ' objetos · ' + b.phrases.length + ' frases'
+            + (isActive ? ' · <b>ACTIVO</b>' : '') + '</div></div>'
+            + '<button class="ghost" data-nb-act="' + escHtml(b.id) + '">' + (isActive ? 'Quitar' : 'Activar') + '</button>'
+            + '<button class="ghost" data-nb-clone="' + escHtml(b.id) + '">Clonar</button>'
+            + '<button class="ghost" data-nb-ren="' + escHtml(b.id) + '">Renombrar</button>'
+            + '<button class="ghost" data-nb-del="' + escHtml(b.id) + '" style="color:var(--bad);">Borrar</button>'
+            + '</div>';
+        });
+        el.innerHTML = html;
+        Array.prototype.forEach.call(el.querySelectorAll('[data-nb-act]'), function (x) {
+          x.addEventListener('click', function () {
+            const id = x.getAttribute('data-nb-act');
+            const cur = getActivePersonalBank(market, sub);
+            if (cur && cur.id === id) setActivePersonalBank(market, sub, null);
+            else setActivePersonalBank(market, sub, id);
+            renderNbanks();
+            tell(cur && cur.id === id ? 'Banco desactivado.' : 'Banco activado: alimenta al motor.', 'good');
+          });
+        });
+        Array.prototype.forEach.call(el.querySelectorAll('[data-nb-clone]'), function (x) {
+          x.addEventListener('click', function () {
+            const id = x.getAttribute('data-nb-clone');
+            const src = getPersonalBank(market, id);
+            const nn = prompt('Nombre de la copia:', (src ? src.name + ' copia' : 'Copia'));
+            if (nn === null) return;
+            const r = clonePersonalBank(market, id, nn);
+            tell(r.ok ? 'Banco clonado.' : (r.error || 'No se pudo clonar.'), r.ok ? 'good' : 'bad');
+            renderNbanks();
+          });
+        });
+        Array.prototype.forEach.call(el.querySelectorAll('[data-nb-ren]'), function (x) {
+          x.addEventListener('click', function () {
+            const id = x.getAttribute('data-nb-ren');
+            const src = getPersonalBank(market, id);
+            const nn = prompt('Nuevo nombre:', src ? src.name : '');
+            if (nn === null) return;
+            const r = renamePersonalBank(market, id, nn);
+            tell(r.ok ? 'Banco renombrado.' : (r.error || 'No se pudo renombrar.'), r.ok ? 'good' : 'bad');
+            renderNbanks();
+          });
+        });
+        Array.prototype.forEach.call(el.querySelectorAll('[data-nb-del]'), function (x) {
+          x.addEventListener('click', function () {
+            if (!confirm('¿Borrar este banco con todo su contenido?')) return;
+            const r = deletePersonalBank(market, x.getAttribute('data-nb-del'));
+            tell(r.ok ? 'Banco eliminado.' : (r.error || 'No se pudo eliminar.'), r.ok ? 'good' : 'bad');
+            renderNbanks();
+          });
+        });
+      }
+
+      /* --- Wire --- */
+      function init() {
+        fillMarkets();
+        if (window.PODNav) {
+          try {
+            var navCtx = window.PODNav.loadContext() || {};
+            var sm = $('selMarket');
+            if (navCtx.market && sm) {
+              for (var oi = 0; oi < sm.options.length; oi++) {
+                if (sm.options[oi].value === navCtx.market) { sm.value = navCtx.market; break; }
+              }
+            }
+            window.PODNav.prefill();
+          } catch (e) { /* sincronización no crítica */ }
+        }
+        fillSubniches();
+        displayBank();
+        renderNbanks();
+        renderTplZones();
+        renderTplList();
+
+        $('selMarket').addEventListener('change', function () {
+          if (window.PODNav) {
+            try { window.PODNav.saveContext({ market: this.value }); } catch (e) {}
+          }
+          fillSubniches();
+          displayBank();
+          renderNbanks();
+        });
+
+        $('selSubniche').addEventListener('change', function () {
+          displayBank();
+          renderNbanks();
+        });
+        $('entryType').addEventListener('change', function () {
+          updateEntryUI();
+          displayBank();
+        });
+        updateEntryUI();
+
+        $('btnSave').addEventListener('click', saveNewObjects);
+        $('btnCreateBank').addEventListener('click', function () {
+          const name = $('nbName') ? $('nbName').value.trim() : '';
+          const sub = $('nbSubniche') ? $('nbSubniche').value : 'comun';
+          if (typeof createPersonalBank !== 'function') { tell('Banco con nombre no disponible.', 'bad'); return; }
+          const r = createPersonalBank(nbMarket(), name, sub);
+          if (!r.ok) { tell(r.error || 'No se pudo crear.', 'bad'); return; }
+          if ($('nbName')) $('nbName').value = '';
+          renderNbanks();
+          tell('Banco "' + name + '" creado.', 'good');
+        });
+        $('btnClearInput').addEventListener('click', function () {
+          var t = $('newObjects');
+          if (t) t.value = '';
+        });
+
+        $('btnExport').addEventListener('click', exportBank);
+        $('btnCopyJSON').addEventListener('click', copyBankJSON);
+        $('btnImport').addEventListener('click', importBank);
+
+        $('btnClearSubniche').addEventListener('click', clearSubnicheBank);
+        $('btnClearAll').addEventListener('click', clearAllBank);
+
+        /* Templates: patrón repetido */
+        renderTplZones();
+        renderTplList();
+        if ($('tplProduct')) $('tplProduct').addEventListener('change', renderTplZones);
+        if ($('tplFile')) $('tplFile').addEventListener('change', function () {
+          var f = this.files && this.files[0];
+          if (!f) return;
+          if (!/^image\/(png|jpeg|webp|gif)$/i.test(f.type || '')) { tell('Formato no compatible. Usa PNG, JPG, WEBP o GIF.', 'bad'); return; }
+          downscaleImage(f, function (url) {
+            if (!url) { tell('No se pudo leer la imagen.', 'bad'); return; }
+            tplDataUrl = url;
+            var pv = $('tplPreview');
+            if (pv) { pv.src = url; pv.style.display = 'block'; }
+          });
+        });
+        if ($('btnSaveTpl')) $('btnSaveTpl').addEventListener('click', saveTpl);
+        if ($('btnClearTpl')) $('btnClearTpl').addEventListener('click', function () {
+          tplDataUrl = '';
+          if ($('tplName')) $('tplName').value = '';
+          if ($('tplNotes')) $('tplNotes').value = '';
+          if ($('tplFile')) $('tplFile').value = '';
+          var pv = $('tplPreview'); if (pv) { pv.src = ''; pv.style.display = 'none'; }
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>
