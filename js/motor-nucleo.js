@@ -1509,6 +1509,39 @@ function _patronAplicacion(tpl, placementFallback) {
   return 'repetir en ' + (placementFallback || MOTOR_STATE.product) + ' (sin template; sube la plantilla en el editor para mochila/bolso/funda)';
 }
 
+/* --- Copy compartido para modo explore sin mensaje ---
+   El modelo de imagen no puede coordinar una frase inventada entre A/B/C
+   en una sola generación; por eso el motor elige UNA frase literal aquí
+   (determinista por concepto+mercado) y las tres fichas la citan literal. */
+const SHARED_EXPLORE_COPY = {
+  en: [
+    'SMALL MOMENTS, BIG MEANING',
+    'HOLD ON TO WONDER',
+    'BUILT FOR THE WILD',
+    'LESS NOISE, MORE SOUL',
+    'MADE TO WANDER',
+    'KEEP IT SIMPLE, KEEP IT REAL',
+    'FIND YOUR TRAIL',
+    'BORN TO ROAM'
+  ],
+  es: [
+    'MOMENTOS PEQUEÑOS, GRANDES HISTORIAS',
+    'HECHO PARA DURAR',
+    'MENOS RUIDO, MÁS ALMA',
+    'NACIDO PARA RODAR',
+    'CONSERVA LO ESENCIAL',
+    'VIVE LIGERO, SUEÑA GRANDE',
+    'TU CAMINO, TUS REGLAS',
+    'LO SIMPLE PERDURA'
+  ]
+};
+function _pickSharedExploreCopy(seedText, market) {
+  const bank = /_en$/.test(String(market || '')) ? SHARED_EXPLORE_COPY.en : SHARED_EXPLORE_COPY.es;
+  if (!bank || !bank.length) return '';
+  const idx = _stableHash(String(seedText || '') + '|' + String(market || '')) % bank.length;
+  return bank[idx];
+}
+
 /* --- Formateo de prompt --- */
 function formatPrompt(result) {
   if (!result || !result.set) return '';
@@ -1561,6 +1594,11 @@ function formatPrompt(result) {
   const contactFunction = contactDNA && set.A ? String(set.A.funcionSimbolica || '').trim() : '';
   const contactMainText = String(MOTOR_STATE.message || '').trim().replace(/\s+/g, ' ');
   const contactSupportText = String(MOTOR_STATE.support || '').trim().replace(/\s+/g, ' ');
+  /* En explore sin mensaje, el motor fija UNA frase literal compartida para
+     A/B/C (no delega inventarla a la IA de imagen, que no puede coordinarla). */
+  const sharedExploreCopy = (isExplore && !String(MOTOR_STATE.message || '').trim())
+    ? _pickSharedExploreCopy(promptConcept, MOTOR_STATE.market)
+    : '';
   const activeDomain = dominioEfectivo();
   let promptFamilyId = null;
   if (isGospelMarket()) promptFamilyId = activeDomain || null;
@@ -1620,7 +1658,7 @@ function formatPrompt(result) {
     const conceptAnchor = String(brief.concept || '').trim();
     o += '/EXPLORACIÓN — 3 DIRECCIONES DEL MISMO CONCEPTO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
-    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || 'propón copy breve') + '\n';
+    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || sharedExploreCopy || 'propón copy breve') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
     o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. El fondo será espacio negativo o textura del estilo, nunca una escena nueva. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
   } else {
@@ -1731,6 +1769,7 @@ function formatPrompt(result) {
   K.forEach(function (k, i) {
     const v = set[k];
     o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + v.audiencia + '\n';
+    o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento)) + '\n';
@@ -1739,7 +1778,7 @@ function formatPrompt(result) {
       o += 'CONTROL ABSOLUTO: no dibujar personas, árboles, símbolos, iconos, siluetas, ilustraciones, fondos narrativos, marcos, cintas, flores, estrellas, rayos, texturas figurativas ni adornos. ÚNICOS elementos permitidos: letras del copy literal y recursos tipográficos integrados en las letras.\n';
     } else {
       o += 'OBJETO: ' + v.objeto + '\n';
-      o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo.\n';
+      o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos.\n';
     }
     if (contactDNA && v.jerarquiaVisual !== 'SOLO_TEXTO') o += 'FUNCIÓN CONSTANTE: ' + v.funcionSimbolica + ' · intención ' + v.intencionEmocional + '\n';
     const textLine = contactDNA
@@ -1749,15 +1788,14 @@ function formatPrompt(result) {
       : (isExplore
         ? (String(MOTOR_STATE.message || '').trim()
           ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
-          : 'COPY COMPARTIDO A/B/C: define palabras exactas de una frase principal original; conserva el mismo texto en las tres direcciones. Apoyo literal solo si aporta y también compartido; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia)
+          : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + sharedExploreCopy + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia)
         : v.textoPrincipal + ' / ' + v.textoApoyo + ' / ' + v.textoTerciario + ' · ' + v.tipografia);
     const hierarchyDirective = {
       SOLO_TEXTO: 'SOLO_TEXTO: solo copy literal; 100% tipografía y cero imágenes, objetos o adornos independientes. ÚNICOS elementos permitidos: letras del copy literal. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.',
-      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible. el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista. Texto y símbolo forman una sola composición integrada, no dos bloques separados. El símbolo aporta como máximo 20–30% del peso visual. El objeto descrito en esta ficha («' + v.objeto + '») debe interactuar físicamente con las letras de forma plausible: cruzar una palabra, quedar parcialmente detrás del lettering, encajar en una contraforma o compartir un contorno. Elige una integración coherente con el objeto real; no lo conviertas en letra si su forma no lo permite. conserva todas las palabras exactas y legibles. La arquitectura asignada cambia la colocación y el recorrido de lectura, no la proporción ni la jerarquía: adapta sus módulos para mantener texto dominante e integración real, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
-      OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte. OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80%. El objeto/concepto autorizado es el único motivo dominante; no lo sustituyas por árboles, personas u otros objetos no indicados ni añadas fondos narrativos, marcos o adornos. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel. El símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte.',
+      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista. Texto y símbolo forman una sola composición integrada, no dos bloques separados. El símbolo aporta como máximo 20–30% del peso visual. El objeto descrito en esta ficha («' + v.objeto + '») debe interactuar físicamente con las letras de forma plausible: cruzar una palabra, quedar parcialmente detrás del lettering, encajar en una contraforma o compartir un contorno. Elige una integración coherente con el objeto real; no lo conviertas en letra si su forma no lo permite. conserva todas las palabras exactas y legibles. La arquitectura asignada cambia la colocación y el recorrido de lectura, no la proporción ni la jerarquía: adapta sus módulos para mantener texto dominante e integración real, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
+      OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte; copy 20–30%. El objeto/concepto autorizado es el único motivo dominante; no lo sustituyas por árboles, personas u otros objetos no indicados ni añadas fondos narrativos, marcos o adornos. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel.',
       BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual. Ambos deben ser legibles y reconocibles a primera vista; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva mediante proximidad, intersección, encaje o alineación deliberada; evita dos bloques desconectados y evita que el layout convierta uno de los dos en protagonista. Mantén el copy exacto y el objeto autorizado; la arquitectura cambia su relación espacial, no sus proporciones. La arquitectura define colocación/relación, nunca cambia la proporción.'
     }[v.jerarquiaVisual] || '';
-    o += 'JERARQUÍA: aplica exactamente la jerarquía indicada en cada ficha\n';
     o += 'JERARQUÍA: ' + hierarchyDirective + ' La jerarquía fija tamaño, área y peso; el layout solo ubicación. Si hay conflicto, prevalece esta regla.\n';
     if (v.jerarquiaVisual === 'BALANCEADO') {
       // COMPOSICIÓN: el layout y la arquitectura definen ubicación, nunca proporción
