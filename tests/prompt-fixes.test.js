@@ -94,6 +94,11 @@ ok(count(out, 'INTEGRACIÓN TEXTO-SÍMBOLO:') === 1, 'Fix5: integración solo en
 ok(count(out, 'COMPOSICIÓN BALANCEADA:') === 1, 'Fix5: composición solo en la ficha BALANCEADO');
 ok(count(out, 'CONTROL ABSOLUTO: no dibujar personas') === 0, 'Fix5: sin SOLO_TEXTO no debe haber CONTROL ABSOLUTO');
 
+/* Sin rótulos pintados: los códigos de ficha y nombres de estilo/jerarquía
+   viven solo en el texto del prompt, nunca pintados en la imagen */
+ok(out.indexOf('Prohibido rotular los paneles con códigos de ficha (01A/01B/01C)') !== -1, 'Falta la prohibición de rotular paneles en la imagen');
+ok(out.indexOf('los rótulos de ficha viven solo en este texto, nunca en la imagen') !== -1, 'Falta el cierre anti-rótulos');
+
 /* Determinismo: misma entrada → misma salida */
 const outB = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') } });
 ok(out === outB, 'Regenerar con el mismo contexto debe dar el mismo prompt');

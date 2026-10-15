@@ -1721,7 +1721,7 @@ function formatPrompt(result) {
     o += 'VARIACIÓN VISUAL REAL: crea una nueva solución gráfica basada en la referencia, no una copia ni una limpieza de la misma. Cambia obligatoriamente composición, silueta global, encuadre, distribución de masas y jerarquía tipográfica. Conserva solo los elementos que exigen los selectores. No basta recolorear, cambiar textura, añadir borde ni aplicar filtro. No inventes objetos, texto, datos o símbolos fuera de las reglas anteriores.\n';
   }
   o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto.\n';
-  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo.\n';
+  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido rotular los paneles con códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia; separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas: los rótulos de ficha viven solo en este texto, nunca en la imagen.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
   if (cultDir) o += 'CULTURA: ' + cultDir + '\n';
