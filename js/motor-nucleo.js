@@ -831,6 +831,19 @@ function _styleTreatmentDirective(styleValue, profileKey) {
     + ' Estilo artístico activo: «' + _getStyleBase(styleValue) + '». ' + techniqueRules.join(' ');
 }
 
+/* Layouts coherentes y producibles para el producto activo. Sin entrada en
+   PRODUCT_LAYOUT_ALLOW = catálogo completo. Nunca devuelve menos de 3 para
+   no romper el dedup intra-set; ante cualquier duda, catálogo completo. */
+function _allowedLayoutPool() {
+  if (typeof PRODUCT_LAYOUT_ALLOW === 'undefined') return null;
+  const allow = PRODUCT_LAYOUT_ALLOW[MOTOR_STATE.product];
+  if (!allow || !allow.length) return null;
+  const pool = (_LAYOUTS || []).filter(function (x) {
+    return allow.some(function (h) { return x.indexOf(h) === 0; });
+  });
+  return pool.length >= 3 ? pool : null;
+}
+
 function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, usedAxes) {
   const used = usedAxes || {};
   const profile = _STRUCTURAL_PROFILES[String(profileKey || '').toUpperCase()];
@@ -839,7 +852,7 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
   const audience = audienceProfile || {};
   // El perfil estructural no restringe el catálogo: todo layout registrado sigue elegible.
   // Producto y audiencia solo sesgan; cada tarjeta del conjunto recibe uno no repetido.
-  const layouts = (_LAYOUTS || []).slice();
+  const layouts = _allowedLayoutPool() || (_LAYOUTS || []).slice();
   const productLayouts = (bias.layout || []).length
     ? layouts.filter(function (x) { return bias.layout.some(function (h) { return x.indexOf(h) === 0; }); })
     : [];
@@ -848,10 +861,21 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
     : [];
   const distinctLayouts = layouts.filter(function (x) { return (used.layout || []).indexOf(x) === -1; });
   const preferredLayouts = new Set(productLayouts.concat(audienceLayouts));
+  // Rotación entre generaciones: los layouts de los últimos sets pesan menos
+  // (×0.35, como los estilos recientes) pero nunca cero: los 16 aplican en
+  // todos los productos/mercados a lo largo de generaciones.
+  let recentLayouts = null;
+  try {
+    const rkFn = typeof memKey === 'function' ? memKey : _memKey;
+    const rk = rkFn(['layoutRecentSets', MOTOR_STATE.market, MOTOR_STATE.region || 'global', MOTOR_STATE.product]);
+    const stored = (typeof getJSON === 'function' ? getJSON(rk, []) : _memGetJSON(rk, [])) || [];
+    recentLayouts = new Set([].concat.apply([], stored.slice(-3)));
+  } catch (e) { recentLayouts = new Set(); }
   // Sesgo suave (3:1), no lista cerrada: cualquier layout puede salir y el
   // catálogo completo se explora a lo largo de generaciones; dentro de A/B/C no se repite.
   const layoutWeights = distinctLayouts.map(function (layout) {
-    return preferredLayouts.has(layout) ? 3 : 1;
+    const base = preferredLayouts.has(layout) ? 3 : 1;
+    return recentLayouts.has(layout) ? base * 0.35 : base;
   });
   v.layout = _pickWeighted(distinctLayouts.length ? distinctLayouts : layouts, layoutWeights);
 
@@ -1182,8 +1206,10 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       stylePref: _SP
     };
 
-    const layoutBias = (productBias.layout || []).concat(audProfile.layoutPref || []);
-    v.layout = _pickFresh(layoutBias, _LAYOUTS, usedAxes.layout);
+    const allowedPool = _allowedLayoutPool();
+    const layoutBiasRaw = (productBias.layout || []).concat(audProfile.layoutPref || []);
+    const layoutBias = allowedPool ? layoutBiasRaw.filter(function (x) { return allowedPool.some(function (a) { return a.indexOf(x) === 0 || String(x).indexOf(a) === 0; }); }) : layoutBiasRaw;
+    v.layout = _pickFresh(layoutBias, allowedPool || _LAYOUTS, usedAxes.layout);
     usedAxes.layout.push(v.layout);
 
     const tipoBias = (audProfile.tipoPref || []).concat(_STYLE_TIPO_PREF[styleBase] || []);
@@ -1368,6 +1394,20 @@ function scoreSet(set) {
 }
 
 /* --- Loop de generación --- */
+/* Registra los layouts del set aceptado para rotar el catálogo entre
+   generaciones (misma cadencia que recentSets de estilos: 1 vez por set). */
+function _recordLayoutSet(set) {
+  try {
+    if (!set) return;
+    const layKeyFn = typeof memKey === 'function' ? memKey : _memKey;
+    const layKey = layKeyFn(['layoutRecentSets', MOTOR_STATE.market, MOTOR_STATE.region || 'global', MOTOR_STATE.product]);
+    const layRecent = (typeof getJSON === 'function' ? getJSON(layKey, []) : _memGetJSON(layKey, [])) || [];
+    const layUsed = K.map(function (k) { return set[k] && set[k].layout; }).filter(Boolean);
+    if (!layUsed.length) return;
+    if (typeof setJSON === 'function') setJSON(layKey, layRecent.concat([layUsed]).slice(-3));
+    else _memSetJSON(layKey, layRecent.concat([layUsed]).slice(-3));
+  } catch (e) {}
+}
 let LAST_RESULT = null;
 function memLocksMarket() {
   try { return MOTOR_STATE.market + '|' + MOTOR_STATE.region; } catch (e) { return MOTOR_STATE.market; }
@@ -1450,6 +1490,7 @@ function generateSet() {
   }
 
   // Anti-repetición por patrón visual
+  _recordLayoutSet(best);
   K.forEach(function (k) {
     const pattern = {
       estilo: _getStyleBase(best[k].estilo),
