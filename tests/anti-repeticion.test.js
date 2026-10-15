@@ -90,6 +90,17 @@ function runBlock(mode, seedConcept, seedMessage) {
       if (bad) { violations++; failures.push(mode + ' gen' + g + ': ' + bad); checks++; }
       else checks++;
     });
+    /* RT-03: fondo/dominante/acento/tinta con 4 HEX distintos por ficha */
+    ['A', 'B', 'C'].forEach(function (k) {
+      const p = String(set[k].paleta);
+      const get = function (n) { const mm = p.match(new RegExp(n + ' (#[0-9A-Fa-f]{6})')); return mm ? mm[1].toUpperCase() : null; };
+      const roles = [get('fondo'), get('dominante'), get('acento'), get('tinta')];
+      checks++;
+      if (roles.every(Boolean) && new Set(roles).size !== 4) {
+        violations++;
+        failures.push(mode + ' gen' + g + ' ficha ' + k + ': roles con HEX repetido [' + roles.join(' | ') + ']');
+      }
+    });
   }
   return violations;
 }
@@ -102,8 +113,10 @@ ok(vNew === 0, 'new: ' + vNew + ' repeticiones intra-set en 25 generaciones');
 /* El gate duro de generateSet debe cubrir los 2 ejes nuevos (con excepción
    documentada para conservarPaleta en variación). */
 const motorSrc = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
-ok(/cand\[k\]\.tecnica; \}\)\)\.size === 3/.test(motorSrc), 'ejesOk debe exigir 3 técnicas distintas');
-ok(/cand\.A\.familiaColor === '\(paleta de la imagen\)'/.test(motorSrc), 'ejesOk debe exigir 3 fondos distintos salvo conservarPaleta');
+ok(/set\[k\]\.tecnica; \}\)\)\.size === 3/.test(motorSrc), 'ejesOk debe exigir 3 técnicas distintas');
+ok(/set\.A\.familiaColor === '\(paleta de la imagen\)'/.test(motorSrc), 'ejesOk debe exigir 3 fondos distintos salvo conservarPaleta');
+const estilosSrc = fs.readFileSync(path.join(JS, 'data-estilos.js'), 'utf8');
+ok(/usedRoles/.test(estilosSrc) && /nunca comparten HEX/.test(estilosSrc), 'hexScheme debe reasignar colisiones de roles');
 
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  anti-repeticion  (' + checks + ' aserciones, ' + failures.length + ' fallos)');

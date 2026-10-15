@@ -1280,17 +1280,27 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       v._esquema = null;
     } else {
       const colorPref = _STYLE_COLOR_PREF[styleBase] || Object.keys(_COLOR_FAMILIES);
-      const fam = _pickFresh(colorPref, Object.keys(_COLOR_FAMILIES), usedAxes.familiaColor);
-      usedAxes.familiaColor.push(fam);
-      const palList = _COLOR_FAMILIES[fam] || ['#14141A'];
-      const pal = _pick(palList);
       const preferredModes = (_AUD_PROFILES[v.audiencia] || {}).modoCol || [];
       const modePool = _COLOR_MODES.filter(function (m) { return preferredModes.indexOf(m) !== -1; });
-      const modo = _pick(modePool.length ? modePool : _COLOR_MODES);
-      const esquema = _hexScheme(pal, modo);
-      v.paleta = pal + ' — fondo ' + esquema.bg + ' · dominante ' + esquema.dom + ' · acento ' + esquema.acc + ' · tinta ' + esquema.ink + ' (modo: ' + modo + ')';
-      v.familiaColor = fam;
-      v._esquema = esquema;
+      // RT-03: reintentar combinaciones hasta que fondo/dominante/acento/tinta
+      // sean 4 HEX distintos (nombres que prometen colores ausentes); si no se
+      // logra en 12 intentos, quedarse con la de menos colisiones. Solo la
+      // familia elegida entra al dedup intra-set, no las probadas.
+      let bestFam = null, bestPal = null, bestModo = null, bestEsq = null, bestScore = -1;
+      for (let cg = 0; cg < 12 && bestScore < 4; cg++) {
+        const f2 = _pickFresh(colorPref, Object.keys(_COLOR_FAMILIES), usedAxes.familiaColor);
+        const pl2 = _pick(_COLOR_FAMILIES[f2] || ['#14141A']);
+        const md2 = _pick(modePool.length ? modePool : _COLOR_MODES);
+        const es2 = _hexScheme(pl2, md2);
+        if (!es2) continue;
+        const roles = [es2.bg, es2.dom, es2.acc, es2.ink].map(function (h) { return String(h || '').toUpperCase(); });
+        const distinct = new Set(roles).size;
+        if (distinct > bestScore) { bestScore = distinct; bestFam = f2; bestPal = pl2; bestModo = md2; bestEsq = es2; }
+      }
+      usedAxes.familiaColor.push(bestFam);
+      v.paleta = bestPal + ' — fondo ' + bestEsq.bg + ' · dominante ' + bestEsq.dom + ' · acento ' + bestEsq.acc + ' · tinta ' + bestEsq.ink + ' (modo: ' + bestModo + ')';
+      v.familiaColor = bestFam;
+      v._esquema = bestEsq;
     }
 
     // Pertinencia medida con preferencias declaradas de audiencia y producto.

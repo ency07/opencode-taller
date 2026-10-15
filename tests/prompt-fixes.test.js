@@ -78,7 +78,7 @@ ok(out.indexOf('MENSAJE EXACTO: ' + frase) !== -1, 'Fix1: la cabecera debe mostr
 ok(out.indexOf('Prohibido añadir manos, brazos, personas') !== -1, 'Fix2: falta la guardia explícita anti-manos');
 
 /* Fix 3: layout de hoja */
-ok(out.indexOf('hoja de 3 columnas') !== -1, 'Fix3: falta el layout de hoja 3 columnas');
+ok(/hoja de 3 columnas/i.test(out), 'Fix3: falta el layout de hoja 3 columnas');
 ok(out.indexOf('No agrupar ni omitir vistas') === -1, 'Fix3: sobrevive el imposible «no agrupar»');
 
 /* Fix 4: sin duplicados */

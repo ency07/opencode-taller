@@ -372,7 +372,16 @@ function hexScheme(palStr, mode) {
     "Medio con acento": { bg: m2, dom: d, acc: l, ink: d }
   };
   const e = { ...(M[mode] || M["Oscuro profundo"]) };
-  if (e.acc === e.ink && m3 && m3 !== e.ink) e.acc = m3;
+  // RT-03: fondo/dominante/acento/tinta nunca comparten HEX. Varios modos
+  // igualaban roles por construcción (p. ej. dom=d=ink en Claro editorial);
+  // se reasigna cada colisión al siguiente tono libre de la escala.
+  const scale = [d, m1, m2, m3, l].filter(function (c, i, a) { return c && a.indexOf(c) === i; });
+  const usedRoles = new Set();
+  ['bg', 'dom', 'acc', 'ink'].forEach(function (k) {
+    if (!usedRoles.has(e[k])) { usedRoles.add(e[k]); return; }
+    const free = scale.filter(function (c) { return !usedRoles.has(c); })[0];
+    if (free) { e[k] = free; usedRoles.add(free); }
+  });
   return e;
 }
 
