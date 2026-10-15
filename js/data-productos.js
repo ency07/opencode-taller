@@ -283,11 +283,26 @@ function getSafeMarginDirective(product) {
   return bias.safeMargin || "respetar márgenes de impresión del producto";
 }
 
+/* Layouts coherentes y producibles por producto (prefijos del catálogo).
+   Sin entrada = catálogo completo (prendas planas, tote y murales).
+   GORRA: panel frontal pequeño y curvo; sin sangrados, campos divididos ni
+   lecturas circulares. MUG: curva + asa; sin órbitas ni bandas múltiples.
+   FUNDA MÓVIL: carcasa pequeña con recorte de cámara; sin sangrados ni
+   fragmentación. MOCHILA: panel con cierres; sin sangrados ni órbitas.
+   Mínimo 9 por producto: el dedup intra-set (3) siempre es posible. */
+const PRODUCT_LAYOUT_ALLOW = {
+  "GORRA": ["Axial centrado", "Emblema circular", "Retícula áurea", "Diagonal descendente", "Diagonal ascendente", "Banda horizontal", "Tarjeta interior", "Columna apilada", "Sello descentrado"],
+  "MUG": ["Axial centrado", "Emblema circular", "Editorial asimétrica", "Retícula áurea", "Diagonal descendente", "Diagonal ascendente", "Banda horizontal", "Tarjeta interior", "Columna apilada", "Sangrado total", "Sello descentrado", "Split 2/3-1/3", "Arco y cúpula"],
+  "FUNDA MÓVIL": ["Axial centrado", "Emblema circular", "Editorial asimétrica", "Retícula áurea", "Diagonal descendente", "Diagonal ascendente", "Banda horizontal", "Tarjeta interior", "Columna apilada", "Sello descentrado", "Arco y cúpula"],
+  "MOCHILA": ["Axial centrado", "Emblema circular", "Editorial asimétrica", "Retícula áurea", "Diagonal descendente", "Diagonal ascendente", "Banda horizontal", "Tarjeta interior", "Columna apilada", "Sello descentrado", "Split 2/3-1/3", "Arco y cúpula", "Escalinata"]
+};
+
 /* Compatibilidad global */
 window.PRODUCT_BIAS = PRODUCT_BIAS;
 window.PLACEMENT = PLACEMENT;
 window.PRODUCT_RULES = PRODUCT_RULES;
 window.PRODUCT_MOCKUP_RULES = PRODUCT_MOCKUP_RULES;
+window.PRODUCT_LAYOUT_ALLOW = PRODUCT_LAYOUT_ALLOW;
 window.PRINT_METHODS_BY_PRODUCT = PRINT_METHODS_BY_PRODUCT;
 window.PRINT_METHOD_LABELS = PRINT_METHOD_LABELS;
 window.PRINT_PREP_RULES = PRINT_PREP_RULES;

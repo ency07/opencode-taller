@@ -85,6 +85,49 @@ function runBlock(mode, market, seedBase) {
   ok(r.seen[top] <= 6, cfg[0] + '/' + cfg[1] + ': «' + top + '» acapara ' + r.seen[top] + '/30 slots (máx 6)');
 });
 
+/* Productos restringidos: rotar SOLO dentro de layouts coherentes/producibles */
+ok(typeof PRODUCT_LAYOUT_ALLOW !== 'undefined', 'debe existir PRODUCT_LAYOUT_ALLOW');
+['GORRA', 'MUG', 'FUNDA MÓVIL', 'MOCHILA'].forEach(function (product) {
+  const allow = PRODUCT_LAYOUT_ALLOW[product] || [];
+  ok(allow.length >= 9, product + ': allow con ' + allow.length + ' layouts (mín 9 para dedup+rotación)');
+  const bias = ((typeof PRODUCT_BIAS !== 'undefined' && PRODUCT_BIAS[product]) || {}).layout || [];
+  ok(bias.every(function (b) { return allow.indexOf(b) !== -1; }), product + ': su bias debe estar dentro del allow (sin regresión)');
+});
+['GORRA', 'MUG', 'FUNDA MÓVIL', 'MOCHILA'].forEach(function (product) {
+  const allow = PRODUCT_LAYOUT_ALLOW[product];
+  MOTOR_STATE.workflowMode = 'explore';
+  MOTOR_STATE.designMode = 'contacto';
+  MOTOR_STATE.market = 'colombia';
+  MOTOR_STATE.region = 'global';
+  MOTOR_STATE.product = product;
+  MOTOR_STATE.subniche = 'auto';
+  MOTOR_STATE.dominio = 'auto';
+  MOTOR_STATE.dominioDetectado = 'auto';
+  MOTOR_STATE.audienceSet = 'Auto';
+  MOTOR_STATE.audienceMulti = 'si';
+  MOTOR_STATE.groupMode = 'distintos';
+  MOTOR_STATE.message = '';
+  MOTOR_STATE.support = '';
+  MOTOR_STATE.explorationBrief = null;
+  const seen = {};
+  let intra = 0, fuera = 0;
+  for (let g = 0; g < 10; g++) {
+    MOTOR_STATE.concept = 'allow-' + product + '-' + g;
+    const set = buildCandidate(resolveAudiences(), null);
+    _recordLayoutSet(set);
+    const ls = ['A', 'B', 'C'].map(function (k) { return String(set[k].layout).split(':')[0].trim(); });
+    if (new Set(ls).size !== 3) intra++;
+    ls.forEach(function (l) {
+      seen[l] = (seen[l] || 0) + 1;
+      if (allow.indexOf(l) === -1) fuera++;
+    });
+  }
+  const keys = Object.keys(seen);
+  ok(intra === 0, product + ': repetidos intra-set en 10 generaciones');
+  ok(fuera === 0, product + ': ' + fuera + ' layouts fuera del allow en 10 generaciones');
+  ok(keys.length >= allow.length - 2, product + ': solo ' + keys.length + '/' + allow.length + ' permitidos en 10 sets');
+});
+
 /* La rotación es peso, nunca exclusión: el catálogo completo sigue elegible */
 const motorSrc = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
 ok(/base \* 0\.35/.test(motorSrc), 'los layouts recientes deben pesar menos sin excluirse');
