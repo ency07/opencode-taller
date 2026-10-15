@@ -1630,7 +1630,11 @@ function _figureDirective(conceptText) {
 /* --- Copy compartido para modo explore sin mensaje ---
    El modelo de imagen no puede coordinar una frase inventada entre A/B/C
    en una sola generación; por eso el motor elige UNA frase literal aquí
-   (determinista por concepto+mercado) y las tres fichas la citan literal. */
+   y las tres fichas la citan literal. Orden: mensaje del usuario, concepto
+   literal tal cual lo escribió, banco neutro solo como último recurso
+   (concepto y brief vacíos). El banco nunca decide sobre un concepto real:
+   una frase genérica ('NACIDO PARA RODAR') sobre un concepto concreto
+   ('niño en brazos del Maestro') rompe la identidad semántica. */
 const SHARED_EXPLORE_COPY = {
   en: [
     'SMALL MOMENTS, BIG MEANING',
@@ -1658,6 +1662,13 @@ function _pickSharedExploreCopy(seedText, market) {
   if (!bank || !bank.length) return '';
   const idx = _stableHash(String(seedText || '') + '|' + String(market || '')) % bank.length;
   return bank[idx];
+}
+/* Resuelve el copy compartido sin inventar: mensaje > concepto literal >
+   banco (solo si no hay ni concepto ni brief). Determinista. */
+function _resolveSharedCopy(conceptText, market) {
+  const text = String(conceptText || '').trim().replace(/\s+/g, ' ');
+  if (text && text !== '—') return text.toUpperCase();
+  return _pickSharedExploreCopy(text, market);
 }
 
 /* --- Formateo de prompt --- */
@@ -1712,10 +1723,15 @@ function formatPrompt(result) {
   const contactFunction = contactDNA && set.A ? String(set.A.funcionSimbolica || '').trim() : '';
   const contactMainText = String(MOTOR_STATE.message || '').trim().replace(/\s+/g, ' ');
   const contactSupportText = String(MOTOR_STATE.support || '').trim().replace(/\s+/g, ' ');
+  /* Copy compartido derivado (mensaje > concepto literal > banco): una sola
+     frase para A/B/C; el banco solo cubre el vacío total, nunca un concepto. */
+  const sharedDerivedCopy = !String(MOTOR_STATE.message || '').trim()
+    ? _resolveSharedCopy(promptConcept, MOTOR_STATE.market)
+    : '';
   /* En explore sin mensaje, el motor fija UNA frase literal compartida para
      A/B/C (no delega inventarla a la IA de imagen, que no puede coordinarla). */
   const sharedExploreCopy = (isExplore && !String(MOTOR_STATE.message || '').trim())
-    ? _pickSharedExploreCopy(promptConcept, MOTOR_STATE.market)
+    ? sharedDerivedCopy
     : '';
   const activeDomain = dominioEfectivo();
   let promptFamilyId = null;
@@ -1804,7 +1820,7 @@ function formatPrompt(result) {
     o += 'DIRECCIÓN: el estilo artístico define el lenguaje visual; HEAVY/SOFT/MODERN modifican composición y jerarquía sin borrar ese estilo. No mezcles instrucciones incompatibles.\n';
     o += 'A/B/C: misma identidad semántica, soluciones distintas en composición, silueta, tipografía y relación texto-imagen; no basta recolorear o cambiar textura.\n';
   }
-  if (isVar) o += 'VARIACIÓN: usa la referencia solo para concepto y datos visibles; no copies su composición, silueta, encuadre ni jerarquía. No añadas objetos ni datos. A/HEAVY: masas compactas, contorno grueso, contraste alto. B/SOFT: formas abiertas, aire y transiciones suaves. C/MODERN: geometría limpia, retícula y asimetría controlada. Cambia layout, silueta y arquitectura tipográfica en cada dirección; el estilo elegido se conserva sin anular el perfil. El copy solo sigue el selector de texto. Si dos diseños parecen la misma imagen recoloreada, replantea su estructura.\n';
+  if (isVar) o += 'VARIACIÓN: usa la referencia solo para concepto y datos visibles; no copies su composición, silueta, pose, rostro, encuadre ni jerarquía. No añadas objetos ni datos. A/HEAVY: masas compactas, contorno grueso, contraste alto. B/SOFT: formas abiertas, aire y transiciones suaves. C/MODERN: geometría limpia, retícula y asimetría controlada. Cambia layout, silueta y arquitectura tipográfica en cada dirección; el estilo elegido se conserva sin anular el perfil. El copy solo sigue el selector de texto. Si dos diseños parecen la misma imagen recoloreada, replantea su estructura.\n';
   if (isVar && MOTOR_STATE.imageReference) {
     const symbolMode = String(MOTOR_STATE.variationOptions.simbolo || 'sustituir');
     const textMode = String(MOTOR_STATE.variationOptions.textos || 'conservar_palabras');
@@ -1905,7 +1921,7 @@ function formatPrompt(result) {
     const textLine = contactDNA
       ? (contactMainText
         ? 'MENSAJE PRINCIPAL literal: «' + contactMainText + '»' + (contactSupportText ? ' · APOYO literal: «' + contactSupportText + '»' : '') + ' · sin texto terciario · ' + v.tipografia
-        : 'COPY PROPUESTO: escribir frase final original exacta según jerarquía ' + v.jerarquiaVisual + '; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia)
+        : 'COPY LITERAL (derivado del concepto): «' + sharedDerivedCopy + '»; usarlo exacto en las tres direcciones; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia)
       : (isExplore
         ? (String(MOTOR_STATE.message || '').trim()
           ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia

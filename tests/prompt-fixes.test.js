@@ -120,6 +120,38 @@ ok(count(outNew, 'HOLD FAST, SHINE BRIGHT') >= 3, 'Modo new: el mensaje literal 
 ok(outNew.indexOf('COPY LITERAL COMPARTIDO') === -1, 'Modo new con mensaje: no debe proponer copy');
 ok(outNew.indexOf('/CONTACTSHEET') !== -1, 'Modo new: cabecera CONTACTSHEET');
 
+/* Identidad semántica: el copy deriva del concepto, nunca del banco genérico.
+   Regression-lock del caso real: concepto 'niño en brazos del Maestro' debe
+   dar su propio texto, jamás 'NACIDO PARA RODAR'. */
+MOTOR_STATE.workflowMode = 'explore';
+MOTOR_STATE.message = '';
+MOTOR_STATE.concept = 'niño en brazos del Maestro sin miedo';
+MOTOR_STATE.explorationBrief = null;
+const outNino = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') } });
+const litsNino = outNino.match(/COPY LITERAL COMPARTIDO A\/B\/C \(propuesto por el motor\): «([^»]+)»/g) || [];
+ok(litsNino.length === 3 && new Set(litsNino).size === 1, 'concepto gospel: copy literal idéntico en A/B/C');
+ok(outNino.indexOf('«NIÑO EN BRAZOS DEL MAESTRO SIN MIEDO»') !== -1, 'el copy debe derivar del concepto literal');
+ok(outNino.indexOf('NACIDO PARA RODAR') === -1, 'el banco genérico no debe decidir sobre un concepto real');
+ok(outNino.indexOf('MENSAJE EXACTO: NIÑO EN BRAZOS DEL MAESTRO SIN MIEDO') !== -1, 'la cabecera muestra el derivado');
+
+/* Contacto sin mensaje: literal derivado, no invención por ficha */
+MOTOR_STATE.workflowMode = 'new';
+MOTOR_STATE.message = '';
+MOTOR_STATE.concept = 'cruz y roca firme';
+MOTOR_STATE.explorationBrief = null;
+const outContact = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') } });
+ok(outContact.indexOf('COPY PROPUESTO: escribir frase') === -1, 'contacto sin mensaje: no debe delegar inventar');
+ok(count(outContact, '«CRUZ Y ROCA FIRME»') >= 3, 'contacto sin mensaje: literal derivado en las 3 fichas');
+
+/* Vacío total: el banco solo cubre la ausencia de concepto y brief */
+MOTOR_STATE.workflowMode = 'explore';
+MOTOR_STATE.message = '';
+MOTOR_STATE.concept = '';
+MOTOR_STATE.explorationBrief = { concept: '', familyId: null, familyLabel: 'x' };
+const outVacio = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') } });
+const litsVacio = outVacio.match(/COPY LITERAL COMPARTIDO A\/B\/C \(propuesto por el motor\): «([^»]+)»/g) || [];
+ok(litsVacio.length === 3 && new Set(litsVacio).size === 1, 'vacío total: el banco da literal idéntico como último recurso');
+
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  prompt-fixes  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.forEach(function (f) { console.log('  X ' + f); });
