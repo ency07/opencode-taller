@@ -94,6 +94,12 @@ ok(outGesto.indexOf('hoja de 3 columnas') !== -1, 'mockups: conserva layout de h
 ok(outGesto.indexOf('prohibido duplicar el mismo ángulo y color') !== -1, 'mockups: prohíbe rellenar duplicando');
 ok(outGesto.indexOf('12 vistas en total') === -1, 'mockups: no debe sobrevivir el contrato de 12 fijas');
 ok(outGesto.indexOf('omitir el tono que destruya contraste') !== -1, 'mockups: permite omitir tono incompatible');
+ok(outGesto.indexOf('centrado en la línea principal') !== -1, 'mockups: macro anclado al copy, no recorte arbitrario');
+ok(outGesto.indexOf('exactamente 3 por diseño') !== -1, 'mockups: conteo exacto por diseño');
+
+/* INTEGRACIÓN DE LA FICHA: la matriz UI por fin llega al prompt (BAL+OBJ) */
+ok(count(outGesto, 'INTEGRACIÓN DE LA FICHA:') === 2, 'integración de ficha en BALANCEADO y OBJETO (2/3, TEXTO usa su bloque)');
+ok(outSolo.indexOf('INTEGRACIÓN DE LA FICHA:') !== -1, 'SOLO/TEXTO/BAL: BAL conserva su integración');
 
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  figuras-mockups  (' + checks + ' aserciones, ' + failures.length + ' fallos)');

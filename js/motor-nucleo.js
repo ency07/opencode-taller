@@ -1056,7 +1056,7 @@ function _compatibleCompositionDirective(hierarchy, architecture) {
   }
   if (!placement) placement = 'texto y símbolo en zonas diferenciadas con asimetría controlada';
   if (hierarchy === 'TEXTO_DOMINANTE') {
-    return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; convierte ubicación y módulos en una sola silueta tipográfica-simbólica integrada: letras y símbolo se solapan o comparten trazos, contornos o contraformas. No presentes el texto y el objeto como dos bloques o ilustraciones separados. El texto sigue siendo la primera lectura y conserva 70–80% del área imprimible; el símbolo queda integrado y subordinado. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada. La arquitectura cambia ubicación, nunca separación ni jerarquía.';
+    return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; convierte ubicación y módulos en una sola silueta tipográfica-simbólica integrada. El texto conserva 70–80% del área y es la primera lectura; el símbolo queda integrado y subordinado. La arquitectura cambia ubicación, nunca proporción ni jerarquía.';
   }
   if (hierarchy === 'OBJETO_DOMINANTE') {
     return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; el símbolo autorizado conserva 70–80% del área y el copy queda subordinado dentro del 20–30% restante. No añadas cintas, marcos, bandas, emblemas ni objetos para ejecutar la distribución.';
@@ -1646,7 +1646,7 @@ function formatPrompt(result) {
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
     o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || 'propón copy breve') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
-    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. El fondo será espacio negativo o textura del estilo, nunca una escena nueva. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
+    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
   } else {
     o += '/CONTACTSHEET — 3 DIRECCIONES · MISMO CONCEPTO · NADA CLONADO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + ' | SERIE: ' + (MOTOR_STATE.serie || '—') + '\n';
@@ -1750,7 +1750,8 @@ function formatPrompt(result) {
   } else {
     o += 'TEXTOS: si existe mensaje proporcionado, conservarlo literalmente y usarlo como único copy principal; no exigir tres niveles ni inventar apoyos, sellos, citas, datos o microtexto. Si no existe mensaje, proponer una sola frase principal exacta y omitir texto secundario salvo que el usuario lo solicite.\n';
   }
-  o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, escala/pose del personaje, tipografía, densidad, forma del símbolo y espacio negativo. Usa las preferencias estructurales de la ficha; no representes la audiencia con estereotipos ni añadiendo objetos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\n\n';
+  o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, tipografía, densidad, forma del símbolo y espacio negativo; no la representes con estereotipos ni objetos añadidos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\n\n';
+  o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + (_PLACEMENT[MOTOR_STATE.product] || _PLACEMENT['CAMISETA SOFT'] || 'pecho centrado') + '; ' + ((_PRODUCT_BIAS[MOTOR_STATE.product] || {}).scale || 'escala adecuada al producto') + '\n\n';
 
   K.forEach(function (k, i) {
     const v = set[k];
@@ -1778,15 +1779,16 @@ function formatPrompt(result) {
         : v.textoPrincipal + ' / ' + v.textoApoyo + ' / ' + v.textoTerciario + ' · ' + v.tipografia);
     const hierarchyDirective = {
       SOLO_TEXTO: 'SOLO_TEXTO: solo copy literal; 100% tipografía y cero imágenes, objetos o adornos independientes. ÚNICOS elementos permitidos: letras del copy literal. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.',
-      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible. el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista. Texto y símbolo forman una sola composición integrada, no dos bloques separados. El símbolo aporta como máximo 20–30% del peso visual. El objeto descrito en esta ficha («' + v.objeto + '») debe interactuar físicamente con las letras de forma plausible: cruzar una palabra, quedar parcialmente detrás del lettering, encajar en una contraforma o compartir un contorno. Elige una integración coherente con el objeto real; no lo conviertas en letra si su forma no lo permite. conserva todas las palabras exactas y legibles. La arquitectura asignada cambia la colocación y el recorrido de lectura, no la proporción ni la jerarquía: adapta sus módulos para mantener texto dominante e integración real, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
-      OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte. OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80%. El objeto/concepto autorizado es el único motivo dominante; no lo sustituyas por árboles, personas u otros objetos no indicados ni añadas fondos narrativos, marcos o adornos. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel. El símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte.',
-      BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual. Ambos deben ser legibles y reconocibles a primera vista; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva mediante proximidad, intersección, encaje o alineación deliberada; evita dos bloques desconectados y evita que el layout convierta uno de los dos en protagonista. Mantén el copy exacto y el objeto autorizado; la arquitectura cambia su relación espacial, no sus proporciones. La arquitectura define colocación/relación, nunca cambia la proporción.'
+      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista. Texto y símbolo forman una sola composición integrada, no dos bloques separados. El símbolo aporta como máximo 20–30% del peso visual. El objeto descrito en esta ficha («' + v.objeto + '») debe interactuar físicamente con las letras de forma plausible. Elige una integración coherente con el objeto real. conserva todas las palabras exactas y legibles, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
+      OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte; copy 20–30%. No lo sustituyas por árboles, personas u otros objetos no indicados. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel.',
+      BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva; evita dos bloques desconectados. La arquitectura define colocación/relación, nunca cambia la proporción.'
     }[v.jerarquiaVisual] || '';
     o += 'JERARQUÍA: aplica exactamente la jerarquía indicada en cada ficha\n';
     o += 'JERARQUÍA: ' + hierarchyDirective + ' La jerarquía fija tamaño, área y peso; el layout solo ubicación. Si hay conflicto, prevalece esta regla.\n';
     if (v.jerarquiaVisual === 'BALANCEADO') {
       // COMPOSICIÓN: el layout y la arquitectura definen ubicación, nunca proporción
-      o += 'COMPOSICIÓN BALANCEADA: ' + v.layout + ' · ' + v.distribucionTexto + '. Adapta la arquitectura para mantener texto y símbolo entre 45–55% cada uno; ambos deben leerse como partes co-protagonistas de una unidad, no como elemento principal más adorno. La arquitectura define colocación/relación, nunca cambia la proporción.\n';
+      o += 'COMPOSICIÓN BALANCEADA: ' + v.layout + ' · ' + v.distribucionTexto + '. La arquitectura define colocación/relación, nunca cambia la proporción.\n';
+      o += 'INTEGRACIÓN DE LA FICHA: ' + v.integracionTexto + '\n';
     }
     else if (v.jerarquiaVisual === 'TEXTO_DOMINANTE' || v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
       o += _compatibleCompositionDirective(v.jerarquiaVisual, v.distribucionTexto) + '\n';
@@ -1794,17 +1796,15 @@ function formatPrompt(result) {
     if (v.jerarquiaVisual === 'TEXTO_DOMINANTE') {
       o += 'INTEGRACIÓN TEXTO-SÍMBOLO: integra el objeto descrito en el concepto ("' + v.objeto + '") en el lettering usando su forma física y acción reales; elige una unión visual clara y natural, sin imponer metáforas genéricas ni partes que el objeto no posee. El texto exacto ocupa 70–80% del área y es la primera lectura; el símbolo ocupa como máximo 20–30%, queda integrado y nunca aparece como ilustración separada. La arquitectura cambia ubicación, no proporción.\n';
     }
+    if (v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
+      o += 'INTEGRACIÓN DE LA FICHA: ' + v.integracionTexto + '\n';
+    }
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
       o += _soloTextCompositionDirective(v.distribucionTexto) + '\n';
-      o += 'DIRECCIÓN: diseño tipográfico puro en ' + v.estilo + '. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.\n';
-      o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + v.placement + '; ' + v.escalaProducto + '\n';
-      o += 'ARTE: solo letras del mensaje exacto; ' + v.tratamiento + '. Sin persona, árbol, objeto, icono, ilustración, marco, cinta, estrella, llama, floritura, textura figurativa ni fondo escénico.\n';
+      o += 'DIRECCIÓN: diseño tipográfico puro en ' + v.estilo + '. SOLO_TEXTO NO SIGNIFICA SIMPLE. Usa las letras como forma visual principal mediante escala, ritmo, composición; mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes. Solo letras del mensaje exacto; ' + v.tratamiento + '. Sin persona, árbol, objeto, icono, ilustración, marco, cinta, estrella, llama, floritura, textura figurativa ni fondo escénico.\n';
       o += 'TEXTO: ' + textLine + '\n';
     } else {
-      o += 'DIRECCIÓN ARTÍSTICA: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + '. Ejecuta el estilo dentro de la jerarquía indicada; no inventes una estructura textual distinta.\n';
-      o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + v.placement + '; ' + v.escalaProducto + '\n';
-      o += 'ESTILO PRINCIPAL (prioridad): ' + v.estilo + '. Gobierna el lenguaje visual; forma, técnica y tratamiento son secundarios y no pueden introducir estéticas incompatibles.\n';
-      o += 'ARTE: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + '\n';
+      o += 'ARTE: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + ' · estilo «' + v.estilo + '» (manda). Ejecuta el estilo dentro de la jerarquía indicada; no inventes una estructura textual distinta.\n';
       o += 'TEXTO: ' + textLine + '\n';
 
     }
