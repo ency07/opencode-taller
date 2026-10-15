@@ -91,9 +91,10 @@ ok(count(outSolo, 'FIGURAS HUMANAS:') === 2, 'SOLO_TEXTO no debe llevar FIGURAS 
 ok(outGesto.indexOf('FICHA SERIE (CAMISETA SOFT)') !== -1, 'mockups: contrato de ficha serie');
 ok(outGesto.indexOf('Franja superior: SERIE, CONCEPTO, MENSAJE') !== -1, 'mockups: franja superior con metadata');
 ok(outGesto.indexOf('Hoja de 3 columnas, una por ficha del set') !== -1, 'mockups: 3 columnas por ficha');
-ok(outGesto.indexOf("recuadro con el arte en plano rotulado según la cara ('vista frontal' o 'vista espalda')") !== -1, 'mockups: recuadro rotulado según la cara');
-ok(outGesto.indexOf('la misma cara donde va el estampado de esa columna') !== -1, 'mockups: miniatura iguala la cara del estampado');
-ok(outGesto.indexOf('prohibido mostrar siempre la frontal') !== -1, 'mockups: prohíbe frontal por defecto');
+ok(outGesto.indexOf("recuadro 'vista frontal' con el arte en plano") !== -1, 'mockups: recuadro frontal por defecto');
+ok(outGesto.indexOf('Por defecto TODO es frontal') !== -1, 'mockups: frontal por defecto');
+ok(outGesto.indexOf('SOLO si la ficha de esa columna indica estampado en espalda') !== -1, 'mockups: espalda solo a pedido');
+ok(outGesto.indexOf('prohibido inventar vistas de espalda no pedidas') !== -1, 'mockups: prohíbe espaldas inventadas');
 ok(outGesto.indexOf('Fila COLORES SUGERIDOS por columna: 5 frontales planos') !== -1, 'mockups: colores sugeridos con nombres');
 ok(outGesto.indexOf('Fila MOCKUPS ADICIONALES en ambiente lifestyle') !== -1, 'mockups: fila de adicionales');
 ok(outGesto.indexOf('Franja PALETA GENERAL DE LA SERIE') !== -1, 'mockups: paleta general con nombres');
