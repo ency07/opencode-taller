@@ -103,9 +103,13 @@ ok(out.indexOf('los rótulos de ficha viven solo en este texto, nunca en la imag
 const outB = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') } });
 ok(out === outB, 'Regenerar con el mismo contexto debe dar el mismo prompt');
 
+/* Endurecimiento píxel: OBJETO con texto acotado */
+ok(count(out, 'TEXTO SUBORDINADO:') === 1, 'OBJETO_DOMINANTE debe acotar el texto a banda breve (1 ficha objeto)');
+
 /* SOLO_TEXTO: excluye objeto y escena */
 const outSolo = formatPrompt({ set: { A: ficha('SOLO_TEXTO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('BALANCEADO') } });
 ok(outSolo.indexOf('OBJETO: NINGUNO') !== -1, 'SOLO_TEXTO debe declarar objeto ninguno');
+ok(outSolo.indexOf('SIN EXCEPCIONES: aunque el concepto nombre un objeto concreto') !== -1, 'SOLO_TEXTO debe prohibir dibujar el objeto sin excepciones');
 ok(count(outSolo, 'CONTROL ABSOLUTO: no dibujar personas') === 1, 'SOLO_TEXTO debe traer CONTROL ABSOLUTO');
 
 /* Modo new con mensaje: el literal del usuario manda, sin copy propuesto */
