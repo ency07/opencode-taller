@@ -848,10 +848,21 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
     : [];
   const distinctLayouts = layouts.filter(function (x) { return (used.layout || []).indexOf(x) === -1; });
   const preferredLayouts = new Set(productLayouts.concat(audienceLayouts));
+  // Rotación entre generaciones: los layouts de los últimos sets pesan menos
+  // (×0.35, como los estilos recientes) pero nunca cero: los 16 aplican en
+  // todos los productos/mercados a lo largo de generaciones.
+  let recentLayouts = null;
+  try {
+    const rkFn = typeof memKey === 'function' ? memKey : _memKey;
+    const rk = rkFn(['layoutRecentSets', MOTOR_STATE.market, MOTOR_STATE.region || 'global', MOTOR_STATE.product]);
+    const stored = (typeof getJSON === 'function' ? getJSON(rk, []) : _memGetJSON(rk, [])) || [];
+    recentLayouts = new Set([].concat.apply([], stored.slice(-3)));
+  } catch (e) { recentLayouts = new Set(); }
   // Sesgo suave (3:1), no lista cerrada: cualquier layout puede salir y el
   // catálogo completo se explora a lo largo de generaciones; dentro de A/B/C no se repite.
   const layoutWeights = distinctLayouts.map(function (layout) {
-    return preferredLayouts.has(layout) ? 3 : 1;
+    const base = preferredLayouts.has(layout) ? 3 : 1;
+    return recentLayouts.has(layout) ? base * 0.35 : base;
   });
   v.layout = _pickWeighted(distinctLayouts.length ? distinctLayouts : layouts, layoutWeights);
 
@@ -1366,6 +1377,20 @@ function scoreSet(set) {
 }
 
 /* --- Loop de generación --- */
+/* Registra los layouts del set aceptado para rotar el catálogo entre
+   generaciones (misma cadencia que recentSets de estilos: 1 vez por set). */
+function _recordLayoutSet(set) {
+  try {
+    if (!set) return;
+    const layKeyFn = typeof memKey === 'function' ? memKey : _memKey;
+    const layKey = layKeyFn(['layoutRecentSets', MOTOR_STATE.market, MOTOR_STATE.region || 'global', MOTOR_STATE.product]);
+    const layRecent = (typeof getJSON === 'function' ? getJSON(layKey, []) : _memGetJSON(layKey, [])) || [];
+    const layUsed = K.map(function (k) { return set[k] && set[k].layout; }).filter(Boolean);
+    if (!layUsed.length) return;
+    if (typeof setJSON === 'function') setJSON(layKey, layRecent.concat([layUsed]).slice(-3));
+    else _memSetJSON(layKey, layRecent.concat([layUsed]).slice(-3));
+  } catch (e) {}
+}
 let LAST_RESULT = null;
 function memLocksMarket() {
   try { return MOTOR_STATE.market + '|' + MOTOR_STATE.region; } catch (e) { return MOTOR_STATE.market; }
@@ -1446,6 +1471,7 @@ function generateSet() {
   }
 
   // Anti-repetición por patrón visual
+  _recordLayoutSet(best);
   K.forEach(function (k) {
     const pattern = {
       estilo: _getStyleBase(best[k].estilo),
