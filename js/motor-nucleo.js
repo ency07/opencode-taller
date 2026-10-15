@@ -1419,6 +1419,49 @@ function _mensajeUmbral(m) {
   if (m.fitProductoMin < UMBRAL_PRODUCTO_MIN) fallos.push('producto mín ' + m.fitProductoMin + '/100 (umbral ' + UMBRAL_PRODUCTO_MIN + ')');
   return fallos.length ? 'Por debajo del umbral: ' + fallos.join(' · ') + '. Regenera o ajusta audiencia/producto.' : '';
 }
+/* Evalúa un set con TODOS los controles (misma fuente para generateSet y
+   para recalcular tras el dado). Devuelve { score, passed }. */
+function evaluaSetOk(set) {
+  const m = scoreSet(set);
+  const ejesOk = new Set(K.map(function (k) { return set[k].layout; })).size === 3
+    && new Set(K.map(function (k) { return set[k].distribucionTexto; })).size === 3
+    && new Set(K.map(function (k) { return set[k].tipografia; })).size === 3
+    && new Set(K.map(function (k) { return set[k].formaSimbolo; })).size === 3
+    && new Set(K.map(function (k) { return set[k].integracionTexto; })).size === 3
+    && new Set(K.map(function (k) { return set[k].tratamiento; })).size === 3
+    && new Set(K.map(function (k) { return set[k].tecnica; })).size === 3
+    && (set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3);
+  const pertinenciaOk = m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN && m.fitProductoMin >= UMBRAL_PRODUCTO_MIN;
+  const estilosOk = MOTOR_STATE.groupMode === 'mismo'
+    ? m.estilos.length === 1
+    : m.estilos.length === 3;
+  const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
+  const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk
+    && _patternConflictsOf(set) === 0;
+  return { score: m, passed: ok };
+}
+/* Ejes en los que una carta candidata repite con las conservadas.
+   El dado la usa como exclusión dura (no como puntos): lo que aquí salga
+   no entra, aunque puntúe bien en lo demás. */
+function _ejesRepetidosConConservadas(v, keptList) {
+  const axes = [
+    ['estilo', function (x) { return x.estilo; }],
+    ['layout', function (x) { return x.layout; }],
+    ['tipografia', function (x) { return x.tipografia; }],
+    ['formaSimbolo', function (x) { return x.formaSimbolo; }],
+    ['integracionTexto', function (x) { return x.integracionTexto; }],
+    ['distribucionTexto', function (x) { return x.distribucionTexto; }],
+    ['familiaColor', function (x) { return x.familiaColor; }],
+    ['tecnica', function (x) { return x.tecnica; }],
+    ['jerarquiaVisual', function (x) { return x.jerarquiaVisual; }],
+    ['tratamiento', function (x) { return x.tratamiento; }]
+  ];
+  return axes.filter(function (ax) {
+    if (ax[0] === 'familiaColor' && v.familiaColor === '(paleta de la imagen)') return false;
+    const nv = ax[1](v);
+    return keptList.some(function (w) { return ax[1](w) === nv; });
+  }).map(function (ax) { return ax[0]; });
+}
 let LAST_RESULT = null;
 function memLocksMarket() {
   try { return MOTOR_STATE.market + '|' + MOTOR_STATE.region; } catch (e) { return MOTOR_STATE.market; }
@@ -1466,24 +1509,9 @@ function generateSet() {
 
   for (let i = 0; i < 3000; i++) {
     const cand = buildCandidate(audsPerKey, fixedIdentity);
-    const m = scoreSet(cand);
-
-    const ejesOk = new Set(K.map(function (k) { return cand[k].layout; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].distribucionTexto; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].tipografia; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].formaSimbolo; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].integracionTexto; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].tratamiento; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].tecnica; })).size === 3
-      && (cand.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return cand[k].familiaColor; })).size === 3);
-
-    const pertinenciaOk = m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN && m.fitProductoMin >= UMBRAL_PRODUCTO_MIN;
-    const estilosOk = MOTOR_STATE.groupMode === 'mismo'
-      ? m.estilos.length === 1
-      : m.estilos.length === 3;
-    const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
-    const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk
-      && _patternConflictsOf(cand) === 0;
+    const ev = evaluaSetOk(cand);
+    const m = ev.score;
+    const ok = ev.passed;
 
     // Rankings SEPARADOS: antes un candidato rechazado subía bestTotal y
     // bloqueaba a los válidos (passed quedaba false aunque hubiera válidos).
@@ -2065,6 +2093,7 @@ function rerollSingle(keyLetter) {
       intencionEmocional: LAST_RESULT.set.A.intencionEmocional
     } : null;
     var best = null, bestScore = -1e9;
+    var clashCount = {};
 
     var rerollNonceBase = Number(MOTOR_STATE._rerollNonce) || 0;
     for (var i = 0; i < 600; i++) {
@@ -2081,6 +2110,13 @@ function rerollSingle(keyLetter) {
       }
       var v = cand && cand[keyLetter];
       if (!v || (chosenStyle && v.estilo !== chosenStyle)) continue;
+
+      // Exclusión dura anti-repetición: si repite CUALQUIER eje con las
+      // conservadas se descarta aunque puntúe bien. El dado no negocia reglas.
+      var keptCards = others.map(function (o) { return LAST_RESULT.set[o]; });
+      var clashes = _ejesRepetidosConConservadas(v, keptCards);
+      clashes.forEach(function (ax) { clashCount[ax] = (clashCount[ax] || 0) + 1; });
+      if (clashes.length) continue;
 
       // Puntuar conflictos en vez de descartar todos los candidatos:
       // el dado debe seguir funcionando aunque los pools sean restrictivos.
@@ -2119,14 +2155,21 @@ function rerollSingle(keyLetter) {
 
     if (!best) {
       var noFitStatus = document.getElementById('status');
+      var topClash = Object.keys(clashCount).sort(function (a, b) { return clashCount[b] - clashCount[a]; })[0];
       if (noFitStatus) noFitStatus.textContent = chosenStyle
         ? 'El estilo fijado no permite otra ficha distinta con los selectores actuales. Cambia el bloqueo de estilo o ajusta otro selector.'
-        : 'No se encontró una alternativa distinta. Cambia un selector y vuelve a tirar el dado.';
+        : (topClash
+          ? 'No se encontró alternativa sin repetir ejes (bloquea: ' + topClash + '). Cambia un selector o quita un bloqueo y vuelve a tirar el dado.'
+          : 'No se encontró una alternativa distinta. Cambia un selector y vuelve a tirar el dado.');
       return;
     }
 
     // Sustituir únicamente la tarjeta elegida; A/B permanecen intactas al tirar C, etc.
     LAST_RESULT.set[keyLetter] = best;
+    try { if (typeof _recordLayoutSet === 'function') _recordLayoutSet(LAST_RESULT.set); } catch (e) {}
+    var freshEval = evaluaSetOk(LAST_RESULT.set);
+    LAST_RESULT.score = freshEval.score;
+    LAST_RESULT.passed = freshEval.passed;
     try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
     try { window.V = LAST_RESULT.set; } catch (e) {}
     _recordPattern(best, memPatternMarket(), MOTOR_STATE.product, { serie: MOTOR_STATE.serie, reroll: keyLetter });
@@ -2136,7 +2179,7 @@ function rerollSingle(keyLetter) {
     var outEl = document.getElementById('out');
     if (outEl) outEl.value = formatPrompt(LAST_RESULT);
     var rerollStatus = document.getElementById('status');
-    if (rerollStatus) rerollStatus.textContent = N[K.indexOf(keyLetter)] + ' regenerada. Las otras dos tarjetas se conservaron.';
+    if (rerollStatus) rerollStatus.textContent = N[K.indexOf(keyLetter)] + ' regenerada sin repetir ejes con las conservadas (10/10 verificado).';
   } catch (e) {
     console.warn(e);
     var errorStatus = document.getElementById('status');
