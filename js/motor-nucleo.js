@@ -1509,6 +1509,30 @@ function _patronAplicacion(tpl, placementFallback) {
   return 'repetir en ' + (placementFallback || MOTOR_STATE.product) + ' (sin template; sube la plantilla en el editor para mochila/bolso/funda)';
 }
 
+/* --- Autorización de figuras humanas por concepto ---
+   Un verbo de gesto (reír, llorar, cantar) no nombra personas, pero exige un
+   rostro; un concepto abstracto no autoriza ninguna figura. La línea FIGURAS
+   HUMANAS de cada ficha cierra el hueco que dejaba CONTROL DE ELEMENTOS. */
+var FIGURE_GESTURE_WORDS = ['rie', 'riendo', 'reir', 'reirse', 'carcajada', 'carcajadas', 'sonrie', 'sonriendo', 'sonreir', 'sonrisa', 'llora', 'llorando', 'llorar', 'llanto', 'canta', 'cantando', 'cantar', 'grita', 'gritando', 'gritar', 'bosteza', 'bostezando', 'guina', 'guino', 'laugh', 'laughing', 'laughter', 'smile', 'smiling', 'cry', 'crying', 'sing', 'singing', 'shout', 'shouting', 'yawn', 'yawning', 'wink'];
+var FIGURE_PEOPLE_WORDS = ['hombre', 'mujer', 'mujeres', 'nino', 'nina', 'persona', 'personas', 'cara', 'rostro', 'rostros', 'retrato', 'madre', 'padre', 'hijo', 'hija', 'familia', 'gente', 'multitud', 'mano', 'manos', 'dedo', 'dedos', 'brazo', 'brazos', 'cuerpo', 'man', 'woman', 'men', 'women', 'child', 'children', 'person', 'people', 'face', 'faces', 'portrait', 'mother', 'father', 'hand', 'hands', 'finger', 'fingers', 'arm', 'arms', 'body', 'crowd'];
+function _figureDirective(conceptText) {
+  var norm = ' ' + _normalizeTxt(String(conceptText || '')) + ' ';
+  var hasAny = function (words) {
+    for (var i = 0; i < words.length; i++) {
+      if (norm.indexOf(' ' + words[i] + ' ') !== -1) return true;
+    }
+    return false;
+  };
+  var QUALITY = 'CALIDAD ANATÓMICA OBLIGATORIA: 5 dedos por mano, dos ojos simétricos y alineados, sin miembros extra ni fusionados, sin caras deformadas, dientes y orejas correctos; lo que no puedas dibujar bien, simplifícalo a silueta o elimínalo.';
+  if (hasAny(FIGURE_PEOPLE_WORDS)) {
+    return 'FIGURAS HUMANAS: el concepto nombra personas o partes del cuerpo: dibuja SOLO lo nombrado, sin añadir otras personas ni multitudes. ' + QUALITY;
+  }
+  if (hasAny(FIGURE_GESTURE_WORDS)) {
+    return 'FIGURAS HUMANAS: el concepto implica gesto facial (risa, llanto o canto): autorizado SOLO el rostro en gesto; prohibidos manos, brazos, cuerpo y cualquier otra persona. ' + QUALITY;
+  }
+  return 'FIGURAS HUMANAS: el concepto no autoriza figuras humanas: prohibidos rostros, manos, personas y siluetas humanas.';
+}
+
 /* --- Formateo de prompt --- */
 function formatPrompt(result) {
   if (!result || !result.set) return '';
@@ -1740,6 +1764,7 @@ function formatPrompt(result) {
     } else {
       o += 'OBJETO: ' + v.objeto + '\n';
       o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo.\n';
+      o += _figureDirective(v.objeto) + '\n';
     }
     if (contactDNA && v.jerarquiaVisual !== 'SOLO_TEXTO') o += 'FUNCIÓN CONSTANTE: ' + v.funcionSimbolica + ' · intención ' + v.intencionEmocional + '\n';
     const textLine = contactDNA
