@@ -156,7 +156,7 @@ ok(motorSourceForTextDiversity.includes('todo layout registrado sigue elegible')
 ok(motorSourceForTextDiversity.includes('v.jerarquia = v.jerarquiaVisual ||'), 'la jerarquía elegida en el selector debe prevalecer sobre el perfil');
 ok(motorSourceForTextDiversity.includes('ÚNICOS elementos permitidos: letras del copy literal'), 'SOLO_TEXTO debe excluir ilustraciones desde el bloque de objeto');
 ok(motorSourceForTextDiversity.includes("'integracionTexto', 'distribucionTexto', 'familiaColor'"), 'la distribución textual debe participar en la puntuación de diversidad');
-ok(motorSourceForTextDiversity.includes('return cand[k].distribucionTexto; })).size === 3'), 'la aceptación del conjunto debe exigir tres arquitecturas textuales distintas');
+ok(motorSourceForTextDiversity.includes('return set[k].distribucionTexto; })).size === 3'), 'la aceptación del conjunto debe exigir tres arquitecturas textuales distintas');
 
 // Contratos de originalidad del prompt CONTACTSHEET.
 // Son pruebas estáticas de instrucciones; no prueban similitud de imágenes generadas.
@@ -190,7 +190,7 @@ ok(rerollSource.includes('var score = Math.random() * 2;'), 'el dado individual 
 ok(rerollSource.includes('LAST_RESULT.set[keyLetter] = best;'), 'el dado individual debe reemplazar solo la tarjeta solicitada');
 ok(rerollSource.includes("MOTOR_STATE.market === 'global_en' && keyLetter === 'A'"), 'la variación adicional de semilla debe limitarse a 01A en Global EN');
 ok(rerollSource.includes('finally { MOTOR_STATE._rerollNonce = nonceBeforeAttempt; }'), 'el dado de 01A debe restaurar el nonce para no afectar generaciones posteriores');
-ok(rerollSource.includes('Las otras dos tarjetas se conservaron.'), 'el estado debe confirmar que las otras dos tarjetas no se regeneraron');
+ok(rerollSource.includes('sin repetir ejes con las conservadas (10/10 verificado)'), 'el estado debe confirmar verificación anti-repetición contra las conservadas');
 
 
 
