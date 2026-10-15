@@ -1366,6 +1366,17 @@ function scoreSet(set) {
 }
 
 /* --- Loop de generación --- */
+/* Umbrales de pertinencia con diente: un set por debajo no se copia.
+   Misma fuente para el gate de generateSet, los pills y el bloqueo. */
+var UMBRAL_AUDIENCIA_MIN = 50;
+var UMBRAL_PRODUCTO_MIN = 40;
+function _mensajeUmbral(m) {
+  if (!m) return '';
+  var fallos = [];
+  if (m.fitAudienciaMin < UMBRAL_AUDIENCIA_MIN) fallos.push('audiencia mín ' + m.fitAudienciaMin + '/100 (umbral ' + UMBRAL_AUDIENCIA_MIN + ')');
+  if (m.fitProductoMin < UMBRAL_PRODUCTO_MIN) fallos.push('producto mín ' + m.fitProductoMin + '/100 (umbral ' + UMBRAL_PRODUCTO_MIN + ')');
+  return fallos.length ? 'Por debajo del umbral: ' + fallos.join(' · ') + '. Regenera o ajusta audiencia/producto.' : '';
+}
 let LAST_RESULT = null;
 function memLocksMarket() {
   try { return MOTOR_STATE.market + '|' + MOTOR_STATE.region; } catch (e) { return MOTOR_STATE.market; }
@@ -1422,7 +1433,7 @@ function generateSet() {
       && new Set(K.map(function (k) { return cand[k].integracionTexto; })).size === 3
       && new Set(K.map(function (k) { return cand[k].tratamiento; })).size === 3;
 
-    const pertinenciaOk = m.fitAudienciaMin >= 50 && m.fitProductoMin >= 40;
+    const pertinenciaOk = m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN && m.fitProductoMin >= UMBRAL_PRODUCTO_MIN;
     const estilosOk = MOTOR_STATE.groupMode === 'mismo'
       ? m.estilos.length === 1
       : m.estilos.length === 3;
@@ -2031,8 +2042,8 @@ function renderGates(result) {
   const m = result.score;
   let html = '';
   html += '<span class="badge ' + (m.diversity >= 55 ? 'good' : 'bad') + '">Diferencia: ' + m.diversity + '/100</span>';
-  html += '<span class="badge ' + (m.fitAudienciaMin >= 50 ? 'good' : 'bad') + '">Audiencia mín: ' + m.fitAudienciaMin + '/100</span>';
-  html += '<span class="badge ' + (m.fitProductoMin >= 40 ? 'good' : 'bad') + '">Producto mín: ' + m.fitProductoMin + '/100</span>';
+  html += '<span class="badge ' + (m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN ? 'good' : 'bad') + '">Audiencia mín: ' + m.fitAudienciaMin + '/100</span>';
+  html += '<span class="badge ' + (m.fitProductoMin >= UMBRAL_PRODUCTO_MIN ? 'good' : 'bad') + '">Producto mín: ' + m.fitProductoMin + '/100</span>';
   html += '<span class="badge ' + (m.estilos.length >= 3 ? 'good' : 'warn') + '">' + m.estilos.length + ' estilos distintos</span>';
   html += '<span class="badge ' + (m.symbolStable ? 'good' : 'bad') + '" title="Comprueba que A/B/C conservan el mismo símbolo indicado en el prompt.">Símbolo constante</span>';
   html += '<span class="badge ' + (m.treatmentsComplete ? 'good' : 'bad') + '" title="Comprueba que el prompt asigna HEAVY, SOFT y MODERN una vez cada uno; no inspecciona la imagen generada.">HEAVY · SOFT · MODERN</span>';
@@ -2064,7 +2075,8 @@ function crearLos3Disenos() {
       if (result.passed) {
         statusEl.innerHTML = '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt</span>';
       } else {
-        statusEl.innerHTML = '<span class="warn">Listo con advertencia: revisa el control de calidad</span>';
+        const umbralMsg = _mensajeUmbral(result.score);
+        statusEl.innerHTML = '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>';
       }
     }
   } catch (e) {
@@ -2081,6 +2093,14 @@ async function copiarPrompt() {
     if (statusEl) statusEl.innerHTML = '<span class="bad">No hay prompt. Primero crea los 3 diseños.</span>';
     return;
   }
+  try {
+    const lastScore = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.score) ? LAST_RESULT.score : null;
+    const umbralBloqueo = _mensajeUmbral(lastScore);
+    if (umbralBloqueo) {
+      if (statusEl) statusEl.innerHTML = '<span class="bad">Copiado bloqueado. ' + umbralBloqueo + '</span>';
+      return;
+    }
+  } catch (e) {}
   try {
     await navigator.clipboard.writeText(outEl.value);
     if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>';
