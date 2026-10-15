@@ -1086,7 +1086,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
   const set = {};
   const textCompositionByKey = _assignTextCompositions();
   const usedThisSet = new Set();
-  const usedAxes = { layout: [], tipografia: [], formaSimbolo: [], tratamiento: [], integracionTexto: [], densidad: [], negativeSpace: [], jerarquia: [] };
+  const usedAxes = { layout: [], tipografia: [], formaSimbolo: [], tratamiento: [], integracionTexto: [], densidad: [], negativeSpace: [], jerarquia: [], tecnica: [], familiaColor: [] };
   const contactIdentity = _isLockedContactSet()
     ? (fixedIdentity || _resolveContactIdentity(objectPool))
     : null;
@@ -1161,7 +1161,8 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       }
     }
 
-    v.tecnica = _pick(sp.tecnica || ['técnica mixta']);
+    v.tecnica = _pickFresh(sp.tecnica || ['técnica mixta'], sp.tecnica || ['técnica mixta'], usedAxes.tecnica);
+    usedAxes.tecnica.push(v.tecnica);
     v.relacion = contactIdentity
       ? 'Integra el mensaje siguiendo solo el contorno y los espacios reales del símbolo; si afecta la lectura, separa texto e imagen. No añadas materiales u objetos no indicados.'
       : _pick(sp.relacion || ['texto y símbolo integrados']);
@@ -1253,7 +1254,8 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       v._esquema = null;
     } else {
       const colorPref = _STYLE_COLOR_PREF[styleBase] || Object.keys(_COLOR_FAMILIES);
-      const fam = _pick(colorPref);
+      const fam = _pickFresh(colorPref, Object.keys(_COLOR_FAMILIES), usedAxes.familiaColor);
+      usedAxes.familiaColor.push(fam);
       const palList = _COLOR_FAMILIES[fam] || ['#14141A'];
       const pal = _pick(palList);
       const preferredModes = (_AUD_PROFILES[v.audiencia] || {}).modoCol || [];
@@ -1420,7 +1422,9 @@ function generateSet() {
       && new Set(K.map(function (k) { return cand[k].tipografia; })).size === 3
       && new Set(K.map(function (k) { return cand[k].formaSimbolo; })).size === 3
       && new Set(K.map(function (k) { return cand[k].integracionTexto; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].tratamiento; })).size === 3;
+      && new Set(K.map(function (k) { return cand[k].tratamiento; })).size === 3
+      && new Set(K.map(function (k) { return cand[k].tecnica; })).size === 3
+      && (cand.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return cand[k].familiaColor; })).size === 3);
 
     const pertinenciaOk = m.fitAudienciaMin >= 50 && m.fitProductoMin >= 40;
     const estilosOk = MOTOR_STATE.groupMode === 'mismo'
