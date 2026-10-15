@@ -3,7 +3,7 @@
    - Gesto facial (reír/llorar/cantar) autoriza SOLO rostro + calidad anatómica.
    - Concepto con personas nombra solo lo nombrado + calidad anatómica.
    - Concepto neutro prohíbe toda figura.
-   - Mockups: vistas útiles por tono + macro, nunca 12 fijas.
+   - Mockups: ficha serie comercial (franja, 3 columnas, colores, adicionales, paleta).
 
    Ejecutar:  node tests/figuras-mockups.test.js
    Sale con código 1 si falla cualquier aserción. */
@@ -87,15 +87,18 @@ ok(outNombrado.indexOf('CALIDAD ANATÓMICA OBLIGATORIA') !== -1, 'nombrado: debe
 const outSolo = formatPrompt({ set: { A: ficha('SOLO_TEXTO', 'x'), B: ficha('TEXTO_DOMINANTE', 'x'), C: ficha('BALANCEADO', 'x') } });
 ok(count(outSolo, 'FIGURAS HUMANAS:') === 2, 'SOLO_TEXTO no debe llevar FIGURAS (2/3 esperado)');
 
-/* Mockups por tono recomendado + macro, nunca 12 fijas */
-ok(outGesto.indexOf('solo las vistas útiles') !== -1, 'mockups: regla de vistas útiles');
-ok(outGesto.indexOf('detalle macro') !== -1, 'mockups: debe incluir detalle macro de legibilidad');
-ok(outGesto.indexOf('hoja de 3 columnas') !== -1, 'mockups: conserva layout de hoja');
-ok(outGesto.indexOf('prohibido duplicar el mismo ángulo y color') !== -1, 'mockups: prohíbe rellenar duplicando');
+/* FICHA SERIE: franja metadata + 3 columnas por audiencia + colores + adicionales + paleta */
+ok(outGesto.indexOf('FICHA SERIE (CAMISETA SOFT)') !== -1, 'mockups: contrato de ficha serie');
+ok(outGesto.indexOf('Franja superior: SERIE, CONCEPTO, MENSAJE') !== -1, 'mockups: franja superior con metadata');
+ok(outGesto.indexOf('Hoja de 3 columnas, una por ficha del set') !== -1, 'mockups: 3 columnas por ficha');
+ok(outGesto.indexOf("recuadro 'vista frontal'") !== -1, 'mockups: recuadro vista frontal por columna');
+ok(outGesto.indexOf('Fila COLORES SUGERIDOS por columna: 5 frontales planos') !== -1, 'mockups: colores sugeridos con nombres');
+ok(outGesto.indexOf('Fila MOCKUPS ADICIONALES en ambiente lifestyle') !== -1, 'mockups: fila de adicionales');
+ok(outGesto.indexOf('Franja PALETA GENERAL DE LA SERIE') !== -1, 'mockups: paleta general con nombres');
+ok(outGesto.indexOf('Rotulación permitida SOLO para: serie, audiencia, nombres de color') !== -1, 'mockups: rotulación editorial acotada');
+ok(outGesto.indexOf('Prohibido pintar códigos de ficha (01A/01B/01C)') !== -1, 'mockups: prohibidos rótulos técnicos');
+ok(outGesto.indexOf('omitir tonos que destruyan contraste o legibilidad') !== -1, 'mockups: omite tonos incompatibles');
 ok(outGesto.indexOf('12 vistas en total') === -1, 'mockups: no debe sobrevivir el contrato de 12 fijas');
-ok(outGesto.indexOf('omitir el tono que destruya contraste') !== -1, 'mockups: permite omitir tono incompatible');
-ok(outGesto.indexOf('centrado en la línea principal') !== -1, 'mockups: macro anclado al copy, no recorte arbitrario');
-ok(outGesto.indexOf('exactamente 3 por diseño') !== -1, 'mockups: conteo exacto por diseño');
 
 /* INTEGRACIÓN DE LA FICHA: la matriz UI por fin llega al prompt (BAL+OBJ) */
 ok(count(outGesto, 'INTEGRACIÓN DE LA FICHA:') === 2, 'integración de ficha en BALANCEADO y OBJETO (2/3, TEXTO usa su bloque)');

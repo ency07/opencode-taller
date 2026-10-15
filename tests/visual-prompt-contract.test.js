@@ -51,7 +51,7 @@ ok(/CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de
 ok(/_PRODUCT_RULES\[MOTOR_STATE\.product\]/.test(motor), 'el prompt debe consultar reglas del producto seleccionado');
 ok(/getPrintPrepRule\(MOTOR_STATE\.product, selectedPrintMethod\)/.test(motor), 'el prompt debe incorporar preparación técnica del producto/método');
 ok(/getMockupRule\(MOTOR_STATE\.product\)/.test(motor), 'el prompt debe incorporar reglas de presentación específicas del producto');
-ok(fs.readFileSync(path.join(root, 'js/data-productos.js'), 'utf8').includes('POR CADA DISEÑO A/B/C, generar solo las vistas útiles'), 'CAMISETA SOFT exige vistas útiles por tono recomendado, no 12 fijas');
+ok(fs.readFileSync(path.join(root, 'js/data-productos.js'), 'utf8').includes('FICHA SERIE (CAMISETA SOFT)'), 'CAMISETA SOFT exige hoja de ficha serie comercial');
 
 // La variación desde imagen debe prohibir explícitamente el calco estructural.
 ok(/VARIACIÓN VISUAL REAL: crea una nueva solución gráfica/i.test(motor), 'la variación debe exigir una solución gráfica nueva');
@@ -62,7 +62,7 @@ ok(/function _stableHash\(value\)/.test(motor) && /function _pickWeightedStable\
 ok(/stableBase.*bias-pick/.test(motor) && /stableBase.*explore-pick/.test(motor), 'las fichas Auto deben conservar sus estilos al regenerar el mismo contexto');
 ok(/const copyLanguage = \(MOTOR_STATE\.market === 'gospel_es'/.test(motor), 'la variación debe resolver el idioma desde el mercado, sin forzar inglés');
 ok(/no añadir mensajes secundarios, citas, versículos, datos ni afirmaciones no proporcionadas/.test(motor), 'la variación debe bloquear copy secundario inventado');
-ok(fs.readFileSync(path.join(root, 'js/data-productos.js'), 'utf8').includes('POR CADA DISEÑO A/B/C, generar solo las vistas útiles'), 'CAMISETA SOFT: vistas por tono recomendado + detalle macro, nunca 12 repetidas');
+ok(fs.readFileSync(path.join(root, 'js/data-productos.js'), 'utf8').includes('FICHA SERIE (CAMISETA SOFT)'), 'CAMISETA SOFT: ficha serie con colores sugeridos y paleta general');
 
 ok(/QA visual pendiente/.test(motor) && /no inspeccionan el archivo de imagen generado/.test(motor), 'la interfaz no debe presentar el score del prompt como aprobación visual');
 
