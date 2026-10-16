@@ -156,7 +156,7 @@ ok(motorSourceForTextDiversity.includes('todo layout registrado sigue elegible')
 ok(motorSourceForTextDiversity.includes('v.jerarquia = v.jerarquiaVisual ||'), 'la jerarquía elegida en el selector debe prevalecer sobre el perfil');
 ok(motorSourceForTextDiversity.includes('ÚNICOS elementos permitidos: letras del copy literal'), 'SOLO_TEXTO debe excluir ilustraciones desde el bloque de objeto');
 ok(motorSourceForTextDiversity.includes("'integracionTexto', 'distribucionTexto', 'familiaColor'"), 'la distribución textual debe participar en la puntuación de diversidad');
-ok(motorSourceForTextDiversity.includes('return cand[k].distribucionTexto; })).size === 3'), 'la aceptación del conjunto debe exigir tres arquitecturas textuales distintas');
+ok(motorSourceForTextDiversity.includes('return set[k].distribucionTexto; })).size === 3'), 'la aceptación del conjunto debe exigir tres arquitecturas textuales distintas');
 
 // Contratos de originalidad del prompt CONTACTSHEET.
 // Son pruebas estáticas de instrucciones; no prueban similitud de imágenes generadas.
@@ -179,7 +179,7 @@ ok(motorSource.includes('CONTRATO CREATIVO: conserva concepto, familia, función
 ok(motorSource.includes('el estilo artístico define el lenguaje visual; HEAVY/SOFT/MODERN modifican composición y jerarquía sin borrar ese estilo.'), 'el tratamiento debe subordinarse al estilo artístico sin reemplazarlo');
 ok(motorSource.includes("var chosenStyle = locksNow.estilo && locksNow.estilo[keyLetter] && locksNow.estilo[keyLetter] !== 'Auto'"), 'el dado individual debe respetar el estilo fijado explícitamente en esa tarjeta');
 ok(/if \(contactIdentity \|\| MOTOR_STATE\.workflowMode === 'explore' \|\| MOTOR_STATE\.workflowMode === 'variation'\) \{[\s\S]*?_applyStructuralProfile\(v, _CONTACT_TREATMENT_ORDER\[k\], productBias, audProfile, priorProfileAxes\);/.test(motorSource), 'CONTACTSHEET, exploración y variación deben aplicar perfiles fijos y evitar repetir ejes compatibles');
-ok(motorSource.includes('VARIACIÓN: usa la referencia solo para concepto y datos visibles; no copies su composición, silueta, encuadre ni jerarquía.'), 'variación guiada debe separar identidad semántica de la composición de referencia');
+ok(motorSource.includes('VARIACIÓN: usa la referencia solo para concepto y datos visibles; no copies su composición, silueta, pose, rostro, encuadre ni jerarquía.'), 'variación guiada debe separar identidad semántica de la composición de referencia');
 ok(motorSource.includes('Si dos diseños parecen la misma imagen recoloreada, replantea su estructura.'), 'variación guiada debe rechazar imágenes que solo cambian de color');
 ok(motorSource.includes('No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado.'), 'el prompt debe limitar añadidos no solicitados para reducir alucinaciones visuales');
 const rerollStart = motorSource.indexOf('function rerollSingle(keyLetter) {');
@@ -190,7 +190,7 @@ ok(rerollSource.includes('var score = Math.random() * 2;'), 'el dado individual 
 ok(rerollSource.includes('LAST_RESULT.set[keyLetter] = best;'), 'el dado individual debe reemplazar solo la tarjeta solicitada');
 ok(rerollSource.includes("MOTOR_STATE.market === 'global_en' && keyLetter === 'A'"), 'la variación adicional de semilla debe limitarse a 01A en Global EN');
 ok(rerollSource.includes('finally { MOTOR_STATE._rerollNonce = nonceBeforeAttempt; }'), 'el dado de 01A debe restaurar el nonce para no afectar generaciones posteriores');
-ok(rerollSource.includes('Las otras dos tarjetas se conservaron.'), 'el estado debe confirmar que las otras dos tarjetas no se regeneraron');
+ok(rerollSource.includes('sin repetir ejes con las conservadas (10/10 verificado)'), 'el estado debe confirmar verificación anti-repetición contra las conservadas');
 
 
 

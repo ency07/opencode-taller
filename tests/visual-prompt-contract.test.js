@@ -51,7 +51,7 @@ ok(/CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de
 ok(/_PRODUCT_RULES\[MOTOR_STATE\.product\]/.test(motor), 'el prompt debe consultar reglas del producto seleccionado');
 ok(/getPrintPrepRule\(MOTOR_STATE\.product, selectedPrintMethod\)/.test(motor), 'el prompt debe incorporar preparación técnica del producto/método');
 ok(/getMockupRule\(MOTOR_STATE\.product\)/.test(motor), 'el prompt debe incorporar reglas de presentación específicas del producto');
-ok(fs.readFileSync(path.join(root, 'js/data-productos.js'), 'utf8').includes('POR CADA DISEÑO A/B/C, generar cuatro mockups separados (12 vistas en total)'), 'CAMISETA SOFT exige cuatro vistas separadas por diseño');
+ok(fs.readFileSync(path.join(root, 'js/data-productos.js'), 'utf8').includes('FICHA SERIE (CAMISETA SOFT)'), 'CAMISETA SOFT exige hoja de ficha serie comercial');
 
 // La variación desde imagen debe prohibir explícitamente el calco estructural.
 ok(/VARIACIÓN VISUAL REAL: crea una nueva solución gráfica/i.test(motor), 'la variación debe exigir una solución gráfica nueva');
@@ -62,7 +62,7 @@ ok(/function _stableHash\(value\)/.test(motor) && /function _pickWeightedStable\
 ok(/stableBase.*bias-pick/.test(motor) && /stableBase.*explore-pick/.test(motor), 'las fichas Auto deben conservar sus estilos al regenerar el mismo contexto');
 ok(/const copyLanguage = \(MOTOR_STATE\.market === 'gospel_es'/.test(motor), 'la variación debe resolver el idioma desde el mercado, sin forzar inglés');
 ok(/no añadir mensajes secundarios, citas, versículos, datos ni afirmaciones no proporcionadas/.test(motor), 'la variación debe bloquear copy secundario inventado');
-ok(fs.readFileSync(path.join(root, 'js/data-productos.js'), 'utf8').includes('POR CADA DISEÑO A/B/C, generar cuatro mockups separados (12 vistas en total)'), 'CAMISETA SOFT exige 4 vistas separadas por diseño, 12 en total');
+ok(fs.readFileSync(path.join(root, 'js/data-productos.js'), 'utf8').includes('FICHA SERIE (CAMISETA SOFT)'), 'CAMISETA SOFT: ficha serie con colores sugeridos y paleta general');
 
 ok(/QA visual pendiente/.test(motor) && /no inspeccionan el archivo de imagen generado/.test(motor), 'la interfaz no debe presentar el score del prompt como aprobación visual');
 
@@ -89,7 +89,7 @@ ok(motor.includes('Texto y símbolo forman una sola composición integrada, no d
 ok(motor.includes('La jerarquía fija área y escala; la arquitectura solo cambia la ubicación.'), 'la arquitectura solo puede cambiar ubicación, no proporción');
 ok(motor.includes('Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.'), 'una arquitectura inferior o lateral no puede hacer que una escena grande supere el copy en TEXTO_DOMINANTE');
 ok(/símbolo autorizado de esta ficha.*ocupa 70–80% del arte/.test(motor), 'OBJETO_DOMINANTE debe priorizar el símbolo autorizado');
-ok(motor.includes("el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte") && motor.includes('no lo sustituyas por árboles, personas u otros objetos no indicados'), 'OBJETO_DOMINANTE debe priorizar el objeto real de cada ficha y prohibir sustituciones concretas no solicitadas');
+ok(motor.includes("el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte") && /no lo sustituyas por árboles, personas u otros objetos no indicados/i.test(motor), 'OBJETO_DOMINANTE debe priorizar el objeto real de cada ficha y prohibir sustituciones concretas no solicitadas');
 ok(!/OBJETO_DOMINANTE:[^\n]*Representa el concepto con solo árbol y persona/.test(motor), 'OBJETO_DOMINANTE no debe fijar árboles/personas como objetos por defecto');
 ok(/si es Pixel \/ 8-bit, usa formas pixeladas y bloques discretos/.test(motor), 'el estilo Pixel / 8-bit debe conservar su lenguaje visual');
 ok(motor.includes("if (v.jerarquiaVisual === 'SOLO_TEXTO')") && !/SOLO_TEXTO[\s\S]{0,180}_compatibleCompositionDirective/.test(motor), 'SOLO_TEXTO no debe heredar instrucciones de ubicación para símbolos o motivos');
@@ -112,7 +112,7 @@ ok(!/\\\\n/.test(promptBuilder), 'formatPrompt no debe emitir secuencias literal
 ok(!/DIRECCIÓN ARTÍSTICA:[^\n]*COMPOSICIÓN TEXTUAL/.test(motor), 'no debe quedar una referencia a una sección inexistente');
 ok(/DIFERENCIA DURA: layout, tipografía, tratamiento/.test(motor), 'se conserva el contrato de diversidad A/B/C');
 ok(motor.includes('ARQUITECTURA TEXTUAL NUNCA se repiten entre A/B/C.'), 'el contrato debe impedir repetir la arquitectura entre tarjetas');
-ok(/DIRECCIÓN ARTÍSTICA: '\s*\+ v\.formaSimbolo \+ '; ' \+ v\.tecnica \+ '; ' \+ v\.tratamiento/.test(motor), 'la dirección artística no debe volver a imponer layout/composición sobre la arquitectura textual');
+ok(/ARTE: '\s*\+ v\.formaSimbolo \+ '; ' \+ v\.tecnica \+ '; ' \+ v\.tratamiento/.test(motor), 'la línea de arte no debe volver a imponer layout/composición sobre la arquitectura textual');
 ok(!/o \+= 'DIRECCIÓN: ' \+ v\.arquitectura \+ '; ' \+ v\.composicion \+ '; ' \+ v\.layout/.test(motor), 'no debe quedar la antigua instrucción de dirección que contradecía la composición textual');
 ok(!/espacio negativo ' \+ v\.negativeSpace \+ ' · jerarquía interna ' \+ v\.jerarquia/.test(motor), 'la jerarquía interna aleatoria no debe contradecir el selector de jerarquía visible');
 ok(!/RELACIÓN TEXTO-IMAGEN: aplica la arquitectura textual obligatoria anterior/.test(motor), 'no debe quedar una instrucción secundaria redundante que vuelva a describir la arquitectura');

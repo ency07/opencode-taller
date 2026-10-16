@@ -831,6 +831,19 @@ function _styleTreatmentDirective(styleValue, profileKey) {
     + ' Estilo artístico activo: «' + _getStyleBase(styleValue) + '». ' + techniqueRules.join(' ');
 }
 
+/* Layouts coherentes y producibles para el producto activo. Sin entrada en
+   PRODUCT_LAYOUT_ALLOW = catálogo completo. Nunca devuelve menos de 3 para
+   no romper el dedup intra-set; ante cualquier duda, catálogo completo. */
+function _allowedLayoutPool() {
+  if (typeof PRODUCT_LAYOUT_ALLOW === 'undefined') return null;
+  const allow = PRODUCT_LAYOUT_ALLOW[MOTOR_STATE.product];
+  if (!allow || !allow.length) return null;
+  const pool = (_LAYOUTS || []).filter(function (x) {
+    return allow.some(function (h) { return x.indexOf(h) === 0; });
+  });
+  return pool.length >= 3 ? pool : null;
+}
+
 function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, usedAxes) {
   const used = usedAxes || {};
   const profile = _STRUCTURAL_PROFILES[String(profileKey || '').toUpperCase()];
@@ -839,7 +852,7 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
   const audience = audienceProfile || {};
   // El perfil estructural no restringe el catálogo: todo layout registrado sigue elegible.
   // Producto y audiencia solo sesgan; cada tarjeta del conjunto recibe uno no repetido.
-  const layouts = (_LAYOUTS || []).slice();
+  const layouts = _allowedLayoutPool() || (_LAYOUTS || []).slice();
   const productLayouts = (bias.layout || []).length
     ? layouts.filter(function (x) { return bias.layout.some(function (h) { return x.indexOf(h) === 0; }); })
     : [];
@@ -848,10 +861,21 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
     : [];
   const distinctLayouts = layouts.filter(function (x) { return (used.layout || []).indexOf(x) === -1; });
   const preferredLayouts = new Set(productLayouts.concat(audienceLayouts));
+  // Rotación entre generaciones: los layouts de los últimos sets pesan menos
+  // (×0.35, como los estilos recientes) pero nunca cero: los 16 aplican en
+  // todos los productos/mercados a lo largo de generaciones.
+  let recentLayouts = null;
+  try {
+    const rkFn = typeof memKey === 'function' ? memKey : _memKey;
+    const rk = rkFn(['layoutRecentSets', MOTOR_STATE.market, MOTOR_STATE.region || 'global', MOTOR_STATE.product]);
+    const stored = (typeof getJSON === 'function' ? getJSON(rk, []) : _memGetJSON(rk, [])) || [];
+    recentLayouts = new Set([].concat.apply([], stored.slice(-3)));
+  } catch (e) { recentLayouts = new Set(); }
   // Sesgo suave (3:1), no lista cerrada: cualquier layout puede salir y el
   // catálogo completo se explora a lo largo de generaciones; dentro de A/B/C no se repite.
   const layoutWeights = distinctLayouts.map(function (layout) {
-    return preferredLayouts.has(layout) ? 3 : 1;
+    const base = preferredLayouts.has(layout) ? 3 : 1;
+    return recentLayouts.has(layout) ? base * 0.35 : base;
   });
   v.layout = _pickWeighted(distinctLayouts.length ? distinctLayouts : layouts, layoutWeights);
 
@@ -1056,7 +1080,7 @@ function _compatibleCompositionDirective(hierarchy, architecture) {
   }
   if (!placement) placement = 'texto y símbolo en zonas diferenciadas con asimetría controlada';
   if (hierarchy === 'TEXTO_DOMINANTE') {
-    return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; convierte ubicación y módulos en una sola silueta tipográfica-simbólica integrada: letras y símbolo se solapan o comparten trazos, contornos o contraformas. No presentes el texto y el objeto como dos bloques o ilustraciones separados. El texto sigue siendo la primera lectura y conserva 70–80% del área imprimible; el símbolo queda integrado y subordinado. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada. La arquitectura cambia ubicación, nunca separación ni jerarquía.';
+    return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; convierte ubicación y módulos en una sola silueta tipográfica-simbólica integrada. El texto conserva 70–80% del área y es la primera lectura; el símbolo queda integrado y subordinado. La arquitectura cambia ubicación, nunca proporción ni jerarquía.';
   }
   if (hierarchy === 'OBJETO_DOMINANTE') {
     return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; el símbolo autorizado conserva 70–80% del área y el copy queda subordinado dentro del 20–30% restante. No añadas cintas, marcos, bandas, emblemas ni objetos para ejecutar la distribución.';
@@ -1086,7 +1110,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
   const set = {};
   const textCompositionByKey = _assignTextCompositions();
   const usedThisSet = new Set();
-  const usedAxes = { layout: [], tipografia: [], formaSimbolo: [], tratamiento: [], integracionTexto: [], densidad: [], negativeSpace: [], jerarquia: [] };
+  const usedAxes = { layout: [], tipografia: [], formaSimbolo: [], tratamiento: [], integracionTexto: [], densidad: [], negativeSpace: [], jerarquia: [], tecnica: [], familiaColor: [] };
   const contactIdentity = _isLockedContactSet()
     ? (fixedIdentity || _resolveContactIdentity(objectPool))
     : null;
@@ -1161,7 +1185,8 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       }
     }
 
-    v.tecnica = _pick(sp.tecnica || ['técnica mixta']);
+    v.tecnica = _pickFresh(sp.tecnica || ['técnica mixta'], sp.tecnica || ['técnica mixta'], usedAxes.tecnica);
+    usedAxes.tecnica.push(v.tecnica);
     v.relacion = contactIdentity
       ? 'Integra el mensaje siguiendo solo el contorno y los espacios reales del símbolo; si afecta la lectura, separa texto e imagen. No añadas materiales u objetos no indicados.'
       : _pick(sp.relacion || ['texto y símbolo integrados']);
@@ -1181,8 +1206,10 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       stylePref: _SP
     };
 
-    const layoutBias = (productBias.layout || []).concat(audProfile.layoutPref || []);
-    v.layout = _pickFresh(layoutBias, _LAYOUTS, usedAxes.layout);
+    const allowedPool = _allowedLayoutPool();
+    const layoutBiasRaw = (productBias.layout || []).concat(audProfile.layoutPref || []);
+    const layoutBias = allowedPool ? layoutBiasRaw.filter(function (x) { return allowedPool.some(function (a) { return a.indexOf(x) === 0 || String(x).indexOf(a) === 0; }); }) : layoutBiasRaw;
+    v.layout = _pickFresh(layoutBias, allowedPool || _LAYOUTS, usedAxes.layout);
     usedAxes.layout.push(v.layout);
 
     const tipoBias = (audProfile.tipoPref || []).concat(_STYLE_TIPO_PREF[styleBase] || []);
@@ -1253,16 +1280,27 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       v._esquema = null;
     } else {
       const colorPref = _STYLE_COLOR_PREF[styleBase] || Object.keys(_COLOR_FAMILIES);
-      const fam = _pick(colorPref);
-      const palList = _COLOR_FAMILIES[fam] || ['#14141A'];
-      const pal = _pick(palList);
       const preferredModes = (_AUD_PROFILES[v.audiencia] || {}).modoCol || [];
       const modePool = _COLOR_MODES.filter(function (m) { return preferredModes.indexOf(m) !== -1; });
-      const modo = _pick(modePool.length ? modePool : _COLOR_MODES);
-      const esquema = _hexScheme(pal, modo);
-      v.paleta = pal + ' — fondo ' + esquema.bg + ' · dominante ' + esquema.dom + ' · acento ' + esquema.acc + ' · tinta ' + esquema.ink + ' (modo: ' + modo + ')';
-      v.familiaColor = fam;
-      v._esquema = esquema;
+      // RT-03: reintentar combinaciones hasta que fondo/dominante/acento/tinta
+      // sean 4 HEX distintos (nombres que prometen colores ausentes); si no se
+      // logra en 12 intentos, quedarse con la de menos colisiones. Solo la
+      // familia elegida entra al dedup intra-set, no las probadas.
+      let bestFam = null, bestPal = null, bestModo = null, bestEsq = null, bestScore = -1;
+      for (let cg = 0; cg < 12 && bestScore < 4; cg++) {
+        const f2 = _pickFresh(colorPref, Object.keys(_COLOR_FAMILIES), usedAxes.familiaColor);
+        const pl2 = _pick(_COLOR_FAMILIES[f2] || ['#14141A']);
+        const md2 = _pick(modePool.length ? modePool : _COLOR_MODES);
+        const es2 = _hexScheme(pl2, md2);
+        if (!es2) continue;
+        const roles = [es2.bg, es2.dom, es2.acc, es2.ink].map(function (h) { return String(h || '').toUpperCase(); });
+        const distinct = new Set(roles).size;
+        if (distinct > bestScore) { bestScore = distinct; bestFam = f2; bestPal = pl2; bestModo = md2; bestEsq = es2; }
+      }
+      usedAxes.familiaColor.push(bestFam);
+      v.paleta = bestPal + ' — fondo ' + bestEsq.bg + ' · dominante ' + bestEsq.dom + ' · acento ' + bestEsq.acc + ' · tinta ' + bestEsq.ink + ' (modo: ' + bestModo + ')';
+      v.familiaColor = bestFam;
+      v._esquema = bestEsq;
     }
 
     // Pertinencia medida con preferencias declaradas de audiencia y producto.
@@ -1366,6 +1404,85 @@ function scoreSet(set) {
 }
 
 /* --- Loop de generación --- */
+/* Registra los layouts del set aceptado para rotar el catálogo entre
+   generaciones (misma cadencia que recentSets de estilos: 1 vez por set). */
+function _recordLayoutSet(set) {
+  try {
+    if (!set) return;
+    const layKeyFn = typeof memKey === 'function' ? memKey : _memKey;
+    const layKey = layKeyFn(['layoutRecentSets', MOTOR_STATE.market, MOTOR_STATE.region || 'global', MOTOR_STATE.product]);
+    const layRecent = (typeof getJSON === 'function' ? getJSON(layKey, []) : _memGetJSON(layKey, [])) || [];
+    const layUsed = K.map(function (k) { return set[k] && set[k].layout; }).filter(Boolean);
+    if (!layUsed.length) return;
+    if (typeof setJSON === 'function') setJSON(layKey, layRecent.concat([layUsed]).slice(-3));
+    else _memSetJSON(layKey, layRecent.concat([layUsed]).slice(-3));
+  } catch (e) {}
+}
+/* Umbrales de pertinencia con diente: un set por debajo no se copia.
+   Misma fuente para el gate de generateSet, los pills y el bloqueo. */
+var UMBRAL_AUDIENCIA_MIN = 50;
+var UMBRAL_PRODUCTO_MIN = 40;
+function _mensajeUmbral(m) {
+  if (!m) return '';
+  var fallos = [];
+  if (m.fitAudienciaMin < UMBRAL_AUDIENCIA_MIN) fallos.push('audiencia mín ' + m.fitAudienciaMin + '/100 (umbral ' + UMBRAL_AUDIENCIA_MIN + ')');
+  if (m.fitProductoMin < UMBRAL_PRODUCTO_MIN) fallos.push('producto mín ' + m.fitProductoMin + '/100 (umbral ' + UMBRAL_PRODUCTO_MIN + ')');
+  return fallos.length ? 'Por debajo del umbral: ' + fallos.join(' · ') + '. Regenera o ajusta audiencia/producto.' : '';
+}
+/* Evalúa un set con TODOS los controles (misma fuente para generateSet y
+   para recalcular tras el dado). Devuelve { score, passed }. */
+function evaluaSetOk(set) {
+  const m = scoreSet(set);
+  const ejesOk = new Set(K.map(function (k) { return set[k].layout; })).size === 3
+    && new Set(K.map(function (k) { return set[k].distribucionTexto; })).size === 3
+    && new Set(K.map(function (k) { return set[k].tipografia; })).size === 3
+    && new Set(K.map(function (k) { return set[k].formaSimbolo; })).size === 3
+    && new Set(K.map(function (k) { return set[k].integracionTexto; })).size === 3
+    && new Set(K.map(function (k) { return set[k].tratamiento; })).size === 3
+    && new Set(K.map(function (k) { return set[k].tecnica; })).size === 3
+    && (set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3);
+  const pertinenciaOk = m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN && m.fitProductoMin >= UMBRAL_PRODUCTO_MIN;
+  const estilosOk = MOTOR_STATE.groupMode === 'mismo'
+    ? m.estilos.length === 1
+    : m.estilos.length === 3;
+  const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
+  const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk
+    && _patternConflictsOf(set) === 0;
+  const detalle = [];
+  if (!(m.diversity >= 55)) detalle.push('diferencia ' + m.diversity + '/100 (mín 55)');
+  [['layout', 'layout'], ['distribucionTexto', 'arquitectura textual'], ['tipografia', 'tipografía'], ['formaSimbolo', 'forma del símbolo'], ['integracionTexto', 'integración'], ['tratamiento', 'tratamiento'], ['tecnica', 'técnica']].forEach(function (e) {
+    if (new Set(K.map(function (k) { return set[k][e[0]]; })).size !== 3) detalle.push(e[1] + ' repetida');
+  });
+  if (!(set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3)) detalle.push('fondo repetido');
+  if (MOTOR_STATE.groupMode === 'mismo' ? m.estilos.length !== 1 : m.estilos.length !== 3) detalle.push('estilos no cumplen el modo');
+  if (_isLockedContactSet() && !(m.symbolStable && m.treatmentsComplete)) detalle.push('identidad de contacto inestable');
+  const umbralMsg = _mensajeUmbral(m);
+  if (umbralMsg) detalle.push(umbralMsg);
+  if (_patternConflictsOf(set) !== 0) detalle.push('patrones recientes repetidos');
+  return { score: m, passed: ok, detalle: detalle };
+}
+/* Ejes en los que una carta candidata repite con las conservadas.
+   El dado la usa como exclusión dura (no como puntos): lo que aquí salga
+   no entra, aunque puntúe bien en lo demás. */
+function _ejesRepetidosConConservadas(v, keptList) {
+  const axes = [
+    ['estilo', function (x) { return x.estilo; }],
+    ['layout', function (x) { return x.layout; }],
+    ['tipografia', function (x) { return x.tipografia; }],
+    ['formaSimbolo', function (x) { return x.formaSimbolo; }],
+    ['integracionTexto', function (x) { return x.integracionTexto; }],
+    ['distribucionTexto', function (x) { return x.distribucionTexto; }],
+    ['familiaColor', function (x) { return x.familiaColor; }],
+    ['tecnica', function (x) { return x.tecnica; }],
+    ['jerarquiaVisual', function (x) { return x.jerarquiaVisual; }],
+    ['tratamiento', function (x) { return x.tratamiento; }]
+  ];
+  return axes.filter(function (ax) {
+    if (ax[0] === 'familiaColor' && v.familiaColor === '(paleta de la imagen)') return false;
+    const nv = ax[1](v);
+    return keptList.some(function (w) { return ax[1](w) === nv; });
+  }).map(function (ax) { return ax[0]; });
+}
 let LAST_RESULT = null;
 function memLocksMarket() {
   try { return MOTOR_STATE.market + '|' + MOTOR_STATE.region; } catch (e) { return MOTOR_STATE.market; }
@@ -1413,22 +1530,9 @@ function generateSet() {
 
   for (let i = 0; i < 3000; i++) {
     const cand = buildCandidate(audsPerKey, fixedIdentity);
-    const m = scoreSet(cand);
-
-    const ejesOk = new Set(K.map(function (k) { return cand[k].layout; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].distribucionTexto; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].tipografia; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].formaSimbolo; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].integracionTexto; })).size === 3
-      && new Set(K.map(function (k) { return cand[k].tratamiento; })).size === 3;
-
-    const pertinenciaOk = m.fitAudienciaMin >= 50 && m.fitProductoMin >= 40;
-    const estilosOk = MOTOR_STATE.groupMode === 'mismo'
-      ? m.estilos.length === 1
-      : m.estilos.length === 3;
-    const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
-    const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk
-      && _patternConflictsOf(cand) === 0;
+    const ev = evaluaSetOk(cand);
+    const m = ev.score;
+    const ok = ev.passed;
 
     // Rankings SEPARADOS: antes un candidato rechazado subía bestTotal y
     // bloqueaba a los válidos (passed quedaba false aunque hubiera válidos).
@@ -1446,6 +1550,7 @@ function generateSet() {
   }
 
   // Anti-repetición por patrón visual
+  _recordLayoutSet(best);
   K.forEach(function (k) {
     const pattern = {
       estilo: _getStyleBase(best[k].estilo),
@@ -1509,6 +1614,74 @@ function _patronAplicacion(tpl, placementFallback) {
   return 'repetir en ' + (placementFallback || MOTOR_STATE.product) + ' (sin template; sube la plantilla en el editor para mochila/bolso/funda)';
 }
 
+/* --- Autorización de figuras humanas por concepto ---
+   Un verbo de gesto (reír, llorar, cantar) no nombra personas, pero exige un
+   rostro; un concepto abstracto no autoriza ninguna figura. La línea FIGURAS
+   HUMANAS de cada ficha cierra el hueco que dejaba CONTROL DE ELEMENTOS. */
+var FIGURE_GESTURE_WORDS = ['rie', 'riendo', 'reir', 'reirse', 'carcajada', 'carcajadas', 'sonrie', 'sonriendo', 'sonreir', 'sonrisa', 'llora', 'llorando', 'llorar', 'llanto', 'canta', 'cantando', 'cantar', 'grita', 'gritando', 'gritar', 'bosteza', 'bostezando', 'guina', 'guino', 'laugh', 'laughing', 'laughter', 'smile', 'smiling', 'cry', 'crying', 'sing', 'singing', 'shout', 'shouting', 'yawn', 'yawning', 'wink'];
+var FIGURE_PEOPLE_WORDS = ['hombre', 'mujer', 'mujeres', 'nino', 'nina', 'persona', 'personas', 'cara', 'rostro', 'rostros', 'retrato', 'madre', 'padre', 'hijo', 'hija', 'familia', 'gente', 'multitud', 'mano', 'manos', 'dedo', 'dedos', 'brazo', 'brazos', 'cuerpo', 'man', 'woman', 'men', 'women', 'child', 'children', 'person', 'people', 'face', 'faces', 'portrait', 'mother', 'father', 'hand', 'hands', 'finger', 'fingers', 'arm', 'arms', 'body', 'crowd'];
+function _figureDirective(conceptText) {
+  var norm = ' ' + _normalizeTxt(String(conceptText || '')) + ' ';
+  var hasAny = function (words) {
+    for (var i = 0; i < words.length; i++) {
+      if (norm.indexOf(' ' + words[i] + ' ') !== -1) return true;
+    }
+    return false;
+  };
+  var QUALITY = 'CALIDAD ANATÓMICA OBLIGATORIA: 5 dedos por mano, dos ojos simétricos y alineados, sin miembros extra ni fusionados, sin caras deformadas, dientes y orejas correctos; lo que no puedas dibujar bien, simplifícalo a silueta o elimínalo.';
+  if (hasAny(FIGURE_PEOPLE_WORDS)) {
+    return 'FIGURAS HUMANAS: el concepto nombra personas o partes del cuerpo: dibuja SOLO lo nombrado, sin añadir otras personas ni multitudes. ' + QUALITY;
+  }
+  if (hasAny(FIGURE_GESTURE_WORDS)) {
+    return 'FIGURAS HUMANAS: el concepto implica gesto facial (risa, llanto o canto): autorizado SOLO el rostro en gesto; prohibidos manos, brazos, cuerpo y cualquier otra persona. ' + QUALITY;
+  }
+  return 'FIGURAS HUMANAS: el concepto no autoriza figuras humanas: prohibidos rostros, manos, personas y siluetas humanas.';
+}
+
+/* --- Copy compartido para modo explore sin mensaje ---
+   El modelo de imagen no puede coordinar una frase inventada entre A/B/C
+   en una sola generación; por eso el motor elige UNA frase literal aquí
+   y las tres fichas la citan literal. Orden: mensaje del usuario, concepto
+   literal tal cual lo escribió, banco neutro solo como último recurso
+   (concepto y brief vacíos). El banco nunca decide sobre un concepto real:
+   una frase genérica ('NACIDO PARA RODAR') sobre un concepto concreto
+   ('niño en brazos del Maestro') rompe la identidad semántica. */
+const SHARED_EXPLORE_COPY = {
+  en: [
+    'SMALL MOMENTS, BIG MEANING',
+    'HOLD ON TO WONDER',
+    'BUILT FOR THE WILD',
+    'LESS NOISE, MORE SOUL',
+    'MADE TO WANDER',
+    'KEEP IT SIMPLE, KEEP IT REAL',
+    'FIND YOUR TRAIL',
+    'BORN TO ROAM'
+  ],
+  es: [
+    'MOMENTOS PEQUEÑOS, GRANDES HISTORIAS',
+    'HECHO PARA DURAR',
+    'MENOS RUIDO, MÁS ALMA',
+    'NACIDO PARA RODAR',
+    'CONSERVA LO ESENCIAL',
+    'VIVE LIGERO, SUEÑA GRANDE',
+    'TU CAMINO, TUS REGLAS',
+    'LO SIMPLE PERDURA'
+  ]
+};
+function _pickSharedExploreCopy(seedText, market) {
+  const bank = /_en$/.test(String(market || '')) ? SHARED_EXPLORE_COPY.en : SHARED_EXPLORE_COPY.es;
+  if (!bank || !bank.length) return '';
+  const idx = _stableHash(String(seedText || '') + '|' + String(market || '')) % bank.length;
+  return bank[idx];
+}
+/* Resuelve el copy compartido sin inventar: mensaje > concepto literal >
+   banco (solo si no hay ni concepto ni brief). Determinista. */
+function _resolveSharedCopy(conceptText, market) {
+  const text = String(conceptText || '').trim().replace(/\s+/g, ' ');
+  if (text && text !== '—') return text.toUpperCase();
+  return _pickSharedExploreCopy(text, market);
+}
+
 /* --- Formateo de prompt --- */
 function formatPrompt(result) {
   if (!result || !result.set) return '';
@@ -1561,6 +1734,16 @@ function formatPrompt(result) {
   const contactFunction = contactDNA && set.A ? String(set.A.funcionSimbolica || '').trim() : '';
   const contactMainText = String(MOTOR_STATE.message || '').trim().replace(/\s+/g, ' ');
   const contactSupportText = String(MOTOR_STATE.support || '').trim().replace(/\s+/g, ' ');
+  /* Copy compartido derivado (mensaje > concepto literal > banco): una sola
+     frase para A/B/C; el banco solo cubre el vacío total, nunca un concepto. */
+  const sharedDerivedCopy = !String(MOTOR_STATE.message || '').trim()
+    ? _resolveSharedCopy(promptConcept, MOTOR_STATE.market)
+    : '';
+  /* En explore sin mensaje, el motor fija UNA frase literal compartida para
+     A/B/C (no delega inventarla a la IA de imagen, que no puede coordinarla). */
+  const sharedExploreCopy = (isExplore && !String(MOTOR_STATE.message || '').trim())
+    ? sharedDerivedCopy
+    : '';
   const activeDomain = dominioEfectivo();
   let promptFamilyId = null;
   if (isGospelMarket()) promptFamilyId = activeDomain || null;
@@ -1620,9 +1803,9 @@ function formatPrompt(result) {
     const conceptAnchor = String(brief.concept || '').trim();
     o += '/EXPLORACIÓN — 3 DIRECCIONES DEL MISMO CONCEPTO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
-    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || 'propón copy breve') + '\n';
+    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || sharedExploreCopy || 'propón copy breve') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
-    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. El fondo será espacio negativo o textura del estilo, nunca una escena nueva. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
+    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
   } else {
     o += '/CONTACTSHEET — 3 DIRECCIONES · MISMO CONCEPTO · NADA CLONADO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + ' | SERIE: ' + (MOTOR_STATE.serie || '—') + '\n';
@@ -1648,7 +1831,7 @@ function formatPrompt(result) {
     o += 'DIRECCIÓN: el estilo artístico define el lenguaje visual; HEAVY/SOFT/MODERN modifican composición y jerarquía sin borrar ese estilo. No mezcles instrucciones incompatibles.\n';
     o += 'A/B/C: misma identidad semántica, soluciones distintas en composición, silueta, tipografía y relación texto-imagen; no basta recolorear o cambiar textura.\n';
   }
-  if (isVar) o += 'VARIACIÓN: usa la referencia solo para concepto y datos visibles; no copies su composición, silueta, encuadre ni jerarquía. No añadas objetos ni datos. A/HEAVY: masas compactas, contorno grueso, contraste alto. B/SOFT: formas abiertas, aire y transiciones suaves. C/MODERN: geometría limpia, retícula y asimetría controlada. Cambia layout, silueta y arquitectura tipográfica en cada dirección; el estilo elegido se conserva sin anular el perfil. El copy solo sigue el selector de texto. Si dos diseños parecen la misma imagen recoloreada, replantea su estructura.\n';
+  if (isVar) o += 'VARIACIÓN: usa la referencia solo para concepto y datos visibles; no copies su composición, silueta, pose, rostro, encuadre ni jerarquía. No añadas objetos ni datos. A/HEAVY: masas compactas, contorno grueso, contraste alto. B/SOFT: formas abiertas, aire y transiciones suaves. C/MODERN: geometría limpia, retícula y asimetría controlada. Cambia layout, silueta y arquitectura tipográfica en cada dirección; el estilo elegido se conserva sin anular el perfil. El copy solo sigue el selector de texto. Si dos diseños parecen la misma imagen recoloreada, replantea su estructura.\n';
   if (isVar && MOTOR_STATE.imageReference) {
     const symbolMode = String(MOTOR_STATE.variationOptions.simbolo || 'sustituir');
     const textMode = String(MOTOR_STATE.variationOptions.textos || 'conservar_palabras');
@@ -1683,7 +1866,7 @@ function formatPrompt(result) {
     o += 'VARIACIÓN VISUAL REAL: crea una nueva solución gráfica basada en la referencia, no una copia ni una limpieza de la misma. Cambia obligatoriamente composición, silueta global, encuadre, distribución de masas y jerarquía tipográfica. Conserva solo los elementos que exigen los selectores. No basta recolorear, cambiar textura, añadir borde ni aplicar filtro. No inventes objetos, texto, datos o símbolos fuera de las reglas anteriores.\n';
   }
   o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto.\n';
-  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo.\n';
+  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido rotular los paneles con códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia; separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas: los rótulos de ficha viven solo en este texto, nunca en la imagen.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
   if (cultDir) o += 'CULTURA: ' + cultDir + '\n';
@@ -1726,42 +1909,46 @@ function formatPrompt(result) {
   } else {
     o += 'TEXTOS: si existe mensaje proporcionado, conservarlo literalmente y usarlo como único copy principal; no exigir tres niveles ni inventar apoyos, sellos, citas, datos o microtexto. Si no existe mensaje, proponer una sola frase principal exacta y omitir texto secundario salvo que el usuario lo solicite.\n';
   }
-  o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, escala/pose del personaje, tipografía, densidad, forma del símbolo y espacio negativo. Usa las preferencias estructurales de la ficha; no representes la audiencia con estereotipos ni añadiendo objetos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\n\n';
+  o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, tipografía, densidad, forma del símbolo y espacio negativo; no la representes con estereotipos ni objetos añadidos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\n\n';
+  o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + (_PLACEMENT[MOTOR_STATE.product] || _PLACEMENT['CAMISETA SOFT'] || 'pecho centrado') + '; ' + ((_PRODUCT_BIAS[MOTOR_STATE.product] || {}).scale || 'escala adecuada al producto') + '\n\n';
 
   K.forEach(function (k, i) {
     const v = set[k];
     o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + v.audiencia + '\n';
+    o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento)) + '\n';
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
       o += 'OBJETO: NINGUNO. El concepto solo inspira el copy; no se representa como escena.\n';
       o += 'CONTROL ABSOLUTO: no dibujar personas, árboles, símbolos, iconos, siluetas, ilustraciones, fondos narrativos, marcos, cintas, flores, estrellas, rayos, texturas figurativas ni adornos. ÚNICOS elementos permitidos: letras del copy literal y recursos tipográficos integrados en las letras.\n';
+      o += 'SIN EXCEPCIONES: aunque el concepto nombre un objeto concreto (fogata, animal, vehículo, paisaje), está prohibido dibujarlo: ni grande ni pequeño, ni como fondo ni integrado entre letras. El objeto solo existe como palabras del copy literal.\n';
     } else {
       o += 'OBJETO: ' + v.objeto + '\n';
-      o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo.\n';
+      o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos.\n';
+      o += _figureDirective(v.objeto) + '\n';
     }
     if (contactDNA && v.jerarquiaVisual !== 'SOLO_TEXTO') o += 'FUNCIÓN CONSTANTE: ' + v.funcionSimbolica + ' · intención ' + v.intencionEmocional + '\n';
     const textLine = contactDNA
       ? (contactMainText
         ? 'MENSAJE PRINCIPAL literal: «' + contactMainText + '»' + (contactSupportText ? ' · APOYO literal: «' + contactSupportText + '»' : '') + ' · sin texto terciario · ' + v.tipografia
-        : 'COPY PROPUESTO: escribir frase final original exacta según jerarquía ' + v.jerarquiaVisual + '; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia)
+        : 'COPY LITERAL (derivado del concepto): «' + sharedDerivedCopy + '»; usarlo exacto en las tres direcciones; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia)
       : (isExplore
         ? (String(MOTOR_STATE.message || '').trim()
           ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
-          : 'COPY COMPARTIDO A/B/C: define palabras exactas de una frase principal original; conserva el mismo texto en las tres direcciones. Apoyo literal solo si aporta y también compartido; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia)
+          : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + sharedExploreCopy + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia)
         : v.textoPrincipal + ' / ' + v.textoApoyo + ' / ' + v.textoTerciario + ' · ' + v.tipografia);
     const hierarchyDirective = {
       SOLO_TEXTO: 'SOLO_TEXTO: solo copy literal; 100% tipografía y cero imágenes, objetos o adornos independientes. ÚNICOS elementos permitidos: letras del copy literal. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.',
-      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible. el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista. Texto y símbolo forman una sola composición integrada, no dos bloques separados. El símbolo aporta como máximo 20–30% del peso visual. El objeto descrito en esta ficha («' + v.objeto + '») debe interactuar físicamente con las letras de forma plausible: cruzar una palabra, quedar parcialmente detrás del lettering, encajar en una contraforma o compartir un contorno. Elige una integración coherente con el objeto real; no lo conviertas en letra si su forma no lo permite. conserva todas las palabras exactas y legibles. La arquitectura asignada cambia la colocación y el recorrido de lectura, no la proporción ni la jerarquía: adapta sus módulos para mantener texto dominante e integración real, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
-      OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte. OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80%. El objeto/concepto autorizado es el único motivo dominante; no lo sustituyas por árboles, personas u otros objetos no indicados ni añadas fondos narrativos, marcos o adornos. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel. El símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte.',
-      BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual. Ambos deben ser legibles y reconocibles a primera vista; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva mediante proximidad, intersección, encaje o alineación deliberada; evita dos bloques desconectados y evita que el layout convierta uno de los dos en protagonista. Mantén el copy exacto y el objeto autorizado; la arquitectura cambia su relación espacial, no sus proporciones. La arquitectura define colocación/relación, nunca cambia la proporción.'
+      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista. Texto y símbolo forman una sola composición integrada, no dos bloques separados. El símbolo aporta como máximo 20–30% del peso visual. El objeto descrito en esta ficha («' + v.objeto + '») debe interactuar físicamente con las letras de forma plausible. Elige una integración coherente con el objeto real. conserva todas las palabras exactas y legibles, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
+      OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte; copy 20–30%. No lo sustituyas por árboles, personas u otros objetos no indicados. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel.',
+      BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva; evita dos bloques desconectados. La arquitectura define colocación/relación, nunca cambia la proporción.'
     }[v.jerarquiaVisual] || '';
-    o += 'JERARQUÍA: aplica exactamente la jerarquía indicada en cada ficha\n';
     o += 'JERARQUÍA: ' + hierarchyDirective + ' La jerarquía fija tamaño, área y peso; el layout solo ubicación. Si hay conflicto, prevalece esta regla.\n';
     if (v.jerarquiaVisual === 'BALANCEADO') {
       // COMPOSICIÓN: el layout y la arquitectura definen ubicación, nunca proporción
-      o += 'COMPOSICIÓN BALANCEADA: ' + v.layout + ' · ' + v.distribucionTexto + '. Adapta la arquitectura para mantener texto y símbolo entre 45–55% cada uno; ambos deben leerse como partes co-protagonistas de una unidad, no como elemento principal más adorno. La arquitectura define colocación/relación, nunca cambia la proporción.\n';
+      o += 'COMPOSICIÓN BALANCEADA: ' + v.layout + ' · ' + v.distribucionTexto + '. La arquitectura define colocación/relación, nunca cambia la proporción.\n';
+      o += 'INTEGRACIÓN DE LA FICHA: ' + v.integracionTexto + '\n';
     }
     else if (v.jerarquiaVisual === 'TEXTO_DOMINANTE' || v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
       o += _compatibleCompositionDirective(v.jerarquiaVisual, v.distribucionTexto) + '\n';
@@ -1769,17 +1956,16 @@ function formatPrompt(result) {
     if (v.jerarquiaVisual === 'TEXTO_DOMINANTE') {
       o += 'INTEGRACIÓN TEXTO-SÍMBOLO: integra el objeto descrito en el concepto ("' + v.objeto + '") en el lettering usando su forma física y acción reales; elige una unión visual clara y natural, sin imponer metáforas genéricas ni partes que el objeto no posee. El texto exacto ocupa 70–80% del área y es la primera lectura; el símbolo ocupa como máximo 20–30%, queda integrado y nunca aparece como ilustración separada. La arquitectura cambia ubicación, no proporción.\n';
     }
+    if (v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
+      o += 'INTEGRACIÓN DE LA FICHA: ' + v.integracionTexto + '\n';
+      o += 'TEXTO SUBORDINADO: el copy ocupa como máximo 20–30% en banda breve (inferior o lateral); prohibido lettering gigante que compita con el símbolo. Si al mirar el arte el texto domina, encogerlo hasta que el objeto autorizado mande a primera vista.\n';
+    }
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
       o += _soloTextCompositionDirective(v.distribucionTexto) + '\n';
-      o += 'DIRECCIÓN: diseño tipográfico puro en ' + v.estilo + '. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.\n';
-      o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + v.placement + '; ' + v.escalaProducto + '\n';
-      o += 'ARTE: solo letras del mensaje exacto; ' + v.tratamiento + '. Sin persona, árbol, objeto, icono, ilustración, marco, cinta, estrella, llama, floritura, textura figurativa ni fondo escénico.\n';
+      o += 'DIRECCIÓN: diseño tipográfico puro en ' + v.estilo + '. SOLO_TEXTO NO SIGNIFICA SIMPLE. Usa las letras como forma visual principal mediante escala, ritmo, composición; mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes. Solo letras del mensaje exacto; ' + v.tratamiento + '. Sin persona, árbol, objeto, icono, ilustración, marco, cinta, estrella, llama, floritura, textura figurativa ni fondo escénico.\n';
       o += 'TEXTO: ' + textLine + '\n';
     } else {
-      o += 'DIRECCIÓN ARTÍSTICA: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + '. Ejecuta el estilo dentro de la jerarquía indicada; no inventes una estructura textual distinta.\n';
-      o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + v.placement + '; ' + v.escalaProducto + '\n';
-      o += 'ESTILO PRINCIPAL (prioridad): ' + v.estilo + '. Gobierna el lenguaje visual; forma, técnica y tratamiento son secundarios y no pueden introducir estéticas incompatibles.\n';
-      o += 'ARTE: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + '\n';
+      o += 'ARTE: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + ' · estilo «' + v.estilo + '» (manda). Ejecuta el estilo dentro de la jerarquía indicada; no inventes una estructura textual distinta.\n';
       o += 'TEXTO: ' + textLine + '\n';
 
     }
@@ -1944,6 +2130,7 @@ function rerollSingle(keyLetter) {
       intencionEmocional: LAST_RESULT.set.A.intencionEmocional
     } : null;
     var best = null, bestScore = -1e9;
+    var clashCount = {};
 
     var rerollNonceBase = Number(MOTOR_STATE._rerollNonce) || 0;
     for (var i = 0; i < 600; i++) {
@@ -1960,6 +2147,13 @@ function rerollSingle(keyLetter) {
       }
       var v = cand && cand[keyLetter];
       if (!v || (chosenStyle && v.estilo !== chosenStyle)) continue;
+
+      // Exclusión dura anti-repetición: si repite CUALQUIER eje con las
+      // conservadas se descarta aunque puntúe bien. El dado no negocia reglas.
+      var keptCards = others.map(function (o) { return LAST_RESULT.set[o]; });
+      var clashes = _ejesRepetidosConConservadas(v, keptCards);
+      clashes.forEach(function (ax) { clashCount[ax] = (clashCount[ax] || 0) + 1; });
+      if (clashes.length) continue;
 
       // Puntuar conflictos en vez de descartar todos los candidatos:
       // el dado debe seguir funcionando aunque los pools sean restrictivos.
@@ -1998,14 +2192,22 @@ function rerollSingle(keyLetter) {
 
     if (!best) {
       var noFitStatus = document.getElementById('status');
+      var topClash = Object.keys(clashCount).sort(function (a, b) { return clashCount[b] - clashCount[a]; })[0];
       if (noFitStatus) noFitStatus.textContent = chosenStyle
         ? 'El estilo fijado no permite otra ficha distinta con los selectores actuales. Cambia el bloqueo de estilo o ajusta otro selector.'
-        : 'No se encontró una alternativa distinta. Cambia un selector y vuelve a tirar el dado.';
+        : (topClash
+          ? 'No se encontró alternativa sin repetir ejes (bloquea: ' + topClash + '). Cambia un selector o quita un bloqueo y vuelve a tirar el dado.'
+          : 'No se encontró una alternativa distinta. Cambia un selector y vuelve a tirar el dado.');
       return;
     }
 
     // Sustituir únicamente la tarjeta elegida; A/B permanecen intactas al tirar C, etc.
     LAST_RESULT.set[keyLetter] = best;
+    try { if (typeof _recordLayoutSet === 'function') _recordLayoutSet(LAST_RESULT.set); } catch (e) {}
+    if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
+    var freshEval = evaluaSetOk(LAST_RESULT.set);
+    LAST_RESULT.score = freshEval.score;
+    LAST_RESULT.passed = freshEval.passed;
     try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
     try { window.V = LAST_RESULT.set; } catch (e) {}
     _recordPattern(best, memPatternMarket(), MOTOR_STATE.product, { serie: MOTOR_STATE.serie, reroll: keyLetter });
@@ -2015,7 +2217,7 @@ function rerollSingle(keyLetter) {
     var outEl = document.getElementById('out');
     if (outEl) outEl.value = formatPrompt(LAST_RESULT);
     var rerollStatus = document.getElementById('status');
-    if (rerollStatus) rerollStatus.textContent = N[K.indexOf(keyLetter)] + ' regenerada. Las otras dos tarjetas se conservaron.';
+    if (rerollStatus) rerollStatus.textContent = N[K.indexOf(keyLetter)] + ' regenerada sin repetir ejes con las conservadas (10/10 verificado).';
   } catch (e) {
     console.warn(e);
     var errorStatus = document.getElementById('status');
@@ -2031,8 +2233,8 @@ function renderGates(result) {
   const m = result.score;
   let html = '';
   html += '<span class="badge ' + (m.diversity >= 55 ? 'good' : 'bad') + '">Diferencia: ' + m.diversity + '/100</span>';
-  html += '<span class="badge ' + (m.fitAudienciaMin >= 50 ? 'good' : 'bad') + '">Audiencia mín: ' + m.fitAudienciaMin + '/100</span>';
-  html += '<span class="badge ' + (m.fitProductoMin >= 40 ? 'good' : 'bad') + '">Producto mín: ' + m.fitProductoMin + '/100</span>';
+  html += '<span class="badge ' + (m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN ? 'good' : 'bad') + '">Audiencia mín: ' + m.fitAudienciaMin + '/100</span>';
+  html += '<span class="badge ' + (m.fitProductoMin >= UMBRAL_PRODUCTO_MIN ? 'good' : 'bad') + '">Producto mín: ' + m.fitProductoMin + '/100</span>';
   html += '<span class="badge ' + (m.estilos.length >= 3 ? 'good' : 'warn') + '">' + m.estilos.length + ' estilos distintos</span>';
   html += '<span class="badge ' + (m.symbolStable ? 'good' : 'bad') + '" title="Comprueba que A/B/C conservan el mismo símbolo indicado en el prompt.">Símbolo constante</span>';
   html += '<span class="badge ' + (m.treatmentsComplete ? 'good' : 'bad') + '" title="Comprueba que el prompt asigna HEAVY, SOFT y MODERN una vez cada uno; no inspecciona la imagen generada.">HEAVY · SOFT · MODERN</span>';
@@ -2040,6 +2242,37 @@ function renderGates(result) {
   html += '<span class="badge warn" title="Estos indicadores validan fichas y prompt; no inspeccionan el archivo de imagen generado.">QA visual pendiente</span>';
 
   gateEl.innerHTML = html;
+}
+
+/* --- Revisión visual manual: cierra el 'QA visual pendiente' con firma humana. */
+function qaChecklistEstado() {
+  let boxes = [];
+  try {
+    const root = document.getElementById('qaVisual');
+    boxes = root ? Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]')) : [];
+  } catch (e) { boxes = []; }
+  const marcados = boxes.filter(function (b) { return b && b.checked; }).length;
+  return { marcados: marcados, total: boxes.length };
+}
+function actualizarQAVisual() {
+  const estadoEl = document.getElementById('qaEstado');
+  const st = qaChecklistEstado();
+  if (!estadoEl) return st;
+  if (!st.total || !st.marcados) {
+    estadoEl.innerHTML = '<span class="badge">Revisión visual: pendiente</span>';
+    return st;
+  }
+  estadoEl.innerHTML = st.marcados === st.total
+    ? '<span class="badge good">Revisión visual verificada (manual): ' + st.marcados + '/' + st.total + ' · ' + new Date().toLocaleString() + '</span>'
+    : '<span class="badge warn">Revisión visual: ' + st.marcados + '/' + st.total + '</span>';
+  return st;
+}
+function limpiarQAVisual() {
+  try {
+    const root = document.getElementById('qaVisual');
+    if (root) Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]')).forEach(function (b) { b.checked = false; });
+  } catch (e) {}
+  actualizarQAVisual();
 }
 
 /* --- Función principal: Crear los 3 diseños --- */
@@ -2059,18 +2292,41 @@ function crearLos3Disenos() {
 
     const prompt = formatPrompt(result);
     if (outEl) outEl.value = prompt;
+    if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
 
     if (statusEl) {
       if (result.passed) {
         statusEl.innerHTML = '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt</span>';
       } else {
-        statusEl.innerHTML = '<span class="warn">Listo con advertencia: revisa el control de calidad</span>';
+        const umbralMsg = _mensajeUmbral(result.score);
+        statusEl.innerHTML = '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>';
       }
     }
   } catch (e) {
     console.error('[Motor] Error:', e);
     if (statusEl) statusEl.textContent = 'Error al generar: ' + String(e && e.message ? e.message : 'error inesperado');
   }
+}
+
+/* --- Validar set actual sin regenerar: lo que hace 'Validar y generar'. */
+function validarSetActual() {
+  const statusEl = document.getElementById('status');
+  if (!LAST_RESULT || !LAST_RESULT.set) {
+    if (statusEl) statusEl.innerHTML = '<span class="warn">No hay diseños. Primero crea los 3 diseños.</span>';
+    return { ok: false, detalle: ['sin diseños'] };
+  }
+  const ev = evaluaSetOk(LAST_RESULT.set);
+  LAST_RESULT.score = ev.score;
+  LAST_RESULT.passed = ev.passed;
+  try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
+  renderGates(LAST_RESULT);
+  renderMatrix(LAST_RESULT);
+  if (statusEl) {
+    statusEl.innerHTML = ev.passed
+      ? '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla.</span>'
+      : '<span class="warn">Validación con fallos: ' + ev.detalle.join(' · ') + '</span>';
+  }
+  return { ok: ev.passed, detalle: ev.detalle };
 }
 
 /* --- Copiar prompt --- */
@@ -2081,6 +2337,14 @@ async function copiarPrompt() {
     if (statusEl) statusEl.innerHTML = '<span class="bad">No hay prompt. Primero crea los 3 diseños.</span>';
     return;
   }
+  try {
+    const lastScore = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.score) ? LAST_RESULT.score : null;
+    const umbralBloqueo = _mensajeUmbral(lastScore);
+    if (umbralBloqueo) {
+      if (statusEl) statusEl.innerHTML = '<span class="bad">Copiado bloqueado. ' + umbralBloqueo + '</span>';
+      return;
+    }
+  } catch (e) {}
   try {
     await navigator.clipboard.writeText(outEl.value);
     if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>';
@@ -2098,6 +2362,7 @@ function limpiarFichas() {
   const status = document.getElementById('status');
   if (cards) cards.innerHTML = '<div class="empty-state">Genera los 3 diseños para ver las fichas aquí.</div>';
   if (gate) gate.innerHTML = '<span class="badge">Aún no hay diseños</span>';
+  if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
   renderMatrix(null);
   if (out) out.value = '';
   if (status) status.textContent = 'Fichas limpias. La memoria de patrones sigue activa.';

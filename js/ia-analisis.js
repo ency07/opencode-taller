@@ -1090,14 +1090,25 @@
     });
 
     on('btnBuild', 'click', function () {
-      // Proposito real: valida estado + muestra dominio detectado + genera los 3. Nada de mensaje falso.
-      if (typeof crearLos3Disenos === 'function') {
+      // Validar y generar: con diseños en pantalla valida sin regenerar;
+      // vacío genera los 3 por primera vez (comportamiento anterior).
+      const hasSet = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.set)
+        || (typeof window !== 'undefined' && window.LAST_RESULT && window.LAST_RESULT.set);
+      if (hasSet && typeof validarSetActual === 'function') {
+        validarSetActual();
+      } else if (typeof crearLos3Disenos === 'function') {
         crearLos3Disenos();
       } else if (typeof readStateFromDOM === 'function') {
         readStateFromDOM();
         tell('<span class="bad">Motor no cargado. Verifica que motor-nucleo.js esté incluido.</span>');
       }
     });
+    try {
+      const qaRoot = document.getElementById('qaVisual');
+      if (qaRoot) Array.prototype.slice.call(qaRoot.querySelectorAll('input[type="checkbox"]')).forEach(function (box) {
+        box.addEventListener('change', function () { if (typeof actualizarQAVisual === 'function') actualizarQAVisual(); });
+      });
+    } catch (e) {}
 
     // btnAI abre el panel de claves IA (revisor). Antes estaba muerto.
     on('btnAI', 'click', function () {

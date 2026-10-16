@@ -220,7 +220,7 @@ function getPrintPrepRule(product, method) {
 }
 
 const PRODUCT_MOCKUP_RULES = {
-  "CAMISETA SOFT": "POR CADA DISEÑO A/B/C, generar cuatro mockups separados (12 vistas en total): 1 camiseta clara frontal, 2 camiseta clara a tres cuartos, 3 camiseta oscura frontal, 4 camiseta oscura a tres cuartos. No agrupar ni omitir vistas; la prenda oscura debe verse claramente oscura. Mantener exactamente el arte asignado a esa dirección en sus cuatro vistas; no inventar, redibujar ni cambiar el texto del arte en los mockups.",
+  "CAMISETA SOFT": "FICHA SERIE (CAMISETA SOFT): entregar UNA sola hoja comercial con esta estructura exacta. (1) Franja superior: SERIE, CONCEPTO, MENSAJE (más referencia doctrinal o dato solo si el copy la trae), mercado, producto y estilo general. (2) Hoja de 3 columnas, una por ficha del set, encabezada con su audiencia en palabras simples: cada columna trae mockup lifestyle frontal de cuerpo completo + recuadro 'vista frontal' con el arte en plano. Por defecto TODO es frontal: mostrar espalda (lifestyle de espaldas + recuadro 'vista espalda') SOLO si la ficha de esa columna indica estampado en espalda; prohibido inventar vistas de espalda no pedidas. (3) Fila COLORES SUGERIDOS por columna: 5 frontales planos en los tonos de prenda que la paleta de ese diseño admita, cada uno rotulado con su nombre de color; omitir tonos que destruyan contraste o legibilidad. (4) Fila MOCKUPS ADICIONALES en ambiente lifestyle. (5) Franja PALETA GENERAL DE LA SERIE con muestras y nombres de color. Rotulación permitida SOLO para: serie, audiencia, nombres de color, 'vista frontal' y 'vista espalda'. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o parámetros del prompt. Mantener exactamente el arte asignado a cada diseño en todas sus vistas; no inventar, redibujar ni cambiar el texto del arte en los mockups.",
   "CAMISETA APPAREL": "dos mockups de prenda fashion (plana o modelo); vista frontal y detalle",
   "HOODIE": "dos mockups de hoodie (uno oscuro y otro claro); vista frontal y espalda",
   "GORRA": "dos mockups de gorra (vista frontal y tres cuartos) y acercamiento del panel con el acabado elegido",
@@ -283,11 +283,26 @@ function getSafeMarginDirective(product) {
   return bias.safeMargin || "respetar márgenes de impresión del producto";
 }
 
+/* Layouts coherentes y producibles por producto (prefijos del catálogo).
+   Sin entrada = catálogo completo (prendas planas, tote y murales).
+   GORRA: panel frontal pequeño y curvo; sin sangrados, campos divididos ni
+   lecturas circulares. MUG: curva + asa; sin órbitas ni bandas múltiples.
+   FUNDA MÓVIL: carcasa pequeña con recorte de cámara; sin sangrados ni
+   fragmentación. MOCHILA: panel con cierres; sin sangrados ni órbitas.
+   Mínimo 9 por producto: el dedup intra-set (3) siempre es posible. */
+const PRODUCT_LAYOUT_ALLOW = {
+  "GORRA": ["Axial centrado", "Emblema circular", "Retícula áurea", "Diagonal descendente", "Diagonal ascendente", "Banda horizontal", "Tarjeta interior", "Columna apilada", "Sello descentrado"],
+  "MUG": ["Axial centrado", "Emblema circular", "Editorial asimétrica", "Retícula áurea", "Diagonal descendente", "Diagonal ascendente", "Banda horizontal", "Tarjeta interior", "Columna apilada", "Sangrado total", "Sello descentrado", "Split 2/3-1/3", "Arco y cúpula"],
+  "FUNDA MÓVIL": ["Axial centrado", "Emblema circular", "Editorial asimétrica", "Retícula áurea", "Diagonal descendente", "Diagonal ascendente", "Banda horizontal", "Tarjeta interior", "Columna apilada", "Sello descentrado", "Arco y cúpula"],
+  "MOCHILA": ["Axial centrado", "Emblema circular", "Editorial asimétrica", "Retícula áurea", "Diagonal descendente", "Diagonal ascendente", "Banda horizontal", "Tarjeta interior", "Columna apilada", "Sello descentrado", "Split 2/3-1/3", "Arco y cúpula", "Escalinata"]
+};
+
 /* Compatibilidad global */
 window.PRODUCT_BIAS = PRODUCT_BIAS;
 window.PLACEMENT = PLACEMENT;
 window.PRODUCT_RULES = PRODUCT_RULES;
 window.PRODUCT_MOCKUP_RULES = PRODUCT_MOCKUP_RULES;
+window.PRODUCT_LAYOUT_ALLOW = PRODUCT_LAYOUT_ALLOW;
 window.PRINT_METHODS_BY_PRODUCT = PRINT_METHODS_BY_PRODUCT;
 window.PRINT_METHOD_LABELS = PRINT_METHOD_LABELS;
 window.PRINT_PREP_RULES = PRINT_PREP_RULES;
