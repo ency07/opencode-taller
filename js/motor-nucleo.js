@@ -1448,7 +1448,18 @@ function evaluaSetOk(set) {
   const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
   const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk
     && _patternConflictsOf(set) === 0;
-  return { score: m, passed: ok };
+  const detalle = [];
+  if (!(m.diversity >= 55)) detalle.push('diferencia ' + m.diversity + '/100 (mín 55)');
+  [['layout', 'layout'], ['distribucionTexto', 'arquitectura textual'], ['tipografia', 'tipografía'], ['formaSimbolo', 'forma del símbolo'], ['integracionTexto', 'integración'], ['tratamiento', 'tratamiento'], ['tecnica', 'técnica']].forEach(function (e) {
+    if (new Set(K.map(function (k) { return set[k][e[0]]; })).size !== 3) detalle.push(e[1] + ' repetida');
+  });
+  if (!(set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3)) detalle.push('fondo repetido');
+  if (MOTOR_STATE.groupMode === 'mismo' ? m.estilos.length !== 1 : m.estilos.length !== 3) detalle.push('estilos no cumplen el modo');
+  if (_isLockedContactSet() && !(m.symbolStable && m.treatmentsComplete)) detalle.push('identidad de contacto inestable');
+  const umbralMsg = _mensajeUmbral(m);
+  if (umbralMsg) detalle.push(umbralMsg);
+  if (_patternConflictsOf(set) !== 0) detalle.push('patrones recientes repetidos');
+  return { score: m, passed: ok, detalle: detalle };
 }
 /* Ejes en los que una carta candidata repite con las conservadas.
    El dado la usa como exclusión dura (no como puntos): lo que aquí salga
@@ -2193,6 +2204,7 @@ function rerollSingle(keyLetter) {
     // Sustituir únicamente la tarjeta elegida; A/B permanecen intactas al tirar C, etc.
     LAST_RESULT.set[keyLetter] = best;
     try { if (typeof _recordLayoutSet === 'function') _recordLayoutSet(LAST_RESULT.set); } catch (e) {}
+    if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
     var freshEval = evaluaSetOk(LAST_RESULT.set);
     LAST_RESULT.score = freshEval.score;
     LAST_RESULT.passed = freshEval.passed;
@@ -2232,6 +2244,37 @@ function renderGates(result) {
   gateEl.innerHTML = html;
 }
 
+/* --- Revisión visual manual: cierra el 'QA visual pendiente' con firma humana. */
+function qaChecklistEstado() {
+  let boxes = [];
+  try {
+    const root = document.getElementById('qaVisual');
+    boxes = root ? Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]')) : [];
+  } catch (e) { boxes = []; }
+  const marcados = boxes.filter(function (b) { return b && b.checked; }).length;
+  return { marcados: marcados, total: boxes.length };
+}
+function actualizarQAVisual() {
+  const estadoEl = document.getElementById('qaEstado');
+  const st = qaChecklistEstado();
+  if (!estadoEl) return st;
+  if (!st.total || !st.marcados) {
+    estadoEl.innerHTML = '<span class="badge">Revisión visual: pendiente</span>';
+    return st;
+  }
+  estadoEl.innerHTML = st.marcados === st.total
+    ? '<span class="badge good">Revisión visual verificada (manual): ' + st.marcados + '/' + st.total + ' · ' + new Date().toLocaleString() + '</span>'
+    : '<span class="badge warn">Revisión visual: ' + st.marcados + '/' + st.total + '</span>';
+  return st;
+}
+function limpiarQAVisual() {
+  try {
+    const root = document.getElementById('qaVisual');
+    if (root) Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]')).forEach(function (b) { b.checked = false; });
+  } catch (e) {}
+  actualizarQAVisual();
+}
+
 /* --- Función principal: Crear los 3 diseños --- */
 function crearLos3Disenos() {
   const statusEl = document.getElementById('status');
@@ -2249,6 +2292,7 @@ function crearLos3Disenos() {
 
     const prompt = formatPrompt(result);
     if (outEl) outEl.value = prompt;
+    if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
 
     if (statusEl) {
       if (result.passed) {
@@ -2262,6 +2306,27 @@ function crearLos3Disenos() {
     console.error('[Motor] Error:', e);
     if (statusEl) statusEl.textContent = 'Error al generar: ' + String(e && e.message ? e.message : 'error inesperado');
   }
+}
+
+/* --- Validar set actual sin regenerar: lo que hace 'Validar y generar'. */
+function validarSetActual() {
+  const statusEl = document.getElementById('status');
+  if (!LAST_RESULT || !LAST_RESULT.set) {
+    if (statusEl) statusEl.innerHTML = '<span class="warn">No hay diseños. Primero crea los 3 diseños.</span>';
+    return { ok: false, detalle: ['sin diseños'] };
+  }
+  const ev = evaluaSetOk(LAST_RESULT.set);
+  LAST_RESULT.score = ev.score;
+  LAST_RESULT.passed = ev.passed;
+  try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
+  renderGates(LAST_RESULT);
+  renderMatrix(LAST_RESULT);
+  if (statusEl) {
+    statusEl.innerHTML = ev.passed
+      ? '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla.</span>'
+      : '<span class="warn">Validación con fallos: ' + ev.detalle.join(' · ') + '</span>';
+  }
+  return { ok: ev.passed, detalle: ev.detalle };
 }
 
 /* --- Copiar prompt --- */
@@ -2297,6 +2362,7 @@ function limpiarFichas() {
   const status = document.getElementById('status');
   if (cards) cards.innerHTML = '<div class="empty-state">Genera los 3 diseños para ver las fichas aquí.</div>';
   if (gate) gate.innerHTML = '<span class="badge">Aún no hay diseños</span>';
+  if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
   renderMatrix(null);
   if (out) out.value = '';
   if (status) status.textContent = 'Fichas limpias. La memoria de patrones sigue activa.';
