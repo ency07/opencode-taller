@@ -970,15 +970,15 @@ function getCulturalDirective(marketId) {
   }
 
   if (marketId === "colombia") {
-    return "Maintain Colombian cultural authenticity. Regional codes must match the selected Colombian region. Do not mix incompatible regional references.";
+    return "Mantén la autenticidad cultural colombiana. Los códigos regionales deben coincidir con la región colombiana seleccionada. No mezcles referencias regionales incompatibles.";
   }
 
   if (marketId === "latam") {
-    return "Use broad Latin American Spanish cultural codes. Avoid country-specific slang unless the region is explicitly selected.";
+    return "Usa códigos culturales del español latinoamericano amplio. Evita jerga de un solo país salvo que la región esté seleccionada explícitamente.";
   }
 
   if (marketId === "spain") {
-    return "Use Spain Spanish cultural codes and natural European Spanish phrasing.";
+    return "Usa códigos culturales de España y fraseo natural del español europeo.";
   }
 
   if (marketId === "diaspora_col") {
@@ -1002,16 +1002,24 @@ function getCulturalDirective(marketId) {
 
 function getLegalDirective(marketId, marketplaceId) {
   const market = getMarket(marketId);
+  const es = market.language === "es";
   let extra = "";
 
   if (market.legal === "strict") {
-    extra = " Extra care required: reject anything that resembles protected IP, trademarked phrases, team logos, brand aesthetics, celebrity likeness, or copyrighted characters.";
+    extra = es
+      ? " Cuidado extra: rechaza todo lo que parezca PI protegida, frases registradas, logos de equipos, estéticas de marca, rostros de celebridades o personajes con derechos."
+      : " Extra care required: reject anything that resembles protected IP, trademarked phrases, team logos, brand aesthetics, celebrity likeness, or copyrighted characters.";
   }
 
   if (marketplaceId === "displate") {
-    extra += " The final art must work as a premium wall poster: strong composition, safe margins, no text too close to edges.";
+    extra += es
+      ? " El arte final debe funcionar como póster mural premium: composición fuerte, márgenes seguros, sin texto pegado a los bordes."
+      : " The final art must work as a premium wall poster: strong composition, safe margins, no text too close to edges.";
   }
 
+  if (es) {
+    return "No incluyas marcas registradas, nombres de marcas, equipos deportivos, universidades, celebridades, personajes protegidos, letras de canciones, citas de películas, logotipos, franquicias ni propiedad intelectual protegida. Usa solo frases y arte originales." + extra;
+  }
   return POD_LEGAL_RULES.directive + extra;
 }
 
