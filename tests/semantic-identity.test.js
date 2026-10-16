@@ -208,10 +208,21 @@ ok(motorSource.includes('COMPATIBILIDAD ESTILO × TRATAMIENTO:'), 'cada tarjeta 
 ok(getLanguageDirective('global_en', 'en').includes('natural, native English'), 'el selector English debe producir directiva de texto nativo en inglés');
 ok(getLanguageDirective('gospel_es', 'es').includes('español natural'), 'Gospel ES debe producir directiva de texto natural en español');
 ok(getLanguageDirective('diaspora_col', 'spanglish').includes('bilingual Spanish/English diaspora'), 'Spanglish debe respetar el contexto bilingüe de diáspora');
+// Contratos culturales y legales en el idioma del mercado (RT-08/RT-15).
+ok(getCulturalDirective('colombia').includes('autenticidad cultural colombiana') && !getCulturalDirective('colombia').includes('Maintain Colombian'), 'Colombia debe recibir directiva cultural en español');
+ok(getCulturalDirective('latam').includes('latinoamericano amplio') && !getCulturalDirective('latam').includes('broad Latin American'), 'Latam debe recibir directiva cultural en español');
+ok(getCulturalDirective('spain').includes('español europeo') && !getCulturalDirective('spain').includes('Spain Spanish'), 'España debe recibir directiva cultural en español');
+ok(getLegalDirective('colombia', 'generic').includes('marcas registradas') && !getLegalDirective('colombia', 'generic').includes('trademarks'), 'mercado ES debe recibir directiva legal en español');
+ok(getLegalDirective('global_en', 'generic').includes('Do not include trademarks'), 'mercado EN conserva directiva legal en inglés');
+ok(getLegalDirective('colombia', 'displate').includes('póster mural premium'), 'extra displate en español para mercado ES');
 const cssSource = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
 ok(/@media \(max-width: 900px\)[\s\S]*?\.main-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(cssSource), 'en móvil la vista previa debe pasar a una sola columna');
 ok(/@media \(max-width: 900px\)[\s\S]*?\.card-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(cssSource), 'en móvil las tarjetas A/B/C deben apilarse sin columnas estrechas');
 ok(/@media \(max-width: 1100px\)[\s\S]*?\.card-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(cssSource), 'en tablet la vista previa debe reducirse a dos columnas');
+// UI sin truncados: placeholder corto con título completo + selects con espacio.
+const indexSrc = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+ok(indexSrc.includes('placeholder="Vacío: el motor propone ideas"') && indexSrc.includes('title="Déjalo vacío para descubrir ideas; o escribe una idea concreta"'), 'concepto sin placeholder truncado y con ayuda completa');
+ok(/\.vk\s*\{[^}]*flex:\s*0 0 34%/.test(cssSource) && /\.vrow \.vv select\s*\{[^}]*max-width:\s*100%/.test(cssSource), 'las fichas deben dar espacio a los selects (etiqueta 34% + valor flexible)');
 
 console.log((failures.length ? 'FAIL' : 'PASS') + ' semantic-identity (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.forEach(function (msg) { console.error(' - ' + msg); });

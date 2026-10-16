@@ -711,14 +711,20 @@ details.panel .panel-title {
 .vk {
   color: var(--mut);
   font-weight: 500;
-  flex: 0 0 42%;
-  max-width: 42%;
+  flex: 0 0 34%;
+  max-width: 34%;
 }
 
 .vv {
   color: var(--text);
   text-align: right;
   overflow-wrap: anywhere;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vrow .vv select {
+  max-width: 100%;
 }
 
 .iachip {
