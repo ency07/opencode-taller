@@ -1110,6 +1110,11 @@
       });
     } catch (e) {}
 
+    // Árbitro: recompone la comprobación de selectores contra el prompt actual.
+    on('btnArbitro', 'click', function () {
+      if (typeof verificarArbitro === 'function') verificarArbitro();
+    });
+
     // btnAI abre el panel de claves IA (revisor). Antes estaba muerto.
     on('btnAI', 'click', function () {
       try {

@@ -2214,6 +2214,7 @@ function rerollSingle(keyLetter) {
     renderCards(LAST_RESULT);
     renderGates({ score: scoreSet(LAST_RESULT.set) });
     renderMatrix(LAST_RESULT);
+    renderArbitro(LAST_RESULT);
     var outEl = document.getElementById('out');
     if (outEl) outEl.value = formatPrompt(LAST_RESULT);
     var rerollStatus = document.getElementById('status');
@@ -2275,6 +2276,144 @@ function limpiarQAVisual() {
   actualizarQAVisual();
 }
 
+/* ============================================================
+   ÁRBITRO DE SELECTORES — determinista, sin IA ni red.
+   Comprueba que cada selector elegido por el usuario quedó
+   reflejado en el prompt final y en las fichas. NO inspecciona
+   la imagen generada: valida texto de prompt y coherencia A/B/C.
+   ============================================================ */
+function _arbNorm(s) {
+  return String(s == null ? '' : s)
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[«»"'`´]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function _arbHas(hay, needle) {
+  const n = _arbNorm(needle);
+  return !!n && hay.indexOf(n) !== -1;
+}
+function arbitroSelectores(promptText, result) {
+  const res = result || LAST_RESULT;
+  if (!res || !res.set) return null;
+  const set = res.set;
+  let raw = promptText;
+  if (raw == null) {
+    const outEl = document.getElementById ? document.getElementById('out') : null;
+    raw = (outEl && outEl.value) ? outEl.value : (typeof formatPrompt === 'function' ? formatPrompt(res) : '');
+  }
+  const text = _arbNorm(raw);
+  const checks = [];
+  function add(grupo, etiqueta, ok, detalle) {
+    checks.push({ grupo: grupo, etiqueta: etiqueta, ok: !!ok, detalle: ok ? '' : (detalle || '') });
+  }
+
+  // Contexto: mercado, idioma y directivas cultural/legal.
+  add('Contexto', 'Mercado: ' + MOTOR_STATE.market,
+    _arbHas(text, 'MERCADO: ' + MOTOR_STATE.market),
+    'el prompt no declara el mercado activo');
+  let langDir = '', cultDir = '', legalDir = '';
+  try { if (typeof getLanguageDirective === 'function') langDir = getLanguageDirective(MOTOR_STATE.market, MOTOR_STATE.language); } catch (e) {}
+  try { if (typeof getCulturalDirective === 'function') cultDir = getCulturalDirective(MOTOR_STATE.market); } catch (e) {}
+  try { if (typeof getLegalDirective === 'function') legalDir = getLegalDirective(MOTOR_STATE.market, MOTOR_STATE.marketplace); } catch (e) {}
+  add('Contexto', 'Idioma del diseño',
+    !langDir || text.indexOf('idioma:') !== -1,
+    'falta la directiva de idioma en el prompt');
+  add('Contexto', 'Cultura y legal del mercado',
+    (!cultDir || text.indexOf('cultura:') !== -1) && (!legalDir || text.indexOf('legal:') !== -1),
+    'falta la directiva cultural o legal del mercado');
+
+  // Producto: ubicación/escala y regla de mockups.
+  add('Producto', 'Producto y ubicación: ' + MOTOR_STATE.product,
+    text.indexOf('producto / ubicacion / escala:') !== -1,
+    'el prompt no fija producto, ubicación y escala');
+  const mockRule = typeof getMockupRule === 'function' ? getMockupRule(MOTOR_STATE.product) : '';
+  add('Producto', 'Regla de presentación (mockups)',
+    !mockRule || _arbHas(text, String(mockRule).slice(0, 60)),
+    'la regla de mockups del producto no llegó al prompt');
+
+  // Entrada del usuario (solo si la escribió).
+  const conceptUsed = String((res.explorationBrief && res.explorationBrief.concept) || MOTOR_STATE.concept || '').trim();
+  if (conceptUsed) add('Entrada', 'Concepto escrito presente', _arbHas(text, conceptUsed), 'el concepto no aparece literal en el prompt');
+  const msg = String(MOTOR_STATE.message || '').trim();
+  if (msg) add('Entrada', 'Mensaje visible presente', _arbHas(text, msg), 'el mensaje no aparece literal en el prompt');
+
+  // Por ficha: estilo, audiencia, objeto, jerarquía y layout permitido.
+  const allow = (typeof PRODUCT_LAYOUT_ALLOW !== 'undefined') ? PRODUCT_LAYOUT_ALLOW[MOTOR_STATE.product] : null;
+  K.forEach(function (k, i) {
+    const v = set[k] || {};
+    const base = String(v.layout || '').split(':')[0].trim();
+    const layoutOk = !allow || !allow.length || allow.some(function (h) { return base.indexOf(h) === 0; });
+    const faltas = [];
+    if (!_arbHas(text, v.estilo)) faltas.push('estilo');
+    if (!_arbHas(text, v.audiencia)) faltas.push('audiencia');
+    if (!_arbHas(text, v.jerarquiaVisual)) faltas.push('jerarquía');
+    const objetoOk = v.jerarquiaVisual === 'SOLO_TEXTO' ? _arbHas(text, 'recap ' + N[i]) : _arbHas(text, v.objeto);
+    if (!objetoOk) faltas.push('objeto');
+    if (!layoutOk) faltas.push('layout fuera del catálogo del producto');
+    add('Ficha ' + N[i], 'Estilo · audiencia · objeto · jerarquía',
+      faltas.length === 0, faltas.join(', '));
+  });
+
+  // Anti-repetición de ejes duros entre A/B/C.
+  const hardAxes = ['layout', 'tipografia', 'tratamiento', 'formaSimbolo', 'integracionTexto', 'distribucionTexto', 'tecnica'];
+  const repetidos = hardAxes.filter(function (ax) {
+    return new Set(K.map(function (k) { return set[k][ax]; })).size !== 3;
+  });
+  add('Diferencia A/B/C', 'Ejes duros sin repetir',
+    repetidos.length === 0, repetidos.length ? 'repetidos: ' + repetidos.join(', ') : '');
+
+  // Paleta: cuatro HEX distintos por ficha.
+  const paletaMal = K.filter(function (k) {
+    const e = set[k]._esquema;
+    return e ? new Set([e.bg, e.dom, e.acc, e.ink]).size < 4 : false;
+  });
+  add('Color', 'Cuatro HEX distintos por ficha',
+    paletaMal.length === 0,
+    paletaMal.length ? 'poca variedad de tinta en ' + paletaMal.map(function (k) { return N[K.indexOf(k)]; }).join(', ') : '');
+
+  const fallos = checks.filter(function (c) { return !c.ok; }).length;
+  return { checks: checks, ok: fallos === 0, total: checks.length, fallos: fallos };
+}
+function renderArbitro(result) {
+  const root = document.getElementById ? document.getElementById('arbitro') : null;
+  if (!root) return null;
+  const estadoEl = document.getElementById('arbitroEstado');
+  const info = arbitroSelectores(null, result);
+  if (!info) {
+    root.innerHTML = '<div class="empty-state">Genera los 3 diseños para que el árbitro verifique los selectores.</div>';
+    if (estadoEl) estadoEl.innerHTML = '<span class="badge">Árbitro: sin diseños</span>';
+    return null;
+  }
+  let html = '<ul class="arbitro-list">';
+  info.checks.forEach(function (c) {
+    html += '<li class="arbitro-item ' + (c.ok ? 'ok' : 'bad') + '">' +
+      '<span class="mk">' + (c.ok ? '✓' : '✗') + '</span>' +
+      '<span class="grp">' + escHtml(c.grupo) + '</span>' +
+      '<span class="et">' + escHtml(c.etiqueta) + '</span>' +
+      (c.ok || !c.detalle ? '' : '<span class="dt">' + escHtml(c.detalle) + '</span>') +
+      '</li>';
+  });
+  html += '</ul>';
+  root.innerHTML = html;
+  if (estadoEl) {
+    estadoEl.innerHTML = info.ok
+      ? '<span class="badge good">Árbitro: ' + info.total + '/' + info.total + ' selectores verificados en el prompt</span>'
+      : '<span class="badge bad">Árbitro: ' + (info.total - info.fallos) + '/' + info.total + ' · ' + info.fallos + ' punto(s) a revisar</span>';
+  }
+  return info;
+}
+function limpiarArbitro() {
+  const root = document.getElementById ? document.getElementById('arbitro') : null;
+  const estadoEl = document.getElementById ? document.getElementById('arbitroEstado') : null;
+  if (root) root.innerHTML = '<div class="empty-state">Genera los 3 diseños para que el árbitro verifique los selectores.</div>';
+  if (estadoEl) estadoEl.innerHTML = '<span class="badge">Árbitro: sin diseños</span>';
+}
+function verificarArbitro() {
+  return renderArbitro(LAST_RESULT);
+}
+
 /* --- Función principal: Crear los 3 diseños --- */
 function crearLos3Disenos() {
   const statusEl = document.getElementById('status');
@@ -2289,6 +2428,7 @@ function crearLos3Disenos() {
     renderCards(result);
     renderGates(result);
     renderMatrix(result);
+    renderArbitro(result);
 
     const prompt = formatPrompt(result);
     if (outEl) outEl.value = prompt;
@@ -2321,6 +2461,7 @@ function validarSetActual() {
   try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
   renderGates(LAST_RESULT);
   renderMatrix(LAST_RESULT);
+  renderArbitro(LAST_RESULT);
   if (statusEl) {
     statusEl.innerHTML = ev.passed
       ? '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla.</span>'
@@ -2363,6 +2504,7 @@ function limpiarFichas() {
   if (cards) cards.innerHTML = '<div class="empty-state">Genera los 3 diseños para ver las fichas aquí.</div>';
   if (gate) gate.innerHTML = '<span class="badge">Aún no hay diseños</span>';
   if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
+  limpiarArbitro();
   renderMatrix(null);
   if (out) out.value = '';
   if (status) status.textContent = 'Fichas limpias. La memoria de patrones sigue activa.';
@@ -2386,6 +2528,9 @@ window.limpiarFichas = limpiarFichas;
 window.borrarMemoria = borrarMemoria;
 window.rerollSingle = rerollSingle;
 window.setCardLock = setCardLock;
+window.arbitroSelectores = arbitroSelectores;
+window.renderArbitro = renderArbitro;
+window.verificarArbitro = verificarArbitro;
 window.dominioEfectivo = dominioEfectivo;
 window.memPatternMarket = memPatternMarket;
 window.memLocksMarket = memLocksMarket;

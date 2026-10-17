@@ -545,6 +545,69 @@ details.panel .panel-title {
   align-items: center;
 }
 
+/* Árbitro de selectores */
+.arbitro-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.arbitro-item {
+  display: grid;
+  grid-template-columns: 16px auto 1fr;
+  gap: 6px 8px;
+  align-items: baseline;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 12px;
+}
+
+.arbitro-item .mk {
+  font-weight: 700;
+  text-align: center;
+}
+
+.arbitro-item.ok {
+  color: var(--mut);
+}
+
+.arbitro-item.ok .mk {
+  color: var(--good);
+}
+
+.arbitro-item.bad {
+  color: var(--txt, inherit);
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.05);
+}
+
+.arbitro-item.bad .mk {
+  color: var(--bad);
+}
+
+.arbitro-item .grp {
+  color: var(--mut2);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.arbitro-item .et {
+  color: inherit;
+}
+
+.arbitro-item .dt {
+  grid-column: 2 / -1;
+  color: var(--bad);
+  font-size: 11px;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
