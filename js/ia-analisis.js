@@ -325,9 +325,11 @@
     var select = $('printMethod');
     var methodField = $('printMethodField');
     var capField = $('capApplicationField');
+    var stampField = $('stampSideField');
     var isCap = product === 'GORRA';
     if (methodField) methodField.style.display = isCap ? 'none' : '';
     if (capField) capField.style.display = isCap ? '' : 'none';
+    if (stampField) stampField.style.display = product === 'DISPLATE' ? 'none' : '';
     if (!select) return;
     var methods = typeof getPrintMethods === 'function' ? getPrintMethods(product) : ['auto'];
     var labels = typeof PRINT_METHOD_LABELS !== 'undefined' ? PRINT_METHOD_LABELS : {};

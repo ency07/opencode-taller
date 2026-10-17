@@ -125,6 +125,15 @@
                 <select id="printMethod"></select>
                 <div class="hint">Se agrega al prompt como guia tecnica; no cambia el estilo visual ni sustituye los ajustes del proveedor.</div>
               </div>
+              <div class="field" id="stampSideField" style="margin-top: 10px;">
+                <label for="stampSide">Cara del estampado</label>
+                <select id="stampSide">
+                  <option value="auto" selected>Auto — frente (solo espalda si el diseño lo pide)</option>
+                  <option value="frente">Frente</option>
+                  <option value="espalda">Espalda</option>
+                </select>
+                <div class="hint">Define en qué cara va el arte y qué vistas muestra la hoja de presentación. La espalda se dibuja solo cuando se pide.</div>
+              </div>
               <div class="field" id="capApplicationField" style="margin-top: 10px;">
                 <label for="capApplication">Acabado de gorra (solo se usa al elegir GORRA)</label>
                 <select id="capApplication">

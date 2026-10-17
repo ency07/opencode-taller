@@ -89,18 +89,18 @@ ok(count(outSolo, 'FIGURAS HUMANAS:') === 2, 'SOLO_TEXTO no debe llevar FIGURAS 
 
 /* FICHA SERIE: franja metadata + 3 columnas por audiencia + colores + adicionales + paleta */
 ok(outGesto.indexOf('FICHA SERIE (CAMISETA SOFT)') !== -1, 'mockups: contrato de ficha serie');
-ok(outGesto.indexOf('Franja superior: SERIE, CONCEPTO, MENSAJE') !== -1, 'mockups: franja superior con metadata');
-ok(outGesto.indexOf('Hoja de 3 columnas, una por ficha del set') !== -1, 'mockups: 3 columnas por ficha');
-ok(outGesto.indexOf("recuadro 'vista frontal' con el arte en plano") !== -1, 'mockups: recuadro frontal por defecto');
-ok(outGesto.indexOf('Por defecto TODO es frontal') !== -1, 'mockups: frontal por defecto');
-ok(outGesto.indexOf('SOLO si la ficha de esa columna indica estampado en espalda') !== -1, 'mockups: espalda solo a pedido');
+ok(outGesto.indexOf('BANDA SUPERIOR en celdas: SERIE · CONCEPTO · MENSAJE · DATO') !== -1, 'mockups: banda superior con metadata');
+ok(outGesto.indexOf('TRES COLUMNAS, una por ficha del set') !== -1, 'mockups: 3 columnas por ficha');
+ok(outGesto.indexOf("recuadro 'VISTA FRONTAL' con el arte en plano") !== -1, 'mockups: recuadro frontal por defecto');
+ok(outGesto.indexOf('TODO ES FRONTAL por defecto') !== -1, 'mockups: frontal por defecto');
+ok(outGesto.indexOf('SOLO en la columna cuya ficha indique CARA DEL ESTAMPADO: ESPALDA') !== -1, 'mockups: espalda solo a pedido');
 ok(outGesto.indexOf('prohibido inventar vistas de espalda no pedidas') !== -1, 'mockups: prohíbe espaldas inventadas');
-ok(outGesto.indexOf('Fila COLORES SUGERIDOS por columna: 5 frontales planos') !== -1, 'mockups: colores sugeridos con nombres');
-ok(outGesto.indexOf('Fila MOCKUPS ADICIONALES en ambiente lifestyle') !== -1, 'mockups: fila de adicionales');
-ok(outGesto.indexOf('Franja PALETA GENERAL DE LA SERIE') !== -1, 'mockups: paleta general con nombres');
-ok(outGesto.indexOf("Rotulación permitida SOLO para: serie, audiencia, nombres de color, 'vista frontal' y 'vista espalda'") !== -1, 'mockups: rotulación editorial acotada con ambas vistas');
+ok(outGesto.indexOf('COLORES SUGERIDOS POR COLUMNA: 5 frontales planos') !== -1, 'mockups: colores sugeridos con nombres');
+ok(outGesto.indexOf('MOCKUPS ADICIONALES (FRENTE)') !== -1, 'mockups: fila de adicionales');
+ok(outGesto.indexOf('PALETA GENERAL DE LA SERIE') !== -1, 'mockups: paleta general con nombres');
+ok(outGesto.indexOf("Rotulación permitida SOLO para: serie, audiencia, línea de valor, nombres de color, 'vista frontal' y 'vista espalda'") !== -1, 'mockups: rotulación editorial acotada con ambas vistas');
 ok(outGesto.indexOf('Prohibido pintar códigos de ficha (01A/01B/01C)') !== -1, 'mockups: prohibidos rótulos técnicos');
-ok(outGesto.indexOf('omitir tonos que destruyan contraste o legibilidad') !== -1, 'mockups: omite tonos incompatibles');
+ok(outGesto.indexOf('omite cualquier tono que destruya contraste o legibilidad') !== -1, 'mockups: omite tonos incompatibles');
 ok(outGesto.indexOf('12 vistas en total') === -1, 'mockups: no debe sobrevivir el contrato de 12 fijas');
 
 /* INTEGRACIÓN DE LA FICHA: la matriz UI por fin llega al prompt (BAL+OBJ) */
