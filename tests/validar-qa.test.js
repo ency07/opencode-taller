@@ -123,14 +123,15 @@ limpiarQAVisual();
 ok(qa.boxes.every(function (b) { return !b.checked; }), 'limpiar desmarca todo');
 ok(qa.estado.innerHTML.indexOf('pendiente') !== -1, 'limpiar vuelve a pendiente');
 
-/* Cableado: botón valida, panel existe con 6 casillas */
+/* Cableado: botón valida, panel QA con una sola casilla */
 const analisisSrc = fs.readFileSync(path.join(ROOT, 'js', 'ia-analisis.js'), 'utf8');
 ok(/hasSet && typeof validarSetActual === 'function'/.test(analisisSrc), 'btnBuild debe validar si hay diseños');
 ok(/typeof crearLos3Disenos === 'function'/.test(analisisSrc), 'btnBuild debe generar si está vacío');
 const indexHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 ok(indexHtml.indexOf('id="qaVisual"') !== -1, 'index debe traer panel qaVisual');
 ok(indexHtml.indexOf('id="qaEstado"') !== -1, 'index debe traer estado qaEstado');
-ok((indexHtml.match(/type="checkbox"/g) || []).length === 6, 'panel QA con 6 casillas');
+ok((indexHtml.match(/type="checkbox"/g) || []).length === 1, 'panel QA con una sola casilla');
+ok(indexHtml.indexOf('Revisé la imagen generada y apruebo este set') !== -1, 'la casilla habla en lenguaje normal');
 
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  validar-qa  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
