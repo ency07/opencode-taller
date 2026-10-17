@@ -17,7 +17,7 @@ const PRODUCT_BIAS = {
     ],
     density: ["Balanced", "Minimal"],
     hierarchy: ["BALANCEADO", "TEXTO_DOMINANTE"],
-    scale: "gráfico de pecho medio o espalda completa; lectura clara a distancia social; silueta reconocible; cero microtexto; fondo controlado o transparente; detalle medio-bajo viable en tela suave",
+    scale: "gráfico de pecho medio FRONTAL por defecto (la espalda solo si la ficha la pide); lectura clara a distancia social; silueta reconocible; cero microtexto; fondo controlado o transparente; detalle medio-bajo viable en tela suave",
     mockup: "camiseta puesta (frontal y tres cuartos)",
     safeMargin: "respetar costuras laterales, cuello y dobladillo inferior"
   },
@@ -147,7 +147,7 @@ const PRODUCT_BIAS = {
 };
 
 const PLACEMENT = {
-  "CAMISETA SOFT": "pecho centrado medio o espalda completa",
+  "CAMISETA SOFT": "pecho centrado medio (frente); la espalda solo si la ficha la pide",
   "CAMISETA APPAREL": "pecho izquierdo pequeño o espalda media editorial",
   "HOODIE": "pecho amplio o espalda oversized",
   "GORRA": "panel frontal de la gorra; composición compacta y centrada, respetando costuras, curva y visera",
@@ -220,7 +220,7 @@ function getPrintPrepRule(product, method) {
 }
 
 const PRODUCT_MOCKUP_RULES = {
-  "CAMISETA SOFT": "FICHA SERIE (CAMISETA SOFT): entregar UNA sola hoja comercial con esta estructura exacta. (1) Franja superior: SERIE, CONCEPTO, MENSAJE (más referencia doctrinal o dato solo si el copy la trae), mercado, producto y estilo general. (2) Hoja de 3 columnas, una por ficha del set, encabezada con su audiencia en palabras simples: cada columna trae mockup lifestyle frontal de cuerpo completo + recuadro 'vista frontal' con el arte en plano. Por defecto TODO es frontal: mostrar espalda (lifestyle de espaldas + recuadro 'vista espalda') SOLO si la ficha de esa columna indica estampado en espalda; prohibido inventar vistas de espalda no pedidas. (3) Fila COLORES SUGERIDOS por columna: 5 frontales planos en los tonos de prenda que la paleta de ese diseño admita, cada uno rotulado con su nombre de color; omitir tonos que destruyan contraste o legibilidad. (4) Fila MOCKUPS ADICIONALES en ambiente lifestyle. (5) Franja PALETA GENERAL DE LA SERIE con muestras y nombres de color. Rotulación permitida SOLO para: serie, audiencia, nombres de color, 'vista frontal' y 'vista espalda'. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o parámetros del prompt. Mantener exactamente el arte asignado a cada diseño en todas sus vistas; no inventar, redibujar ni cambiar el texto del arte en los mockups.",
+  "CAMISETA SOFT": "FICHA SERIE (CAMISETA SOFT): entrega UNA sola hoja comercial con esta estructura exacta. (1) BANDA SUPERIOR en celdas: SERIE · CONCEPTO · MENSAJE · DATO (la referencia doctrinal solo en mercado gospel; en otros, el dato o claim solo si el copy lo trae) · PRODUCTO (con su técnica de estampado) · MERCADO · ESTILO GENERAL. (2) TRES COLUMNAS, una por ficha del set; el encabezado sigue el eje del modo: si el modo explora 3 audiencias, la AUDIENCIA en palabras simples del idioma del mercado; si no, la FICHA (01A · 01B · 01C) con su estilo. Bajo cada encabezado: una LÍNEA DE VALOR de una frase derivada de esa audiencia, el mockup lifestyle FRONTAL de cuerpo completo y el recuadro 'VISTA FRONTAL' con el arte en plano. TODO ES FRONTAL por defecto: dibuja la espalda (lifestyle de espaldas + recuadro 'VISTA ESPALDA') SOLO en la columna cuya ficha indique CARA DEL ESTAMPADO: ESPALDA; prohibido inventar vistas de espalda no pedidas ni mostrar personas de espaldas cuando la ficha es frontal. (3) COLORES SUGERIDOS POR COLUMNA: 5 frontales planos de la misma prenda con el arte, en los tonos de prenda que admita la paleta de ese diseño, cada uno rotulado con su nombre de color; omite cualquier tono que destruya contraste o legibilidad. (4) Fila inferior: DETALLES DE IMPRESIÓN (FRENTE) · MOCKUPS ADICIONALES (FRENTE) · PALETA GENERAL DE LA SERIE (muestras y nombres de color). Rotulación permitida SOLO para: serie, audiencia, línea de valor, nombres de color, 'vista frontal' y 'vista espalda'. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o parámetros del prompt. Mantén exactamente el arte asignado a cada diseño en la cara correcta en todas sus vistas; no inventes, redibujes ni cambies el texto del arte en los mockups.",
   "CAMISETA APPAREL": "dos mockups de prenda fashion (plana o modelo); vista frontal y detalle",
   "HOODIE": "dos mockups de hoodie (uno oscuro y otro claro); vista frontal y espalda",
   "GORRA": "dos mockups de gorra (vista frontal y tres cuartos) y acercamiento del panel con el acabado elegido",

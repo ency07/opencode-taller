@@ -118,6 +118,7 @@ let MOTOR_STATE = {
     esencia: ''
   },
   capApplication: 'auto',
+  stampSide: 'auto',
   printMethod: 'auto',
   imageReference: null,
   imageAnalysis: null
@@ -162,6 +163,7 @@ function readStateFromDOM() {
   MOTOR_STATE.variationOptions.paleta = v('paletaVar', 'renovar');
   MOTOR_STATE.variationOptions.esencia = (g('essence') ? g('essence').value : '').trim();
   MOTOR_STATE.capApplication = v('capApplication', 'auto');
+  MOTOR_STATE.stampSide = v('stampSide', 'auto');
   MOTOR_STATE.printMethod = v('printMethod', 'auto');
   const imageInput = g('imageUpload');
   const imageFile = imageInput && imageInput.files ? imageInput.files[0] : null;
@@ -568,6 +570,17 @@ function subnicheForDominio(dom) {
     return d.subniche_col || d.subniche || null;
   }
   return d.subniche_global || null;
+}
+
+/* Cara del estampado (frente/espalda/auto). Auto resuelve la cara natural del
+   producto: FRENTE salvo en soportes cuya colocación canónica es la trasera. */
+function _stampSideForProduct() {
+  const sel = MOTOR_STATE.stampSide || 'auto';
+  if (sel === 'frente' || sel === 'espalda') return sel;
+  const pl = String(_PLACEMENT[MOTOR_STATE.product] || '').toLowerCase();
+  const espalda = /trasera|espalda/.test(pl);
+  const frente = /frontal|frente|pecho/.test(pl);
+  return (espalda && !frente) ? 'espalda' : 'frente';
 }
 
 /* Regiones cuyo banco (getBankForSubniche usa la REGIÓN) está en inglés.
@@ -1298,6 +1311,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       : _pick(_POOLS.intencionEmocional || ['Certeza silenciosa']);
 
     v.placement = _PLACEMENT[MOTOR_STATE.product] || _PLACEMENT['CAMISETA SOFT'] || 'pecho centrado';
+    v.cara = _stampSideForProduct();
     v.escalaProducto = productBias.scale || 'escala adecuada al producto';
 
     // Paleta
@@ -1711,6 +1725,33 @@ function _resolveSharedCopy(conceptText, market) {
 }
 
 /* --- Formateo de prompt --- */
+/* Bloque de contraste estructural A/B/C (punto 1: evitar que las 3 columnas
+   converjan en la misma imagen). Lista los ejes asignados a cada ficha y
+   exige que no coincidan. */
+function _contrastBlock(set) {
+  const axes = [
+    ['Jerarquía', function (v) { return v.jerarquiaVisual; }],
+    ['Layout', function (v) { return String(v.layout || '').split(':')[0]; }],
+    ['Arquitectura textual', function (v) { return v.distribucionTexto; }],
+    ['Tipografía', function (v) { return v.tipografia; }],
+    ['Tratamiento', function (v) { return _treatmentKey(v.tratamiento); }],
+    ['Forma del símbolo', function (v) { return v.formaSimbolo; }],
+    ['Densidad', function (v) { return v.densidad; }],
+    ['Espacio negativo', function (v) { return v.negativeSpace; }],
+    ['Familia de color', function (v) { return v.familiaColor; }],
+    ['Composición', function (v) { return v.composicion; }]
+  ];
+  let s = 'CONTRASTE ESTRUCTURAL A/B/C — cada columna debe ser una solución distinta, NO la misma imagen recoloreada:\n';
+  axes.forEach(function (ax) {
+    const vals = K.map(function (k) { return String(ax[1](set[k]) || '—'); });
+    const distinct = new Set(vals).size === vals.length;
+    s += '- ' + ax[0] + ': ' + K.map(function (k, i) { return N[i] + ' ' + vals[i]; }).join(' | ')
+      + (distinct ? ' (distinto)' : ' (REPETIDO: cámbialo en al menos una columna)') + '\n';
+  });
+  s += 'REGLA DE CONTRASTE: si dos columnas comparten encuadre, silueta global o distribución de masas, replantéalas. Deben diferir en encuadre, masa y relación texto-símbolo, no solo en color o textura.';
+  return s;
+}
+
 function formatPrompt(result) {
   if (!result || !result.set) return '';
   const set = result.set;
@@ -1901,7 +1942,18 @@ function formatPrompt(result) {
   if (legalDir) o += 'LEGAL: ' + legalDir + '\n';
   if (productRule) o += 'PRODUCTO: ' + productRule + '\n';
   if (printPrepRule) o += 'ACABADO / PREPARACION TECNICA (' + printMethodName + '): ' + printPrepRule + '\n';
-  if (mockupRule) o += 'PRESENTACION: ' + mockupRule + '\n';
+  if (mockupRule) {
+    const colsByAudience = new Set(K.map(function (k) { return set[k].audiencia; })).size === 3;
+    o += 'PRESENTACION: ' + mockupRule + '\n';
+    o += 'EJE DE COLUMNAS: ' + (colsByAudience
+      ? 'las 3 columnas se encabezan por AUDIENCIA, en palabras simples del idioma del mercado.'
+      : 'las 3 columnas se encabezan por FICHA (01A · 01B · 01C) con su estilo.') + '\n';
+    const caras = new Set(K.map(function (k) { return set[k].cara; }));
+    o += 'CARAS DEL SET: ' + (caras.size === 1
+      ? 'todas ' + (set.A.cara === 'espalda' ? 'ESPALDA' : 'FRENTE')
+      : K.map(function (k) { return N[K.indexOf(k)] + ' ' + (set[k].cara === 'espalda' ? 'espalda' : 'frente'); }).join(' · '))
+      + '. La hoja de presentación respeta la cara de cada columna y dibuja la vista frontal solo cuando corresponde.\n';
+  }
   // Template activo (banco de templates: mochila/bolso/funda). Ancla el diseño
   // a zonas reales en vez de generar a ciegas.
   if (tplActive) {
@@ -1923,6 +1975,7 @@ function formatPrompt(result) {
     o += 'SANDBOX: solo bancos globales del idioma del mercado. Prohibidos regionalismos colombianos y simbolismo gospel doctrinal.\n';
   }
   o += 'DIFERENCIA DURA: layout, tipografía, tratamiento, forma del símbolo, fondo y ARQUITECTURA TEXTUAL NUNCA se repiten entre A/B/C.\n';
+  if (!isVar && !isPatron) o += _contrastBlock(set) + '\n';
   o += 'JERARQUÍA: aplica exactamente la jerarquía indicada en cada ficha; estilo y layout no pueden alterarla.\n';
   if (isPatron) {
     o += 'PATRON: cada variante es un tile sin costura visible (bordes que empatan al repetirse); motivo y fondo definidos por ficha; repetición ' + (MOTOR_STATE.repeatType || 'medio salto') + ' en toda la superficie aplicable.\n';
@@ -1944,6 +1997,7 @@ function formatPrompt(result) {
     const v = set[k];
     o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + v.audiencia + '\n';
     o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
+    o += 'CARA DEL ESTAMPADO: ' + (v.cara === 'espalda' ? 'ESPALDA' : 'FRENTE') + ' — ubica el arte en esa cara; en la hoja de presentación muestra esa vista y no inventes la cara contraria.\n';
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento)) + '\n';
@@ -2663,10 +2717,12 @@ window.readStateFromDOM = readStateFromDOM;
     const productEl = document.getElementById('product');
     const methodEl = document.getElementById('printMethod');
     const capField = document.getElementById('capApplicationField');
+    const stampField = document.getElementById('stampSideField');
     if (!productEl) return;
 
     const product = productEl.value;
     if (capField) capField.style.display = product === 'GORRA' ? '' : 'none';
+    if (stampField) stampField.style.display = product === 'DISPLATE' ? 'none' : '';
     if (!methodEl || typeof getPrintMethods !== 'function') return;
 
     const labels = typeof PRINT_METHOD_LABELS !== 'undefined' ? PRINT_METHOD_LABELS : {};
