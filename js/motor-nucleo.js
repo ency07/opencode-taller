@@ -194,7 +194,12 @@ function readStateFromDOM() {
 function getCurrentAudiencePool() {
   const market = MOTOR_STATE.market;
   const region = MOTOR_STATE.region;
-  const subniche = MOTOR_STATE.subniche;
+  // Con subnicho en 'auto' NUNCA se filtraba por el subnicho detectado: el pool
+  // quedaba abierto a todo el mercado y la audiencia salía al azar (p. ej.
+  // infantil en un concepto de motos). Se resuelve el subnicho efectivo.
+  const subniche = (MOTOR_STATE.subniche && MOTOR_STATE.subniche !== 'auto')
+    ? MOTOR_STATE.subniche
+    : (typeof effectiveSubniche === 'function' ? (effectiveSubniche() || 'auto') : 'auto');
   let pool = typeof getAudiencesForMarketRegion === 'function'
     ? getAudiencesForMarketRegion(market, region)
     : (typeof getAudiencesForRegion === 'function' ? getAudiencesForRegion(region) : _AUD_NAMES.slice());
@@ -915,6 +920,12 @@ function _isLockedContactSet() {
   return MOTOR_STATE.workflowMode !== 'variation' && MOTOR_STATE.workflowMode !== 'explore' && MOTOR_STATE.designMode !== 'patron';
 }
 
+/* En Exploración el ADN del set es el CONCEPTO, no un único símbolo: cada ficha
+   lleva su propio símbolo derivado. En contacto/variación sí se exige constancia. */
+function _isSymbolConstancyRequired() {
+  return MOTOR_STATE.workflowMode !== 'explore';
+}
+
 /* El banco aporta candidatos, no sustituye la semántica del concepto.
    Si ningún objeto del banco coincide claramente, conserva el concepto como ancla. */
 function _chooseConceptCompatibleObject(objectPool, concept) {
@@ -1141,9 +1152,25 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     } else if (MOTOR_STATE.workflowMode === 'explore') {
       const brief = MOTOR_STATE.explorationBrief || _resolveExplorationBrief();
       const anchor = String(brief.concept || MOTOR_STATE.message || '').trim();
-      v.objeto = anchor
-        ? anchor
-        : 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
+      // El concepto ancla el set, pero cada ficha recibe un SÍMBOLO DISTINTO
+      // del banco de la familia. Antes las 3 copiaban el mismo ancla y las
+      // tarjetas salían prácticamente idénticas.
+      const usedArr = Array.from(usedThisSet);
+      const fullObjs = Array.isArray(objectPool) ? objectPool : [];
+      const freshObjs = fullObjs.filter(function (obj) { return usedArr.indexOf(obj) === -1; });
+      let obj = '';
+      if (typeof _chooseConceptCompatibleObject === 'function' && anchor) {
+        obj = _chooseConceptCompatibleObject(freshObjs.length ? freshObjs : fullObjs, anchor);
+      }
+      // Si no hay match claro, o el resultado repite el ancla / un símbolo ya
+      // usado, se toma uno fresco del banco para diferenciar la ficha.
+      if (!obj || obj === anchor || usedThisSet.has(obj)) {
+        obj = (typeof _pickFresh === 'function')
+          ? _pickFresh(freshObjs, fullObjs, usedArr)
+          : (freshObjs.length ? _pick(freshObjs) : '');
+      }
+      v.objeto = obj || anchor
+        || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
     } else {
       let obj, g = 0;
       do {
@@ -1382,6 +1409,7 @@ function scoreSet(set) {
   const familias = [...new Set(K.map(function (k) { return set[k].familiaColor; }))];
   const symbols = K.map(function (k) { return String(set[k].objeto || '').trim(); });
   const symbolStable = symbols.length === 3 && !!symbols[0] && symbols.every(function (x) { return x === symbols[0]; });
+  const symbolRequired = _isSymbolConstancyRequired();
   const treatmentKeys = K.map(function (k) { return _treatmentKey(set[k].tratamiento); });
   const requiredTreatments = ['HEAVY', 'SOFT', 'MODERN'];
   const treatmentsComplete = requiredTreatments.every(function (name) { return treatmentKeys.indexOf(name) !== -1; })
@@ -1399,7 +1427,7 @@ function scoreSet(set) {
     treatmentsComplete: treatmentsComplete,
     fitAudienciaMin: fitAudMin,
     fitProductoMin: fitProdMin,
-    total: dPct * 2 + (estilos.length === 3 ? 30 : 0) + (symbolStable ? 20 : -50) + (treatmentsComplete ? 20 : -40) + fitAudMin * 0.5 + fitProdMin * 0.5
+    total: dPct * 2 + (estilos.length === 3 ? 30 : 0) + (symbolRequired ? (symbolStable ? 20 : -50) : 0) + (treatmentsComplete ? 20 : -40) + fitAudMin * 0.5 + fitProdMin * 0.5
   };
 }
 
@@ -2000,6 +2028,30 @@ function renderCards(result) {
   var styleLocks = _loadLocks(memLocksMarket(), MOTOR_STATE.product).estilo || {};
   var modes = ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE'];
 
+  // Contexto de la serie (una sola vez): antes se repetía "Dominio" en cada
+  // ficha y se pintaba el subnicho crudo ("auto"). Se resuelve y se muestra arriba.
+  (function () {
+    const dom = (typeof dominioEfectivo === 'function' ? dominioEfectivo() : '')
+      || (typeof effectiveSubniche === 'function' ? effectiveSubniche() : '') || '';
+    let domLabel = dom;
+    if (dom && typeof getSubnicheLabel === 'function') {
+      try { domLabel = getSubnicheLabel(dom, MOTOR_STATE.market) || dom; } catch (e) { domLabel = dom; }
+    }
+    const auds = K.map(function (k) { return set[k] && set[k].audiencia; });
+    const sameAud = auds.length && auds.every(function (a) { return a === auds[0]; });
+    const cx = document.createElement('div');
+    cx.className = 'cards-context';
+    cx.innerHTML =
+      '<span class="ctx-lead">Contexto de la serie</span>'
+      + '<span class="cx">Mercado: <b>' + escHtml(MOTOR_STATE.market) + '</b></span>'
+      + '<span class="cx">Producto: <b>' + escHtml(MOTOR_STATE.product) + '</b></span>'
+      + (domLabel ? '<span class="cx">Dominio: <b>' + escHtml(domLabel) + '</b></span>' : '')
+      + (sameAud
+        ? '<span class="cx">Audiencia: <b>' + escHtml(auds[0]) + '</b></span>'
+        : '<span class="cx">Audiencia: <b>por ficha</b></span>');
+    root.appendChild(cx);
+  })();
+
   N.forEach(function (n, i) {
     const k = K[i];
     const v = set[k];
@@ -2024,19 +2076,28 @@ function renderCards(result) {
       + modes.map(function (m) { return '<option value="' + m + '"' + (_loadLocks(memLocksMarket(), MOTOR_STATE.product).jerarquia[k] === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
       + '</select></span></div>';
 
+    // Decisiones propias de la ficha; el Dominio sube al contexto de la serie.
     const rows = [
       ['Objeto', v.objeto],
-      ['Dominio', dominioEfectivo() || MOTOR_STATE.subniche],
-      ['Tipografia', v.tipografia],
       ['Tratamiento', v.tratamiento],
-      ['Layout', String(v.layout).split(':')[0]],
-      ['Forma simbolo', v.formaSimbolo],
-      ['Integracion', v.integracionTexto]
+      ['Layout', String(v.layout).split(':')[0]]
     ];
 
     rows.forEach(function (r) {
       html += '<div class="vrow"><span class="vk">' + r[0] + '</span><span class="vv">' + escHtml(r[1]) + '</span></div>';
     });
+
+    // Secundarios plegables para aligerar la ficha.
+    const moreRows = [
+      ['Tipografia', v.tipografia],
+      ['Forma simbolo', v.formaSimbolo],
+      ['Integracion', v.integracionTexto]
+    ];
+    html += '<details class="vmore"><summary>Más detalles</summary>';
+    moreRows.forEach(function (r) {
+      html += '<div class="vrow"><span class="vk">' + r[0] + '</span><span class="vv">' + escHtml(r[1]) + '</span></div>';
+    });
+    html += '</details>';
 
     html += '</div>';
 
@@ -2236,7 +2297,11 @@ function renderGates(result) {
   html += '<span class="badge ' + (m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN ? 'good' : 'bad') + '">Audiencia mín: ' + m.fitAudienciaMin + '/100</span>';
   html += '<span class="badge ' + (m.fitProductoMin >= UMBRAL_PRODUCTO_MIN ? 'good' : 'bad') + '">Producto mín: ' + m.fitProductoMin + '/100</span>';
   html += '<span class="badge ' + (m.estilos.length >= 3 ? 'good' : 'warn') + '">' + m.estilos.length + ' estilos distintos</span>';
-  html += '<span class="badge ' + (m.symbolStable ? 'good' : 'bad') + '" title="Comprueba que A/B/C conservan el mismo símbolo indicado en el prompt.">Símbolo constante</span>';
+  if (_isSymbolConstancyRequired()) {
+    html += '<span class="badge ' + (m.symbolStable ? 'good' : 'bad') + '" title="Comprueba que A/B/C conservan el mismo símbolo indicado en el prompt.">Símbolo constante</span>';
+  } else {
+    html += '<span class="badge blue" title="En Exploración cada ficha lleva su propio símbolo derivado del concepto; el ADN que se conserva es el concepto y el mensaje.">Símbolos por ficha</span>';
+  }
   html += '<span class="badge ' + (m.treatmentsComplete ? 'good' : 'bad') + '" title="Comprueba que el prompt asigna HEAVY, SOFT y MODERN una vez cada uno; no inspecciona la imagen generada.">HEAVY · SOFT · MODERN</span>';
   html += '<span class="badge ' + (m.familias.length >= 3 ? 'good' : 'warn') + '">Colores distintos</span>';
   html += '<span class="badge warn" title="Estos indicadores validan fichas y prompt; no inspeccionan el archivo de imagen generado.">QA visual pendiente</span>';
