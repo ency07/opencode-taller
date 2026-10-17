@@ -680,6 +680,48 @@ details.panel .panel-title {
   text-align: center;
 }
 
+.cards-context {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 10px 14px;
+  margin-bottom: 2px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--acc-dim);
+  font-size: 12px;
+  color: var(--mut);
+}
+
+.cards-context .ctx-lead {
+  font-weight: 700;
+  color: var(--text);
+  margin-right: 4px;
+}
+
+.cards-context .cx b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.vmore {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.vmore > summary {
+  cursor: pointer;
+  color: var(--mut);
+  padding: 4px 0;
+  user-select: none;
+}
+
+.vmore[open] > summary {
+  margin-bottom: 2px;
+}
+
 .vcard {
   background: var(--panel);
   border: 1px solid var(--line);
