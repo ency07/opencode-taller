@@ -1169,8 +1169,14 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       // El concepto ancla el set, pero cada ficha recibe un SÍMBOLO DISTINTO
       // del banco de la familia. Antes las 3 copiaban el mismo ancla y las
       // tarjetas salían prácticamente idénticas.
+      // El símbolo debe salir del banco de la FAMILIA elegida, no del banco
+      // común genérico. El común solo se usa si la familia no aporta banco
+      // propio (p.ej. dominio sin subnicho con banco): así "Humor Costeño"
+      // nunca recibe objetos como "faro" o "vaso de barro".
+      const commonBank = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
+      const familyObjs = (Array.isArray(objectPool) ? objectPool : []).filter(function (o) { return commonBank.indexOf(o) === -1; });
+      const fullObjs = familyObjs.length ? familyObjs : (Array.isArray(objectPool) ? objectPool : []);
       const usedArr = Array.from(usedThisSet);
-      const fullObjs = Array.isArray(objectPool) ? objectPool : [];
       const freshObjs = fullObjs.filter(function (obj) { return usedArr.indexOf(obj) === -1; });
       let obj = '';
       if (typeof _chooseConceptCompatibleObject === 'function' && anchor) {
