@@ -2627,19 +2627,19 @@ async function copiarPrompt() {
     if (statusEl) statusEl.innerHTML = '<span class="bad">No hay prompt. Primero crea los 3 diseños.</span>';
     return;
   }
+  // El copiado nunca se bloquea: el umbral es un aviso, no una puerta.
+  // Antes, un set por debajo del umbral no se copiaba y el botón parecía roto.
+  let aviso = '';
   try {
     const lastScore = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.score) ? LAST_RESULT.score : null;
-    const umbralBloqueo = _mensajeUmbral(lastScore);
-    if (umbralBloqueo) {
-      if (statusEl) statusEl.innerHTML = '<span class="bad">Copiado bloqueado. ' + umbralBloqueo + '</span>';
-      return;
-    }
+    aviso = _mensajeUmbral(lastScore) || '';
   } catch (e) {}
+  const avisoHtml = aviso ? ' <span class="warn">Aviso: ' + aviso + '</span>' : '';
   try {
     await navigator.clipboard.writeText(outEl.value);
-    if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>';
+    if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>' + avisoHtml;
   } catch (e) {
-    try { outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>'; }
+    try { outEl.focus(); outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>' + avisoHtml; }
     catch (e2) { if (statusEl) statusEl.innerHTML = '<span class="bad">No se pudo copiar. Usa Ctrl+C.</span>'; }
   }
 }
