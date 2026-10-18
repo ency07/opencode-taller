@@ -83,6 +83,29 @@ for (let i = 0; i < 15; i++) {
 }
 ok(vistos > 0, 'debe haber generado al menos un símbolo');
 
+/* --- 2b) TRAZABILIDAD en modo Patrón repetido (antes elegía al azar del banco) --- */
+baseState();
+MOTOR_STATE.market = 'colombia';
+MOTOR_STATE.region = 'todas';
+MOTOR_STATE.product = 'MOCHILA';   // producto que admite patrón
+MOTOR_STATE.subniche = 'auto';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+MOTOR_STATE.designMode = 'patron';
+MOTOR_STATE.workflowMode = 'new';
+MOTOR_STATE.concept = 'amo a mi perro y lo cuido';
+MOTOR_STATE.message = '';
+let patronVistos = 0;
+for (let i = 0; i < 10; i++) {
+  const syms = symbols(buildCandidate(resolveAudiences(), null));
+  syms.forEach(function (s) {
+    patronVistos++;
+    ok(s === 'amo a mi perro y lo cuido', 'en Patrón el motivo debe derivar del concepto (no aleatorio del banco): "' + s + '"');
+    ok(commonBank.indexOf(s) === -1, 'en Patrón el motivo no debe salir del banco común genérico: "' + s + '"');
+  });
+}
+ok(patronVistos > 0, 'el modo Patrón debe producir al menos un motivo');
+
 /* --- 3) Exploración pura de familia (sin concepto del usuario): usa el banco de familia --- */
 baseState();
 MOTOR_STATE.market = 'colombia';

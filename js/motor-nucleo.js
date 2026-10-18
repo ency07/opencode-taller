@@ -1202,12 +1202,22 @@ function buildCandidate(audsPerKey, fixedIdentity) {
           || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
       }
     } else {
-      let obj, g = 0;
-      do {
-        obj = _pick(objectPool);
-        g++;
-      } while (usedThisSet.has(obj) && g < 30);
-      v.objeto = obj || '—';
+      // Patrón repetido: el motivo debe derivar del CONCEPTO del usuario, no
+      // elegirse al azar del banco (misma coherencia que contacto y exploración).
+      // Sin concepto, se usa el banco de la familia con variedad.
+      const anchor = String(MOTOR_STATE.concept || MOTOR_STATE.message || '').trim();
+      if (anchor) {
+        const match = (typeof _chooseConceptCompatibleObject === 'function')
+          ? _chooseConceptCompatibleObject(objectPool, anchor) : '';
+        v.objeto = (match && match !== anchor) ? match : anchor;
+      } else {
+        let obj, g = 0;
+        do {
+          obj = _pick(objectPool);
+          g++;
+        } while (usedThisSet.has(obj) && g < 30);
+        v.objeto = obj || '—';
+      }
     }
     usedThisSet.add(v.objeto);
 
