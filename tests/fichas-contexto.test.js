@@ -1,5 +1,5 @@
-/* PR 1 — Fichas: audiencia Auto coherente, símbolos distintos en Exploración
-   y contexto de serie en las tarjetas.
+/* PR 1 — Fichas: audiencia Auto coherente, símbolo trazable al concepto en
+   Exploración y contexto de serie en las tarjetas.
    Ejecutar: node tests/fichas-contexto.test.js
    No requiere DOM real ni proveedores. Sale con código 1 si algo falla. */
 
@@ -66,23 +66,27 @@ ok(poolCole.indexOf('infantil_col') !== -1,
 ok(/const subniche = \(MOTOR_STATE\.subniche && MOTOR_STATE\.subniche !== 'auto'\)[\s\S]*?effectiveSubniche\(\)/.test(motorSource),
   'getCurrentAudiencePool debe resolver el subnicho efectivo cuando el selector está en auto');
 
-/* --- 2) Exploración: cada ficha con símbolo DISTINTO --- */
-let distinctOk = true;
+/* --- 2) Exploración: el símbolo es el CONCEPTO del usuario (trazable) ---
+   (Antes se exigían símbolos A/B/C distintos; ahora mandan coherencia y
+   trazabilidad: la familia sesga estilo, no decide qué se ve.) */
+let trazableOk = true;
 const GENS = 20;
+const CONCEPTO = 'motero en ruta con su motocicleta';
 for (let g = 0; g < GENS; g++) {
   baseState();
   MOTOR_STATE.workflowMode = 'explore';
-  MOTOR_STATE.concept = 'motero en ruta con su motocicleta';
+  MOTOR_STATE.concept = CONCEPTO;
   MOTOR_STATE.message = 'La libertad se conquista en el camino';
   const set = buildCandidate(resolveAudiences(), null);
   const objs = ['A', 'B', 'C'].map(function (k) { return String(set[k].objeto || '').trim(); });
-  if (new Set(objs).size !== 3) {
-    distinctOk = false;
-    failures.push('explore gen' + g + ': símbolos A/B/C no distintos [' + objs.join(' | ') + ']');
+  const divergentes = objs.filter(function (o) { return o !== CONCEPTO; });
+  if (divergentes.length) {
+    trazableOk = false;
+    failures.push('explore gen' + g + ': símbolo no trazable al concepto [' + objs.join(' | ') + ']');
     checks++;
   } else { checks++; }
 }
-ok(distinctOk, 'en Exploración A/B/C deben llevar símbolos distintos (el concepto es el ADN, no un único símbolo)');
+ok(trazableOk, 'en Exploración el símbolo debe derivar del concepto del usuario (coherencia y trazabilidad)');
 
 /* --- 3) La constancia de símbolo deja de exigirse en Exploración --- */
 ok(motorSource.includes('function _isSymbolConstancyRequired()'),

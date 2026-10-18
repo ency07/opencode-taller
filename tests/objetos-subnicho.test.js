@@ -1,7 +1,11 @@
-/* Objetos coherentes con el subnicho (rama fix/objetos-subnicho).
+/* Objetos coherentes con el concepto y el subnicho (rama fix/objetos-subnicho).
    - region 'todas' es superconjunto de las regiones del subnicho (no solo 'nacional').
-   - En explore, el símbolo sale del banco de la FAMILIA elegida, nunca del banco
-     común genérico ("faro", "vaso de barro"...).
+   - TRAZABILIDAD: si el usuario da concepto/mensaje, el símbolo se deriva de él;
+     la familia solo sesga estilo y nunca sustituye el concepto por un objeto ajeno
+     (concepto "silueta empujando contra tráfico" + familia Skate no debe dibujar
+     "lija negra" ni el banco común "árbol de biblioteca").
+   - Sin concepto del usuario (exploración pura de familia), el símbolo sale del
+     banco de la familia y nunca del banco común genérico.
 
    Ejecutar:  node tests/objetos-subnicho.test.js
    Sale con código 1 si falla cualquier aserción. */
@@ -21,11 +25,31 @@ global.window = global;
 global.document = { getElementById: function () { return null; }, querySelectorAll: function () { return []; } };
 
 const JS = path.join(ROOT, 'js');
-['data-mercados.js', 'data-audiencias.js', 'data-bancos.js', 'data-estilos.js',
+['data-mercados.js', 'data-audiencias.js', 'data-bancos.js', 'banco-global.js', 'data-estilos.js',
  'dominios.js', 'data-productos.js', 'memoria-local.js', 'motor-nucleo.js'
 ].forEach(function (f) {
   vm.runInThisContext(fs.readFileSync(path.join(JS, f), 'utf8'), { filename: f });
 });
+
+function baseState() {
+  MOTOR_STATE.designMode = 'contacto';
+  MOTOR_STATE.audienceSet = 'Auto';
+  MOTOR_STATE.audienceMulti = 'si';
+  MOTOR_STATE.groupMode = 'distintos';
+  MOTOR_STATE.support = '';
+  MOTOR_STATE.explorationBrief = null;
+  MOTOR_STATE.stampSide = 'auto';
+  MOTOR_STATE.workflowMode = 'explore';
+  MOTOR_STATE.message = '';
+  MOTOR_STATE.concept = '';
+}
+
+function symbols(set) {
+  return ['A', 'B', 'C'].map(function (k) {
+    const v = set[k];
+    return (!v || v.jerarquiaVisual === 'SOLO_TEXTO') ? '' : String(v.objeto || '');
+  }).filter(function (s) { return s; });
+}
 
 /* --- 1) region 'todas' debe ser superconjunto del banco regional --- */
 const bankTodas = getBankForSubniche('humor_costeno', 'todas', 'colombia');
@@ -36,44 +60,48 @@ bankCosta.forEach(function (o) {
   ok(bankTodas.indexOf(o) !== -1, "'todas' debe incluir el objeto regional: " + o);
 });
 
-/* --- 2) explore no debe escoger objetos del banco común genérico --- */
+/* --- 2) TRAZABILIDAD: el símbolo sigue al concepto aunque no quepa en el banco --- */
+baseState();
+MOTOR_STATE.market = 'global_es';
+MOTOR_STATE.region = 'global';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.subniche = 'skate_culture';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+const CONCEPTO = 'silueta empujando contra tráfico';
+MOTOR_STATE.concept = CONCEPTO;
+MOTOR_STATE.message = 'SILUETA EMPUJANDO CONTRA TRÁFICO';
+const commonBank = _commonBankForMarket();
+let vistos = 0;
+for (let i = 0; i < 15; i++) {
+  const syms = symbols(buildCandidate(resolveAudiences(), null));
+  syms.forEach(function (s) {
+    vistos++;
+    ok(s === CONCEPTO, 'el símbolo debe ser el concepto del usuario (trazable), no un objeto distinto del banco: "' + s + '"');
+    ok(commonBank.indexOf(s) === -1, 'el símbolo nunca debe ser un objeto del banco común genérico: "' + s + '"');
+  });
+}
+ok(vistos > 0, 'debe haber generado al menos un símbolo');
+
+/* --- 3) Exploración pura de familia (sin concepto del usuario): usa el banco de familia --- */
+baseState();
 MOTOR_STATE.market = 'colombia';
 MOTOR_STATE.region = 'todas';
 MOTOR_STATE.product = 'CAMISETA SOFT';
-MOTOR_STATE.subniche = 'auto';
-MOTOR_STATE.dominio = 'humor_costeno';
+MOTOR_STATE.subniche = 'humor_costeno';
+MOTOR_STATE.dominio = 'auto';
 MOTOR_STATE.dominioDetectado = 'auto';
-MOTOR_STATE.audienceSet = 'Auto';
-MOTOR_STATE.audienceMulti = 'no';
-MOTOR_STATE.groupMode = 'distintos';
-MOTOR_STATE.designMode = 'contacto';
-MOTOR_STATE.support = '';
-MOTOR_STATE.explorationBrief = null;
-MOTOR_STATE.stampSide = 'auto';
-MOTOR_STATE.workflowMode = 'explore';
-MOTOR_STATE.concept = 'burla y bembeo a lo costeño';
-MOTOR_STATE.message = 'HABLA CACHON';
-
 const familyBank = getBankForSubniche('humor_costeno', 'todas', 'colombia');
-const commonBank = _commonBankForMarket();
-const anchor = 'burla y bembeo a lo costeño';
-
-let generados = 0;
-for (let i = 0; i < 20; i++) {
-  const set = buildCandidate(resolveAudiences(), null);
-  ['A', 'B', 'C'].forEach(function (k) {
-    const v = set[k];
-    if (!v || v.jerarquiaVisual === 'SOLO_TEXTO') return;
-    generados++;
-    const obj = String(v.objeto || '');
-    ok(commonBank.indexOf(obj) === -1,
-      'explore no debe usar un objeto del banco común genérico: "' + obj + '"');
-    const coherente = familyBank.indexOf(obj) !== -1 || obj === anchor;
-    ok(coherente,
-      'el objeto debe pertenecer a la familia Humor Costeño o ser el ancla del concepto: "' + obj + '"');
+let genFamilia = 0;
+for (let i = 0; i < 15; i++) {
+  const syms = symbols(buildCandidate(resolveAudiences(), null));
+  syms.forEach(function (s) {
+    genFamilia++;
+    ok(familyBank.indexOf(s) !== -1, 'sin concepto, el símbolo debe venir del banco de la familia: "' + s + '"');
+    ok(commonBank.indexOf(s) === -1, 'sin concepto, el símbolo no debe venir del banco común genérico: "' + s + '"');
   });
 }
-ok(generados > 0, 'debe haber generado al menos un objeto con símbolo (no solo tipografía)');
+ok(genFamilia > 0, 'la exploración de familia debe producir símbolos del banco');
 
 function finish() {
   const passed = failures.length === 0;

@@ -1165,32 +1165,42 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       v.objeto = _chooseConceptCompatibleObject(objectPool, semanticAnchor) || semanticAnchor || 'proponer un símbolo directamente derivado del concepto y la familia seleccionada';
     } else if (MOTOR_STATE.workflowMode === 'explore') {
       const brief = MOTOR_STATE.explorationBrief || _resolveExplorationBrief();
-      const anchor = String(brief.concept || MOTOR_STATE.message || '').trim();
-      // El concepto ancla el set, pero cada ficha recibe un SÍMBOLO DISTINTO
-      // del banco de la familia. Antes las 3 copiaban el mismo ancla y las
-      // tarjetas salían prácticamente idénticas.
-      // El símbolo debe salir del banco de la FAMILIA elegida, no del banco
-      // común genérico. El común solo se usa si la familia no aporta banco
-      // propio (p.ej. dominio sin subnicho con banco): así "Humor Costeño"
-      // nunca recibe objetos como "faro" o "vaso de barro".
+      // TRAZABILIDAD: el símbolo se deriva del CONCEPTO/MENSAJE del usuario.
+      // La familia solo sesga estilo y tratamiento; no decide qué se ve. Antes,
+      // cuando el concepto no coincidía con el banco, la ficha sustituía el
+      // concepto por un objeto ajeno del banco ("silueta empujando contra
+      // tráfico" + familia Skate salía dibujando "lija negra" o incluso el
+      // banco común "árbol de biblioteca"). El banco solo se usa si el usuario
+      // no dio concepto/mensaje (exploración pura de familia).
+      const userConcept = String(MOTOR_STATE.concept || '').trim();
+      const userMessage = String(MOTOR_STATE.message || '').trim();
+      const userAnchor = userConcept || userMessage;
       const commonBank = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
-      const familyObjs = (Array.isArray(objectPool) ? objectPool : []).filter(function (o) { return commonBank.indexOf(o) === -1; });
+      const familyObjs = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBank.indexOf(ob) === -1; });
       const fullObjs = familyObjs.length ? familyObjs : (Array.isArray(objectPool) ? objectPool : []);
-      const usedArr = Array.from(usedThisSet);
-      const freshObjs = fullObjs.filter(function (obj) { return usedArr.indexOf(obj) === -1; });
-      let obj = '';
-      if (typeof _chooseConceptCompatibleObject === 'function' && anchor) {
-        obj = _chooseConceptCompatibleObject(freshObjs.length ? freshObjs : fullObjs, anchor);
+      if (userAnchor) {
+        // Solo se acepta un objeto del banco si coincide claramente con lo pedido.
+        const match = (typeof _chooseConceptCompatibleObject === 'function')
+          ? _chooseConceptCompatibleObject(fullObjs, userAnchor) : '';
+        v.objeto = (match && match !== userAnchor) ? match : userAnchor;
+      } else {
+        const anchor = String(brief.concept || '').trim();
+        const usedArr = Array.from(usedThisSet);
+        const freshObjs = fullObjs.filter(function (obj) { return usedArr.indexOf(obj) === -1; });
+        let obj = '';
+        if (typeof _chooseConceptCompatibleObject === 'function' && anchor) {
+          obj = _chooseConceptCompatibleObject(freshObjs.length ? freshObjs : fullObjs, anchor);
+        }
+        // Si no hay match claro, o el resultado repite el ancla / un símbolo ya
+        // usado, se toma uno fresco del banco de la familia para diferenciar la ficha.
+        if (!obj || obj === anchor || usedThisSet.has(obj)) {
+          obj = (typeof _pickFresh === 'function')
+            ? _pickFresh(freshObjs, fullObjs, usedArr)
+            : (freshObjs.length ? _pick(freshObjs) : '');
+        }
+        v.objeto = obj || anchor
+          || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
       }
-      // Si no hay match claro, o el resultado repite el ancla / un símbolo ya
-      // usado, se toma uno fresco del banco para diferenciar la ficha.
-      if (!obj || obj === anchor || usedThisSet.has(obj)) {
-        obj = (typeof _pickFresh === 'function')
-          ? _pickFresh(freshObjs, fullObjs, usedArr)
-          : (freshObjs.length ? _pick(freshObjs) : '');
-      }
-      v.objeto = obj || anchor
-        || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
     } else {
       let obj, g = 0;
       do {
