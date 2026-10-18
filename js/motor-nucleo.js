@@ -1113,13 +1113,32 @@ function _compatibleCompositionDirective(hierarchy, architecture) {
   return '';
 }
 
+/* Arquitecturas usadas en los últimos sets del mismo mercado/región/producto.
+   Igual que layoutRecentSets: rotación entre corridas, no exclusión. */
+function _recentArchitectures() {
+  try {
+    const keyFn = typeof memKey === 'function' ? memKey : _memKey;
+    const key = keyFn(['archRecentSets', MOTOR_STATE.market, MOTOR_STATE.region || 'global', MOTOR_STATE.product]);
+    const stored = (typeof getJSON === 'function' ? getJSON(key, []) : _memGetJSON(key, [])) || [];
+    return new Set([].concat.apply([], stored.slice(-3)));
+  } catch (e) { return new Set(); }
+}
+
 function _assignTextCompositions() {
-  const shuffled = _TEXT_COMPOSITION_BANK.slice();
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = temp;
-  }
-  return { A: shuffled[0], B: shuffled[1], C: shuffled[2] };
+  // Rotación entre generaciones: las arquitecturas de los últimos sets pesan
+  // menos (×0.35, como layout y estilos) pero nunca cero; dentro de A/B/C las
+  // tres son distintas. Antes el banco se barajaba al azar sin memoria y una
+  // misma arquitectura podía repetirse en corridas consecutivas.
+  const recent = _recentArchitectures();
+  const remaining = _TEXT_COMPOSITION_BANK.slice();
+  const out = {};
+  ['A', 'B', 'C'].forEach(function (k) {
+    const weights = remaining.map(function (a) { return recent.has(a) ? 0.35 : 1; });
+    const pick = _pickWeighted(remaining, weights);
+    out[k] = pick;
+    remaining.splice(remaining.indexOf(pick), 1);
+  });
+  return out;
 }
 
 function buildCandidate(audsPerKey, fixedIdentity) {
@@ -1462,6 +1481,20 @@ function _recordLayoutSet(set) {
     else _memSetJSON(layKey, layRecent.concat([layUsed]).slice(-3));
   } catch (e) {}
 }
+/* Registra las arquitecturas textuales del set aceptado, misma cadencia que
+   _recordLayoutSet (1 vez por set) para rotar el catálogo entre generaciones. */
+function _recordArchitectureSet(set) {
+  try {
+    if (!set) return;
+    const keyFn = typeof memKey === 'function' ? memKey : _memKey;
+    const key = keyFn(['archRecentSets', MOTOR_STATE.market, MOTOR_STATE.region || 'global', MOTOR_STATE.product]);
+    const stored = (typeof getJSON === 'function' ? getJSON(key, []) : _memGetJSON(key, [])) || [];
+    const used = K.map(function (k) { return set[k] && set[k].distribucionTexto; }).filter(Boolean);
+    if (!used.length) return;
+    if (typeof setJSON === 'function') setJSON(key, stored.concat([used]).slice(-3));
+    else _memSetJSON(key, stored.concat([used]).slice(-3));
+  } catch (e) {}
+}
 /* Umbrales de pertinencia con diente: un set por debajo no se copia.
    Misma fuente para el gate de generateSet, los pills y el bloqueo. */
 var UMBRAL_AUDIENCIA_MIN = 50;
@@ -1595,6 +1628,7 @@ function generateSet() {
 
   // Anti-repetición por patrón visual
   _recordLayoutSet(best);
+  _recordArchitectureSet(best);
   K.forEach(function (k) {
     const pattern = {
       estilo: _getStyleBase(best[k].estilo),
@@ -2328,6 +2362,7 @@ function rerollSingle(keyLetter) {
     // Sustituir únicamente la tarjeta elegida; A/B permanecen intactas al tirar C, etc.
     LAST_RESULT.set[keyLetter] = best;
     try { if (typeof _recordLayoutSet === 'function') _recordLayoutSet(LAST_RESULT.set); } catch (e) {}
+    try { if (typeof _recordArchitectureSet === 'function') _recordArchitectureSet(LAST_RESULT.set); } catch (e) {}
     if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
     var freshEval = evaluaSetOk(LAST_RESULT.set);
     LAST_RESULT.score = freshEval.score;

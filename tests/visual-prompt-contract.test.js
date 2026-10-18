@@ -25,7 +25,8 @@ ok(promptBuilderIndex >= 0 && motor.indexOf('_soloTextCompositionDirective(v.dis
 ok(/if \(v\.jerarquiaVisual === 'SOLO_TEXTO'\) \{[\s\S]{0,180}SIN OBJETO — composición tipográfica pura'[\s\S]{0,100}\} else if \(contactIdentity\)/.test(motor), 'SOLO_TEXTO debe prevalecer sobre la identidad de símbolo bloqueada en el set');
 ok(/const hasSoloText = K\.some\([\s\S]{0,180}el símbolo se conserva solo en las tarjetas cuya jerarquía admite objeto/.test(motor), 'el ADN global no debe contradecir SOLO_TEXTO cuando coexiste con otras jerarquías');
 ok(/if \(contactDNA && v\.jerarquiaVisual !== 'SOLO_TEXTO'\) o \+= 'FUNCIÓN CONSTANTE/.test(motor), 'SOLO_TEXTO no debe recibir instrucciones funcionales de un símbolo');
-ok(/function _assignTextCompositions\(\)[\s\S]{0,260}const shuffled = _TEXT_COMPOSITION_BANK\.slice\(\)/.test(motor) && /return \{ A: shuffled\[0\], B: shuffled\[1\], C: shuffled\[2\] \}/.test(motor), 'la asignación de arquitecturas debe seguir siendo aleatoria e independiente de la jerarquía');
+const assignBody = motor.slice(motor.indexOf('function _assignTextCompositions()'), motor.indexOf('function buildCandidate('));
+ok(assignBody.includes('_TEXT_COMPOSITION_BANK.slice()') && assignBody.includes('_pickWeighted(remaining, weights)') && assignBody.indexOf('jerarquiaVisual') === -1 && assignBody.indexOf('.tratamiento') === -1, 'la asignación de arquitecturas debe seguir siendo aleatoria (ponderada) e independiente de la jerarquía');
 ok((motor.match(/const _TEXT_COMPOSITION_BANK = \[/g) || []).length === 1 && (motor.slice(motor.indexOf('const _TEXT_COMPOSITION_BANK = ['), motor.indexOf('function _soloTextCompositionDirective')).match(/^  '/gm) || []).length === 20, 'el banco conserva las 20 arquitecturas sin fijarlas a una tarjeta');
 
 // Los tres tratamientos deben existir como decisiones visuales distintas.
