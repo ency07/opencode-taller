@@ -98,8 +98,8 @@ ok(outGesto.indexOf('prohibido inventar vistas de espalda no pedidas') !== -1, '
 ok(outGesto.indexOf('COLORES SUGERIDOS POR COLUMNA: 5 frontales planos') !== -1, 'mockups: colores sugeridos con nombres');
 ok(outGesto.indexOf('MOCKUPS ADICIONALES (FRENTE)') !== -1, 'mockups: fila de adicionales');
 ok(outGesto.indexOf('PALETA GENERAL DE LA SERIE') !== -1, 'mockups: paleta general con nombres');
-ok(outGesto.indexOf("Rotulación permitida SOLO para: serie, audiencia, línea de valor, nombres de color, 'vista frontal' y 'vista espalda'") !== -1, 'mockups: rotulación editorial acotada con ambas vistas');
-ok(outGesto.indexOf('Prohibido pintar códigos de ficha (01A/01B/01C)') !== -1, 'mockups: prohibidos rótulos técnicos');
+ok(outGesto.indexOf("Rotulación editorial de la HOJA permitida: serie, encabezados de columna (código de ficha 01A/01B/01C y nombre de estilo cuando el eje del modo lo pida)") !== -1, 'mockups: rotulación editorial acotada con encabezados de columna permitidos');
+ok(outGesto.indexOf('PROHIBIDO rotular DENTRO del arte y sus mockups') !== -1 && outGesto.indexOf('Rotulación permitida SOLO para') === -1, 'mockups: prohibidos rótulos técnicos dentro del arte (encabezados de hoja permitidos)');
 ok(outGesto.indexOf('omite cualquier tono que destruya contraste o legibilidad') !== -1, 'mockups: omite tonos incompatibles');
 ok(outGesto.indexOf('12 vistas en total') === -1, 'mockups: no debe sobrevivir el contrato de 12 fijas');
 

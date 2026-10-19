@@ -2061,7 +2061,7 @@ function formatPrompt(result) {
     o += 'VARIACIÓN VISUAL REAL: crea una nueva solución gráfica basada en la referencia, no una copia ni una limpieza de la misma. Cambia obligatoriamente composición, silueta global, encuadre, distribución de masas y jerarquía tipográfica. Conserva solo los elementos que exigen los selectores. No basta recolorear, cambiar textura, añadir borde ni aplicar filtro. No inventes objetos, texto, datos o símbolos fuera de las reglas anteriores.\n';
   }
   o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto.\n';
-  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido rotular los paneles con códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia; separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas: los rótulos de ficha viven solo en este texto, nunca en la imagen.\n';
+  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (result.objectConflicts && result.objectConflicts.length) {
     o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
@@ -2126,10 +2126,19 @@ function formatPrompt(result) {
     const v = set[k];
     o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + v.audiencia + '\n';
     o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
+    const pesoExigido = {
+      SOLO_TEXTO: 'texto 100% · símbolo 0% — el arte completo son las letras del copy literal',
+      TEXTO_DOMINANTE: 'texto 70–80% del área · símbolo 20–30% — el copy manda a primera vista y el objeto es apoyo',
+      OBJETO_DOMINANTE: 'símbolo 70–80% del área · texto 20–30% — el objeto manda a primera vista y el texto es apoyo',
+      BALANCEADO: 'texto 45–55% del área · símbolo 45–55% — mitad y mitad; ninguno de los dos es un adorno secundario'
+    }[v.jerarquiaVisual] || '';
+    o += 'PESO VISUAL EXIGIDO — ' + pesoExigido + '. Es una medición verificable a primera vista, no una sugerencia: si el elemento que manda no ocupa su franja, reescala el arte y entrega la versión corregida.\n';
     o += 'CARA DEL ESTAMPADO: ' + (v.cara === 'espalda' ? 'ESPALDA' : 'FRENTE') + ' — ubica el arte en esa cara; en la hoja de presentación muestra esa vista y no inventes la cara contraria.\n';
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento)) + '\n';
+    const styleIsLettering = /graffiti|street|lettering|sign paint/i.test(String(v.estilo || ''));
+    o += 'TÉCNICA GLOBAL: todo el arte de esta ficha — símbolo, letras, fondo y detalles — se ejecuta con la técnica del estilo «' + v.estilo + '»' + (styleIsLettering ? '; aquí el lettering SÍ es el estilo activo.' : '. Prohibido dibujar el copy como graffiti, lettering streetwear, lettering retro o cualquier lenguaje de letras ajeno al estilo activo: las letras también llevan la técnica del estilo.') + '\n';
     o += 'PRIORIDAD DE IDENTIDAD — decisiones FIJAS: jerarquía (' + v.jerarquiaVisual + '), tratamiento (' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ') y estilo («' + v.estilo + '», como técnica de acabado). Decisiones ADAPTABLES: paleta, textura y detalles secundarios, siempre que no anulen el contraste y la lectura que exige el tratamiento. Si dos decisiones compiten, manda este orden: jerarquía > tratamiento > estilo > paleta; no priorices el efecto del estilo (3D, neón, textura) por encima del tratamiento estructural.\n';
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
       o += 'OBJETO: NINGUNO (composición tipográfica pura).' + (seriesAnchor

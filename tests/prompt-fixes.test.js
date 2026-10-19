@@ -94,10 +94,10 @@ ok(count(out, 'INTEGRACIÓN TEXTO-SÍMBOLO:') === 1, 'Fix5: integración solo en
 ok(count(out, 'COMPOSICIÓN BALANCEADA:') === 1, 'Fix5: composición solo en la ficha BALANCEADO');
 ok(count(out, 'CONTROL ABSOLUTO: no dibujar personas') === 0, 'Fix5: sin SOLO_TEXTO no debe haber CONTROL ABSOLUTO');
 
-/* Sin rótulos pintados: los códigos de ficha y nombres de estilo/jerarquía
-   viven solo en el texto del prompt, nunca pintados en la imagen */
-ok(out.indexOf('Prohibido rotular los paneles con códigos de ficha (01A/01B/01C)') !== -1, 'Falta la prohibición de rotular paneles en la imagen');
-ok(out.indexOf('los rótulos de ficha viven solo en este texto, nunca en la imagen') !== -1, 'Falta el cierre anti-rótulos');
+/* Sin rótulos pintados EN EL ARTE: los códigos de ficha viven en el texto del prompt
+   y, en la hoja de presentación, solo como encabezados editoriales de columna */
+ok(out.indexOf('Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups') !== -1, 'Falta la prohibición de rotular dentro del arte');
+ok(out.indexOf('únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado') !== -1, 'Falta el cierre anti-rótulos acotado a encabezados editoriales');
 
 /* Determinismo: misma entrada → misma salida */
 const outB = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') } });
