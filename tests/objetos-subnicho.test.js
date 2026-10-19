@@ -213,7 +213,7 @@ ok(_userNamedObject('quiero una tabla rota', ['tabla rota', 'otra cosa']) === 't
 ok(_userNamedObject('nada que ver aquí', ['tabla rota']) === '',
   '_userNamedObject no debe inventar objetos ausentes del pool');
 
-/* --- 8) El concepto que ya es motivo del banco se dibuja como OBJETO (coherencia de serie) --- */
+/* --- 8) El concepto del banco es el ANCLA de toda la series --- */
 baseState();
 MOTOR_STATE.market = 'colombia';
 MOTOR_STATE.region = 'todas';
@@ -223,27 +223,54 @@ MOTOR_STATE.dominio = 'auto';
 MOTOR_STATE.dominioDetectado = 'auto';
 MOTOR_STATE.concept = 'puesto de fritanga donde el calor firma la conversación';
 MOTOR_STATE.message = '';
+/* El concepto tiene 8+ palabras: el auto-score penaliza SOLO_TEXTO hasta casi
+   no aparecer. Se fuerza una ficha tipográfica por lock para verificar identidad. */
+['A', 'B', 'C'].forEach(function (k) {
+  setLockValue('colombia|todas', 'CAMISETA SOFT', 'jerarquia', k,
+    { A: 'OBJETO_DOMINANTE', B: 'SOLO_TEXTO' }[k] || 'Auto');
+});
 const familyBankHC = getBankForSubniche('humor_costeno', 'todas', 'colombia');
 const escena = 'puesto de fritanga donde el calor firma la conversación';
-const permitidos = [escena].concat(_rankCompatibleMotifs(familyBankHC, escena));
 let escenaDibujada = false;
 let motivoAjeno = false;
 let conflictosFalsos = 0;
-let fichasVistas = 0;
-for (let i = 0; i < 12; i++) {
+let fichasDibujadas = 0;
+let soloConIdentidad = [];
+let promptConDominante = false;
+let promptConPrioridad = false;
+let promptConIdentidadSerie = false;
+for (let i = 0; i < 5; i++) {
   const r = buildCandidate(resolveAudiences(), null);
   conflictosFalsos += (r.objectConflicts || []).length;
-  symbols(r).forEach(function (s) {
-    fichasVistas++;
-    if (s === escena) escenaDibujada = true;
-    if (permitidos.indexOf(s) === -1) motivoAjeno = true;
-    ok(familyBankHC.indexOf(s) !== -1, 'cada ficha debe dibujar un motivo de la familia Humor Costeño: "' + s + '"');
+  ['A', 'B', 'C'].forEach(function (k) {
+    const v = r[k];
+    if (!v) return;
+    if (v.jerarquiaVisual === 'SOLO_TEXTO') {
+      if (String(v.objeto).indexOf(escena) !== -1) soloConIdentidad.push(k + i);
+    } else {
+      fichasDibujadas++;
+      if (v.objeto === escena) escenaDibujada = true;
+      if (v.objeto !== escena) motivoAjeno = true;
+    }
   });
+  const prompt = formatPrompt(asResult(r));
+  if (prompt.indexOf('ARQUITECTURA DOMINANTE') !== -1) promptConDominante = true;
+  if (prompt.indexOf('PRIORIDAD DE IDENTIDAD') !== -1) promptConPrioridad = true;
+  if (prompt.indexOf('Identidad conceptual de la serie') !== -1) promptConIdentidadSerie = true;
 }
-ok(fichasVistas > 0, 'la serie debe producir al menos una ficha con objeto');
-ok(escenaDibujada, 'el concepto-motivo del banco debe dibujarse como OBJETO en la serie');
-ok(!motivoAjeno, 'ningún OBJETO puede ser ajeno al concepto (solo el motivo del banco y sus compatibles)');
-ok(conflictosFalsos === 0, 'no debe declararse conflicto cuando el concepto ya es motivo del banco');
+['A', 'B', 'C'].forEach(function (k) {
+  setLockValue('colombia|todas', 'CAMISETA SOFT', 'jerarquia', k, 'Auto');
+});
+ok(fichasDibujadas > 0 && escenaDibujada, 'las fichas que dibujan deben mantener el ancla (la escena concebida), no un sustituto por afinidad');
+ok(!motivoAjeno, 'ninguna ficha puede dibujar un motivo distinto del ancla (sin «calor»→fuego, sin «limonada», sin banco común)');
+ok(!conflictosFalsos, 'no debe declararse conflicto cuando el concepto ya es motivo del banco');
+ok(soloConIdentidad.length > 0, 'la ficha SOLO_TEXTO debe conservar la identidad de la serie aunque no dibuje el ancla');
+ok(promptConDominante, 'cada ficha debe declarar UNA arquitectura dominante');
+ok(promptConPrioridad, 'cada ficha debe declarar la prioridad de identidad (fijas vs adaptables)');
+ok(promptConIdentidadSerie, 'SOLO_TEXTO debe declarar la identidad conceptual compartida en el prompt');
+const planAncla = _planExploreMotifs(familyBankHC, [], escena, '', '');
+ok(planAncla.list.length === 1 && planAncla.list[0] === escena,
+  'concepto literal del banco: plan con UN solo motivo (el ancla), sin sustituciones');
 
 /* --- 9) Conflicto resuelto a nivel de SERIE: un solo aviso, un motivo provisional único --- */
 baseState();

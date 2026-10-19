@@ -1004,27 +1004,31 @@ function _rankCompatibleMotifs(pools, concept) {
 }
 
 /* Plan de motivos de la SERIE (exploración). Se calcula UNA vez por set:
-   1. Si el concepto ya es un motivo del banco de la familia → dibujar ESE motivo
-      (es la escena que el usuario eligió; los motivos del banco son descripciones de escena).
+   1. Si el concepto ya es un motivo del banco de la familia → ese es el ANCLA
+      semántica de TODA la serie: se dibuja ESE motivo en las fichas que
+      representan. La representación (tratamiento, composición, tipografía)
+      cambia por ficha; la escena no. Sin sustituciones por afinidad superficial:
+      «calor» no autoriza a dibujar fuego, brasas ni un sol.
    2. Si no → los motivos de familia compatibles (afinidad de palabras), en orden.
    3. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
-      existe, UN conflicto para toda la serie con un motivo provisional. */
+      existe, UN conflicto para toda la serie con un motivo provisional.
+   La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
 function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
   const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
   if (inBank) {
-    const others = _rankCompatibleMotifs(familyObjs, anchor).filter(function (l) { return l !== anchor; });
-    return { list: [anchor].concat(others), conflict: '' };
+    return { list: [anchor], anchor: anchor, conflict: '' };
   }
   const compatibles = _rankCompatibleMotifs(familyObjs, anchor || userConcept || '');
-  if (compatibles.length) return { list: compatibles, conflict: '' };
+  if (compatibles.length) return { list: compatibles, anchor: compatibles[0], conflict: '' };
   const userObj = (typeof _userNamedObject === 'function')
     ? _userNamedObject((userConcept || '') + ' ' + (userMessage || ''), objectPool)
     : '';
-  if (userObj) return { list: [userObj], conflict: '' };
+  if (userObj) return { list: [userObj], anchor: userObj, conflict: '' };
   const fallback = (typeof _pick === 'function') ? _pick(familyObjs) : '';
-  if (!fallback) return { list: [], conflict: '' };
+  if (!fallback) return { list: [], anchor: anchor, conflict: '' };
   return {
     list: [fallback],
+    anchor: fallback,
     conflict: 'el concepto «' + (anchor || userConcept || '') + '» no encaja con ningún motivo de la familia; se usó «' + fallback + '» como motivo provisional de la serie.'
   };
 }
@@ -1214,9 +1218,27 @@ function buildCandidate(audsPerKey, fixedIdentity) {
   // variantes (nunca el mensaje ni la frase del concepto). Sin familia → concepto.
   // Si ningún motivo encaja con el concepto se declara conflicto (ver abajo).
   const objectConflicts = [];
-  // Plan de motivos de la SERIE (se calcula una vez, no por ficha): evita que
-  // cada ficha negocie el banco por separado y acabe contando historias distintas.
+  // Plan de motivos de la SERIE (se calcula una vez, antes del bucle): el ancla
+  // semántica es la misma para todas las fichas; SOLO_TEXTO la conserva como
+  // identidad aunque no la dibuje.
   let setMotifPlan = null;
+  let seriesAnchor = '';
+  if (MOTOR_STATE.workflowMode === 'explore') {
+    const briefPlan = MOTOR_STATE.explorationBrief || _resolveExplorationBrief();
+    const userConceptPlan = String(MOTOR_STATE.concept || '').trim();
+    const anchorPlan = String(userConceptPlan || briefPlan.concept || '').trim();
+    const commonBankPlan = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
+    const familyPlan = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBankPlan.indexOf(ob) === -1; });
+    if (familyPlan.length) {
+      setMotifPlan = (typeof _planExploreMotifs === 'function')
+        ? _planExploreMotifs(familyPlan, objectPool, anchorPlan, userConceptPlan, String(MOTOR_STATE.message || ''))
+        : { list: [], anchor: anchorPlan, conflict: '' };
+      if (setMotifPlan.conflict) objectConflicts.push(setMotifPlan.conflict);
+      seriesAnchor = setMotifPlan.anchor || anchorPlan;
+    } else {
+      seriesAnchor = anchorPlan;
+    }
+  }
   let patronMotif = '';
   if (MOTOR_STATE.workflowMode !== 'variation' && MOTOR_STATE.designMode === 'patron') {
     const pConcept = String(MOTOR_STATE.concept || '').trim();
@@ -1247,6 +1269,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     } else {
       patronMotif = pConcept;
     }
+    seriesAnchor = patronMotif || pConcept;
   }
 
   K.forEach(function (k) {
@@ -1259,7 +1282,9 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     // Variación desde imagen conserva su propia lógica y sus selectores.
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
       // La jerarquía tipográfica prevalece incluso en un contactsheet con identidad bloqueada.
-      v.objeto = 'SIN OBJETO — composición tipográfica pura';
+      // No dibuja el ancla, pero la conserva como identidad de la serie.
+      v.objeto = 'SIN OBJETO — composición tipográfica pura'
+        + (seriesAnchor ? ' (identidad de la serie: «' + seriesAnchor + '»)' : '');
     } else if (contactIdentity) {
       v.objeto = contactIdentity.symbol;
     } else if (conservarSimb) {
@@ -1271,32 +1296,17 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       // No escoger un objeto al azar solo por compartir nicho.
       v.objeto = _chooseConceptCompatibleObject(objectPool, semanticAnchor) || semanticAnchor || 'proponer un símbolo directamente derivado del concepto y la familia seleccionada';
     } else if (MOTOR_STATE.workflowMode === 'explore') {
-      const brief = MOTOR_STATE.explorationBrief || _resolveExplorationBrief();
-      // OBJETO = motivo CONCRETO del banco de la FAMILIA, resuelto a nivel de
-      // SERIE (el plan se calcula una vez y se reparte): así A/B/C desarrollan
-      // el MISMO concepto y no chocan entre sí dejando historias distintas.
-      // Si el concepto ya es un motivo del banco, ESE es el objeto (la escena
-      // que el usuario eligió). Solo si no hay banco de familia, el concepto
-      // queda como ancla.
-      const userConcept = String(MOTOR_STATE.concept || '').trim();
-      const anchor = String(userConcept || brief.concept || '').trim();
-      const commonBank = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
-      const familyObjs = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBank.indexOf(ob) === -1; });
-      if (familyObjs.length) {
-        if (!setMotifPlan) {
-          setMotifPlan = (typeof _planExploreMotifs === 'function')
-            ? _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, String(MOTOR_STATE.message || ''))
-            : { list: familyObjs, conflict: '' };
-          if (setMotifPlan.conflict) objectConflicts.push(setMotifPlan.conflict);
-        }
-        // Reparto: motivo distinto primero; si el subconjunto compatible es más
-        // pequeño que el número de fichas, se reutiliza (coherencia > conflicto falso).
-        const options = setMotifPlan.list;
+      // OBJETO = el ANCLA de la serie (plan único calculado antes del bucle).
+      // Si el concepto ya es un motivo del banco, TODAS las fichas dibujan ESE
+      // motivo y solo cambia su representación; la variedad viene de
+      // composición/tratamiento/jerarquía, nunca de cambiar la escena.
+      const options = (setMotifPlan && setMotifPlan.list) || [];
+      if (options.length) {
         const fresh = options.filter(function (o) { return !usedThisSet.has(o); });
-        const obj = fresh.length ? fresh[0] : (options[0] || '');
+        const obj = fresh.length ? fresh[0] : options[0];
         v.objeto = obj || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
       } else {
-        v.objeto = anchor
+        v.objeto = seriesAnchor
           || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
       }
     } else {
@@ -1512,6 +1522,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
   });
 
   set.objectConflicts = objectConflicts;
+  set.seriesAnchor = seriesAnchor;
   return set;
 }
 
@@ -1869,6 +1880,7 @@ function _contrastBlock(set) {
 function formatPrompt(result) {
   if (!result || !result.set) return '';
   const set = result.set;
+  const seriesAnchor = String(set.seriesAnchor || '').trim();
   const dense = MOTOR_STATE.fmtDense;
   const isVar = MOTOR_STATE.workflowMode === 'variation';
 
@@ -2118,8 +2130,11 @@ function formatPrompt(result) {
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento)) + '\n';
+    o += 'PRIORIDAD DE IDENTIDAD — decisiones FIJAS: jerarquía (' + v.jerarquiaVisual + '), tratamiento (' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ') y estilo («' + v.estilo + '», como técnica de acabado). Decisiones ADAPTABLES: paleta, textura y detalles secundarios, siempre que no anulen el contraste y la lectura que exige el tratamiento. Si dos decisiones compiten, manda este orden: jerarquía > tratamiento > estilo > paleta; no priorices el efecto del estilo (3D, neón, textura) por encima del tratamiento estructural.\n';
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
-      o += 'OBJETO: NINGUNO. El concepto solo inspira el copy; no se representa como escena.\n';
+      o += 'OBJETO: NINGUNO (composición tipográfica pura).' + (seriesAnchor
+        ? ' Identidad conceptual de la serie: «' + seriesAnchor + '». Esta ficha NO dibuja ese ancla: la expresa solo con tipografía, pero comunica el MISMO concepto que las demás fichas.'
+        : ' El concepto solo inspira el copy; no se representa como escena.') + '\n';
       o += 'CONTROL ABSOLUTO: no dibujar personas, árboles, símbolos, iconos, siluetas, ilustraciones, fondos narrativos, marcos, cintas, flores, estrellas, rayos, texturas figurativas ni adornos. ÚNICOS elementos permitidos: letras del copy literal y recursos tipográficos integrados en las letras.\n';
       o += 'SIN EXCEPCIONES: aunque el concepto nombre un objeto concreto (fogata, animal, vehículo, paisaje), está prohibido dibujarlo: ni grande ni pequeño, ni como fondo ni integrado entre letras. El objeto solo existe como palabras del copy literal.\n';
     } else {
@@ -2145,9 +2160,10 @@ function formatPrompt(result) {
     }[v.jerarquiaVisual] || '';
     o += 'JERARQUÍA: ' + hierarchyDirective + ' La jerarquía fija tamaño, área y peso; el layout solo ubicación. Si hay conflicto, prevalece esta regla.\n';
     o += 'LAYOUT (ubicación): ' + v.layout + '. El layout rige dónde se ubica cada elemento y dónde respira el vacío; no cambia tamaño, área ni jerarquía.\n';
+    o += 'ARQUITECTURA DOMINANTE — una sola estructura por ficha: el LAYOUT fija la ubicación y la ARQUITECTURA TEXTUAL solo define la forma del bloque tipográfico DENTRO de esa ubicación. Ninguna otra regla introduce una segunda composición; si dos instrucciones estructurales sugieren ubicaciones distintas, prevalece el LAYOUT y la arquitectura se adapta a él.\n';
     if (v.jerarquiaVisual === 'BALANCEADO') {
-      // COMPOSICIÓN: el layout y la arquitectura definen ubicación, nunca proporción
-      o += 'COMPOSICIÓN BALANCEADA: ' + v.layout + ' · ' + v.distribucionTexto + '. La arquitectura define colocación/relación, nunca cambia la proporción.\n';
+      // COMPOSICIÓN: el layout manda la ubicación; la arquitectura textual se adapta
+      o += 'COMPOSICIÓN BALANCEADA: arquitectura dominante = LAYOUT (' + v.layout + '). El bloque tipográfico (' + v.distribucionTexto + ') se ejecuta DENTRO de esa ubicación; si sugiere una posición distinta, prevalece el LAYOUT. La arquitectura nunca cambia la proporción.\n';
       o += 'INTEGRACIÓN DE LA FICHA: ' + v.integracionTexto + '\n';
     }
     else if (v.jerarquiaVisual === 'TEXTO_DOMINANTE' || v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
