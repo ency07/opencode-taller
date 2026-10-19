@@ -981,6 +981,54 @@ function _userNamedObject(text, pools) {
   return best;
 }
 
+/* Motivos de familia compatibles con el concepto, ordenados por afinidad
+   (mismo criterio de puntuación que _chooseConceptCompatibleObject, pero
+   devuelve la lista completa para repartirla entre las fichas de la serie). */
+function _rankCompatibleMotifs(pools, concept) {
+  const normalize = function (value) {
+    return (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(value || '')) : String(value || '').toLowerCase())
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+  };
+  const source = normalize(concept);
+  if (!source) return [];
+  const stop = new Set(['que','con','para','desde','hacia','sobre','entre','una','uno','unos','unas','los','las','el','la','de','del','en','por','como','sin','the','and','with','for','from','into','over','under','that','which','holding','sosteniendo','representa','lugares','turisticos','tourist','places','profundo','deep','my','a','an','of','to']);
+  const tokens = [...new Set(source.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+  const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
+    const label = String(item || '').trim();
+    const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+    const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
+    if (!overlap.length) return null;
+    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
+  }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
+  return ranked.map(function (r) { return r.label; });
+}
+
+/* Plan de motivos de la SERIE (exploración). Se calcula UNA vez por set:
+   1. Si el concepto ya es un motivo del banco de la familia → dibujar ESE motivo
+      (es la escena que el usuario eligió; los motivos del banco son descripciones de escena).
+   2. Si no → los motivos de familia compatibles (afinidad de palabras), en orden.
+   3. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
+      existe, UN conflicto para toda la serie con un motivo provisional. */
+function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
+  const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
+  if (inBank) {
+    const others = _rankCompatibleMotifs(familyObjs, anchor).filter(function (l) { return l !== anchor; });
+    return { list: [anchor].concat(others), conflict: '' };
+  }
+  const compatibles = _rankCompatibleMotifs(familyObjs, anchor || userConcept || '');
+  if (compatibles.length) return { list: compatibles, conflict: '' };
+  const userObj = (typeof _userNamedObject === 'function')
+    ? _userNamedObject((userConcept || '') + ' ' + (userMessage || ''), objectPool)
+    : '';
+  if (userObj) return { list: [userObj], conflict: '' };
+  const fallback = (typeof _pick === 'function') ? _pick(familyObjs) : '';
+  if (!fallback) return { list: [], conflict: '' };
+  return {
+    list: [fallback],
+    conflict: 'el concepto «' + (anchor || userConcept || '') + '» no encaja con ningún motivo de la familia; se usó «' + fallback + '» como motivo provisional de la serie.'
+  };
+}
+
 function _resolveContactIdentity(objectPool) {
   const concept = String(MOTOR_STATE.concept || '').trim();
   const message = String(MOTOR_STATE.message || '').trim();
@@ -1166,27 +1214,34 @@ function buildCandidate(audsPerKey, fixedIdentity) {
   // variantes (nunca el mensaje ni la frase del concepto). Sin familia → concepto.
   // Si ningún motivo encaja con el concepto se declara conflicto (ver abajo).
   const objectConflicts = [];
+  // Plan de motivos de la SERIE (se calcula una vez, no por ficha): evita que
+  // cada ficha negocie el banco por separado y acabe contando historias distintas.
+  let setMotifPlan = null;
   let patronMotif = '';
   if (MOTOR_STATE.workflowMode !== 'variation' && MOTOR_STATE.designMode === 'patron') {
     const pConcept = String(MOTOR_STATE.concept || '').trim();
     const pCommon = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
     const pFamily = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return pCommon.indexOf(ob) === -1; });
     if (pFamily.length) {
-      const pConcrete = pFamily.filter(function (o) { return o !== pConcept; });
-      const pPool = pConcrete.length ? pConcrete : pFamily;
-      if (pConcept && typeof _chooseConceptCompatibleObject === 'function') {
-        const cand = _chooseConceptCompatibleObject(pPool, pConcept);
-        if (cand && cand !== pConcept && pPool.indexOf(cand) !== -1) patronMotif = cand;
-      }
-      if (!patronMotif) {
-        // Ningún motivo de la familia es compatible con el concepto → conflicto.
-        // Si el usuario nombró un objeto, se conserva; si no, motivo de familia + aviso.
-        const userObj = _userNamedObject(pConcept + ' ' + String(MOTOR_STATE.message || ''), objectPool);
-        if (userObj) {
-          patronMotif = userObj;
+      if (pConcept && pFamily.indexOf(pConcept) !== -1) {
+        // El concepto ya es un motivo del banco: dibujar ESE motivo.
+        patronMotif = pConcept;
+      } else {
+        const pConcrete = pFamily.filter(function (o) { return o !== pConcept; });
+        const pPool = pConcrete.length ? pConcrete : pFamily;
+        const ranked = (pConcept && typeof _rankCompatibleMotifs === 'function') ? _rankCompatibleMotifs(pPool, pConcept) : [];
+        if (ranked.length) {
+          patronMotif = ranked[0];
         } else {
-          patronMotif = _pick(pPool);
-          if (patronMotif) objectConflicts.push('Patrón: el concepto «' + pConcept + '» no encaja con ningún motivo de la familia; se usó «' + patronMotif + '».');
+          // Ningún motivo de la familia es compatible con el concepto → conflicto.
+          // Si el usuario nombró un objeto, se conserva; si no, motivo provisional.
+          const userObj = _userNamedObject(pConcept + ' ' + String(MOTOR_STATE.message || ''), objectPool);
+          if (userObj) {
+            patronMotif = userObj;
+          } else {
+            patronMotif = _pick(pPool);
+            if (patronMotif) objectConflicts.push('Patrón: el concepto «' + pConcept + '» no encaja con ningún motivo de la familia; se usó «' + patronMotif + '» como motivo provisional.');
+          }
         }
       }
     } else {
@@ -1217,43 +1272,28 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       v.objeto = _chooseConceptCompatibleObject(objectPool, semanticAnchor) || semanticAnchor || 'proponer un símbolo directamente derivado del concepto y la familia seleccionada';
     } else if (MOTOR_STATE.workflowMode === 'explore') {
       const brief = MOTOR_STATE.explorationBrief || _resolveExplorationBrief();
-      // OBJETO = motivo CONCRETO del banco de la FAMILIA (garantiza el nicho:
-      // Skate dibuja cosas de skate). Nunca el mensaje ni la frase del concepto:
-      // un objeto es una cosa dibujable (tabla, ruedas, rampa), no una oración.
-      // El CONCEPTO es la idea que la IA representa USANDO ese motivo. Solo si
-      // no hay banco de familia, el concepto queda como ancla.
+      // OBJETO = motivo CONCRETO del banco de la FAMILIA, resuelto a nivel de
+      // SERIE (el plan se calcula una vez y se reparte): así A/B/C desarrollan
+      // el MISMO concepto y no chocan entre sí dejando historias distintas.
+      // Si el concepto ya es un motivo del banco, ESE es el objeto (la escena
+      // que el usuario eligió). Solo si no hay banco de familia, el concepto
+      // queda como ancla.
       const userConcept = String(MOTOR_STATE.concept || '').trim();
       const anchor = String(userConcept || brief.concept || '').trim();
       const commonBank = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
       const familyObjs = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBank.indexOf(ob) === -1; });
       if (familyObjs.length) {
-        // Excluir la frase del concepto como OBJETO: el objeto es una cosa
-        // concreta (tabla, ruedas, tenis…), no la oración del concepto.
-        const concreteObjs = familyObjs.filter(function (o) { return o !== anchor; });
-        const pool = concreteObjs.length ? concreteObjs : familyObjs;
-        const usedArr = Array.from(usedThisSet);
-        const freshObjs = pool.filter(function (obj) { return usedArr.indexOf(obj) === -1; });
-        let obj = '';
-        // Preferir el motivo de familia que se acerque al concepto…
-        if (anchor && typeof _chooseConceptCompatibleObject === 'function') {
-          const cand = _chooseConceptCompatibleObject(freshObjs.length ? freshObjs : pool, anchor);
-          if (cand && cand !== anchor && pool.indexOf(cand) !== -1 && !usedThisSet.has(cand)) obj = cand;
+        if (!setMotifPlan) {
+          setMotifPlan = (typeof _planExploreMotifs === 'function')
+            ? _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, String(MOTOR_STATE.message || ''))
+            : { list: familyObjs, conflict: '' };
+          if (setMotifPlan.conflict) objectConflicts.push(setMotifPlan.conflict);
         }
-        if (!obj) {
-          // Ningún motivo de la familia es compatible con el concepto. Conflicto:
-          // si el usuario nombró un objeto concreto (concepto o mensaje), se
-          // PRESERVA; si no, se usa un motivo de familia y se declara el conflicto
-          // (nunca elegir un objeto arbitrario en silencio).
-          const userObj = _userNamedObject(userConcept + ' ' + String(MOTOR_STATE.message || ''), objectPool);
-          if (userObj) {
-            obj = userObj;
-          } else {
-            obj = (typeof _pickFresh === 'function')
-              ? _pickFresh(freshObjs, pool, usedArr)
-              : (freshObjs.length ? _pick(freshObjs) : '');
-            if (obj) objectConflicts.push('Ficha ' + k + ': el concepto «' + anchor + '» no encaja con ningún motivo de la familia; se usó «' + obj + '».');
-          }
-        }
+        // Reparto: motivo distinto primero; si el subconjunto compatible es más
+        // pequeño que el número de fichas, se reutiliza (coherencia > conflicto falso).
+        const options = setMotifPlan.list;
+        const fresh = options.filter(function (o) { return !usedThisSet.has(o); });
+        const obj = fresh.length ? fresh[0] : (options[0] || '');
         v.objeto = obj || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
       } else {
         v.objeto = anchor
@@ -2012,7 +2052,7 @@ function formatPrompt(result) {
   o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido rotular los paneles con códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia; separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas: los rótulos de ficha viven solo en este texto, nunca en la imagen.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (result.objectConflicts && result.objectConflicts.length) {
-    o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' Ningún motivo autorizado de la familia es compatible con el concepto: confírmalo con el usuario antes de diseñar; no sustituyas el concepto ni añadas objetos fuera de la familia.\n';
+    o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
   }
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
   if (cultDir) o += 'CULTURA: ' + cultDir + '\n';

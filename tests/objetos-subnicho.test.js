@@ -1,10 +1,11 @@
 /* Objetos coherentes con el concepto y el subnicho (rama fix/objetos-subnicho).
    - region 'todas' es superconjunto de las regiones del subnicho (no solo 'nacional').
-   - OBJETO = motivo CONCRETO del banco de la FAMILIA (garantiza el nicho). Nunca
-     el mensaje ni la frase del concepto; la familia solo sesga, no sustituye.
-   - CONFLICTO: si ningún motivo de la familia encaja con el concepto, se declara
-     conflicto. Si el usuario nombró un objeto (concepto/mensaje) se PRESERVA; si
-     no, se usa un motivo de familia y se avisa (nunca elegir al azar en silencio).
+   - OBJETO = motivo CONCRETO del banco de la FAMILIA, resuelto a nivel de SERIE
+     (un plan para A/B/C, no una negociación por ficha).
+   - Si el concepto ya es un motivo del banco (los bancos describen escenas), ese
+     motivo SE DIBUJA; nunca un motivo ajeno al concepto ni un conflicto falso.
+   - CONFLICTO: solo el concepto incompatible sin objeto del usuario; UN aviso por
+     serie y UN motivo provisional compartido por todas las fichas.
    - Sin familia con banco, el concepto queda como ancla.
 
    Ejecutar:  node tests/objetos-subnicho.test.js
@@ -211,6 +212,83 @@ ok(_userNamedObject('quiero una tabla rota', ['tabla rota', 'otra cosa']) === 't
   '_userNamedObject debe detectar el objeto nombrado en el texto');
 ok(_userNamedObject('nada que ver aquí', ['tabla rota']) === '',
   '_userNamedObject no debe inventar objetos ausentes del pool');
+
+/* --- 8) El concepto que ya es motivo del banco se dibuja como OBJETO (coherencia de serie) --- */
+baseState();
+MOTOR_STATE.market = 'colombia';
+MOTOR_STATE.region = 'todas';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.subniche = 'humor_costeno';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+MOTOR_STATE.concept = 'puesto de fritanga donde el calor firma la conversación';
+MOTOR_STATE.message = '';
+const familyBankHC = getBankForSubniche('humor_costeno', 'todas', 'colombia');
+const escena = 'puesto de fritanga donde el calor firma la conversación';
+const permitidos = [escena].concat(_rankCompatibleMotifs(familyBankHC, escena));
+let escenaDibujada = false;
+let motivoAjeno = false;
+let conflictosFalsos = 0;
+let fichasVistas = 0;
+for (let i = 0; i < 12; i++) {
+  const r = buildCandidate(resolveAudiences(), null);
+  conflictosFalsos += (r.objectConflicts || []).length;
+  symbols(r).forEach(function (s) {
+    fichasVistas++;
+    if (s === escena) escenaDibujada = true;
+    if (permitidos.indexOf(s) === -1) motivoAjeno = true;
+    ok(familyBankHC.indexOf(s) !== -1, 'cada ficha debe dibujar un motivo de la familia Humor Costeño: "' + s + '"');
+  });
+}
+ok(fichasVistas > 0, 'la serie debe producir al menos una ficha con objeto');
+ok(escenaDibujada, 'el concepto-motivo del banco debe dibujarse como OBJETO en la serie');
+ok(!motivoAjeno, 'ningún OBJETO puede ser ajeno al concepto (solo el motivo del banco y sus compatibles)');
+ok(conflictosFalsos === 0, 'no debe declararse conflicto cuando el concepto ya es motivo del banco');
+
+/* --- 9) Conflicto resuelto a nivel de SERIE: un solo aviso, un motivo provisional único --- */
+baseState();
+MOTOR_STATE.market = 'global_es';
+MOTOR_STATE.region = 'global';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.subniche = 'skate_culture';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+MOTOR_STATE.concept = 'zzz qqq vvv uuu';
+MOTOR_STATE.message = '';
+const skateBankES2 = getBankForSubniche('skate_culture', 'global', 'global_es');
+let serieMismoMotivo = '';
+let motivosDistintosEnConflicto = false;
+let avisosEnSerie = 0;
+for (let i = 0; i < 8; i++) {
+  const r = buildCandidate(resolveAudiences(), null);
+  if (!(r.objectConflicts || []).length) continue;
+  const prompt = formatPrompt(asResult(r));
+  avisosEnSerie = prompt.split('AVISO OBJETO (conflicto)').length - 1;
+  const motivoSerie = '';
+  const distintos = {};
+  symbols(r).forEach(function (s) {
+    distintos[s] = 1;
+    ok(skateBankES2.indexOf(s) !== -1, 'en conflicto, el motivo provisional debe ser de la familia: "' + s + '"');
+  });
+  if (Object.keys(distintos).length > 1) motivosDistintosEnConflicto = true;
+  break;
+}
+if (avisosEnSerie) {
+  ok(motivosDistintosEnConflicto === false, 'en conflicto, toda la serie debe compartir UN motivo provisional (no historias distintas por ficha)');
+  ok(avisosEnSerie === 1, 'el prompt debe contener UN solo aviso de conflicto por serie');
+}
+
+/* --- Unidad: _planExploreMotifs --- */
+baseState();
+const plan1 = _planExploreMotifs(
+  ['puesto de fritanga donde el calor firma la conversación', 'hamaca de la familia', 'limonada de coco rule'],
+  [...['puesto de fritanga donde el calor firma la conversación', 'hamaca de la familia', 'limonada de coco rule'], 'árbol de biblioteca'],
+  'puesto de fritanga donde el calor firma la conversación', '', '');
+ok(plan1.conflict === '', 'concepto que es motivo del banco no genera conflicto');
+ok(plan1.list[0] === 'puesto de fritanga donde el calor firma la conversación', 'el concepto-motivo debe ser el objeto base de la serie');
+const plan2 = _planExploreMotifs(['sombra que agrupa', 'otra cosa'],
+  ['sombra que agrupa', 'otra cosa', 'arbol de biblioteca'], 'una sombra que agrupa', '', '');
+ok(plan2.conflict === '' && plan2.list[0] === 'sombra que agrupa', 'concepto compatible debe elegir el motivo afín sin conflicto');
 
 function finish() {
   const passed = failures.length === 0;
