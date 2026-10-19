@@ -1,11 +1,11 @@
 /* Objetos coherentes con el concepto y el subnicho (rama fix/objetos-subnicho).
    - region 'todas' es superconjunto de las regiones del subnicho (no solo 'nacional').
-   - TRAZABILIDAD: si el usuario da concepto/mensaje, el símbolo se deriva de él;
-     la familia solo sesga estilo y nunca sustituye el concepto por un objeto ajeno
-     (concepto "silueta empujando contra tráfico" + familia Skate no debe dibujar
-     "lija negra" ni el banco común "árbol de biblioteca").
-   - Sin concepto del usuario (exploración pura de familia), el símbolo sale del
-     banco de la familia y nunca del banco común genérico.
+   - OBJETO = motivo CONCRETO del banco de la FAMILIA (garantiza el nicho). Nunca
+     el mensaje ni la frase del concepto; la familia solo sesga, no sustituye.
+   - CONFLICTO: si ningún motivo de la familia encaja con el concepto, se declara
+     conflicto. Si el usuario nombró un objeto (concepto/mensaje) se PRESERVA; si
+     no, se usa un motivo de familia y se avisa (nunca elegir al azar en silencio).
+   - Sin familia con banco, el concepto queda como ancla.
 
    Ejecutar:  node tests/objetos-subnicho.test.js
    Sale con código 1 si falla cualquier aserción. */
@@ -49,6 +49,12 @@ function symbols(set) {
     const v = set[k];
     return (!v || v.jerarquiaVisual === 'SOLO_TEXTO') ? '' : String(v.objeto || '');
   }).filter(function (s) { return s; });
+}
+
+/* buildCandidate devuelve el SET (con los conflictos adjuntos). formatPrompt
+   espera la forma { set, objectConflicts }. */
+function asResult(r) {
+  return { set: r, objectConflicts: r.objectConflicts, score: 0, passed: true };
 }
 
 /* --- 1) region 'todas' debe ser superconjunto del banco regional --- */
@@ -152,6 +158,59 @@ for (let i = 0; i < 10; i++) {
   });
 }
 ok(sinFamilia > 0, 'debe producir al menos un objeto-ancla');
+
+/* --- 5) Conflicto declarado: concepto que no encaja con ningún motivo de familia --- */
+baseState();
+MOTOR_STATE.market = 'global_es';
+MOTOR_STATE.region = 'global';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.subniche = 'skate_culture';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+MOTOR_STATE.concept = 'zzz qqq vvv uuu';
+MOTOR_STATE.message = '';
+const skateBankES = getBankForSubniche('skate_culture', 'global', 'global_es');
+let foundConflict = false;
+let conflictoFueraDeFamilia = false;
+let conflictoSinAviso = false;
+for (let i = 0; i < 20 && !foundConflict; i++) {
+  const r = buildCandidate(resolveAudiences(), null);
+  if (r.objectConflicts && r.objectConflicts.length) {
+    foundConflict = true;
+    symbols(r).forEach(function (s) {
+      if (skateBankES.indexOf(s) === -1) conflictoFueraDeFamilia = true;
+    });
+    if (formatPrompt(asResult(r)).indexOf('AVISO OBJETO (conflicto)') === -1) conflictoSinAviso = true;
+  }
+}
+ok(foundConflict, 'debe declarar conflicto cuando ningún motivo de la familia encaja con el concepto');
+ok(!conflictoFueraDeFamilia, 'en conflicto sin objeto del usuario, el OBJETO debe caer a un motivo de la familia');
+ok(!conflictoSinAviso, 'el prompt debe mostrar el aviso de conflicto');
+
+/* --- 6) Preservar el objeto que el usuario nombró, aunque no sea de la familia --- */
+baseState();
+MOTOR_STATE.market = 'global_es';
+MOTOR_STATE.region = 'global';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.subniche = 'skate_culture';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+const comObjs = _commonBankForMarket();
+const userObj = comObjs[0];
+MOTOR_STATE.concept = userObj;
+MOTOR_STATE.message = '';
+let preservado = false;
+for (let i = 0; i < 20 && !preservado; i++) {
+  const syms = symbols(buildCandidate(resolveAudiences(), null));
+  if (syms.indexOf(userObj) !== -1) preservado = true;
+}
+ok(preservado, 'debe preservar el objeto nombrado por el usuario aunque no sea de la familia: "' + userObj + '"');
+
+/* --- 7) Unidad: _userNamedObject detecta el objeto nombrado y no inventa --- */
+ok(_userNamedObject('quiero una tabla rota', ['tabla rota', 'otra cosa']) === 'tabla rota',
+  '_userNamedObject debe detectar el objeto nombrado en el texto');
+ok(_userNamedObject('nada que ver aquí', ['tabla rota']) === '',
+  '_userNamedObject no debe inventar objetos ausentes del pool');
 
 function finish() {
   const passed = failures.length === 0;

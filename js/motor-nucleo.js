@@ -961,6 +961,26 @@ function _chooseConceptCompatibleObject(objectPool, concept) {
   return String(concept).trim();
 }
 
+/* Objeto que el usuario nombró explícitamente en el concepto o el mensaje.
+   Solo detecta objetos presentes en el pool autorizado (sin NLP): sirve para
+   PRESERVAR lo que el usuario pidió cuando ningún motivo de familia encaja. */
+function _userNamedObject(text, pools) {
+  const normalize = function (value) {
+    return (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(value || '')) : String(value || '').toLowerCase())
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+  };
+  const hay = ' ' + normalize(text) + ' ';
+  if (hay.trim() === '') return '';
+  let best = '';
+  (Array.isArray(pools) ? pools : []).forEach(function (item) {
+    const label = String(item || '').trim();
+    const needle = normalize(label);
+    if (!needle || needle.length < 3) return;
+    if (hay.indexOf(' ' + needle + ' ') !== -1 && needle.length > normalize(best).length) best = label;
+  });
+  return best;
+}
+
 function _resolveContactIdentity(objectPool) {
   const concept = String(MOTOR_STATE.concept || '').trim();
   const message = String(MOTOR_STATE.message || '').trim();
@@ -1144,6 +1164,8 @@ function buildCandidate(audsPerKey, fixedIdentity) {
 
   // Patrón repetido: un solo motivo CONCRETO de la FAMILIA para todas las
   // variantes (nunca el mensaje ni la frase del concepto). Sin familia → concepto.
+  // Si ningún motivo encaja con el concepto se declara conflicto (ver abajo).
+  const objectConflicts = [];
   let patronMotif = '';
   if (MOTOR_STATE.workflowMode !== 'variation' && MOTOR_STATE.designMode === 'patron') {
     const pConcept = String(MOTOR_STATE.concept || '').trim();
@@ -1152,9 +1174,21 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     if (pFamily.length) {
       const pConcrete = pFamily.filter(function (o) { return o !== pConcept; });
       const pPool = pConcrete.length ? pConcrete : pFamily;
-      patronMotif = (pConcept && typeof _chooseConceptCompatibleObject === 'function')
-        ? _chooseConceptCompatibleObject(pPool, pConcept) : '';
-      if (!patronMotif || patronMotif === pConcept || pPool.indexOf(patronMotif) === -1) patronMotif = _pick(pPool);
+      if (pConcept && typeof _chooseConceptCompatibleObject === 'function') {
+        const cand = _chooseConceptCompatibleObject(pPool, pConcept);
+        if (cand && cand !== pConcept && pPool.indexOf(cand) !== -1) patronMotif = cand;
+      }
+      if (!patronMotif) {
+        // Ningún motivo de la familia es compatible con el concepto → conflicto.
+        // Si el usuario nombró un objeto, se conserva; si no, motivo de familia + aviso.
+        const userObj = _userNamedObject(pConcept + ' ' + String(MOTOR_STATE.message || ''), objectPool);
+        if (userObj) {
+          patronMotif = userObj;
+        } else {
+          patronMotif = _pick(pPool);
+          if (patronMotif) objectConflicts.push('Patrón: el concepto «' + pConcept + '» no encaja con ningún motivo de la familia; se usó «' + patronMotif + '».');
+        }
+      }
     } else {
       patronMotif = pConcept;
     }
@@ -1205,11 +1239,20 @@ function buildCandidate(audsPerKey, fixedIdentity) {
           const cand = _chooseConceptCompatibleObject(freshObjs.length ? freshObjs : pool, anchor);
           if (cand && cand !== anchor && pool.indexOf(cand) !== -1 && !usedThisSet.has(cand)) obj = cand;
         }
-        // …si no, un motivo fresco de la familia para diferenciar la ficha.
         if (!obj) {
-          obj = (typeof _pickFresh === 'function')
-            ? _pickFresh(freshObjs, pool, usedArr)
-            : (freshObjs.length ? _pick(freshObjs) : '');
+          // Ningún motivo de la familia es compatible con el concepto. Conflicto:
+          // si el usuario nombró un objeto concreto (concepto o mensaje), se
+          // PRESERVA; si no, se usa un motivo de familia y se declara el conflicto
+          // (nunca elegir un objeto arbitrario en silencio).
+          const userObj = _userNamedObject(userConcept + ' ' + String(MOTOR_STATE.message || ''), objectPool);
+          if (userObj) {
+            obj = userObj;
+          } else {
+            obj = (typeof _pickFresh === 'function')
+              ? _pickFresh(freshObjs, pool, usedArr)
+              : (freshObjs.length ? _pick(freshObjs) : '');
+            if (obj) objectConflicts.push('Ficha ' + k + ': el concepto «' + anchor + '» no encaja con ningún motivo de la familia; se usó «' + obj + '».');
+          }
         }
         v.objeto = obj || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
       } else {
@@ -1428,6 +1471,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     set[k] = v;
   });
 
+  set.objectConflicts = objectConflicts;
   return set;
 }
 
@@ -1651,7 +1695,7 @@ function generateSet() {
   const usedObjs = K.filter(function (k) { return best[k].jerarquiaVisual !== 'SOLO_TEXTO'; }).map(function (k) { return best[k].objeto; });
   _addUsedObjects(historyKey, usedObjs);
 
-  LAST_RESULT = { set: best, score: bestScore, passed: passed, explorationBrief: MOTOR_STATE.explorationBrief };
+  LAST_RESULT = { set: best, score: bestScore, passed: passed, explorationBrief: MOTOR_STATE.explorationBrief, objectConflicts: (best && best.objectConflicts) || [] };
   try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
   try { window.V = best; } catch (e) {} // Puente para el revisor IA (ia-revisor.js lee window.V con fichas A/B/C).
   return LAST_RESULT;
@@ -1967,6 +2011,9 @@ function formatPrompt(result) {
   o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto.\n';
   o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido rotular los paneles con códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia; separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas: los rótulos de ficha viven solo en este texto, nunca en la imagen.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
+  if (result.objectConflicts && result.objectConflicts.length) {
+    o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' Ningún motivo autorizado de la familia es compatible con el concepto: confírmalo con el usuario antes de diseñar; no sustituyas el concepto ni añadas objetos fuera de la familia.\n';
+  }
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
   if (cultDir) o += 'CULTURA: ' + cultDir + '\n';
   if (legalDir) o += 'LEGAL: ' + legalDir + '\n';
