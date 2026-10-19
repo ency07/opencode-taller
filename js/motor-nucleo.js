@@ -1131,6 +1131,11 @@ function buildCandidate(audsPerKey, fixedIdentity) {
   const conservarPaleta = isVar && !!MOTOR_STATE.imageReference && MOTOR_STATE.variationOptions.paleta === 'conservar';
   const textosImagen = isVar && !!MOTOR_STATE.imageReference && MOTOR_STATE.variationOptions.textos === 'conservar_palabras';
   const textosMensaje = isVar && MOTOR_STATE.variationOptions.textos === 'mismo_mensaje';
+  const textosNuevo = isVar && MOTOR_STATE.variationOptions.textos === 'nuevo_texto';
+  // La frase escrita por el usuario es la FUENTE del selector de texto en variación:
+  // conservar_palabras la mantiene literal; mismo_mensaje la reescribe sin cambiar
+  // significado; nuevo_texto crea otra desde el concepto (no la conserva).
+  const typedMessage = String(MOTOR_STATE.message || '').trim();
 
   const set = {};
   const textCompositionByKey = _assignTextCompositions();
@@ -1204,12 +1209,19 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     v.textoPrincipal = _pick(sp.textoPrincipal || ['título principal con peso visual']);
 
     if (textosImagen) {
-      v.textoApoyo = '(conservar literalmente las palabras secundarias de la imagen)';
-      v.textoTerciario = '(conservar referencia legible si existe)';
+      v.textoPrincipal = typedMessage || 'transcribir literalmente las palabras legibles de la referencia';
+      v.textoApoyo = typedMessage ? '(no añadir texto secundario salvo dato real)' : '(conservar literalmente las palabras secundarias de la imagen)';
+      v.textoTerciario = '(conservar referencia legible si existe; no inventar)';
     } else if (textosMensaje) {
-      v.textoPrincipal = 'REDACTAR DE NUEVO el mensaje original con palabras distintas y naturales; preservar exactamente su significado, intención y audiencia. No copiar literalmente la frase fuente.';
+      v.textoPrincipal = typedMessage
+        ? 'Reescribir con palabras distintas el mensaje «' + typedMessage + '»; conservar significado, intención y audiencia; no añadir datos ni afirmaciones.'
+        : 'REDACTAR DE NUEVO el mensaje original con palabras distintas y naturales; preservar exactamente su significado, intención y audiencia. No copiar literalmente la frase fuente.';
       v.textoApoyo = 'Crear una frase secundaria distinta que amplíe la misma idea sin repetir el título ni añadir afirmaciones.';
       v.textoTerciario = 'Conservar literalmente solo fechas, cifras, nombres propios o referencias que sean datos; no inventar datos.';
+    } else if (textosNuevo) {
+      v.textoPrincipal = 'Crear un mensaje NUEVO desde el concepto, la familia y la audiencia' + (typedMessage ? ' (puede inspirarse en «' + typedMessage + '», no obliga a conservarlo)' : '') + '; una frase concreta; no inventar datos ni citas.';
+      v.textoApoyo = 'Apoyo opcional solo si aporta; no inventar datos.';
+      v.textoTerciario = 'Tercer nivel solo con dato real o se omite.';
     } else {
       v.textoApoyo = _pick(sp.textoApoyo || _TEXTO_FALLBACK_SECULAR.textoApoyo || ['texto de apoyo con peso']);
       v.textoTerciario = _pick(sp.textoTerciario || _TEXTO_FALLBACK_SECULAR.textoTerciario || ['dato de serie legible']);
@@ -1798,6 +1810,7 @@ function formatPrompt(result) {
   const explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? (MOTOR_STATE.explorationBrief || _resolveExplorationBrief()) : null;
   const promptConcept = String((explorationBrief && explorationBrief.concept) || MOTOR_STATE.concept || '').trim() || String(MOTOR_STATE.message || '').trim() || '—';
   const promptMessage = String(MOTOR_STATE.message || '').trim() || '—';
+  const typedMessage = String(MOTOR_STATE.message || '').trim();
   const isExplore = MOTOR_STATE.workflowMode === 'explore';
   const contactDNA = !isVar && !isPatron && !isExplore;
   const contactSymbol = contactDNA && set.A ? String(set.A.objeto || '').trim() : '';
@@ -1855,12 +1868,15 @@ function formatPrompt(result) {
     o += 'ORIGINALIDAD VISUAL: la referencia sirve para entender la idea, no como plantilla de trazado. No hagas una versión recoloreada, un simple cambio de técnica ni una réplica con texto reemplazado. Replantea la pose/representación, el encuadre, la estructura compositiva y la integración tipográfica. Mantén el ADN conceptual, pero toma decisiones visuales independientes y diferentes entre A/B/C.\n';
     if (MOTOR_STATE.variationOptions.paleta === 'conservar' && !hasAnalysis) o += 'Si se adjunta referencia, conserva sus colores; sin imagen usa la paleta explicita de cada ficha y no afirmes que replica la original.\n';
     const copyLanguage = (MOTOR_STATE.market === 'gospel_es' || /español natural/i.test(langDir)) ? 'español natural' : 'inglés nativo';
+    const msgRule = ' La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.';
     if (MOTOR_STATE.variationOptions.textos === 'conservar_palabras') {
-      o += 'TEXTOS: conservar literalmente las frases visibles de la referencia cuando se detecten con confianza. No sustituir, completar ni inventar texto; si una frase no se lee con seguridad, omitirla.\n';
+      o += typedMessage
+        ? 'TEXTOS: conservar LITERALMENTE el mensaje proporcionado «' + typedMessage + '»; no cambiar palabras, no traducir, no inventar texto.' + msgRule + '\n'
+        : 'TEXTOS: conservar literalmente las frases visibles de la referencia cuando se detecten con confianza. No sustituir, completar ni inventar texto; si una frase no se lee con seguridad, omitirla.' + msgRule + '\n';
     } else if (MOTOR_STATE.variationOptions.textos === 'mismo_mensaje') {
-      o += 'TEXTOS: reescribir el mensaje en ' + copyLanguage + ' con una frase concreta y natural para cada dirección 01A, 01B y 01C. Mantener significado, intención y audiencia. Las frases pueden variar en redacción, pero no añadir mensajes secundarios, citas, versículos, datos ni afirmaciones no proporcionadas.\n';
+      o += 'TEXTOS: mantener el significado, la intención y la audiencia del ' + (typedMessage ? 'mensaje proporcionado «' + typedMessage + '»' : 'mensaje de la referencia') + ', pero redactar una frase nueva y natural en ' + copyLanguage + ' para cada dirección 01A, 01B y 01C (redacción distinta permitida); no añadir mensajes secundarios, citas, versículos, datos ni afirmaciones no proporcionadas.' + msgRule + '\n';
     } else {
-      o += 'TEXTOS: crear copy original en ' + copyLanguage + ' desde concepto, función y nicho. Una frase concreta por dirección. No añadir citas, versículos, datos ni afirmaciones no proporcionadas.\n';
+      o += 'TEXTOS: crear un mensaje NUEVO en ' + copyLanguage + ' desde el concepto, la familia y la audiencia (no obliga a conservar el mensaje original' + (typedMessage ? ' «' + typedMessage + '»' : '') + '). Una frase concreta por dirección. No añadir citas, versículos, datos ni afirmaciones no proporcionadas.' + msgRule + '\n';
     }
     o += 'ESQUEMAS: aplica las decisiones particulares de cada ficha.\n\n';
   } else if (isPatron) {
@@ -1918,11 +1934,13 @@ function formatPrompt(result) {
     }
     o += 'TEXTO=' + textMode + '; ';
     if (textMode === 'conservar_palabras') {
-      o += 'transcribe y conserva exactamente las palabras legibles de la imagen; no reescribas, traduzcas ni inventes texto. Si una palabra no puede leerse con seguridad, omítela. ';
+      o += (typedMessage
+        ? 'conserva LITERALMENTE el mensaje proporcionado «' + typedMessage + '»; no reescribas, traduzcas ni inventes texto. '
+        : 'transcribe y conserva exactamente las palabras legibles de la imagen; no reescribas, traduzcas ni inventes texto. Si una palabra no puede leerse con seguridad, omítela. ');
     } else if (textMode === 'mismo_mensaje') {
-      o += 'conserva el significado del mensaje, pero redacta una frase nueva y exacta en el idioma del mercado; no añadas datos ni afirmaciones. ';
-    } else if (textMode === 'nuevo') {
-      o += 'crea un copy nuevo, breve y pertinente al concepto y mercado; no inventes datos, nombres, fechas ni citas. ';
+      o += 'conserva el significado, la intención y la audiencia' + (typedMessage ? ' del mensaje «' + typedMessage + '»' : '') + ', pero redacta una frase nueva y exacta en el idioma del mercado; no añadas datos ni afirmaciones. ';
+    } else if (textMode === 'nuevo_texto') {
+      o += 'crea un copy nuevo, breve y pertinente al concepto, la familia y el mercado; no inventes datos, nombres, fechas ni citas. ';
     } else if (textMode === 'sin_texto') {
       o += 'elimina el texto del arte; no generes letras, números ni microtexto. ';
     } else {
@@ -1936,7 +1954,7 @@ function formatPrompt(result) {
     }
     o += 'VARIACIÓN VISUAL REAL: crea una nueva solución gráfica basada en la referencia, no una copia ni una limpieza de la misma. Cambia obligatoriamente composición, silueta global, encuadre, distribución de masas y jerarquía tipográfica. Conserva solo los elementos que exigen los selectores. No basta recolorear, cambiar textura, añadir borde ni aplicar filtro. No inventes objetos, texto, datos o símbolos fuera de las reglas anteriores.\n';
   }
-  o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto.\n';
+  o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto. La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
   o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido rotular los paneles con códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia; separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas: los rótulos de ficha viven solo en este texto, nunca en la imagen.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
