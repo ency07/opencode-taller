@@ -1142,6 +1142,24 @@ function buildCandidate(audsPerKey, fixedIdentity) {
   const contactPrimaryText = String(MOTOR_STATE.message || '').trim().replace(/\s+/g, ' ');
   const contactSupportText = String(MOTOR_STATE.support || '').trim().replace(/\s+/g, ' ');
 
+  // Patrón repetido: un solo motivo CONCRETO de la FAMILIA para todas las
+  // variantes (nunca el mensaje ni la frase del concepto). Sin familia → concepto.
+  let patronMotif = '';
+  if (MOTOR_STATE.workflowMode !== 'variation' && MOTOR_STATE.designMode === 'patron') {
+    const pConcept = String(MOTOR_STATE.concept || '').trim();
+    const pCommon = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
+    const pFamily = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return pCommon.indexOf(ob) === -1; });
+    if (pFamily.length) {
+      const pConcrete = pFamily.filter(function (o) { return o !== pConcept; });
+      const pPool = pConcrete.length ? pConcrete : pFamily;
+      patronMotif = (pConcept && typeof _chooseConceptCompatibleObject === 'function')
+        ? _chooseConceptCompatibleObject(pPool, pConcept) : '';
+      if (!patronMotif || patronMotif === pConcept || pPool.indexOf(patronMotif) === -1) patronMotif = _pick(pPool);
+    } else {
+      patronMotif = pConcept;
+    }
+  }
+
   K.forEach(function (k) {
     const v = {};
     v.estilo = estilos[k];
@@ -1165,59 +1183,43 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       v.objeto = _chooseConceptCompatibleObject(objectPool, semanticAnchor) || semanticAnchor || 'proponer un símbolo directamente derivado del concepto y la familia seleccionada';
     } else if (MOTOR_STATE.workflowMode === 'explore') {
       const brief = MOTOR_STATE.explorationBrief || _resolveExplorationBrief();
-      // TRAZABILIDAD: el símbolo se deriva del CONCEPTO/MENSAJE del usuario.
-      // La familia solo sesga estilo y tratamiento; no decide qué se ve. Antes,
-      // cuando el concepto no coincidía con el banco, la ficha sustituía el
-      // concepto por un objeto ajeno del banco ("silueta empujando contra
-      // tráfico" + familia Skate salía dibujando "lija negra" o incluso el
-      // banco común "árbol de biblioteca"). El banco solo se usa si el usuario
-      // no dio concepto/mensaje (exploración pura de familia).
+      // OBJETO = motivo CONCRETO del banco de la FAMILIA (garantiza el nicho:
+      // Skate dibuja cosas de skate). Nunca el mensaje ni la frase del concepto:
+      // un objeto es una cosa dibujable (tabla, ruedas, rampa), no una oración.
+      // El CONCEPTO es la idea que la IA representa USANDO ese motivo. Solo si
+      // no hay banco de familia, el concepto queda como ancla.
       const userConcept = String(MOTOR_STATE.concept || '').trim();
-      const userMessage = String(MOTOR_STATE.message || '').trim();
-      const userAnchor = userConcept || userMessage;
+      const anchor = String(userConcept || brief.concept || '').trim();
       const commonBank = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
       const familyObjs = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBank.indexOf(ob) === -1; });
-      const fullObjs = familyObjs.length ? familyObjs : (Array.isArray(objectPool) ? objectPool : []);
-      if (userAnchor) {
-        // Solo se acepta un objeto del banco si coincide claramente con lo pedido.
-        const match = (typeof _chooseConceptCompatibleObject === 'function')
-          ? _chooseConceptCompatibleObject(fullObjs, userAnchor) : '';
-        v.objeto = (match && match !== userAnchor) ? match : userAnchor;
-      } else {
-        const anchor = String(brief.concept || '').trim();
+      if (familyObjs.length) {
+        // Excluir la frase del concepto como OBJETO: el objeto es una cosa
+        // concreta (tabla, ruedas, tenis…), no la oración del concepto.
+        const concreteObjs = familyObjs.filter(function (o) { return o !== anchor; });
+        const pool = concreteObjs.length ? concreteObjs : familyObjs;
         const usedArr = Array.from(usedThisSet);
-        const freshObjs = fullObjs.filter(function (obj) { return usedArr.indexOf(obj) === -1; });
+        const freshObjs = pool.filter(function (obj) { return usedArr.indexOf(obj) === -1; });
         let obj = '';
-        if (typeof _chooseConceptCompatibleObject === 'function' && anchor) {
-          obj = _chooseConceptCompatibleObject(freshObjs.length ? freshObjs : fullObjs, anchor);
+        // Preferir el motivo de familia que se acerque al concepto…
+        if (anchor && typeof _chooseConceptCompatibleObject === 'function') {
+          const cand = _chooseConceptCompatibleObject(freshObjs.length ? freshObjs : pool, anchor);
+          if (cand && cand !== anchor && pool.indexOf(cand) !== -1 && !usedThisSet.has(cand)) obj = cand;
         }
-        // Si no hay match claro, o el resultado repite el ancla / un símbolo ya
-        // usado, se toma uno fresco del banco de la familia para diferenciar la ficha.
-        if (!obj || obj === anchor || usedThisSet.has(obj)) {
+        // …si no, un motivo fresco de la familia para diferenciar la ficha.
+        if (!obj) {
           obj = (typeof _pickFresh === 'function')
-            ? _pickFresh(freshObjs, fullObjs, usedArr)
+            ? _pickFresh(freshObjs, pool, usedArr)
             : (freshObjs.length ? _pick(freshObjs) : '');
         }
-        v.objeto = obj || anchor
+        v.objeto = obj || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
+      } else {
+        v.objeto = anchor
           || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
       }
     } else {
-      // Patrón repetido: el motivo debe derivar del CONCEPTO del usuario, no
-      // elegirse al azar del banco (misma coherencia que contacto y exploración).
-      // Sin concepto, se usa el banco de la familia con variedad.
-      const anchor = String(MOTOR_STATE.concept || MOTOR_STATE.message || '').trim();
-      if (anchor) {
-        const match = (typeof _chooseConceptCompatibleObject === 'function')
-          ? _chooseConceptCompatibleObject(objectPool, anchor) : '';
-        v.objeto = (match && match !== anchor) ? match : anchor;
-      } else {
-        let obj, g = 0;
-        do {
-          obj = _pick(objectPool);
-          g++;
-        } while (usedThisSet.has(obj) && g < 30);
-        v.objeto = obj || '—';
-      }
+      // Patrón repetido: motivo concreto de la FAMILIA (nunca el mensaje).
+      v.objeto = patronMotif
+        || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir motivo coherente antes de diseñar';
     }
     usedThisSet.add(v.objeto);
 

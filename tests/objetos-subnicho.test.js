@@ -60,7 +60,7 @@ bankCosta.forEach(function (o) {
   ok(bankTodas.indexOf(o) !== -1, "'todas' debe incluir el objeto regional: " + o);
 });
 
-/* --- 2) TRAZABILIDAD: el símbolo sigue al concepto aunque no quepa en el banco --- */
+/* --- 2) El OBJETO es un motivo CONCRETO de la FAMILIA, nunca el mensaje ni el banco común --- */
 baseState();
 MOTOR_STATE.market = 'global_es';
 MOTOR_STATE.region = 'global';
@@ -68,40 +68,46 @@ MOTOR_STATE.product = 'CAMISETA SOFT';
 MOTOR_STATE.subniche = 'skate_culture';
 MOTOR_STATE.dominio = 'auto';
 MOTOR_STATE.dominioDetectado = 'auto';
+const MENSAJE = 'SILUETA EMPUJANDO CONTRA TRÁFICO';
 const CONCEPTO = 'silueta empujando contra tráfico';
 MOTOR_STATE.concept = CONCEPTO;
-MOTOR_STATE.message = 'SILUETA EMPUJANDO CONTRA TRÁFICO';
+MOTOR_STATE.message = MENSAJE;
 const commonBank = _commonBankForMarket();
+const skateBank = getBankForSubniche('skate_culture', 'global', 'global_es');
 let vistos = 0;
 for (let i = 0; i < 15; i++) {
   const syms = symbols(buildCandidate(resolveAudiences(), null));
   syms.forEach(function (s) {
     vistos++;
-    ok(s === CONCEPTO, 'el símbolo debe ser el concepto del usuario (trazable), no un objeto distinto del banco: "' + s + '"');
-    ok(commonBank.indexOf(s) === -1, 'el símbolo nunca debe ser un objeto del banco común genérico: "' + s + '"');
+    ok(skateBank.indexOf(s) !== -1, 'el OBJETO debe ser un motivo concreto de la familia Skate: "' + s + '"');
+    ok(commonBank.indexOf(s) === -1, 'el OBJETO nunca debe ser un objeto del banco común genérico: "' + s + '"');
+    ok(s !== MENSAJE, 'el OBJETO nunca debe ser el mensaje: "' + s + '"');
+    ok(s !== CONCEPTO, 'el OBJETO no debe ser la frase del concepto (debe ser una cosa concreta): "' + s + '"');
   });
 }
 ok(vistos > 0, 'debe haber generado al menos un símbolo');
 
-/* --- 2b) TRAZABILIDAD en modo Patrón repetido (antes elegía al azar del banco) --- */
+/* --- 2b) Patrón repetido: un motivo CONCRETO de la familia, nunca el mensaje --- */
 baseState();
 MOTOR_STATE.market = 'colombia';
 MOTOR_STATE.region = 'todas';
 MOTOR_STATE.product = 'MOCHILA';   // producto que admite patrón
-MOTOR_STATE.subniche = 'auto';
+MOTOR_STATE.subniche = 'humor_costeno';
 MOTOR_STATE.dominio = 'auto';
 MOTOR_STATE.dominioDetectado = 'auto';
 MOTOR_STATE.designMode = 'patron';
 MOTOR_STATE.workflowMode = 'new';
-MOTOR_STATE.concept = 'amo a mi perro y lo cuido';
-MOTOR_STATE.message = '';
+MOTOR_STATE.concept = 'motivo costeño';
+MOTOR_STATE.message = 'EL SOL NO ESPERA';
+const patronBank = getBankForSubniche('humor_costeno', 'todas', 'colombia');
 let patronVistos = 0;
 for (let i = 0; i < 10; i++) {
   const syms = symbols(buildCandidate(resolveAudiences(), null));
   syms.forEach(function (s) {
     patronVistos++;
-    ok(s === 'amo a mi perro y lo cuido', 'en Patrón el motivo debe derivar del concepto (no aleatorio del banco): "' + s + '"');
+    ok(patronBank.indexOf(s) !== -1, 'en Patrón el motivo debe ser de la familia (no aleatorio ni mensaje): "' + s + '"');
     ok(commonBank.indexOf(s) === -1, 'en Patrón el motivo no debe salir del banco común genérico: "' + s + '"');
+    ok(s !== 'EL SOL NO ESPERA', 'en Patrón el motivo nunca debe ser el mensaje: "' + s + '"');
   });
 }
 ok(patronVistos > 0, 'el modo Patrón debe producir al menos un motivo');
@@ -125,6 +131,27 @@ for (let i = 0; i < 15; i++) {
   });
 }
 ok(genFamilia > 0, 'la exploración de familia debe producir símbolos del banco');
+
+/* --- 4) Sin familia con banco: el OBJETO es el concepto como ancla, nunca un objeto de biblioteca --- */
+baseState();
+MOTOR_STATE.market = 'colombia';
+MOTOR_STATE.region = 'todas';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.subniche = 'auto';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+MOTOR_STATE.concept = 'amo a mi perro y lo cuido';
+MOTOR_STATE.message = '';
+let sinFamilia = 0;
+for (let i = 0; i < 10; i++) {
+  const syms = symbols(buildCandidate(resolveAudiences(), null));
+  syms.forEach(function (s) {
+    sinFamilia++;
+    ok(s === 'amo a mi perro y lo cuido', 'sin familia, el OBJETO debe ser el concepto como ancla: "' + s + '"');
+    ok(commonBank.indexOf(s) === -1, 'sin familia, el OBJETO no debe ser un objeto de biblioteca (banco común): "' + s + '"');
+  });
+}
+ok(sinFamilia > 0, 'debe producir al menos un objeto-ancla');
 
 function finish() {
   const passed = failures.length === 0;
