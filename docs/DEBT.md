@@ -144,3 +144,21 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Fecha objetivo:** pendiente de decisión del propietario.
 - **Estado:** open.
 - **Revisión:** cada release.
+
+### DEBT-011 — Cliente IA triplicado (copy / revisor / visión) ya divergió
+
+- **Origen:** tres implementaciones independientes de fetch+auth para los mismos
+  proveedores: `js/copy-ia.js`, `js/ia-revisor.js` y `js/ia-analisis.js`. La de
+  copy-ia mandaba Gemini con `Authorization: Bearer` (inválido: exige
+  `x-goog-api-key`), lo que hacía fallar el botón "Proponer copy con IA".
+- **Riesgo:** cada proveedor nuevo o cambio de auth debe replicarse en tres sitios;
+  una copia queda atrás en silencio (ya ocurrió).
+- **Impacto:** Alto (funciones de IA caen sin error visible).
+- **Mitigación actual:** copy-ia corregido en PR #20 y cubierto por tests de
+  contrato de red (headers, JSON mode, timeout, diagnóstico).
+- **Solución definitiva:** un único módulo cliente IA (endpoints, auth, failover,
+  timeouts y parseo) usado por copy, revisor y visión.
+- **Responsable:** Motor/IA.
+- **Fecha objetivo:** próxima revisión del subsistema IA.
+- **Estado:** open.
+- **Revisión:** cada release.

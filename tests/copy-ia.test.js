@@ -97,6 +97,85 @@ const JS = path.join(ROOT, 'js');
   ok(idx.indexOf('id="btnSugerirCopy"') !== -1 && idx.indexOf('id="copyIAStatus"') !== -1, 'botón y estado en index.html');
   ok(idx.indexOf('id="btnCopy"') !== -1, 'el botón copiar queda intacto');
 
+  /* --- 7) contrato de red por proveedor (regresión del bug de auth) --- */
+  let llamadas = [];
+  global.fetch = function (url, opt) {
+    llamadas.push({ url: url, opt: opt });
+    return Promise.resolve({
+      ok: true,
+      json: function () {
+        return Promise.resolve({ candidates: [{ content: { parts: [{ text: '{"frase":"Vuelve a empezar","alternativas":["Sigue subiendo"]}' }] } }] });
+      }
+    });
+  };
+  window.getAISlots = function () {
+    return [{ provider: 'Gemini', model: 'gemini-2.5-flash', key: 'k-gem', timeoutMs: 15000 }];
+  };
+  outEl.value = '';
+  const rGem = await PODCopyIA.sugerirCopy();
+  ok(rGem && rGem.frase === 'Vuelve a empezar', 'Gemini devuelve frase usable');
+  ok(llamadas.length === 1 && llamadas[0].opt.headers['x-goog-api-key'] === 'k-gem', 'Gemini manda la clave en x-goog-api-key');
+  ok(!llamadas[0].opt.headers['Authorization'], 'Gemini NO manda Authorization Bearer');
+  const bGem = JSON.parse(llamadas[0].opt.body);
+  ok(bGem.generationConfig && bGem.generationConfig.responseMimeType === 'application/json', 'Gemini pide respuesta JSON');
+  ok(bGem.generationConfig.maxOutputTokens >= 300, 'Gemini con presupuesto de tokens suficiente');
+  ok(!!llamadas[0].opt.signal, 'la llamada lleva AbortSignal (timeout real)');
+
+  /* --- 8) compatible OpenAI: JSON mode + tokens, y fallback entre slots --- */
+  llamadas = [];
+  global.fetch = function (url, opt) {
+    llamadas.push({ url: url, opt: opt });
+    return Promise.resolve({
+      ok: true,
+      json: function () { return Promise.resolve({ choices: [{ message: { content: '{"frase":"Otro viaje","alternativas":[]}' } }] }); }
+    });
+  };
+  window.getAISlots = function () {
+    return [{ provider: 'OpenRouter', model: 'google/gemini-2.5-flash', key: 'k-or', timeoutMs: 15000 }];
+  };
+  outEl.value = '';
+  const rOr = await PODCopyIA.sugerirCopy();
+  ok(rOr && rOr.frase === 'Otro viaje', 'OpenRouter devuelve frase');
+  const bOr = JSON.parse(llamadas[0].opt.body);
+  ok(bOr.response_format && bOr.response_format.type === 'json_object', 'OpenRouter/Groq piden JSON mode');
+  ok(bOr.max_tokens >= 300, 'tokens suficientes para frase + alternativas');
+  ok(llamadas[0].opt.headers['Authorization'] === 'Bearer k-or', 'OpenRouter usa Bearer');
+
+  /* --- 9) errores reales visibles: proveedor + status (sin claves) --- */
+  global.fetch = function () { return Promise.resolve({ ok: false, status: 401 }); };
+  window.getAISlots = function () {
+    return [
+      { provider: 'Groq', model: 'openai/gpt-oss-20b', key: 'k-groq', timeoutMs: 8000 },
+      { provider: 'Gemini', model: 'gemini-2.5-flash', key: 'k-gem2', timeoutMs: 8000 }
+    ];
+  };
+  outEl.value = '';
+  const rFail = await PODCopyIA.sugerirCopy();
+  ok(rFail && rFail.error === 'respuesta-invalida', 'todo falla: respuesta-invalida');
+  const diagTxt = (rFail.diagnosticos || []).join(' | ');
+  ok(diagTxt.indexOf('Groq: HTTP 401') !== -1, 'el diagnóstico nombra Groq y su status');
+  ok(diagTxt.indexOf('Gemini: HTTP 401') !== -1, 'el diagnóstico nombra Gemini y su status');
+  ok(diagTxt.indexOf('k-groq') === -1 && diagTxt.indexOf('k-gem2') === -1, 'el diagnóstico nunca expone claves');
+
+  /* --- 10) timeout real: slot colgado se aborta y pasa al siguiente --- */
+  global.fetch = function (url, opt) {
+    return new Promise(function (resolve, reject) {
+      opt.signal.addEventListener('abort', function () {
+        const e = new Error('aborted');
+        e.name = 'AbortError';
+        reject(e);
+      });
+    });
+  };
+  window.getAISlots = function () {
+    return [{ provider: 'Groq', model: 'openai/gpt-oss-20b', key: 'k-slow', timeoutMs: 1200 }];
+  };
+  outEl.value = '';
+  const t0 = Date.now();
+  const rSlow = await PODCopyIA.sugerirCopy();
+  ok(Date.now() - t0 < 5000, 'el timeout corta la espera (no cuelga el botón)');
+  ok((rSlow.diagnosticos || []).join(' ').indexOf('sin respuesta en 1s') !== -1, 'el diagnóstico reporta el timeout del slot');
+
   console.log((failures.length ? 'FAIL' : 'PASS') + ' copy-ia (' + checks + ' aserciones, ' + failures.length + ' fallos)');
   failures.forEach(function (msg) { console.error(' - ' + msg); });
   process.exit(failures.length ? 1 : 0);
