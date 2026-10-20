@@ -275,7 +275,8 @@
     return {
       estilo: { A: 'Auto', B: 'Auto', C: 'Auto' },
       audiencia: { A: 'Auto', B: 'Auto', C: 'Auto' },
-      jerarquia: { A: 'Auto', B: 'Auto', C: 'Auto' }
+      jerarquia: { A: 'Auto', B: 'Auto', C: 'Auto' },
+      layout: { A: 'Auto', B: 'Auto', C: 'Auto' }
     };
   }
 
@@ -283,7 +284,7 @@
     const saved = getJSON(memKey(['locks', market, product]), {});
     const base = defaultLocks();
 
-    ['estilo', 'audiencia', 'jerarquia'].forEach(function (field) {
+    ['estilo', 'audiencia', 'jerarquia', 'layout'].forEach(function (field) {
       ['A', 'B', 'C'].forEach(function (card) {
         if (saved && saved[field] && saved[field][card]) {
           base[field][card] = saved[field][card];

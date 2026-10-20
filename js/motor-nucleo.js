@@ -39,7 +39,7 @@ const _CONTACT_TREATMENT_ORDER = { A: 'HEAVY', B: 'SOFT', C: 'MODERN' };
 const _memGetJSON = typeof getJSON === 'function' ? getJSON : function () { return null; };
 const _memSetJSON = typeof setJSON === 'function' ? setJSON : function () { return false; };
 const _memKey = typeof memKey === 'function' ? memKey : function (p) { return 'POD2|' + (p || []).join('|'); };
-const _loadLocks = typeof loadLocks === 'function' ? loadLocks : function () { return { estilo: { A: 'Auto', B: 'Auto', C: 'Auto' }, audiencia: { A: 'Auto', B: 'Auto', C: 'Auto' }, jerarquia: { A: 'Auto', B: 'Auto', C: 'Auto' } }; };
+const _loadLocks = typeof loadLocks === 'function' ? loadLocks : function () { return { estilo: { A: 'Auto', B: 'Auto', C: 'Auto' }, audiencia: { A: 'Auto', B: 'Auto', C: 'Auto' }, jerarquia: { A: 'Auto', B: 'Auto', C: 'Auto' }, layout: { A: 'Auto', B: 'Auto', C: 'Auto' } }; };
 const _saveLocks = typeof saveLocks === 'function' ? saveLocks : function () { };
 const _setLockValue = typeof setLockValue === 'function' ? setLockValue : function () { };
 const _loadPatternMemory = typeof loadPatternMemory === 'function' ? loadPatternMemory : function () { return []; };
@@ -862,7 +862,7 @@ function _allowedLayoutPool() {
   return pool.length >= 3 ? pool : null;
 }
 
-function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, usedAxes) {
+function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, usedAxes, fixedLayout) {
   const used = usedAxes || {};
   const profile = _STRUCTURAL_PROFILES[String(profileKey || '').toUpperCase()];
   if (!profile) return v;
@@ -889,13 +889,14 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
     const stored = (typeof getJSON === 'function' ? getJSON(rk, []) : _memGetJSON(rk, [])) || [];
     recentLayouts = new Set([].concat.apply([], stored.slice(-3)));
   } catch (e) { recentLayouts = new Set(); }
-  // Sesgo suave (3:1), no lista cerrada: cualquier layout puede salir y el
-  // catálogo completo se explora a lo largo de generaciones; dentro de A/B/C no se repite.
+  // Sesgo suave (1.5:1), no lista cerrada: cualquier layout puede salir y el
+  // catálogo completo se explora a lo largo de generaciones; dentro de A/B/C no
+  // se repite. El override manual (lock) siempre gana.
   const layoutWeights = distinctLayouts.map(function (layout) {
-    const base = preferredLayouts.has(layout) ? 3 : 1;
+    const base = preferredLayouts.has(layout) ? 1.5 : 1;
     return recentLayouts.has(layout) ? base * 0.35 : base;
   });
-  v.layout = _pickWeighted(distinctLayouts.length ? distinctLayouts : layouts, layoutWeights);
+  v.layout = (fixedLayout && fixedLayout !== 'Auto') ? fixedLayout : _pickWeighted(distinctLayouts.length ? distinctLayouts : layouts, layoutWeights);
 
   const typeHints = profile.type || [];
   const types = (_TIPOS || []).filter(function (x) { return typeHints.some(function (h) { return x.indexOf(h) === 0; }); });
@@ -1249,7 +1250,8 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     const allowedPool = _allowedLayoutPool();
     const layoutBiasRaw = (productBias.layout || []).concat(audProfile.layoutPref || []);
     const layoutBias = allowedPool ? layoutBiasRaw.filter(function (x) { return allowedPool.some(function (a) { return a.indexOf(x) === 0 || String(x).indexOf(a) === 0; }); }) : layoutBiasRaw;
-    v.layout = _pickFresh(layoutBias, allowedPool || _LAYOUTS, usedAxes.layout);
+    const fixedLayout = ((_loadLocks(memLocksMarket(), MOTOR_STATE.product).layout) || {})[k] || '';
+    v.layout = (fixedLayout && fixedLayout !== 'Auto') ? fixedLayout : _pickFresh(layoutBias, allowedPool || _LAYOUTS, usedAxes.layout);
     usedAxes.layout.push(v.layout);
 
     const tipoBias = (audProfile.tipoPref || []).concat(_STYLE_TIPO_PREF[styleBase] || []);
@@ -1294,7 +1296,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
         negativeSpace: usedAxes.negativeSpace,
         jerarquia: usedAxes.jerarquia
       };
-      _applyStructuralProfile(v, _CONTACT_TREATMENT_ORDER[k], productBias, audProfile, priorProfileAxes);
+      _applyStructuralProfile(v, _CONTACT_TREATMENT_ORDER[k], productBias, audProfile, priorProfileAxes, fixedLayout);
       usedAxes.layout[usedAxes.layout.length - 1] = v.layout;
       usedAxes.tipografia[usedAxes.tipografia.length - 1] = v.tipografia;
       usedAxes.formaSimbolo[usedAxes.formaSimbolo.length - 1] = v.formaSimbolo;
@@ -2027,6 +2029,7 @@ function formatPrompt(result) {
       BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva; evita dos bloques desconectados. La arquitectura define colocación/relación, nunca cambia la proporción.'
     }[v.jerarquiaVisual] || '';
     o += 'JERARQUÍA: ' + hierarchyDirective + ' La jerarquía fija tamaño, área y peso; el layout solo ubicación. Si hay conflicto, prevalece esta regla.\n';
+    o += 'LAYOUT (ubicación): ' + v.layout + '. El layout rige dónde se ubica cada elemento y dónde respira el vacío; no cambia tamaño, área ni jerarquía.\n';
     if (v.jerarquiaVisual === 'BALANCEADO') {
       // COMPOSICIÓN: el layout y la arquitectura definen ubicación, nunca proporción
       o += 'COMPOSICIÓN BALANCEADA: ' + v.layout + ' · ' + v.distribucionTexto + '. La arquitectura define colocación/relación, nunca cambia la proporción.\n';
@@ -2079,7 +2082,10 @@ function renderCards(result) {
   var audPool = [];
   try { audPool = getCurrentAudiencePool(); } catch (e) { audPool = _AUD_NAMES.slice(); }
   var stylePool = _styleCandidatesForContext();
-  var styleLocks = _loadLocks(memLocksMarket(), MOTOR_STATE.product).estilo || {};
+  var modeLocks = _loadLocks(memLocksMarket(), MOTOR_STATE.product);
+  var styleLocks = modeLocks.estilo || {};
+  var layoutLocks = modeLocks.layout || {};
+  var layoutPool = (_allowedLayoutPool() || _LAYOUTS || []);
   var modes = ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE'];
 
   // Contexto de la serie (una sola vez): antes se repetía "Dominio" en cada
@@ -2129,12 +2135,15 @@ function renderCards(result) {
       + '<option value="Auto"' + ((!_loadLocks(memLocksMarket(), MOTOR_STATE.product).jerarquia[k] || _loadLocks(memLocksMarket(), MOTOR_STATE.product).jerarquia[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(v.jerarquiaVisual) + ')</option>'
       + modes.map(function (m) { return '<option value="' + m + '"' + (_loadLocks(memLocksMarket(), MOTOR_STATE.product).jerarquia[k] === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
       + '</select></span></div>';
+    html += '<div class="vrow"><span class="vk">Layout</span><span class="vv"><select data-card="' + k + '" data-lock="layout" onchange="setCardLock(this)">'
+      + '<option value="Auto"' + ((!layoutLocks[k] || layoutLocks[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(String(v.layout).split(':')[0].trim()) + ')</option>'
+      + layoutPool.map(function (e) { return '<option value="' + escHtml(e) + '"' + (layoutLocks[k] === e ? ' selected' : '') + '>' + escHtml(String(e).split(':')[0].trim()) + '</option>'; }).join('')
+      + '</select></span></div>';
 
     // Decisiones propias de la ficha; el Dominio sube al contexto de la serie.
     const rows = [
       ['Objeto', v.objeto],
-      ['Tratamiento', v.tratamiento],
-      ['Layout', String(v.layout).split(':')[0]]
+      ['Tratamiento', v.tratamiento]
     ];
 
     rows.forEach(function (r) {
