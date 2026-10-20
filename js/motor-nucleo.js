@@ -1863,8 +1863,7 @@ function _contrastBlock(set) {
     ['Forma del símbolo', function (v) { return v.formaSimbolo; }],
     ['Densidad', function (v) { return v.densidad; }],
     ['Espacio negativo', function (v) { return v.negativeSpace; }],
-    ['Familia de color', function (v) { return v.familiaColor; }],
-    ['Composición', function (v) { return v.composicion; }]
+    ['Familia de color', function (v) { return v.familiaColor; }]
   ];
   let s = 'CONTRASTE ESTRUCTURAL A/B/C — cada columna debe ser una solución distinta, NO la misma imagen recoloreada:\n';
   axes.forEach(function (ax) {
@@ -2061,7 +2060,7 @@ function formatPrompt(result) {
     o += 'VARIACIÓN VISUAL REAL: crea una nueva solución gráfica basada en la referencia, no una copia ni una limpieza de la misma. Cambia obligatoriamente composición, silueta global, encuadre, distribución de masas y jerarquía tipográfica. Conserva solo los elementos que exigen los selectores. No basta recolorear, cambiar textura, añadir borde ni aplicar filtro. No inventes objetos, texto, datos o símbolos fuera de las reglas anteriores.\n';
   }
   o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto.\n';
-  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado.\n';
+  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado. FONDO DEL ARTE: liso, plano o transparente; prohibido añadir cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas, marcos ni escenas de fondo no solicitadas, aunque el estilo los use habitualmente.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (result.objectConflicts && result.objectConflicts.length) {
     o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
@@ -2133,6 +2132,15 @@ function formatPrompt(result) {
       BALANCEADO: 'texto 45–55% del área · símbolo 45–55% — mitad y mitad; ninguno de los dos es un adorno secundario'
     }[v.jerarquiaVisual] || '';
     o += 'PESO VISUAL EXIGIDO — ' + pesoExigido + '. Es una medición verificable a primera vista, no una sugerencia: si el elemento que manda no ocupa su franja, reescala el arte y entrega la versión corregida.\n';
+    const audPerfil = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES[v.audiencia]) || {};
+    const perfilMockup = audPerfil.edad === 'infantil'
+      ? 'modelo infantil (niño o niña según el perfil) con la prenda en talla de niño'
+      : (audPerfil.genero === 'femenino'
+        ? 'modelo mujer' + (audPerfil.edad === 'joven' ? ' joven' : audPerfil.edad === 'adulto' ? ' adulta' : '') + ' con corte y talla femeninos'
+        : (audPerfil.genero === 'masculino'
+          ? 'modelo hombre' + (audPerfil.edad === 'joven' ? ' joven' : audPerfil.edad === 'adulto' ? ' adulto' : '') + ' con corte y talla masculinos'
+          : 'modelo acorde al perfil (edad y género del perfil) con el corte y la talla que le corresponden'));
+    o += 'AUDIENCIA DE LA FICHA: «' + (audPerfil.label || v.audiencia) + '» (id ' + v.audiencia + '; ' + (audPerfil.edad || 'edad del perfil') + ', ' + (audPerfil.genero || 'género del perfil') + '). Perfil: ' + (audPerfil.perfil || 'el declarado en el motor') + '. Contexto de uso: ' + (audPerfil.contexto || 'cotidiano') + '. Códigos que le hablan: ' + (audPerfil.codigos || 'los de la familia') + '. Evita: ' + (audPerfil.rechaza || 'lo ajeno al perfil') + '. Directiva: ' + (audPerfil.directiva || 'la del perfil') + '. OBLIGATORIO: el arte se siente hecho para esta persona y el mockup muestra ' + perfilMockup + '; un modelo adulto genérico invalida la ficha.\n';
     o += 'CARA DEL ESTAMPADO: ' + (v.cara === 'espalda' ? 'ESPALDA' : 'FRENTE') + ' — ubica el arte en esa cara; en la hoja de presentación muestra esa vista y no inventes la cara contraria.\n';
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
@@ -2182,8 +2190,7 @@ function formatPrompt(result) {
       o += 'INTEGRACIÓN TEXTO-SÍMBOLO: integra el objeto descrito en el concepto ("' + v.objeto + '") en el lettering usando su forma física y acción reales; elige una unión visual clara y natural, sin imponer metáforas genéricas ni partes que el objeto no posee. El texto exacto ocupa 70–80% del área y es la primera lectura; el símbolo ocupa como máximo 20–30%, queda integrado y nunca aparece como ilustración separada. La arquitectura cambia ubicación, no proporción.\n';
     }
     if (v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
-      o += 'INTEGRACIÓN DE LA FICHA: ' + v.integracionTexto + '\n';
-      o += 'TEXTO SUBORDINADO: el copy ocupa como máximo 20–30% en banda breve (inferior o lateral); prohibido lettering gigante que compita con el símbolo. Si al mirar el arte el texto domina, encogerlo hasta que el objeto autorizado mande a primera vista.\n';
+      o += 'TEXTO SUBORDINADO: el copy ocupa como máximo 20–30% en la zona que le asigne el layout; prohibido lettering gigante que compita con el símbolo. Si al mirar el arte el texto domina, encogerlo hasta que el objeto autorizado mande a primera vista.\n';
     }
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
       o += _soloTextCompositionDirective(v.distribucionTexto) + '\n';

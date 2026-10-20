@@ -103,8 +103,9 @@ ok(outGesto.indexOf('PROHIBIDO rotular DENTRO del arte y sus mockups') !== -1 &&
 ok(outGesto.indexOf('omite cualquier tono que destruya contraste o legibilidad') !== -1, 'mockups: omite tonos incompatibles');
 ok(outGesto.indexOf('12 vistas en total') === -1, 'mockups: no debe sobrevivir el contrato de 12 fijas');
 
-/* INTEGRACIÓN DE LA FICHA: la matriz UI por fin llega al prompt (BAL+OBJ) */
-ok(count(outGesto, 'INTEGRACIÓN DE LA FICHA:') === 2, 'integración de ficha en BALANCEADO y OBJETO (2/3, TEXTO usa su bloque)');
+/* INTEGRACIÓN DE LA FICHA: solo BALANCEADO; OBJETO usa su distribución
+   para no duplicar arquitectura (una sola estructura por ficha) */
+ok(count(outGesto, 'INTEGRACIÓN DE LA FICHA:') === 1, 'integración de ficha solo en BALANCEADO (OBJETO usa su distribución)');
 ok(outSolo.indexOf('INTEGRACIÓN DE LA FICHA:') !== -1, 'SOLO/TEXTO/BAL: BAL conserva su integración');
 
 const passed = failures.length === 0;
