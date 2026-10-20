@@ -1699,12 +1699,12 @@ function getBankForSubniche(id, region, marketId) {
   } else if (region === "todas" || !region) {
     addKey("nacional");
 
-    if (!out.size) {
-      const primary = (s.regiones || []).find(function (r) {
-        return r !== "todas" && allowed.indexOf(r) !== -1;
-      });
-      if (primary) addArray(s.bank[primary]);
-    }
+    // "Todas" debe ser superconjunto de las regiones del subnicho, no solo la
+    // clave nacional. Antes devolvía MENOS objetos que una región concreta
+    // (p.ej. humor_costeno: 3 con 'todas' frente a 11 con 'costa_caribe').
+    (s.regiones || []).forEach(function (r) {
+      if (r !== "todas" && allowed.indexOf(r) !== -1) addArray(s.bank[r]);
+    });
     if (!out.size && allowed.length) addArray(s.bank[allowed[0]]);
   } else {
     // Región sin clave para este banco: solo claves del MISMO idioma.
