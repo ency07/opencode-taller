@@ -1931,10 +1931,16 @@ function _pickSharedExploreCopy(seedText, market) {
   return bank[idx];
 }
 /* Resuelve el copy compartido sin inventar: mensaje > concepto literal >
-   banco (solo si no hay ni concepto ni brief). Determinista. */
+   banco (solo si no hay ni concepto ni brief). Determinista. El concepto
+   derivado se usa tal cual lo escribió el usuario (mayúscula inicial natural
+   salvo siglas: convertirlo en VERSALES lo convertía en un texto de
+   marquee que la IA terminaba estampando literal). */
 function _resolveSharedCopy(conceptText, market) {
   const text = String(conceptText || '').trim().replace(/\s+/g, ' ');
-  if (text && text !== '—') return text.toUpperCase();
+  if (text && text !== '—') {
+    const primera = text.charAt(0).toUpperCase();
+    return primera + text.slice(1);
+  }
   return _pickSharedExploreCopy(text, market);
 }
 
