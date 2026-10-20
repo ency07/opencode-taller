@@ -1476,8 +1476,8 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     const audienceDensity = (typeof AUD_DENSITY_PREF !== 'undefined' ? AUD_DENSITY_PREF[v.audiencia] : []) || [];
     const compatibleDensity = productDensity.filter(function (x) { return audienceDensity.indexOf(x) !== -1; });
     const densityPool = compatibleDensity.length ? compatibleDensity : (productDensity.length ? productDensity : (audienceDensity.length ? audienceDensity : (_POOLS.densidad || ['Balanced'])));
-    v.densidad = _pick(densityPool);
-    v.negativeSpace = _pick(_POOLS.negativeSpace || ['aire alrededor del motivo']);
+    v.densidad = _pickFresh(densityPool, densityPool, usedAxes.densidad) || densityPool[0];
+    v.negativeSpace = _pickFresh(_POOLS.negativeSpace || ['aire alrededor del motivo'], _POOLS.negativeSpace || ['aire alrededor del motivo'], usedAxes.negativeSpace) || (_POOLS.negativeSpace || ['aire alrededor del motivo'])[0];
 
     // Aplicar al final: A/B/C conservan perfil estructural Y tratamiento fijos también en variación guiada.
     // Evita contradicciones entre el nombre del tratamiento y el perfil que llega al generador de imágenes.
@@ -1689,6 +1689,23 @@ function _mensajeUmbral(m) {
    para recalcular tras el dado). Devuelve { score, passed }. */
 function evaluaSetOk(set) {
   const m = scoreSet(set);
+  // DEBT-002: jerarquía, densidad y espacio negativo también entran al gate.
+  // Los locks manuales pueden repetir un eje (decisión del usuario); el gate
+  // solo rechaza repetición entre tarjetas que el motor asignó en Auto.
+  const modeLocks = _loadLocks(memLocksMarket(), MOTOR_STATE.product) || {};
+  const jerLocks = modeLocks.jerarquia || {};
+  const jerAutoDistintas = K.every(function (ki, i) {
+    if (!set[ki]) return false;
+    return K.slice(i + 1).every(function (kj) {
+      if (!set[kj]) return false;
+      const aAuto = !jerLocks[ki] || jerLocks[ki] === 'Auto';
+      const bAuto = !jerLocks[kj] || jerLocks[kj] === 'Auto';
+      if (!aAuto || !bAuto) return true;
+      return set[ki].jerarquiaVisual !== set[kj].jerarquiaVisual;
+    });
+  });
+  const densAutoDistinta = new Set(K.map(function (k) { return set[k].densidad; })).size === 3;
+  const negAutoDistinta = new Set(K.map(function (k) { return set[k].negativeSpace; })).size === 3;
   const ejesOk = new Set(K.map(function (k) { return set[k].layout; })).size === 3
     && new Set(K.map(function (k) { return set[k].distribucionTexto; })).size === 3
     && new Set(K.map(function (k) { return set[k].tipografia; })).size === 3
@@ -1696,7 +1713,8 @@ function evaluaSetOk(set) {
     && new Set(K.map(function (k) { return set[k].integracionTexto; })).size === 3
     && new Set(K.map(function (k) { return set[k].tratamiento; })).size === 3
     && new Set(K.map(function (k) { return set[k].tecnica; })).size === 3
-    && (set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3);
+    && (set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3)
+    && jerAutoDistintas && densAutoDistinta && negAutoDistinta;
   const pertinenciaOk = m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN && m.fitProductoMin >= UMBRAL_PRODUCTO_MIN;
   const estilosOk = MOTOR_STATE.groupMode === 'mismo'
     ? m.estilos.length === 1
@@ -1709,6 +1727,9 @@ function evaluaSetOk(set) {
   [['layout', 'layout'], ['distribucionTexto', 'arquitectura textual'], ['tipografia', 'tipografía'], ['formaSimbolo', 'forma del símbolo'], ['integracionTexto', 'integración'], ['tratamiento', 'tratamiento'], ['tecnica', 'técnica']].forEach(function (e) {
     if (new Set(K.map(function (k) { return set[k][e[0]]; })).size !== 3) detalle.push(e[1] + ' repetida');
   });
+  if (!jerAutoDistintas) detalle.push('jerarquía repetida entre tarjetas Auto');
+  if (!densAutoDistinta) detalle.push('densidad repetida');
+  if (!negAutoDistinta) detalle.push('espacio negativo repetido');
   if (!(set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3)) detalle.push('fondo repetido');
   if (MOTOR_STATE.groupMode === 'mismo' ? m.estilos.length !== 1 : m.estilos.length !== 3) detalle.push('estilos no cumplen el modo');
   if (_isLockedContactSet() && !(m.symbolStable && m.treatmentsComplete)) detalle.push('identidad de contacto inestable');
@@ -1731,11 +1752,14 @@ function _ejesRepetidosConConservadas(v, keptList) {
     ['familiaColor', function (x) { return x.familiaColor; }],
     ['tecnica', function (x) { return x.tecnica; }],
     ['jerarquiaVisual', function (x) { return x.jerarquiaVisual; }],
-    ['tratamiento', function (x) { return x.tratamiento; }]
+    ['tratamiento', function (x) { return x.tratamiento; }],
+    ['densidad', function (x) { return x.densidad; }],
+    ['negativeSpace', function (x) { return x.negativeSpace; }]
   ];
   return axes.filter(function (ax) {
     if (ax[0] === 'familiaColor' && v.familiaColor === '(paleta de la imagen)') return false;
     const nv = ax[1](v);
+    if (nv == null && keptList.every(function (w) { return ax[1](w) == null; })) return false;
     return keptList.some(function (w) { return ax[1](w) === nv; });
   }).map(function (ax) { return ax[0]; });
 }

@@ -30,13 +30,12 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
   `distribucionTexto`, `tipografia`, `formaSimbolo`, `integracionTexto`,
   `tratamiento`, `tecnica` y `familiaColor`, pero no `jerarquiaVisual`,
   `densidad`, `negativeSpace` ni `composicion`.
-- **Riesgo:** un set "aprobado" puede repetir jerarquía/densidad entre direcciones.
-- **Impacto:** Medio.
-- **Mitigación actual:** el reintento aleatorio del dado suele corregirlo, sin garantía.
-- **Solución definitiva:** ampliar `ejesOk` con los ejes restantes y cubrirlo con test.
-- **Responsable:** Motor.
-- **Fecha objetivo:** próxima revisión de gates (rama `fix/locks-merge-sync` o específica).
-- **Estado:** open.
+- **Cierre (2026-10-20, PR `fix/gate-axes`):** `ejesOk` ahora exige jerarquía,
+  densidad y espacio negativo distintos entre A/B/C; la asignación provisional
+  usa `_pickFresh` para esos ejes y el dado excluye candidatos que repiten con
+  las conservadas. Los locks manuales pueden repetir jerarquía (decisión del
+  usuario, nunca se bloquea). Cubierto por `tests/gate-axes.test.js`.
+- **Estado:** closed (verificado en suite).
 - **Revisión:** cada release.
 
 ### DEBT-003 — `nuevo_texto` del selector nunca coincide y el fallback se contradice

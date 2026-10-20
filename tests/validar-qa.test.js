@@ -33,13 +33,14 @@ MOTOR_STATE.market = 'colombia';
 MOTOR_STATE.region = 'global';
 MOTOR_STATE.product = 'CAMISETA SOFT';
 
+function densSuf(suf) { const ps = { A: 'Media', B: 'Baja suave', C: 'Alta core' }; return ps[suf]; }
 function ficha(suf, jer, tr) {
   return {
     estilo: 'Estilo' + suf, audiencia: 'coste_adulto_m', jerarquiaVisual: jer,
     objeto: 'fogata prueba', layout: 'Layout' + suf, tipografia: 'Tipo' + suf,
     formaSimbolo: 'Forma' + suf, tratamiento: tr, integracionTexto: 'Int' + suf,
     distribucionTexto: 'Dist' + suf, familiaColor: 'Fam' + suf, tecnica: 'Tec' + suf,
-    densidad: 'Media', negativeSpace: 'abierto', fitAudiencia: 80, fitProducto: 80,
+    densidad: densSuf(suf), negativeSpace: 'aire ' + suf, fitAudiencia: 80, fitProducto: 80,
     funcionSimbolica: 'f', intencionEmocional: 'e'
   };
 }
