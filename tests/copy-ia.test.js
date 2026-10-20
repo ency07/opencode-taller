@@ -74,6 +74,16 @@ const JS = path.join(ROOT, 'js');
   ok(rSin && rSin.error === 'sin-clave', 'sin claves: aviso de configuración, no invención');
   ok(outEl.value === '', 'el campo mensaje queda intacto sin claves');
 
+  /* --- 4b) modo explorador: el concepto del brief entra al contexto --- */
+  MOTOR_STATE.concept = '';
+  MOTOR_STATE.explorationBrief = { concept: 'Escalera apoyada en una pared sin terminar', familyId: 'auto', familyLabel: 'Exploración libre' };
+  const ctxExp = PODCopyIA.contextoActual();
+  ok(ctxExp.concepto === 'Escalera apoyada en una pared sin terminar', 'sin concepto del usuario usa el del brief del explorador');
+  const pExp = PODCopyIA.construirPromptContexto(ctxExp);
+  ok(pExp.indexOf('Escalera apoyada en una pared sin terminar') !== -1, 'el concepto del explorador fluye al prompt de copy');
+  MOTOR_STATE.explorationBrief = null;
+  ok(PODCopyIA.contextoActual().concepto === '', 'sin brief ni concepto queda vacío (no inventa)');
+
   /* --- 5) mensaje existente: no se toca (revisión del usuario manda) --- */
   outEl.value = 'Frase del usuario';
   const rExiste = await PODCopyIA.sugerirCopy();
