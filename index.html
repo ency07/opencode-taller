@@ -217,7 +217,10 @@
             <input id="message" type="text" placeholder="Texto que aparece en el diseño" />
             <div class="actions" style="margin-top: 6px;">
               <button id="btnUseBankPhrase" type="button" class="ghost">Cargar una frase guardada para este subnicho</button>
+              <button id="btnSugerirCopy" type="button" class="ghost">Proponer copy con IA</button>
             </div>
+            <div class="hint" id="copyIAStatus"></div>
+            <div class="actions" id="copyIAAlternativas" style="margin-top: 4px;"></div>
           </div>
 
           <div class="field">
@@ -528,6 +531,7 @@
   <script src="js/motor-nucleo.js" defer></script>
   <script src="js/ia-analisis.js" defer></script>
   <script src="js/ia-revisor.js" defer></script>
+  <script src="js/copy-ia.js" defer></script>
   <script src="js/ia-validador.js" defer></script>
   <script src="js/sync-supabase.js" defer></script>
 </body>
