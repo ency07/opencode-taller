@@ -46,47 +46,102 @@
     return o;
   }
 
+  /* Modelos de texto retirados -> reemplazo vivo. Los slots guardados pueden
+     traer modelos apagados; aquí se migran antes de llamar. */
+  var DEAD_TEXT_MODELS = {
+    'llama-3.3-70b-versatile': 'openai/gpt-oss-20b',
+    'google/gemini-2.0-flash-exp': 'google/gemini-2.5-flash',
+    'gemini-2.0-flash': 'gemini-2.5-flash',
+    'gemini-2.0-flash-001': 'gemini-2.5-flash',
+    'gemini-2.0-flash-lite': 'gemini-2.5-flash',
+    'gemini-2.0-flash-lite-001': 'gemini-2.5-flash',
+    'gemini-1.5-flash': 'gemini-2.5-flash',
+    'gemini-1.5-flash-001': 'gemini-2.5-flash',
+    'gemini-1.5-pro': 'gemini-2.5-flash'
+  };
+
+  /* Gemini de texto alineado a la generación que el panel de visión ya usa
+     (evita llamar a modelos de la serie 1.x/2.0 retirados). */
+  function modeloVivo(provider, model) {
+    var m = String(model || '').trim();
+    if (provider !== 'Gemini') return m;
+    if (/^gemini-(1\.|2\.0)/i.test(m)) {
+      try {
+        if (window.PODVision && window.PODVision.getVisionConfig) {
+          var vc = window.PODVision.getVisionConfig();
+          if (vc && vc.geminiModel) return vc.geminiModel;
+        }
+      } catch (e) { /* sin visión cargada */ }
+      return 'gemini-2.5-flash';
+    }
+    return DEAD_TEXT_MODELS[m] || m;
+  }
+
   function llamarSlots(promptText) {
     if (typeof window.getAISlots !== 'function') {
       return Promise.resolve({ error: 'sin-slots' });
     }
-    const slots = (window.getAISlots() || []).filter(function (s) { return s.key && s.provider && s.model; });
+    var slots = (window.getAISlots() || []).filter(function (s) { return s.key && s.provider && s.model; });
     if (!slots.length) return Promise.resolve({ error: 'sin-clave' });
-    const intento = function (slot, resto) {
-      const url = ep(slot.provider, slot.model);
-      if (!url) return resto.length ? intento(resto[0], resto.slice(1)) : Promise.resolve({ error: 'sin-proveedor' });
-      let body;
+    var diagnosticos = [];
+    var intento = function (slot, resto) {
+      var model = modeloVivo(slot.provider, slot.model);
+      var url = ep(slot.provider, model);
+      if (!url) {
+        diagnosticos.push(slot.provider + ': proveedor desconocido');
+        return resto.length ? intento(resto[0], resto.slice(1))
+          : Promise.resolve({ error: 'sin-proveedor', diagnosticos: diagnosticos.slice() });
+      }
+      var ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+      var timeoutMs = parseInt(slot.timeoutMs, 10) || 15000;
+      var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
+      function limpiar() { if (timer) clearTimeout(timer); }
+      var headers = { 'Content-Type': 'application/json' };
+      var body;
       if (slot.provider === 'Gemini') {
-        body = JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] });
+        /* Gemini NO acepta Authorization: Bearer; la clave va en x-goog-api-key. */
+        headers['x-goog-api-key'] = slot.key;
+        body = JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: promptText }] }],
+          generationConfig: { temperature: 0.6, maxOutputTokens: 400, responseMimeType: 'application/json' }
+        });
       } else {
-        body = JSON.stringify({ model: slot.model, messages: [{ role: 'user', content: promptText }], max_tokens: 200, temperature: 0.6 });
+        headers['Authorization'] = 'Bearer ' + slot.key;
+        body = JSON.stringify({
+          model: model,
+          messages: [{ role: 'user', content: promptText }],
+          max_tokens: 400,
+          temperature: 0.6,
+          response_format: { type: 'json_object' }
+        });
       }
       return fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + slot.key },
-        body: body
+        headers: headers,
+        body: body,
+        signal: ctrl ? ctrl.signal : undefined
       }).then(function (r) {
-        if (!r.ok) {
-          if (resto.length) return intento(resto[0], resto.slice(1));
-          return { error: 'http ' + r.status };
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function (j) {
+        var texto;
+        if (slot.provider === 'Gemini') {
+          texto = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text;
+        } else {
+          texto = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
         }
-        return r.json().then(function (j) {
-          let texto;
-          if (slot.provider === 'Gemini') {
-            texto = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text;
-          } else {
-            texto = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-          }
-          const parsed = pJSON(texto);
-          if (!parsed || !esFraseValida(parsed.frase)) {
-            if (resto.length) return intento(resto[0], resto.slice(1));
-            return { error: 'respuesta-invalida' };
-          }
-          return { frase: String(parsed.frase).trim(), alternativas: (parsed.alternativas || []).filter(esFraseValida).slice(0, 3) };
-        });
+        var parsed = pJSON(texto);
+        if (!parsed || !esFraseValida(parsed.frase)) throw new Error(texto ? 'respuesta sin frase válida' : 'respuesta vacía');
+        limpiar();
+        return { frase: String(parsed.frase).trim(), alternativas: (parsed.alternativas || []).filter(esFraseValida).slice(0, 3) };
       }).catch(function (e) {
+        limpiar();
+        var motivo = (e && e.name === 'AbortError')
+          ? ('sin respuesta en ' + Math.round(timeoutMs / 1000) + 's')
+          : String((e && e.message) || e);
+        diagnosticos.push(slot.provider + ': ' + motivo);
         if (resto.length) return intento(resto[0], resto.slice(1));
-        return { error: String((e && e.message) || e) };
+        return { error: 'respuesta-invalida', diagnosticos: diagnosticos.slice() };
       });
     };
     return intento(slots[0], slots.slice(1));
@@ -134,9 +189,12 @@
         drawAlternatives(r.alternativas || [], field);
         return r;
       }
+      var diag = r && Array.isArray(r.diagnosticos) && r.diagnosticos.length
+        ? ' Causa: ' + r.diagnosticos.join(' · ') + '.'
+        : '';
       var msg = r && r.error === 'sin-clave' ? 'Configura una clave en el panel IA para proponer copy.'
         : r && r.error === 'sin-slots' ? 'Carga ia-revisor.js para usar los slots del panel IA.'
-        : 'La IA no devolvió una frase usable. Nada cambió; puedes escribir el mensaje a mano.';
+        : 'La IA no devolvió una frase usable.' + diag + ' Nada cambió; puedes escribir el mensaje a mano.';
       tellStatus(msg, r && (r.error === 'sin-clave' || r.error === 'sin-slots') ? 'warn' : 'bad');
       return r;
     } finally {
