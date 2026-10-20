@@ -1,5 +1,5 @@
-/* PR 1 — Fichas: audiencia Auto coherente, símbolos distintos en Exploración
-   y contexto de serie en las tarjetas.
+/* PR 1 — Fichas: audiencia Auto coherente, OBJETO como motivo de la familia en
+   Exploración y contexto de serie en las tarjetas.
    Ejecutar: node tests/fichas-contexto.test.js
    No requiere DOM real ni proveedores. Sale con código 1 si algo falla. */
 
@@ -66,23 +66,33 @@ ok(poolCole.indexOf('infantil_col') !== -1,
 ok(/const subniche = \(MOTOR_STATE\.subniche && MOTOR_STATE\.subniche !== 'auto'\)[\s\S]*?effectiveSubniche\(\)/.test(motorSource),
   'getCurrentAudiencePool debe resolver el subnicho efectivo cuando el selector está en auto');
 
-/* --- 2) Exploración: cada ficha con símbolo DISTINTO --- */
-let distinctOk = true;
+/* --- 2) Exploración: el OBJETO es un motivo CONCRETO del banco de la FAMILIA --- */
+let familiaOk = true;
 const GENS = 20;
+const CONCEPTO = 'motero en ruta con su motocicleta';
+const MENSAJE = 'La libertad se conquista en el camino';
+baseState();
+MOTOR_STATE.workflowMode = 'explore';
+MOTOR_STATE.concept = CONCEPTO;
+MOTOR_STATE.message = MENSAJE;
+const FAMILIA_DETECTADA = effectiveSubniche();
+const FAMILIA_BANK = getBankForSubniche(FAMILIA_DETECTADA, MOTOR_STATE.region, MOTOR_STATE.market);
+const COMUN_BANK = _commonBankForMarket();
 for (let g = 0; g < GENS; g++) {
   baseState();
   MOTOR_STATE.workflowMode = 'explore';
-  MOTOR_STATE.concept = 'motero en ruta con su motocicleta';
-  MOTOR_STATE.message = 'La libertad se conquista en el camino';
+  MOTOR_STATE.concept = CONCEPTO;
+  MOTOR_STATE.message = MENSAJE;
   const set = buildCandidate(resolveAudiences(), null);
   const objs = ['A', 'B', 'C'].map(function (k) { return String(set[k].objeto || '').trim(); });
-  if (new Set(objs).size !== 3) {
-    distinctOk = false;
-    failures.push('explore gen' + g + ': símbolos A/B/C no distintos [' + objs.join(' | ') + ']');
+  const malos = objs.filter(function (o) { return FAMILIA_BANK.indexOf(o) === -1 || COMUN_BANK.indexOf(o) !== -1 || o === MENSAJE; });
+  if (malos.length) {
+    familiaOk = false;
+    failures.push('explore gen' + g + ': OBJETO fuera de la familia/mensaje [' + objs.join(' | ') + ']');
     checks++;
   } else { checks++; }
 }
-ok(distinctOk, 'en Exploración A/B/C deben llevar símbolos distintos (el concepto es el ADN, no un único símbolo)');
+ok(familiaOk, 'en Exploración el OBJETO debe ser un motivo concreto del banco de la familia, nunca el mensaje ni el banco común');
 
 /* --- 3) La constancia de símbolo deja de exigirse en Exploración --- */
 ok(motorSource.includes('function _isSymbolConstancyRequired()'),
