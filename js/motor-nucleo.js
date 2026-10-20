@@ -484,7 +484,8 @@ function resolveTextImageModes(estilos, audsPerKey) {
     SOLO_TEXTO: 'TIPO 1 · Solo texto',
     TEXTO_DOMINANTE: 'TIPO 2 · Texto dominante',
     BALANCEADO: 'TIPO 3 · Balanceado',
-    OBJETO_DOMINANTE: 'TIPO 4 · Objeto dominante'
+    OBJETO_DOMINANTE: 'TIPO 4 · Objeto dominante',
+    SOLO_OBJETO: 'TIPO 5 · Solo objeto (cero letras)'
   };
   const result = {};
   const auto = [];
@@ -510,9 +511,9 @@ function resolveTextImageModes(estilos, audsPerKey) {
       return;
     }
 
-    const score = { SOLO_TEXTO: 0, TEXTO_DOMINANTE: 0, BALANCEADO: 0, OBJETO_DOMINANTE: 0 };
+    const score = { SOLO_TEXTO: 0, TEXTO_DOMINANTE: 0, BALANCEADO: 0, OBJETO_DOMINANTE: 0, SOLO_OBJETO: 0 };
     if (words <= 3) { score.SOLO_TEXTO += 2; score.TEXTO_DOMINANTE += 1; }
-    else if (words >= 8) { score.OBJETO_DOMINANTE += 2; score.BALANCEADO += 1; score.SOLO_TEXTO -= 4; }
+    else if (words >= 8) { score.OBJETO_DOMINANTE += 2; score.BALANCEADO += 1; score.SOLO_OBJETO += 1; score.SOLO_TEXTO -= 4; }
 
     const productBias = _PRODUCT_BIAS[MOTOR_STATE.product] || {};
     (productBias.hierarchy || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 3 : 1); });
@@ -2230,7 +2231,7 @@ function formatPrompt(result) {
     if (contactMainText) {
       o += 'TEXTOS: conserva literalmente el mensaje principal «' + contactMainText + '». Si hay apoyo autorizado, consérvalo literalmente; si no lo hay, no inventes datos, fechas, cifras ni sellos. Legibilidad primero: letras grandes y correctas a escala real de ' + MOTOR_STATE.product + '.\n';
     } else {
-      o += 'TEXTOS: no se proporcionó mensaje, pero NO se ha prohibido el copy. Propón para cada dirección una frase comercial original, concreta y nativa en el idioma del mercado; escribe el texto exacto final, no instrucciones ni placeholders. La jerarquía visual manda: TEXTO_DOMINANTE = frase protagonista; BALANCEADO = texto y símbolo equilibrados; OBJETO_DOMINANTE = símbolo protagonista y frase breve secundaria. No inventes fechas, cifras, nombres propios ni afirmaciones factuales. Omite texto de apoyo si no aporta valor.\n';
+      o += 'TEXTOS: no se proporcionó mensaje, pero NO se ha prohibido el copy. Propón para cada dirección una frase comercial original, concreta y nativa en el idioma del mercado; escribe el texto exacto final, no instrucciones ni placeholders. La jerarquía visual manda: TEXTO_DOMINANTE = frase protagonista; BALANCEADO = texto y símbolo equilibrados; OBJETO_DOMINANTE = símbolo protagonista y frase breve secundaria; SOLO_OBJETO = cero letras (sin copy). No inventes fechas, cifras, nombres propios ni afirmaciones factuales. Omite texto de apoyo si no aporta valor.\n';
     }
     o += 'COLOR: separa tinta, fondo del arte y color de la prenda; no uses el mismo color para fondo y tinta. Mantén contraste claro sobre el producto y no presentes el mockup como validación de producción.\n';
   } else {
@@ -2253,7 +2254,8 @@ function formatPrompt(result) {
       SOLO_TEXTO: 'texto 100% · símbolo 0% — el arte completo son las letras del copy literal',
       TEXTO_DOMINANTE: 'texto 70–80% del área · símbolo 20–30% — el copy manda a primera vista y el objeto es apoyo',
       OBJETO_DOMINANTE: 'símbolo 70–80% del área · texto 20–30% — el objeto manda a primera vista y el texto es apoyo',
-      BALANCEADO: 'texto 45–55% del área · símbolo 45–55% — mitad y mitad; ninguno de los dos es un adorno secundario'
+      BALANCEADO: 'texto 45–55% del área · símbolo 45–55% — mitad y mitad; ninguno de los dos es un adorno secundario',
+      SOLO_OBJETO: 'símbolo 100% del área · texto 0% — el arte completo es el objeto autorizado; CERO letras de cualquier tipo'
     }[v.jerarquiaVisual] || '';
     o += 'PESO VISUAL EXIGIDO — ' + pesoExigido + '. Es una medición verificable a primera vista, no una sugerencia: si el elemento que manda no ocupa su franja, reescala el arte y entrega la versión corregida.\n';
     const audPerfil = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES[v.audiencia]) || {};
@@ -2283,6 +2285,10 @@ function formatPrompt(result) {
       o += 'OBJETO: ' + v.objeto + '\n';
       o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos.\n';
       o += _figureDirective(v.objeto) + '\n';
+      if (v.jerarquiaVisual === 'SOLO_OBJETO') {
+        o += 'CERO TEXTO (SOLO_OBJETO): prohibido cualquier letra, cifra, número, logo tipográfico, microtexto o sellos con rótulos, incluso decorativos. Los recursos del estilo que normalmente portan texto (cintas, cartelas, banderines, sellos, escudos) aparecen SIN rótulo alguno; si un elemento necesita un rótulo para leerse, no lo uses.\n';
+        o += 'ELEMENTOS SECUNDARIOS ADMITIDOS: únicamente recursos visuales NO textuales del estilo asignado (ornamentos, marco, filete, textura, recursos gráficos de taller) que no introduzcan texto y respeten el contrato de elementos del concepto; ningún elemento secundario puede competir con el objeto.\n';
+      }
     }
     if (contactDNA && v.jerarquiaVisual !== 'SOLO_TEXTO') o += 'FUNCIÓN CONSTANTE: ' + v.funcionSimbolica + ' · intención ' + v.intencionEmocional + '\n';
     const textLine = contactDNA
@@ -2298,6 +2304,7 @@ function formatPrompt(result) {
       SOLO_TEXTO: 'SOLO_TEXTO: solo copy literal; 100% tipografía y cero imágenes, objetos o adornos independientes. ÚNICOS elementos permitidos: letras del copy literal. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.',
       TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista. Texto y símbolo forman una sola composición integrada, no dos bloques separados. El símbolo aporta como máximo 20–30% del peso visual. El objeto descrito en esta ficha («' + v.objeto + '») debe interactuar físicamente con las letras de forma plausible. Elige una integración coherente con el objeto real. conserva todas las palabras exactas y legibles, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
       OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte; copy 20–30%. No lo sustituyas por árboles, personas u otros objetos no indicados. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel.',
+      SOLO_OBJETO: 'SOLO_OBJETO: el objeto autorizado («' + v.objeto + '») ocupa el 100% visual de la ficha y NO HAY TEXTO en absoluto: ni letras, ni cifras, ni tipografía decorativa ni accidental. Diferéncialo de OBJETO_DOMINANTE (allí el copy ocupa 20–30%; aquí ninguna letra existe). ADMITE elementos secundarios visuales no textuales del estilo asignado (ornamentos, marcos, filetes, texturas, recursos gráficos de taller) siempre que no introduzcan texto y respeten el contrato de elementos del concepto.',
       BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva; evita dos bloques desconectados. La arquitectura define colocación/relación, nunca cambia la proporción.'
     }[v.jerarquiaVisual] || '';
     o += 'JERARQUÍA: ' + hierarchyDirective + ' La jerarquía fija tamaño, área y peso; el layout solo ubicación. Si hay conflicto, prevalece esta regla.\n';
@@ -2323,7 +2330,9 @@ function formatPrompt(result) {
       o += 'TEXTO: ' + textLine + '\n';
     } else {
       o += 'ARTE: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + ' · estilo «' + v.estilo + '» (manda). Ejecuta el estilo dentro de la jerarquía indicada; no inventes una estructura textual distinta.\n';
-      o += 'TEXTO: ' + textLine + '\n';
+      o += v.jerarquiaVisual === 'SOLO_OBJETO'
+        ? 'TEXTO: NINGUNO (jerarquía SOLO_OBJETO): solo arte visual; si el boceto salió con letras, entrega la versión sin letras.\n'
+        : 'TEXTO: ' + textLine + '\n';
 
     }
     o += 'PALETA: ' + v.paleta + '\n';
@@ -2358,7 +2367,7 @@ function renderCards(result) {
   var styleLocks = modeLocks.estilo || {};
   var layoutLocks = modeLocks.layout || {};
   var layoutPool = (_allowedLayoutPool() || _LAYOUTS || []);
-  var modes = ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE'];
+  var modes = ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
 
   // Contexto de la serie (una sola vez): antes se repetía "Dominio" en cada
   // ficha y se pintaba el subnicho crudo ("auto"). Se resuelve y se muestra arriba.
