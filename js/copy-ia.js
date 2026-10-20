@@ -102,11 +102,17 @@
     try {
       if (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.set && LAST_RESULT.set.A) audiencia = String(LAST_RESULT.set.A.audiencia || '');
     } catch (e) { audiencia = ''; }
+    let concepto = String(MOTOR_STATE.concept || '').trim();
+    /* En modo explorador el usuario no escribió concepto: usamos el que el
+       motor generó (explorationBrief.concept), igual que hace la hoja. */
+    if (!concepto && MOTOR_STATE.explorationBrief && MOTOR_STATE.explorationBrief.concept) {
+      concepto = String(MOTOR_STATE.explorationBrief.concept).trim();
+    }
     return {
       mercado: MOTOR_STATE.market,
       producto: MOTOR_STATE.product,
       familia: familia,
-      concepto: String(MOTOR_STATE.concept || '').trim(),
+      concepto: concepto,
       audiencia: audiencia
     };
   }
@@ -182,7 +188,8 @@
     sugerirCopy: sugerirCopy,
     construirPromptContexto: construirPromptContexto,
     esFraseValida: esFraseValida,
-    pJSON: pJSON
+    pJSON: pJSON,
+    contextoActual: contextoActual
   };
 
 })();
