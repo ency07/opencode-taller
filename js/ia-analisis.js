@@ -1311,6 +1311,10 @@
     pickVisionTarget: pickVisionTarget,
     otherVisionTarget: otherVisionTarget,
     preflightVision: preflightVision,
+    callGeminiVision: callGeminiVision,
+    callOpenRouterVision: callOpenRouterVision,
+    downscaleImage: downscaleImage,
+    fileToBase64: fileToBase64,
     VISION_DEFAULTS: VISION_DEFAULTS,
     VISION_FALLBACK_OR: VISION_FALLBACK_OR
   };

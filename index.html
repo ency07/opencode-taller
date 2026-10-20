@@ -494,6 +494,20 @@
           </div>
         </section>
 
+        <section class="panel">
+          <div class="panel-title">
+            <span>Validador de hoja (avisos)</span>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="file" id="sheetUpload" accept="image/png,image/jpeg,image/webp" style="max-width:320px;">
+            <button id="btnValidarHoja" class="ghost" type="button">Validar hoja con IA</button>
+          </div>
+
+          <div id="validadorStatus" style="margin-top:10px;font-size:12px;"></div>
+          <div id="validadorRes" style="margin-top:8px;font-size:13px;"></div>
+        </section>
+
       </div>
     </div>
   </div>
@@ -514,6 +528,7 @@
   <script src="js/motor-nucleo.js" defer></script>
   <script src="js/ia-analisis.js" defer></script>
   <script src="js/ia-revisor.js" defer></script>
+  <script src="js/ia-validador.js" defer></script>
   <script src="js/sync-supabase.js" defer></script>
 </body>
 </html>
