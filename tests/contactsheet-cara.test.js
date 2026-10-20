@@ -90,8 +90,8 @@ const mockup = getMockupRule('CAMISETA SOFT');
 ok(mockup.indexOf('COLORES SUGERIDOS POR COLUMNA') !== -1, 'la hoja debe incluir COLORES SUGERIDOS POR COLUMNA');
 ok(mockup.indexOf('VISTA ESPALDA') !== -1 && mockup.indexOf('CARA DEL ESTAMPADO: ESPALDA') !== -1,
   'la espalda solo debe dibujarse cuando la ficha lo pide');
-ok(mockup.indexOf('LÍNEA DE VALOR') !== -1, 'cada columna debe llevar su línea de valor');
-ok(mockup.indexOf('LÍNEA DE VALOR') !== -1 && /EJE|encabezado/i.test(mockup), 'el encabezado debe ser adaptable al eje del modo');
+ok(mockup.indexOf('LÍNEA DE VALOR') === -1 && mockup.indexOf('línea de valor') === -1, 'la hoja ya no exige línea de valor (imán de invenciones eliminado)');
+ok(mockup.indexOf('el mockup lifestyle FRONTAL de cuerpo completo de una persona acorde') !== -1 && /eje del modo/i.test(mockup), 'la columna sigue siendo adaptable al eje del modo');
 ok(mockup.indexOf('DETALLES DE IMPRESIÓN') !== -1 && mockup.indexOf('PALETA GENERAL DE LA SERIE') !== -1,
   'la fila inferior debe incluir detalles de impresión y la paleta general');
 ok(!/espalda completa/.test(productSource), 'data-productos no debe invitar a la espalda completa por defecto');
