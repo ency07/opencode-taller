@@ -226,6 +226,7 @@ function resolveAudiences() {
   const audienceLocks = locks.audiencia || {};
   const result = {};
   const autos = [];
+  MOTOR_STATE._audsShort = null;
 
   // Las elecciones manuales por tarjeta prevalecen también en Exploración.
   // No se deben sustituir al pulsar "Crear los 3 diseños".
@@ -267,24 +268,45 @@ function resolveAudiences() {
       result[k] = pick;
       if (pick) used.add(pick);
     });
+    if (pool.length < K.length) MOTOR_STATE._audsShort = { faltantes: K.length - pool.length };
     return result;
   }
 
-  // Sin audiencia distinta por tarjeta, Auto comparte una audiencia estable.
-  // Los locks manuales de B/C nunca se sobrescriben con el valor de A.
-  let shared = base !== 'Auto' && pool.indexOf(base) !== -1 ? base : '';
-  if (!shared) {
+  // Audiencia específica elegida por el usuario: decisión explícita de
+  // compartirla en las tarjetas Auto (los locks de B/C nunca se sobrescriben).
+  if (base !== 'Auto') {
+    if (pool.indexOf(base) !== -1) {
+      autos.forEach(function (k) { result[k] = base; });
+    }
+    return result;
+  }
+
+  // En Auto nada se repite: cada ficha recibe un perfil propio del pool
+  // (elección estable por re-roll con la ficha en el contexto). Si el pool
+  // tiene menos perfiles que fichas, las sobrantes reutilizan el pool y
+  // quedan marcadas como AVISO en el prompt, nunca como bloqueo.
+  const usedNow = new Set(Object.values(result));
+  let faltantes = 0;
+  autos.forEach(function (k) {
+    const available = pool.filter(function (aud) { return !usedNow.has(aud); });
+    if (!available.length) {
+      faltantes++;
+      result[k] = pool.length ? pool[0] : '';
+      return;
+    }
     const stableContext = [
       market, region, MOTOR_STATE.subniche, MOTOR_STATE.product,
-      MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE._rerollNonce || 0
+      MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE._rerollNonce || 0, k
     ].map(function (value) { return String(value || '').trim().toLowerCase(); }).join('|');
     let stableHash = 0;
     for (let i = 0; i < stableContext.length; i++) {
       stableHash = ((stableHash << 5) - stableHash + stableContext.charCodeAt(i)) | 0;
     }
-    shared = pool.length ? pool[Math.abs(stableHash) % pool.length] : '';
-  }
-  autos.forEach(function (k) { result[k] = shared; });
+    const pick = available[Math.abs(stableHash) % available.length];
+    result[k] = pick;
+    usedNow.add(pick);
+  });
+  if (faltantes) MOTOR_STATE._audsShort = { faltantes: faltantes };
   return result;
 }
 
@@ -2208,7 +2230,12 @@ function formatPrompt(result) {
   } else {
     o += 'TEXTOS: si existe mensaje proporcionado, conservarlo literalmente y usarlo como único copy principal; no exigir tres niveles ni inventar apoyos, sellos, citas, datos o microtexto. Si no existe mensaje, proponer una sola frase principal exacta y omitir texto secundario salvo que el usuario lo solicite.\n';
   }
-  o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, tipografía, densidad, forma del símbolo y espacio negativo; no la representes con estereotipos ni objetos añadidos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\n\n';
+  o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, tipografía, densidad, forma del símbolo y espacio negativo; no la representes con estereotipos ni objetos añadidos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\n';
+  if (MOTOR_STATE._audsShort && MOTOR_STATE._audsShort.faltantes) {
+    o += 'AUDIENCIA (AVISO): el pool del mercado tiene menos perfiles que fichas y ' + MOTOR_STATE._audsShort.faltantes + ' ficha(s) repiten audiencia porque se agotó el pool; es un aviso válido, no bloquea la hoja.\n\n';
+  } else {
+    o += '\n';
+  }
   o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + (_PLACEMENT[MOTOR_STATE.product] || _PLACEMENT['CAMISETA SOFT'] || 'pecho centrado') + '; ' + ((_PRODUCT_BIAS[MOTOR_STATE.product] || {}).scale || 'escala adecuada al producto') + '\n\n';
 
   K.forEach(function (k, i) {
