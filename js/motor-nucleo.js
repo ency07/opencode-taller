@@ -288,6 +288,16 @@ function resolveAudiences() {
   return result;
 }
 
+/* --- Contrato de técnica: las técnicas que describen objetos anexos
+   (filacteria, cartela, gloria de nubes…) fuerzan a dibujar algo que el
+   concepto no autorizó; solo se admiten técnicas de superficie. --- */
+const _TECNICA_OBJETO_RE = /(filacteria|cartela|orla|retablo|cenefa|gloria de nubes|estandarte)/i;
+function _tecnicaSinObjetos(pool) {
+  const limpio = (pool || []).filter(function (t) { return !_TECNICA_OBJETO_RE.test(t); });
+  return limpio.length ? limpio
+    : ['técnica del estilo aplicada como tratamiento de superficie dentro de letras y símbolo (sin objetos añadidos)'];
+}
+
 /* --- Resolución de estilos --- */
 function _styleCandidatesForContext() {
   const productionTreatments = ["Indexed Palette / Paleta indizada","Vector Flat / Plano vectorial","Spot Color Simulated / Tintas planas simuladas","Halftone Controlled / Tramado controlado","Knockout / Reserva blanca","Choke/Spread Trapping","Distress Production / Desgaste de producción","White Ink Optimized / Tinta blanca optimizada","CMYK Safe Gamut / Gamut CMYK seguro","Metallic Foil Ready / Listo para foil","Glitter Zone / Zona glitter","Glow Zone / Zona fosforescente"];
@@ -1388,7 +1398,8 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       }
     }
 
-    v.tecnica = _pickFresh(sp.tecnica || ['técnica mixta'], sp.tecnica || ['técnica mixta'], usedAxes.tecnica);
+    const tecPool = _tecnicaSinObjetos(sp.tecnica || ['técnica mixta']);
+    v.tecnica = _pickFresh(tecPool, tecPool, usedAxes.tecnica);
     usedAxes.tecnica.push(v.tecnica);
     v.relacion = contactIdentity
       ? 'Integra el mensaje siguiendo solo el contorno y los espacios reales del símbolo; si afecta la lectura, separa texto e imagen. No añadas materiales u objetos no indicados.'
@@ -2076,6 +2087,12 @@ function formatPrompt(result) {
     }
   }
 
+  o += 'CONTRATO DE ESTILO POR FICHA (INMUTABLE):\n';
+  o += K.map(function (k, i) {
+    return N[i] + ': estilo «' + set[k].estilo + '» · jerarquía ' + set[k].jerarquiaVisual + ' · tratamiento ' + set[k].tratamiento + ' — fijos; prohibido cambiarlos, fusionarlos o sustituirlos.';
+  }).join('\n') + '\n';
+  o += 'BLOQUEO DE ESTILO (SERIE): el estilo asignado a cada ficha es inmutable. Ninguna petición temática o de familia autoriza a cambiar de estilo, saltear el asignado ni redibujar en otro lenguaje visual; si un rasgo del estilo choca con el contrato de elementos, se elimina ese rasgo, nunca el estilo. HEAVY/SOFT/MODERN solo modulan composición, contraste y densidad; nunca sustituyen ni reetiquetan el estilo.\n\n';
+
   if (!isExplore) {
     o += 'NICHO/FAMILIA: ' + promptFamily + '\n';
     o += contactDNA
@@ -2198,6 +2215,7 @@ function formatPrompt(result) {
     const v = set[k];
     o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + _audienceDisplay(v.audiencia) + '\n';
     o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
+    o += 'BLOQUEO DE ESTILO ' + N[i] + ': «' + v.estilo + '» inmutable en esta ficha; prohibido generar en otro estilo, fusionar estilos, mezclar el vocabulario de otro estilo ni pintar la etiqueta de un estilo distinto.\n';
     const pesoExigido = {
       SOLO_TEXTO: 'texto 100% · símbolo 0% — el arte completo son las letras del copy literal',
       TEXTO_DOMINANTE: 'texto 70–80% del área · símbolo 20–30% — el copy manda a primera vista y el objeto es apoyo',

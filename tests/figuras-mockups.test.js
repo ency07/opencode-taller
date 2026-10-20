@@ -89,7 +89,7 @@ ok(count(outSolo, 'FIGURAS HUMANAS:') === 2, 'SOLO_TEXTO no debe llevar FIGURAS 
 
 /* FICHA SERIE: franja metadata + 3 columnas por audiencia + colores + adicionales + paleta */
 ok(outGesto.indexOf('FICHA SERIE (CAMISETA SOFT)') !== -1, 'mockups: contrato de ficha serie');
-ok(outGesto.indexOf('BANDA SUPERIOR en celdas: SERIE · CONCEPTO · MENSAJE · DATO') !== -1, 'mockups: banda superior con metadata');
+ok(outGesto.indexOf('BANDA SUPERIOR en celdas: SERIE') !== -1 && outGesto.indexOf('prohibido inventar nombre') !== -1, 'mockups: banda superior con metadata sin imanes de invención');
 ok(outGesto.indexOf('TRES COLUMNAS, una por ficha del set') !== -1, 'mockups: 3 columnas por ficha');
 ok(outGesto.indexOf("recuadro 'VISTA FRONTAL' con el arte en plano") !== -1, 'mockups: recuadro frontal por defecto');
 ok(outGesto.indexOf('TODO ES FRONTAL por defecto') !== -1, 'mockups: frontal por defecto');
@@ -98,7 +98,7 @@ ok(outGesto.indexOf('prohibido inventar vistas de espalda no pedidas') !== -1, '
 ok(outGesto.indexOf('COLORES SUGERIDOS POR COLUMNA: 5 frontales planos') !== -1, 'mockups: colores sugeridos con nombres');
 ok(outGesto.indexOf('MOCKUPS ADICIONALES (FRENTE)') !== -1, 'mockups: fila de adicionales');
 ok(outGesto.indexOf('PALETA GENERAL DE LA SERIE') !== -1, 'mockups: paleta general con nombres');
-ok(outGesto.indexOf("Rotulación editorial de la HOJA permitida: serie, encabezados de columna (código de ficha 01A/01B/01C y nombre de estilo cuando el eje del modo lo pida)") !== -1, 'mockups: rotulación editorial acotada con encabezados de columna permitidos');
+ok(outGesto.indexOf('Rotulación editorial de la HOJA permitida: serie, encabezados de columna (código de ficha 01A/01B/01C, nombre de estilo cuando el eje del modo lo pida, audiencia solo cuando sea el eje del modo)') !== -1, 'mockups: rotulación editorial acotada con encabezados de columna permitidos');
 ok(outGesto.indexOf('PROHIBIDO rotular DENTRO del arte y sus mockups') !== -1 && outGesto.indexOf('Rotulación permitida SOLO para') === -1, 'mockups: prohibidos rótulos técnicos dentro del arte (encabezados de hoja permitidos)');
 ok(outGesto.indexOf('omite cualquier tono que destruya contraste o legibilidad') !== -1, 'mockups: omite tonos incompatibles');
 ok(outGesto.indexOf('12 vistas en total') === -1, 'mockups: no debe sobrevivir el contrato de 12 fijas');
