@@ -86,12 +86,17 @@ ok(prompt.includes('01A/HEAVY:') && prompt.includes('01B/SOFT:') && prompt.inclu
 
 ['A', 'B', 'C'].forEach(function (k, i) {
   const start = prompt.indexOf('### ' + NAMES[i]);
-  const seg = prompt.slice(start, start + 600);
+  const nextStart = i < 2 ? prompt.indexOf('### ' + NAMES[i + 1]) : prompt.length;
+  const seg = prompt.slice(start, nextStart);
+  const head = prompt.slice(start, start + 600);
   const label = _audienceDisplay(set[k].audiencia);
   ok(seg.includes('PERFIL ESTRUCTURAL: ' + KEYS[i]), 'ficha ' + NAMES[i] + ' debe declarar PERFIL ' + KEYS[i]);
   ok(seg.includes(' · ' + label), 'ficha ' + NAMES[i] + ' debe mostrar la audiencia legible (' + label + ')');
-  ok(label === set[k].audiencia || seg.indexOf(set[k].audiencia) === -1,
-    'ficha ' + NAMES[i] + ' no debe exponer el id interno de audiencia');
+  /* Reconciliación con audiencia-mockup (PR #8): el id SÍ vive en la ficha,
+     necesario para las validaciones; la regla de #7 lo acota a no aparecer
+     en la cabecera legible de la ficha (head). */
+  ok(label === set[k].audiencia || head.indexOf(set[k].audiencia) === -1,
+    'ficha ' + NAMES[i] + ' no debe abrir con el id interno de audiencia');
   if (set[k].jerarquiaVisual !== 'SOLO_TEXTO') {
     ok(seg.indexOf(KEYS[i]) !== -1, 'ficha ' + NAMES[i] + ' debe mantener perfil y tratamiento alineados');
   }
