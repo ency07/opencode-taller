@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Generador de prompts — Bancos POD</title>
+<title>Generador de prompts — Bancos POD (multimercado)</title>
 <style>
   :root { --bg:#101216; --panel:#171a20; --line:#2a2f38; --txt:#e8e6e1; --dim:#9aa3b0; --accent:#7a2ee0; --ok:#4fbf7a; }
   * { box-sizing:border-box; }
@@ -11,18 +11,21 @@
   header { padding:22px 26px 10px; border-bottom:1px solid var(--line); }
   h1 { margin:0 0 4px; font-size:20px; }
   header p { margin:0; color:var(--dim); font-size:13px; }
-  main { display:grid; grid-template-columns:340px 1fr; gap:22px; padding:22px 26px 40px; }
+  main { display:grid; grid-template-columns:360px 1fr; gap:22px; padding:22px 26px 40px; }
   @media (max-width:900px) { main { grid-template-columns:1fr; } }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
   label { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); margin:12px 0 5px; }
-  select, input, textarea { width:100%; background:#0d0f13; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:9px 10px; font:inherit; }
+  select, input { width:100%; background:#0d0f13; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:9px 10px; font:inherit; }
   select:focus, input:focus, textarea:focus { outline:2px solid var(--accent); outline-offset:1px; }
   .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .hint { color:var(--dim); font-size:12px; margin-top:8px; }
+  .mkt { border:1px solid var(--line); border-radius:9px; padding:10px 12px; margin-top:12px; font-size:12px; color:var(--dim); }
+  .mkt b { color:var(--txt); }
   button { margin-top:16px; width:100%; padding:11px 14px; border-radius:9px; border:1px solid var(--accent); background:var(--accent); color:#fff; font:600 14px/1 system-ui; cursor:pointer; }
   button.sec { background:transparent; color:var(--txt); border-color:var(--line); margin-top:8px; }
   button:hover { filter:brightness(1.12); }
-  #prompt { min-height:520px; height:calc(100vh - 260px); resize:vertical; font:13px/1.55 ui-monospace,Consolas,monospace; white-space:pre; }
+  #prompt { min-height:540px; height:calc(100vh - 240px); resize:vertical; font:13px/1.55 ui-monospace,Consolas,monospace; white-space:pre; }
+  textarea { width:100%; background:#0d0f13; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:10px; }
   .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
   .chip { font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:99px; padding:3px 9px; }
   .warn { color:#f2c14e; font-size:12px; margin-top:10px; }
@@ -31,19 +34,27 @@
 </head>
 <body>
 <header>
-  <h1>Generador de prompts — Bancos POD</h1>
-  <p>Selecciona familia, región, audiencia y tipo. La herramienta arma el prompt exacto; tú lo pegas en tu IA de texto y traes los ítems de vuelta al banco.</p>
+  <h1>Generador de prompts — Bancos POD (multimercado)</h1>
+  <p>Colombia, Global EN/ES, Anglo, LATAM, España, Diáspora y Gospel. Elige mercado, familia y tipo; la herramienta arma el prompt exacto y el destino real del banco.</p>
 </header>
 <main>
   <section class="panel">
-    <label for="grupo">Grupo</label>
-    <select id="grupo"></select>
+    <label for="mercado">Mercado</label>
+    <select id="mercado"></select>
+    <div class="mkt" id="mktInfo"></div>
 
-    <label for="familia">Familia (subnicho)</label>
+    <div id="wrapGrupo">
+      <label for="grupo">Grupo</label>
+      <select id="grupo"></select>
+    </div>
+
+    <div id="wrapRegion">
+      <label for="region">Región del banco</label>
+      <select id="region"></select>
+    </div>
+
+    <label for="familia">Familia / dominio</label>
     <select id="familia"></select>
-
-    <label for="region">Banco / región</label>
-    <select id="region"></select>
 
     <label for="audiencia">Audiencia objetivo</label>
     <select id="audiencia"></select>
@@ -76,154 +87,359 @@
   <section class="panel">
     <label for="prompt">Prompt generado</label>
     <textarea id="prompt" readonly spellcheck="false"></textarea>
-    <div class="hint">El resultado debe ser JSON puro. Pega los ítems en <code>POD_SUBNICHES[id].bank[region]</code>; no los agregues a mano si el prompt ya los generó.</div>
+    <div class="hint" id="destino"></div>
   </section>
 </main>
 
-<script src="js/data-bancos.js"></script>
+<script src="js/data-mercados.js"></script>
 <script src="js/data-audiencias.js"></script>
+<script src="js/data-bancos.js"></script>
+<script src="js/banco-gospel-es.js"></script>
+<script src="js/banco-gospel-en.js"></script>
+<script src="js/banco-global.js"></script>
 <script>
 (function () {
   'use strict';
 
-  var hasData = typeof POD_SUBNICHES !== 'undefined';
+  var OK_DATA = typeof POD_SUBNICHES !== 'undefined' && typeof POD_MARKETS !== 'undefined';
   var $ = function (id) { return document.getElementById(id); };
-  var ui = { grupo: $('grupo'), familia: $('familia'), region: $('region'), audiencia: $('audiencia'), tipo: $('tipo'), cantidad: $('cantidad'), matiz: $('matiz'), prompt: $('prompt'), status: $('status'), chips: $('chips') };
+  var ui = {
+    mercado: $('mercado'), grupo: $('grupo'), region: $('region'), familia: $('familia'),
+    audiencia: $('audiencia'), tipo: $('tipo'), cantidad: $('cantidad'), matiz: $('matiz'),
+    prompt: $('prompt'), status: $('status'), chips: $('chips'), mktInfo: $('mktInfo'),
+    destino: $('destino'), wrapGrupo: $('wrapGrupo'), wrapRegion: $('wrapRegion')
+  };
 
-  if (!hasData) {
+  if (!OK_DATA) {
     $('warn').hidden = false;
-    ui.prompt.value = 'No se cargaron POD_SUBNICHES ni AUD_PROFILES.\nAbre este HTML desde la carpeta del repositorio (debe existir js/data-bancos.js).';
+    ui.prompt.value = 'No se cargaron los bancos (POD_SUBNICHES / POD_MARKETS).\nAbre este HTML desde la carpeta del repositorio.';
     return;
   }
 
-  var GROUPS = { evergreen: 'Comercial Evergreen', temporada: 'Comercial Temporada' };
+  var GROUPS = (typeof POD_NICHO_GROUPS !== 'undefined') ? POD_NICHO_GROUPS : { evergreen: 'Evergreen', temporada: 'Temporada' };
+  var MARKETS = (typeof POD_MARKET_ORDER !== 'undefined' ? POD_MARKET_ORDER : Object.keys(POD_MARKETS)).filter(function (id) { return !!POD_MARKETS[id]; });
+  var EN_KEYS = (typeof POD_BANK_KEYS_EN !== 'undefined') ? POD_BANK_KEYS_EN : ['global', 'us', 'uk', 'ca', 'au', 'anglo'];
+  var ES_KEYS = (typeof POD_BANK_KEYS_ES !== 'undefined') ? POD_BANK_KEYS_ES : ['global_es', 'es', 'latam', 'mexico', 'caribe', 'cono_sur', 'spain'];
 
-  function regionLabel(key) {
-    if (typeof POD_REGIONS !== 'undefined' && POD_REGIONS[key]) return POD_REGIONS[key];
-    return key === 'nacional' ? 'Nacional' : key;
+  function isGospel(m) { return m === 'gospel_es' || m === 'gospel_en'; }
+  function langOf(m) { return (POD_MARKETS[m] || {}).language || 'es'; }
+  function marketKeyOf(m, r) { return m + '|' + r; }
+  function keyLang(k) {
+    if (typeof _bankKeyLang === 'function') return _bankKeyLang(k);
+    if (EN_KEYS.indexOf(k) !== -1) return 'en';
+    if (ES_KEYS.indexOf(k) !== -1) return 'es';
+    return null;
+  }
+  function targetLang(m) {
+    var l = langOf(m);
+    if (l === 'en') return 'en';
+    if (l === 'es' || l === 'spanglish') return 'es';
+    return null;
+  }
+  function regionLabel(id) {
+    if (typeof POD_REGIONS !== 'undefined' && POD_REGIONS[id]) return POD_REGIONS[id];
+    var map = { global: 'Global', us: 'US', uk: 'UK', ca: 'Canadá', au: 'Australia', global_es: 'Global hispano', es: 'España', latam: 'LATAM', mexico: 'México', caribe: 'Caribe', andina: 'Andina', cono_sur: 'Cono Sur', spain: 'España', universal_es: 'Universal (ES)', universal_en: 'Universal (EN)', nacional: 'Nacional' };
+    return map[id] || id;
   }
   function audLabel(id) {
     var p = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES[id]) || {};
     return p.label ? p.label : id;
   }
-  function subniches() {
-    return Object.keys(POD_SUBNICHES).map(function (id) {
-      return { id: id, nombre: POD_SUBNICHES[id].nombre, grupo: POD_SUBNICHES[id].grupo };
-    });
+  function gospelDomains(m) {
+    var src = m === 'gospel_en' ? window.GOSPEL_DOMINIOS_EN : window.GOSPEL_DOMINIOS_ES;
+    return src ? Object.keys(src) : [];
   }
+  function gospelDef(m) { return m === 'gospel_en' ? window.BANCO_GOSPEL_EN : window.BANCO_GOSPEL_ES; }
+  function isAllAudiences(m, r) {
+    if (typeof getAudiencesForMarketRegion !== 'function') return [];
+    try { return getAudiencesForMarketRegion(m, r) || []; } catch (e) { return []; }
+  }
+
+  function fillMercado() {
+    ui.mercado.innerHTML = MARKETS.map(function (m) {
+      return '<option value="' + m + '">' + POD_MARKETS[m].label + '</option>';
+    }).join('');
+    fillGrupo();
+  }
+
+  function marketInfo() {
+    var m = ui.mercado.value;
+    var mk = POD_MARKETS[m] || {};
+    ui.mktInfo.innerHTML = '<b>' + mk.label + '</b><br>' + (mk.description || '') +
+      '<br>Idioma: <b>' + (mk.language || '') + '</b> · Cultura: <b>' + (mk.culture || '') + '</b> · Legal: <b>' + (mk.legal || '') + '</b>';
+    var g = isGospel(m);
+    ui.wrapGrupo.style.display = g ? 'none' : '';
+    ui.wrapRegion.style.display = g ? 'none' : '';
+  }
+
   function fillGrupo() {
-    var gs = Object.keys(GROUPS);
-    ui.grupo.innerHTML = gs.map(function (g) { return '<option value="' + g + '">' + GROUPS[g] + '</option>'; }).join('');
-  }
-  function fillFamilia() {
-    var g = ui.grupo.value;
-    var list = subniches().filter(function (s) { return s.grupo === g; });
-    ui.familia.innerHTML = list.map(function (s) { return '<option value="' + s.id + '">' + s.nombre + '</option>'; }).join('');
+    marketInfo();
+    var m = ui.mercado.value;
+    if (isGospel(m)) { fillRegion(); return; }
+    var allowed = Object.keys(GROUPS).filter(function (id) {
+      return Object.keys(POD_SUBNICHES).some(function (sid) {
+        var s = POD_SUBNICHES[sid];
+        return s && s.grupo === id && sid !== 'gospel_es' && sid !== 'gospel_en';
+      });
+    });
+    ui.grupo.innerHTML = allowed.map(function (id) { return '<option value="' + id + '">' + GROUPS[id] + '</option>'; }).join('');
     fillRegion();
   }
+
   function fillRegion() {
-    var sub = POD_SUBNICHES[ui.familia.value];
-    var keys = Object.keys(sub.bank || {});
-    ui.region.innerHTML = keys.map(function (k) { return '<option value="' + k + '">' + regionLabel(k) + '</option>'; }).join('');
+    var m = ui.mercado.value;
+    if (isGospel(m)) { ui.region.innerHTML = ''; fillFamilia(); return; }
+    var list = (typeof POD_MARKET_REGIONS !== 'undefined' && POD_MARKET_REGIONS[m]) ? POD_MARKET_REGIONS[m] : [{ id: 'global', label: 'Global' }];
+    ui.region.innerHTML = list.map(function (r) {
+      return '<option value="' + r.id + '">' + (r.label || regionLabel(r.id)) + '</option>';
+    }).join('');
+    fillFamilia();
+  }
+
+  function familyList() {
+    var m = ui.mercado.value;
+    if (isGospel(m)) {
+      var ds = gospelDomains(m);
+      var def = gospelDef(m) || {};
+      return ds.map(function (d) {
+        var item = (def.dominios || {})[d] || {};
+        return { id: d, nombre: item.label || d, keywords: item.keywords || [] };
+      });
+    }
+    var region = ui.region.value;
+    var group = ui.grupo.value;
+    var ids = (typeof getSubnicheIdsForMarket === 'function')
+      ? (getSubnicheIdsForMarket(m, group, region) || [])
+      : Object.keys(POD_SUBNICHES);
+    return ids.filter(function (id) {
+      var s = POD_SUBNICHES[id];
+      if (!s || !s.bank) return false;
+      if (id === 'gospel_es' || id === 'gospel_en') return false;
+      try { return getBankForSubniche(id, region, m).length > 0; } catch (e) { return false; }
+    }).map(function (id) {
+      var s = POD_SUBNICHES[id];
+      var label = (typeof getSubnicheLabel === 'function') ? getSubnicheLabel(id, m) : s.nombre;
+      return { id: id, nombre: label || s.nombre, keywords: s.keywords || [] };
+    });
+  }
+
+  function fillFamilia() {
+    var list = familyList();
+    ui.familia.innerHTML = list.map(function (f) { return '<option value="' + f.id + '">' + f.nombre + '</option>'; }).join('');
     fillAudiencia();
   }
+
   function fillAudiencia() {
-    var sub = POD_SUBNICHES[ui.familia.value];
-    var ids = sub.audiencias || [];
-    var opts = ['<option value="">Sin audiencia específica</option>'];
-    ids.forEach(function (id) { opts.push('<option value="' + id + '">' + audLabel(id) + '</option>'); });
-    ui.audiencia.innerHTML = opts.join('');
+    var m = ui.mercado.value;
+    var pool = isGospel(m) ? ((gospelDef(m) || {}).audiencias || []) : isAllAudiences(m, ui.region.value);
+    if (!pool || !pool.length) {
+      var s = POD_SUBNICHES[ui.familia.value] || {};
+      pool = s.audiencias || [];
+    }
+    pool = pool.filter(function (id) { return !(typeof AUD_PROFILES !== 'undefined') || !!AUD_PROFILES[id]; });
+    ui.audiencia.innerHTML = ['<option value="">Sin audiencia específica</option>'].concat(pool.map(function (id) {
+      return '<option value="' + id + '">' + audLabel(id) + '</option>';
+    })).join('');
     render();
   }
 
-  function bankItems() {
-    var sub = POD_SUBNICHES[ui.familia.value];
-    var arr = (sub.bank || {})[ui.region.value] || [];
-    return arr.slice();
+  function langBlock(m) {
+    var l = langOf(m);
+    if (l === 'en') {
+      return ['IDIOMA DE SALIDA: inglés nativo y natural (US/UK/CA/AU según el mercado). Prohibido traducir literalmente del español; usa modismos reales del mercado.',
+        'CULTURA: códigos culturales nativos del mercado anglosajón; nada de referencias latinas metidas a la fuerza.'];
+    }
+    if (l === 'spanglish') {
+      return ['IDIOMA DE SALIDA: español con inglés natural cuando aporte (spanglish orgánico); no fuerces mezcla ni traduzcas literal.',
+        'CULTURA: identidad colombiana viviendo en el exterior; nostalgia, familia, acento y orgullo de origen.'];
+    }
+    if (m === 'spain') {
+      return ['IDIOMA DE SALIDA: español europeo natural (España); evita modismos latinoamericanos.',
+        'CULTURA: códigos españoles contemporáneos; nada de referencias regionales de Colombia o LATAM.'];
+    }
+    if (m === 'latam') {
+      return ['IDIOMA DE SALIDA: español neutro latinoamericano; evita modismos exclusivos de un solo país.',
+        'CULTURA: referencias amplias de LATAM que funcionen en México, Centroamérica, Caribe hispano, Andina y Cono Sur.'];
+    }
+    if (m === 'global_es') {
+      return ['IDIOMA DE SALIDA: español neutro; sin regionalismos.',
+        'CULTURA: referencias universales; nada de códigos nacionales específicos.'];
+    }
+    if (isGospel(m)) {
+      return ['IDIOMA DE SALIDA: ' + (m === 'gospel_en' ? 'inglés nativo natural.' : 'español natural.'),
+        'DOCTRINA: trinitaria y cristocéntrica. Sin herejías, sin denominacionalismo, sin política partidista, sin marcas de iglesias.',
+        'LEGAL: citas bíblicas solo si son exactas y de dominio público; prohibido usar letras de canciones de adoración o frases registradas.'];
+    }
+    if (m === 'colombia') {
+      return ['IDIOMA DE SALIDA: español natural de Colombia.',
+        'CULTURA: códigos regionales colombianos compatibles con la región elegida; no mezcles regiones incompatibles.'];
+    }
+    return ['IDIOMA DE SALIDA: español o inglés natural según el mercado; sin traducciones literales.'];
+  }
+
+  function existingItems() {
+    var m = ui.mercado.value;
+    var fam = ui.familia.value;
+    var tipo = ui.tipo.value;
+    if (isGospel(m)) {
+      var d = (gospelDef(m) || {}).dominios || {};
+      var dom = d[fam] || {};
+      var out = [];
+      if (tipo !== 'frases') out = out.concat(dom.objetos || []);
+      if (tipo !== 'objetos') out = out.concat(dom.frases || []);
+      return out;
+    }
+    try { return getBankForSubniche(fam, ui.region.value, m) || []; } catch (e) { return []; }
+  }
+
+  function targetKey() {
+    var m = ui.mercado.value;
+    var fam = ui.familia.value;
+    if (isGospel(m)) return null;
+    var region = ui.region.value;
+    var s = POD_SUBNICHES[fam] || {};
+    var bank = s.bank || {};
+    if (bank[region]) return region;
+    var prefer = {
+      todas: ['nacional'], global: ['global', 'us', 'uk', 'ca', 'au'],
+      us: ['us', 'global'], uk: ['uk', 'global'], ca: ['ca', 'global'], au: ['au', 'global'],
+      spain: ['spain', 'es', 'global_es'], latam: ['latam', 'global_es', 'es'],
+      mexico: ['mexico', 'latam', 'global_es', 'es'], caribe: ['caribe', 'latam', 'global_es', 'es'],
+      cono_sur: ['cono_sur', 'latam', 'global_es', 'es'], andina: ['andina', 'global_es', 'es'],
+      global_es: ['global_es', 'es'], universal_es: ['universal', 'global_es', 'es'],
+      universal_en: ['universal', 'global', 'us']
+    }[region] || [];
+    for (var i = 0; i < prefer.length; i++) { if (bank[prefer[i]]) return prefer[i]; }
+    var want = targetLang(m);
+    var keys = Object.keys(bank);
+    var same = keys.filter(function (k) { return keyLang(k) === want; });
+    if (same.length) return same[0];
+    return keys[0] || region;
+  }
+
+  function targetPath() {
+    var m = ui.mercado.value;
+    var fam = ui.familia.value;
+    if (isGospel(m)) {
+      var lib = m === 'gospel_en' ? 'GOSPEL_DOMINIOS_EN' : 'GOSPEL_DOMINIOS_ES';
+      var t = ui.tipo.value;
+      if (t === 'ambos') return lib + '["' + fam + '"].objetos y ' + lib + '["' + fam + '"].frases';
+      return lib + '["' + fam + '"].' + t;
+    }
+    return 'POD_SUBNICHES["' + fam + '"].bank["' + targetKey() + '"]';
+  }
+
+  function familyMeta() {
+    var m = ui.mercado.value;
+    var fam = ui.familia.value;
+    if (isGospel(m)) {
+      var def = gospelDef(m) || {};
+      var d = (def.dominios || {})[fam] || {};
+      return { nombre: d.label || fam, keywords: d.keywords || [], desc: d.desc || '', nombreInterno: def.nombre || '' };
+    }
+    var s = POD_SUBNICHES[fam] || {};
+    return { nombre: s.nombre_es && langOf(m) === 'es' ? s.nombre_es : s.nombre, keywords: s.keywords || [], desc: '', nombreInterno: s.nombre || '' };
   }
 
   function buildPrompt() {
-    var id = ui.familia.value;
-    var sub = POD_SUBNICHES[id] || {};
-    var region = ui.region.value;
+    var m = ui.mercado.value;
+    var mk = POD_MARKETS[m] || {};
+    var fam = ui.familia.value;
+    var meta = familyMeta();
     var tipo = ui.tipo.value;
     var n = Math.max(20, Math.min(300, parseInt(ui.cantidad.value, 10) || 150));
-    var existing = bankItems();
+    var existing = existingItems();
     var audId = ui.audiencia.value;
     var aud = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES[audId]) || null;
     var matiz = String(ui.matiz.value || '').trim();
     var tipoTxt = tipo === 'objetos' ? 'objetos/escenas' : tipo === 'frases' ? 'frases/mensajes' : 'objetos/escenas Y frases/mensajes';
-
     var L = [];
-    L.push('Actúa como director creativo y copywriter senior de print-on-demand (POD), especializado en identidad cultural colombiana y estampados originales.');
+
+    L.push('Actúa como director creativo y copywriter senior de print-on-demand (POD), especializado en estampados originales y bancos creativos.');
+    L.push('');
+    L.push('MERCADO');
+    L.push('- ' + mk.label + ' (' + m + '). ' + (mk.description || ''));
+    langBlock(m).forEach(function (x) { L.push('- ' + x); });
+    if (mk.legal === 'strict') {
+      L.push('- LEGAL ESTRICTO: nada de marcas, frases registradas, logos, estética de marca, equipos, universidades, celebridades, personajes protegidos, letras de canciones ni citas de películas. Solo frases y conceptos originales.');
+    } else {
+      L.push('- LEGAL: sin marcas, equipos, universidades, celebridades, personajes protegidos, letras de canciones, citas de películas ni propiedad intelectual registrada.');
+    }
+    if (isGospel(m)) {
+      var def = gospelDef(m) || {};
+      L.push('- DOCTRINA OBLIGATORIA: ' + (def.doctrine || 'trinitaria y cristocéntrica') + '. ' + (def.antiHerejia || 'Sin herejías ni sincretismo.'));
+    }
     L.push('');
     L.push('OBJETIVO');
-    L.push('Genera ' + (tipo === 'ambos' ? n + ' objetos/escenas y ' + n + ' frases/mensajes' : n + ' elementos de tipo ' + tipoTxt) + ' para el banco creativo de la familia «' + (sub.nombre || id) + '» (id ' + id + '), mercado Colombia, banco/región «' + regionLabel(region) + '».');
+    L.push('Genera ' + (tipo === 'ambos' ? n + ' objetos/escenas y ' + n + ' frases/mensajes' : n + ' elementos de tipo ' + tipoTxt) + ' para la familia «' + meta.nombre + '»' + (meta.desc ? ' (' + meta.desc + ')' : '') + '.' + (isGospel(m) ? ' Dominio doctrinal: ' + fam + '.' : ''));
     L.push('');
-    L.push('CONTEXTO DE USO');
-    L.push('- Los ítems se insertan literalmente en el arreglo POD_SUBNICHES["' + id + '"].bank["' + region + '"].');
-    L.push('- Banco actual de esa región (' + existing.length + ' ítems). NO repetir, ni parafrasear de cerca, ni reutilizar sus sustantivos principales:');
-    if (existing.length) existing.forEach(function (it) { L.push('  · ' + it); });
+    L.push('DESTINO Y CONTEXTO');
+    L.push('- Los ítems se insertan literalmente en: ' + targetPath() + '.');
+    if (!isGospel(m)) L.push('- Mercado: ' + mk.label + ' · Región del banco: ' + regionLabel(ui.region.value) + ' (' + ui.region.value + ').');
+    L.push('- Banco actual de ese destino (' + existing.length + ' ítems). NO repetir, ni parafrasear de cerca, ni reutilizar sus sustantivos principales:');
+    if (existing.length) existing.slice(0, 80).forEach(function (it) { L.push('  · ' + it); });
     else L.push('  (vacío)');
-    L.push('- Keywords declaradas de la familia: ' + ((sub.keywords || []).join(', ') || '(sin keywords)') + '.');
+    if (existing.length > 80) L.push('  · …(' + (existing.length - 80) + ' más, todos prohibidos de repetir)');
+    L.push('- Keywords declaradas de la familia: ' + (meta.keywords.join(', ') || '(sin keywords)') + '.');
     if (aud) {
-      L.push('- Audiencia objetivo: «' + (aud.label || audId) + '» (' + (aud.edad || '') + ', ' + (aud.genero || '') + '). Perfil: ' + (aud.perfil || '') + '. Códigos que le hablan: ' + (aud.codigos || '') + '. Evita: ' + (aud.rechaza || '') + '.');
+      L.push('- Audiencia objetivo: «' + (aud.label || audId) + '» (' + (aud.edad || '') + ', ' + (aud.genero || '') + '). Perfil: ' + (aud.perfil || '') + '. Códigos: ' + (aud.codigos || '') + '. Evita: ' + (aud.rechaza || '') + '.');
     }
-    L.push('- Sandbox: solo códigos culturales colombianos compatibles con la región del banco. Prohibidos gospel doctrinal, regionalismos de otras regiones y frases en inglés.');
     if (matiz) L.push('- Matiz solicitado por el usuario: ' + matiz + '.');
     L.push('');
     L.push('FORMATO DE SALIDA (estricto)');
+    L.push('Devuelve SOLO un JSON válido, sin markdown, sin explicaciones y sin comentarios:');
     if (tipo === 'ambos') {
-      L.push('Devuelve SOLO un JSON válido, sin markdown, sin explicaciones y sin comentarios:');
-      L.push('{"familia":"' + id + '","region":"' + region + '","tipo":"ambos","objetos":[' + n + ' strings],"frases":[' + n + ' strings]}');
+      L.push('{"mercado":"' + m + '","familia":"' + fam + '","tipo":"ambos","objetos":[' + n + ' strings],"frases":[' + n + ' strings]}');
     } else {
-      L.push('Devuelve SOLO un JSON válido, sin markdown, sin explicaciones y sin comentarios:');
-      L.push('{"familia":"' + id + '","region":"' + region + '","tipo":"' + tipo + '","items":[' + n + ' strings]}');
+      L.push('{"mercado":"' + m + '","familia":"' + fam + '","tipo":"' + tipo + '","items":[' + n + ' strings]}');
     }
     L.push('');
     L.push('REGLAS DE CONTENIDO — OBJETOS/ESCENAS');
     L.push('1. Cada ítem describe un objeto o escena concreta con actitud, acción o consecuencia: no un sustantivo suelto ni una metáfora abstracta.');
-    L.push('2. Extensión: 6 a 16 palabras. Español natural, sin punto final, sin numeración y sin comillas internas.');
+    L.push('2. Extensión: 6 a 16 palabras. Sin punto final, sin numeración y sin comillas internas.');
     L.push('3. Un solo foco por ítem: un objeto/gesto central; prohibido encadenar dos ideas o listas de objetos.');
     L.push('4. Debe verse como idea de estampado: silueta reconocible, legible en camiseta, sin microescenas imposibles.');
-    L.push('5. Humor, ternura u orgullo según la familia; no explicar el chiste ni añadir moraleja.');
-    L.push('6. Prohibido: marcas, equipos, universidades, celebridades, personajes protegidos, letras de canciones, citas de películas, frases registradas y nombres propios reales.');
-    L.push('7. Nada de relleno genérico (sol, flores, montañas, aves) salvo que la familia lo pida explícitamente.');
-    L.push('8. Variedad real: no repetir estructuras ("X que Y") más de una de cada cinco veces ni reutilizar sustantivos centrales.');
-    L.push('9. Cada ítem debe pertenecer inequívocamente a esta familia y a esta región; si podría servir a otra familia, descártalo.');
-    L.push('10. Sin datos inventados, cifras, fechas ni afirmaciones verificables.');
+    L.push('5. Tono según la familia; no explicar el chiste ni añadir moraleja.');
+    L.push('6. Prohibido: nombres propios reales, marcas, IP protegida y datos inventados.');
+    L.push('7. Nada de relleno genérico (sol, flores, montañas, aves) si la familia no lo pide.');
+    L.push('8. Variedad real: no repetir estructuras ("X que Y") más de una de cada cinco veces.');
+    L.push('9. Cada ítem debe pertenecer inequívocamente a esta familia y mercado; si podría servir a otra, descártalo.');
+    L.push('10. Escribe exactamente en el idioma de salida indicado, con la naturalidad de ese mercado.');
     L.push('');
     L.push('REGLAS DE CONTENIDO — FRASES/MENSAJES');
-    L.push('1. Extensión: 3 a 9 palabras. Gancho comercial que se lea completo en el pecho de una camiseta.');
-    L.push('2. Español natural y original; sin punto final, sin signos decorativos, sin emojis ni placeholders.');
-    L.push('3. Tono según la familia (humor, afecto, orgullo, celebración); nada de explicaciones ni microcopy.');
-    L.push('4. Prohibido: marcas, IP protegida, canciones, citas, nombres propios, datos y frases registradas.');
-    L.push('5. Variedad: no repetir la misma fórmula inicial (empieza distinto) ni duplicar significado entre frases.');
+    L.push('1. Extensión: 3 a 9 palabras. Gancho comercial legible completo en el pecho de una camiseta.');
+    L.push('2. Sin punto final, sin signos decorativos, sin emojis ni placeholders.');
+    L.push('3. Tono según la familia; nada de explicaciones ni microcopy.');
+    L.push('4. Prohibido: marcas, IP protegida, canciones, citas, nombres propios y datos.');
+    L.push('5. Variedad: no repetir la misma fórmula inicial ni duplicar significado entre frases.');
+    L.push('6. Idioma de salida: el del mercado, natural y vendedor.');
     L.push('');
     L.push('CONTROL DE CALIDAD ANTES DE RESPONDER');
     L.push('a) Cuenta exacta: ' + (tipo === 'ambos' ? n + ' objetos y ' + n + ' frases' : n + ' ítems') + '.');
     L.push('b) Cero duplicados exactos y cero variantes obvias del banco actual.');
-    L.push('c) Nada fuera de familia, región o sandbox; nada de IP protegida.');
+    L.push('c) Nada fuera de familia, mercado, idioma o legal.');
     L.push('d) JSON válido, sin texto fuera de él y sin bloques de código.');
     return L.join('\n');
   }
 
   function render() {
-    if (!POD_SUBNICHES[ui.familia.value]) return;
+    if (!ui.familia.value) { ui.prompt.value = ''; ui.destino.textContent = ''; return; }
     ui.prompt.value = buildPrompt();
-    var sub = POD_SUBNICHES[ui.familia.value] || {};
-    var items = bankItems();
+    ui.destino.textContent = 'Destino: ' + targetPath() + '  ·  banco actual: ' + existingItems().length + ' ítems';
+    var meta = familyMeta();
     ui.chips.innerHTML = [
-      'familia: ' + (sub.nombre || ''),
-      'región: ' + regionLabel(ui.region.value),
-      'en banco: ' + items.length,
-      'audiencias: ' + ((sub.audiencias || []).length)
-    ].map(function (t) { return '<span class="chip">' + t.replace(/</g, '&lt;') + '</span>'; }).join('');
+      'mercado: ' + POD_MARKETS[ui.mercado.value].label,
+      'idioma: ' + langOf(ui.mercado.value),
+      isGospel(ui.mercado.value) ? 'dominio: ' + ui.familia.value : 'región: ' + regionLabel(ui.region.value),
+      'familia: ' + meta.nombre,
+      'en banco: ' + existingItems().length
+    ].map(function (t) { return '<span class="chip">' + String(t).replace(/</g, '&lt;') + '</span>'; }).join('');
   }
 
-  ui.grupo.addEventListener('change', fillFamilia);
-  ui.familia.addEventListener('change', fillRegion);
-  ui.region.addEventListener('change', fillAudiencia);
+  ui.mercado.addEventListener('change', fillGrupo);
+  ui.grupo.addEventListener('change', fillRegion);
+  ui.region.addEventListener('change', fillFamilia);
+  ui.familia.addEventListener('change', fillAudiencia);
   ui.audiencia.addEventListener('change', render);
   ui.tipo.addEventListener('change', render);
   ui.cantidad.addEventListener('input', render);
@@ -247,13 +463,12 @@
     var blob = new Blob([ui.prompt.value], { type: 'text/plain;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'prompt-banco-' + ui.familia.value + '-' + ui.region.value + '.txt';
+    a.download = 'prompt-banco-' + ui.mercado.value + '-' + ui.familia.value + '.txt';
     document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   });
 
-  fillGrupo();
-  fillFamilia();
+  fillMercado();
 })();
 </script>
 </body>
