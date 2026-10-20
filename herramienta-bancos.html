@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador de prompts — Bancos POD</title>
+<style>
+  :root { --bg:#101216; --panel:#171a20; --line:#2a2f38; --txt:#e8e6e1; --dim:#9aa3b0; --accent:#7a2ee0; --ok:#4fbf7a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif; }
+  header { padding:22px 26px 10px; border-bottom:1px solid var(--line); }
+  h1 { margin:0 0 4px; font-size:20px; }
+  header p { margin:0; color:var(--dim); font-size:13px; }
+  main { display:grid; grid-template-columns:340px 1fr; gap:22px; padding:22px 26px 40px; }
+  @media (max-width:900px) { main { grid-template-columns:1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  label { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); margin:12px 0 5px; }
+  select, input, textarea { width:100%; background:#0d0f13; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:9px 10px; font:inherit; }
+  select:focus, input:focus, textarea:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .hint { color:var(--dim); font-size:12px; margin-top:8px; }
+  button { margin-top:16px; width:100%; padding:11px 14px; border-radius:9px; border:1px solid var(--accent); background:var(--accent); color:#fff; font:600 14px/1 system-ui; cursor:pointer; }
+  button.sec { background:transparent; color:var(--txt); border-color:var(--line); margin-top:8px; }
+  button:hover { filter:brightness(1.12); }
+  #prompt { min-height:520px; height:calc(100vh - 260px); resize:vertical; font:13px/1.55 ui-monospace,Consolas,monospace; white-space:pre; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .chip { font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:99px; padding:3px 9px; }
+  .warn { color:#f2c14e; font-size:12px; margin-top:10px; }
+  .status { font-size:12px; color:var(--ok); min-height:16px; margin-top:8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Generador de prompts — Bancos POD</h1>
+  <p>Selecciona familia, región, audiencia y tipo. La herramienta arma el prompt exacto; tú lo pegas en tu IA de texto y traes los ítems de vuelta al banco.</p>
+</header>
+<main>
+  <section class="panel">
+    <label for="grupo">Grupo</label>
+    <select id="grupo"></select>
+
+    <label for="familia">Familia (subnicho)</label>
+    <select id="familia"></select>
+
+    <label for="region">Banco / región</label>
+    <select id="region"></select>
+
+    <label for="audiencia">Audiencia objetivo</label>
+    <select id="audiencia"></select>
+
+    <div class="row">
+      <div>
+        <label for="tipo">Tipo</label>
+        <select id="tipo">
+          <option value="objetos" selected>Objetos (escenas)</option>
+          <option value="frases">Frases (copy)</option>
+          <option value="ambos">Ambos</option>
+        </select>
+      </div>
+      <div>
+        <label for="cantidad">Cantidad por tipo</label>
+        <input id="cantidad" type="number" min="20" max="300" step="10" value="150">
+      </div>
+    </div>
+
+    <label for="matiz">Matiz opcional</label>
+    <input id="matiz" type="text" placeholder="ej. enfocar en oficios del barrio">
+
+    <button id="copiar">Copiar prompt</button>
+    <button id="descargar" class="sec">Descargar .txt</button>
+    <div class="status" id="status"></div>
+    <div class="chips" id="chips"></div>
+    <div class="warn" id="warn" hidden>No se pudieron leer los bancos. Abre este archivo dentro de la carpeta del proyecto (junto a js/).</div>
+  </section>
+
+  <section class="panel">
+    <label for="prompt">Prompt generado</label>
+    <textarea id="prompt" readonly spellcheck="false"></textarea>
+    <div class="hint">El resultado debe ser JSON puro. Pega los ítems en <code>POD_SUBNICHES[id].bank[region]</code>; no los agregues a mano si el prompt ya los generó.</div>
+  </section>
+</main>
+
+<script src="js/data-bancos.js"></script>
+<script src="js/data-audiencias.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var hasData = typeof POD_SUBNICHES !== 'undefined';
+  var $ = function (id) { return document.getElementById(id); };
+  var ui = { grupo: $('grupo'), familia: $('familia'), region: $('region'), audiencia: $('audiencia'), tipo: $('tipo'), cantidad: $('cantidad'), matiz: $('matiz'), prompt: $('prompt'), status: $('status'), chips: $('chips') };
+
+  if (!hasData) {
+    $('warn').hidden = false;
+    ui.prompt.value = 'No se cargaron POD_SUBNICHES ni AUD_PROFILES.\nAbre este HTML desde la carpeta del repositorio (debe existir js/data-bancos.js).';
+    return;
+  }
+
+  var GROUPS = { evergreen: 'Comercial Evergreen', temporada: 'Comercial Temporada' };
+
+  function regionLabel(key) {
+    if (typeof POD_REGIONS !== 'undefined' && POD_REGIONS[key]) return POD_REGIONS[key];
+    return key === 'nacional' ? 'Nacional' : key;
+  }
+  function audLabel(id) {
+    var p = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES[id]) || {};
+    return p.label ? p.label : id;
+  }
+  function subniches() {
+    return Object.keys(POD_SUBNICHES).map(function (id) {
+      return { id: id, nombre: POD_SUBNICHES[id].nombre, grupo: POD_SUBNICHES[id].grupo };
+    });
+  }
+  function fillGrupo() {
+    var gs = Object.keys(GROUPS);
+    ui.grupo.innerHTML = gs.map(function (g) { return '<option value="' + g + '">' + GROUPS[g] + '</option>'; }).join('');
+  }
+  function fillFamilia() {
+    var g = ui.grupo.value;
+    var list = subniches().filter(function (s) { return s.grupo === g; });
+    ui.familia.innerHTML = list.map(function (s) { return '<option value="' + s.id + '">' + s.nombre + '</option>'; }).join('');
+    fillRegion();
+  }
+  function fillRegion() {
+    var sub = POD_SUBNICHES[ui.familia.value];
+    var keys = Object.keys(sub.bank || {});
+    ui.region.innerHTML = keys.map(function (k) { return '<option value="' + k + '">' + regionLabel(k) + '</option>'; }).join('');
+    fillAudiencia();
+  }
+  function fillAudiencia() {
+    var sub = POD_SUBNICHES[ui.familia.value];
+    var ids = sub.audiencias || [];
+    var opts = ['<option value="">Sin audiencia específica</option>'];
+    ids.forEach(function (id) { opts.push('<option value="' + id + '">' + audLabel(id) + '</option>'); });
+    ui.audiencia.innerHTML = opts.join('');
+    render();
+  }
+
+  function bankItems() {
+    var sub = POD_SUBNICHES[ui.familia.value];
+    var arr = (sub.bank || {})[ui.region.value] || [];
+    return arr.slice();
+  }
+
+  function buildPrompt() {
+    var id = ui.familia.value;
+    var sub = POD_SUBNICHES[id] || {};
+    var region = ui.region.value;
+    var tipo = ui.tipo.value;
+    var n = Math.max(20, Math.min(300, parseInt(ui.cantidad.value, 10) || 150));
+    var existing = bankItems();
+    var audId = ui.audiencia.value;
+    var aud = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES[audId]) || null;
+    var matiz = String(ui.matiz.value || '').trim();
+    var tipoTxt = tipo === 'objetos' ? 'objetos/escenas' : tipo === 'frases' ? 'frases/mensajes' : 'objetos/escenas Y frases/mensajes';
+
+    var L = [];
+    L.push('Actúa como director creativo y copywriter senior de print-on-demand (POD), especializado en identidad cultural colombiana y estampados originales.');
+    L.push('');
+    L.push('OBJETIVO');
+    L.push('Genera ' + (tipo === 'ambos' ? n + ' objetos/escenas y ' + n + ' frases/mensajes' : n + ' elementos de tipo ' + tipoTxt) + ' para el banco creativo de la familia «' + (sub.nombre || id) + '» (id ' + id + '), mercado Colombia, banco/región «' + regionLabel(region) + '».');
+    L.push('');
+    L.push('CONTEXTO DE USO');
+    L.push('- Los ítems se insertan literalmente en el arreglo POD_SUBNICHES["' + id + '"].bank["' + region + '"].');
+    L.push('- Banco actual de esa región (' + existing.length + ' ítems). NO repetir, ni parafrasear de cerca, ni reutilizar sus sustantivos principales:');
+    if (existing.length) existing.forEach(function (it) { L.push('  · ' + it); });
+    else L.push('  (vacío)');
+    L.push('- Keywords declaradas de la familia: ' + ((sub.keywords || []).join(', ') || '(sin keywords)') + '.');
+    if (aud) {
+      L.push('- Audiencia objetivo: «' + (aud.label || audId) + '» (' + (aud.edad || '') + ', ' + (aud.genero || '') + '). Perfil: ' + (aud.perfil || '') + '. Códigos que le hablan: ' + (aud.codigos || '') + '. Evita: ' + (aud.rechaza || '') + '.');
+    }
+    L.push('- Sandbox: solo códigos culturales colombianos compatibles con la región del banco. Prohibidos gospel doctrinal, regionalismos de otras regiones y frases en inglés.');
+    if (matiz) L.push('- Matiz solicitado por el usuario: ' + matiz + '.');
+    L.push('');
+    L.push('FORMATO DE SALIDA (estricto)');
+    if (tipo === 'ambos') {
+      L.push('Devuelve SOLO un JSON válido, sin markdown, sin explicaciones y sin comentarios:');
+      L.push('{"familia":"' + id + '","region":"' + region + '","tipo":"ambos","objetos":[' + n + ' strings],"frases":[' + n + ' strings]}');
+    } else {
+      L.push('Devuelve SOLO un JSON válido, sin markdown, sin explicaciones y sin comentarios:');
+      L.push('{"familia":"' + id + '","region":"' + region + '","tipo":"' + tipo + '","items":[' + n + ' strings]}');
+    }
+    L.push('');
+    L.push('REGLAS DE CONTENIDO — OBJETOS/ESCENAS');
+    L.push('1. Cada ítem describe un objeto o escena concreta con actitud, acción o consecuencia: no un sustantivo suelto ni una metáfora abstracta.');
+    L.push('2. Extensión: 6 a 16 palabras. Español natural, sin punto final, sin numeración y sin comillas internas.');
+    L.push('3. Un solo foco por ítem: un objeto/gesto central; prohibido encadenar dos ideas o listas de objetos.');
+    L.push('4. Debe verse como idea de estampado: silueta reconocible, legible en camiseta, sin microescenas imposibles.');
+    L.push('5. Humor, ternura u orgullo según la familia; no explicar el chiste ni añadir moraleja.');
+    L.push('6. Prohibido: marcas, equipos, universidades, celebridades, personajes protegidos, letras de canciones, citas de películas, frases registradas y nombres propios reales.');
+    L.push('7. Nada de relleno genérico (sol, flores, montañas, aves) salvo que la familia lo pida explícitamente.');
+    L.push('8. Variedad real: no repetir estructuras ("X que Y") más de una de cada cinco veces ni reutilizar sustantivos centrales.');
+    L.push('9. Cada ítem debe pertenecer inequívocamente a esta familia y a esta región; si podría servir a otra familia, descártalo.');
+    L.push('10. Sin datos inventados, cifras, fechas ni afirmaciones verificables.');
+    L.push('');
+    L.push('REGLAS DE CONTENIDO — FRASES/MENSAJES');
+    L.push('1. Extensión: 3 a 9 palabras. Gancho comercial que se lea completo en el pecho de una camiseta.');
+    L.push('2. Español natural y original; sin punto final, sin signos decorativos, sin emojis ni placeholders.');
+    L.push('3. Tono según la familia (humor, afecto, orgullo, celebración); nada de explicaciones ni microcopy.');
+    L.push('4. Prohibido: marcas, IP protegida, canciones, citas, nombres propios, datos y frases registradas.');
+    L.push('5. Variedad: no repetir la misma fórmula inicial (empieza distinto) ni duplicar significado entre frases.');
+    L.push('');
+    L.push('CONTROL DE CALIDAD ANTES DE RESPONDER');
+    L.push('a) Cuenta exacta: ' + (tipo === 'ambos' ? n + ' objetos y ' + n + ' frases' : n + ' ítems') + '.');
+    L.push('b) Cero duplicados exactos y cero variantes obvias del banco actual.');
+    L.push('c) Nada fuera de familia, región o sandbox; nada de IP protegida.');
+    L.push('d) JSON válido, sin texto fuera de él y sin bloques de código.');
+    return L.join('\n');
+  }
+
+  function render() {
+    if (!POD_SUBNICHES[ui.familia.value]) return;
+    ui.prompt.value = buildPrompt();
+    var sub = POD_SUBNICHES[ui.familia.value] || {};
+    var items = bankItems();
+    ui.chips.innerHTML = [
+      'familia: ' + (sub.nombre || ''),
+      'región: ' + regionLabel(ui.region.value),
+      'en banco: ' + items.length,
+      'audiencias: ' + ((sub.audiencias || []).length)
+    ].map(function (t) { return '<span class="chip">' + t.replace(/</g, '&lt;') + '</span>'; }).join('');
+  }
+
+  ui.grupo.addEventListener('change', fillFamilia);
+  ui.familia.addEventListener('change', fillRegion);
+  ui.region.addEventListener('change', fillAudiencia);
+  ui.audiencia.addEventListener('change', render);
+  ui.tipo.addEventListener('change', render);
+  ui.cantidad.addEventListener('input', render);
+  ui.matiz.addEventListener('input', render);
+
+  $('copiar').addEventListener('click', function () {
+    var txt = ui.prompt.value;
+    function done(okFlag) {
+      ui.status.textContent = okFlag ? 'Prompt copiado.' : 'No se pudo copiar: selecciona el texto y usa Ctrl+C.';
+      setTimeout(function () { ui.status.textContent = ''; }, 2500);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); });
+    } else {
+      ui.prompt.focus(); ui.prompt.select();
+      done(document.execCommand('copy'));
+    }
+  });
+
+  $('descargar').addEventListener('click', function () {
+    var blob = new Blob([ui.prompt.value], { type: 'text/plain;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'prompt-banco-' + ui.familia.value + '-' + ui.region.value + '.txt';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+
+  fillGrupo();
+  fillFamilia();
+})();
+</script>
+</body>
+</html>
