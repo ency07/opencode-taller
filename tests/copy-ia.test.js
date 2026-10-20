@@ -156,6 +156,19 @@ const JS = path.join(ROOT, 'js');
   ok(diagTxt.indexOf('Groq: HTTP 401') !== -1, 'el diagnóstico nombra Groq y su status');
   ok(diagTxt.indexOf('Gemini: HTTP 401') !== -1, 'el diagnóstico nombra Gemini y su status');
   ok(diagTxt.indexOf('k-groq') === -1 && diagTxt.indexOf('k-gem2') === -1, 'el diagnóstico nunca expone claves');
+  ok(diagTxt.indexOf('formato inesperado') !== -1, 'avisa si la clave no tiene el formato del proveedor');
+
+  /* --- 9b) clave con formato correcto: solo longitud, sin volcar la clave --- */
+  global.fetch = function () { return Promise.resolve({ ok: false, status: 401 }); };
+  window.getAISlots = function () {
+    return [{ provider: 'OpenRouter', model: 'google/gemini-2.5-flash', key: 'sk-or-v1-0123456789abcdef', timeoutMs: 8000 }];
+  };
+  outEl.value = '';
+  const rOr401 = await PODCopyIA.sugerirCopy();
+  const dOr401 = (rOr401.diagnosticos || []).join(' ');
+  ok(dOr401.indexOf('clave de 25 caracteres') !== -1, 'diagnóstico reporta longitud de la clave');
+  ok(dOr401.indexOf('formato inesperado') === -1, 'no marca formato cuando el prefijo es el correcto');
+  ok(dOr401.indexOf('0123456789abcdef') === -1, 'nunca imprime el cuerpo de la clave');
 
   /* --- 10) timeout real: slot colgado se aborta y pasa al siguiente --- */
   global.fetch = function (url, opt) {

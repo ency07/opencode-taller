@@ -77,6 +77,15 @@
     return DEAD_TEXT_MODELS[m] || m;
   }
 
+  /* Pista de diagnóstico SIN exponer la clave: longitud y formato esperado. */
+  function pistaClave(provider, key) {
+    var k = String(key || '');
+    if (!k) return '';
+    var esperado = { Groq: 'gsk_', OpenRouter: 'sk-or-', Gemini: 'AIza' }[provider];
+    if (!esperado || k.indexOf(esperado) === 0) return 'clave de ' + k.length + ' caracteres';
+    return 'clave de ' + k.length + ' caracteres con formato inesperado (una clave de ' + provider + ' suele empezar por ' + esperado + ')';
+  }
+
   function llamarSlots(promptText) {
     if (typeof window.getAISlots !== 'function') {
       return Promise.resolve({ error: 'sin-slots' });
@@ -139,6 +148,10 @@
         var motivo = (e && e.name === 'AbortError')
           ? ('sin respuesta en ' + Math.round(timeoutMs / 1000) + 's')
           : String((e && e.message) || e);
+        if (/HTTP 40[13]/.test(motivo)) {
+          var pista = pistaClave(slot.provider, slot.key);
+          if (pista) motivo += ' (' + pista + ')';
+        }
         diagnosticos.push(slot.provider + ': ' + motivo);
         if (resto.length) return intento(resto[0], resto.slice(1));
         return { error: 'respuesta-invalida', diagnosticos: diagnosticos.slice() };
