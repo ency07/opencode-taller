@@ -741,6 +741,16 @@ function _pickFresh(biasPool, fullPool, used) {
 
 function _treatmentKey(value) { return String(value || '').split(':')[0].trim().toUpperCase(); }
 
+/* Etiqueta legible de la audiencia para el prompt: el generador de imágenes debe
+   recibir palabras del mercado, no el id interno (p. ej. "Mujer cristiana" en
+   lugar de "gospel_mujer"). Lee el catálogo de audiencias sin asumir su carga. */
+function _audienceDisplay(id) {
+  if (typeof getAudienceLabel === 'function') {
+    try { return getAudienceLabel(id); } catch (e) { return id; }
+  }
+  return id;
+}
+
 function _treatmentSpecComplete(value) {
   const key = _treatmentKey(value);
   const detail = String(value || '').toLowerCase();
@@ -1263,7 +1273,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     usedAxes.formaSimbolo.push(v.formaSimbolo);
 
     const tratBias = (productBias.trat || []).concat(audProfile.tratPref || []);
-    const fixedTreatment = (contactIdentity || MOTOR_STATE.workflowMode === 'explore') ? _CONTACT_TREATMENT_ORDER[k] : '';
+    const fixedTreatment = (contactIdentity || MOTOR_STATE.workflowMode === 'explore' || MOTOR_STATE.workflowMode === 'variation') ? _CONTACT_TREATMENT_ORDER[k] : '';
     const fixedTreatmentSpec = fixedTreatment && _TRATAMIENTOS.find(function (x) { return _treatmentKey(x) === fixedTreatment; });
     v.tratamiento = fixedTreatmentSpec || _pickFreshTreatment(tratBias, _TRATAMIENTOS, usedAxes.tratamiento);
     usedAxes.tratamiento.push(v.tratamiento);
@@ -1283,7 +1293,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     v.densidad = _pick(densityPool);
     v.negativeSpace = _pick(_POOLS.negativeSpace || ['aire alrededor del motivo']);
 
-    // Aplicar al final: A/B/C conservan perfiles estructurales fijos también en variación guiada.
+    // Aplicar al final: A/B/C conservan perfil estructural Y tratamiento fijos también en variación guiada.
     // Evita contradicciones entre el nombre del tratamiento y el perfil que llega al generador de imágenes.
     if (contactIdentity || MOTOR_STATE.workflowMode === 'explore' || MOTOR_STATE.workflowMode === 'variation') {
       // Excluir los valores provisionales de esta tarjeta: solo cuentan las tarjetas previas.
@@ -1833,7 +1843,7 @@ function formatPrompt(result) {
     const analysis = MOTOR_STATE.imageAnalysis;
     const hasAnalysis = !!(image && analysis);
     o += '/VARIATION - TRES DIRECCIONES NUEVAS (01A · 01B · 01C)\n';
-    o += 'MODO: variacion guiada | MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
+    o += 'MODO: variacion guiada | MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + ' | SERIE: ' + (MOTOR_STATE.serie || '—') + '\n';
     o += 'ESTILOS: ' + K.map(function (k) { return N[K.indexOf(k)] + ' ' + set[k].estilo; }).join(' · ') + '\n';
     o += 'CONCEPTO: ' + promptConcept + ' | MENSAJE: ' + promptMessage + '\n';
     if (hasAnalysis) {
@@ -1902,7 +1912,18 @@ function formatPrompt(result) {
     o += 'DIRECCIÓN: el estilo artístico define el lenguaje visual; HEAVY/SOFT/MODERN modifican composición y jerarquía sin borrar ese estilo. No mezcles instrucciones incompatibles.\n';
     o += 'A/B/C: misma identidad semántica, soluciones distintas en composición, silueta, tipografía y relación texto-imagen; no basta recolorear o cambiar textura.\n';
   }
-  if (isVar) o += 'VARIACIÓN: usa la referencia solo para concepto y datos visibles; no copies su composición, silueta, pose, rostro, encuadre ni jerarquía. No añadas objetos ni datos. A/HEAVY: masas compactas, contorno grueso, contraste alto. B/SOFT: formas abiertas, aire y transiciones suaves. C/MODERN: geometría limpia, retícula y asimetría controlada. Cambia layout, silueta y arquitectura tipográfica en cada dirección; el estilo elegido se conserva sin anular el perfil. El copy solo sigue el selector de texto. Si dos diseños parecen la misma imagen recoloreada, replantea su estructura.\n';
+  if (isVar) {
+    const _profileHints = {
+      HEAVY: 'masas compactas, contorno grueso, contraste alto',
+      SOFT: 'formas abiertas, aire y transiciones suaves',
+      MODERN: 'geometría limpia, retícula y asimetría controlada'
+    };
+    const _varProfiles = K.map(function (k, i) {
+      const pk = set[k].perfilEstructural || _treatmentKey(set[k].tratamiento);
+      return N[i] + '/' + pk + ': ' + (_profileHints[pk] || 'perfil estructural fijo');
+    }).join('. ');
+    o += 'VARIACIÓN: usa la referencia solo para concepto y datos visibles; no copies su composición, silueta, pose, rostro, encuadre ni jerarquía. No añadas objetos ni datos. ' + _varProfiles + '. Cambia layout, silueta y arquitectura tipográfica en cada dirección; el estilo elegido se conserva sin anular el perfil. El copy solo sigue el selector de texto. Si dos diseños parecen la misma imagen recoloreada, replantea su estructura.\n';
+  }
   if (isVar && MOTOR_STATE.imageReference) {
     const symbolMode = String(MOTOR_STATE.variationOptions.simbolo || 'sustituir');
     const textMode = String(MOTOR_STATE.variationOptions.textos || 'conservar_palabras');
@@ -1997,7 +2018,7 @@ function formatPrompt(result) {
 
   K.forEach(function (k, i) {
     const v = set[k];
-    o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + v.audiencia + '\n';
+    o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + _audienceDisplay(v.audiencia) + '\n';
     o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
     o += 'CARA DEL ESTAMPADO: ' + (v.cara === 'espalda' ? 'ESPALDA' : 'FRENTE') + ' — ubica el arte en esa cara; en la hoja de presentación muestra esa vista y no inventes la cara contraria.\n';
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
@@ -2475,7 +2496,7 @@ function arbitroSelectores(promptText, result) {
     const layoutOk = !allow || !allow.length || allow.some(function (h) { return base.indexOf(h) === 0; });
     const faltas = [];
     if (!_arbHas(text, v.estilo)) faltas.push('estilo');
-    if (!_arbHas(text, v.audiencia)) faltas.push('audiencia');
+    if (!_arbHas(text, v.audiencia) && !_arbHas(text, _audienceDisplay(v.audiencia))) faltas.push('audiencia');
     if (!_arbHas(text, v.jerarquiaVisual)) faltas.push('jerarquía');
     const objetoOk = v.jerarquiaVisual === 'SOLO_TEXTO' ? _arbHas(text, 'recap ' + N[i]) : _arbHas(text, v.objeto);
     if (!objetoOk) faltas.push('objeto');
@@ -2606,19 +2627,19 @@ async function copiarPrompt() {
     if (statusEl) statusEl.innerHTML = '<span class="bad">No hay prompt. Primero crea los 3 diseños.</span>';
     return;
   }
+  // El copiado nunca se bloquea: el umbral es un aviso, no una puerta.
+  // Antes, un set por debajo del umbral no se copiaba y el botón parecía roto.
+  let aviso = '';
   try {
     const lastScore = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.score) ? LAST_RESULT.score : null;
-    const umbralBloqueo = _mensajeUmbral(lastScore);
-    if (umbralBloqueo) {
-      if (statusEl) statusEl.innerHTML = '<span class="bad">Copiado bloqueado. ' + umbralBloqueo + '</span>';
-      return;
-    }
+    aviso = _mensajeUmbral(lastScore) || '';
   } catch (e) {}
+  const avisoHtml = aviso ? ' <span class="warn">Aviso: ' + aviso + '</span>' : '';
   try {
     await navigator.clipboard.writeText(outEl.value);
-    if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>';
+    if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>' + avisoHtml;
   } catch (e) {
-    try { outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>'; }
+    try { outEl.focus(); outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>' + avisoHtml; }
     catch (e2) { if (statusEl) statusEl.innerHTML = '<span class="bad">No se pudo copiar. Usa Ctrl+C.</span>'; }
   }
 }

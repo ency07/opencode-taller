@@ -1,7 +1,7 @@
 /* Umbral de pertinencia con diente (rama fix/umbral-qc).
    - Constantes únicas (50/40) para gate, pills y bloqueo.
    - Mensaje específico que nombra el gate caído y cómo salir.
-   - Copiar prompt se bloquea bajo umbral (headless con DOM simulado).
+   - Copiar prompt NUNCA se bloquea: bajo umbral copia y muestra el aviso.
 
    Ejecutar:  node tests/umbral-qc.test.js
    Sale con código 1 si falla cualquier aserción. */
@@ -56,36 +56,40 @@ ok(/m\.fitProductoMin >= UMBRAL_PRODUCTO_MIN/.test(motorSrc), 'pertinenciaOk pro
 ok(/fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN \? 'good'/.test(motorSrc), 'pill audiencia debe usar la constante');
 ok(/fitProductoMin >= UMBRAL_PRODUCTO_MIN \? 'good'/.test(motorSrc), 'pill producto debe usar la constante');
 
-/* Bloqueo de copiado: stub de DOM + LAST_RESULT vía vm */
+/* Copiado: stub de DOM + LAST_RESULT vía vm */
 function stubDoc(outValue) {
-  const els = { out: { value: outValue }, status: { innerHTML: '' } };
+  const els = { out: { value: outValue, focus: function () {}, select: function () {} }, status: { innerHTML: '' } };
   global.document = {
     getElementById: function (id) { return els[id] || null; },
-    querySelectorAll: function () { return []; }
+    querySelectorAll: function () { return []; },
+    execCommand: function () { return true; }
   };
   return els;
 }
 
 (async function () {
   try {
-    // Caso A: bajo umbral → bloquea y nombra el gate
+    // Caso A: bajo umbral → copia igual, con aviso que nombra el gate caído
     let els = stubDoc('PROMPT VÁLIDO');
     vm.runInThisContext('LAST_RESULT = { set: null, score: { fitAudienciaMin: 43, fitProductoMin: 60 }, passed: false };');
     await copiarPrompt();
-    ok(els.status.innerHTML.indexOf('Copiado bloqueado') !== -1, 'copiar bajo umbral debe bloquearse');
-    ok(els.status.innerHTML.indexOf('audiencia mín 43/100') !== -1, 'el bloqueo debe nombrar el gate caído');
+    ok(els.status.innerHTML.indexOf('Copiado bloqueado') === -1, 'copiar bajo umbral NO debe bloquearse');
+    ok(els.status.innerHTML.indexOf('Copiado') !== -1, 'copiar bajo umbral debe copiar igual');
+    ok(els.status.innerHTML.indexOf('audiencia mín 43/100') !== -1, 'debe avisar nombrando el gate caído');
 
-    // Caso B: sobre umbral → no bloquea (falla solo por falta de portapapeles en Node)
+    // Caso B: sobre umbral → copia sin aviso
     els = stubDoc('PROMPT VÁLIDO');
     vm.runInThisContext('LAST_RESULT = { set: null, score: { fitAudienciaMin: 80, fitProductoMin: 70 }, passed: true };');
     await copiarPrompt();
     ok(els.status.innerHTML.indexOf('Copiado bloqueado') === -1, 'copiar sobre umbral no debe bloquearse');
+    ok(els.status.innerHTML.indexOf('Aviso:') === -1, 'sobre umbral no debe mostrar aviso');
 
-    // Caso C: sin score (prompt pegado a mano) → no bloquea
+    // Caso C: sin score (prompt pegado a mano) → no bloquea ni avisa
     els = stubDoc('PROMPT PEGADO');
     vm.runInThisContext('LAST_RESULT = null;');
     await copiarPrompt();
     ok(els.status.innerHTML.indexOf('Copiado bloqueado') === -1, 'sin score no debe bloquearse');
+    ok(els.status.innerHTML.indexOf('Aviso:') === -1, 'sin score no debe avisar');
   } catch (e) {
     ok(false, 'el flujo de copiado lanzó excepción: ' + (e && e.message));
   }
