@@ -33,7 +33,8 @@
       SOLO_TEXTO: 'texto 100% / símbolo 0%',
       TEXTO_DOMINANTE: 'texto 70-80% / símbolo 20-30%',
       OBJETO_DOMINANTE: 'símbolo 70-80% / texto 20-30%',
-      BALANCEADO: 'texto 45-55% / símbolo 45-55%'
+      BALANCEADO: 'texto 45-55% / símbolo 45-55%',
+      SOLO_OBJETO: 'símbolo 100% / texto 0% (cero letras)'
     }[j] || 'franja no declarada';
   }
 
