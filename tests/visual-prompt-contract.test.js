@@ -22,7 +22,7 @@ ok(soloHelper.includes('bloque tipográfico en la parte superior') && soloHelper
 ok(soloHelper.includes('No añadir personas, escenas, objetos, iconos, símbolos independientes') && soloHelper.includes('No añadir ilustraciones, objetos, iconos'), 'SOLO_TEXTO no debe convertir referencias de layout en objetos o ilustraciones');
 const promptBuilderIndex = motor.indexOf('function formatPrompt(');
 ok(promptBuilderIndex >= 0 && motor.indexOf('_soloTextCompositionDirective(v.distribucionTexto)', promptBuilderIndex) > promptBuilderIndex, 'SOLO_TEXTO debe recibir la arquitectura asignada a la tarjeta');
-ok(/if \(v\.jerarquiaVisual === 'SOLO_TEXTO'\) \{[\s\S]{0,180}SIN OBJETO — composición tipográfica pura'[\s\S]{0,100}\} else if \(contactIdentity\)/.test(motor), 'SOLO_TEXTO debe prevalecer sobre la identidad de símbolo bloqueada en el set');
+ok(/if \(v\.jerarquiaVisual === 'SOLO_TEXTO'\) \{[\s\S]{0,260}composición tipográfica pura[\s\S]{0,600}\} else if \(contactIdentity\)/.test(motor), 'SOLO_TEXTO debe prevalecer sobre la identidad de símbolo bloqueada en el set');
 ok(/const hasSoloText = K\.some\([\s\S]{0,180}el símbolo se conserva solo en las tarjetas cuya jerarquía admite objeto/.test(motor), 'el ADN global no debe contradecir SOLO_TEXTO cuando coexiste con otras jerarquías');
 ok(/if \(contactDNA && v\.jerarquiaVisual !== 'SOLO_TEXTO'\) o \+= 'FUNCIÓN CONSTANTE/.test(motor), 'SOLO_TEXTO no debe recibir instrucciones funcionales de un símbolo');
 ok(/function _assignTextCompositions\(\)[\s\S]{0,260}const shuffled = _TEXT_COMPOSITION_BANK\.slice\(\)/.test(motor) && /return \{ A: shuffled\[0\], B: shuffled\[1\], C: shuffled\[2\] \}/.test(motor), 'la asignación de arquitecturas debe seguir siendo aleatoria e independiente de la jerarquía');
@@ -135,9 +135,9 @@ ok(motor.includes("return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; convierte 
 ok(motor.includes("return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; el símbolo autorizado conserva 70–80% del área"), 'OBJETO_DOMINANTE debe conservar la proporción al adaptar la ubicación');
 ok(motor.includes('sin añadir cinta ni objeto físico') && motor.includes('No añadas cintas, marcos, bandas, emblemas ni objetos'), 'la arquitectura debe traducirse a ubicación y no exigir objetos decorativos');
 ok(motor.includes("else if (v.jerarquiaVisual === 'TEXTO_DOMINANTE' || v.jerarquiaVisual === 'OBJETO_DOMINANTE')") && motor.includes('_compatibleCompositionDirective(v.jerarquiaVisual, v.distribucionTexto)'), 'solo TEXTO_DOMINANTE y OBJETO_DOMINANTE deben recibir la arquitectura adaptada');
-ok(motor.includes("if (v.jerarquiaVisual === 'BALANCEADO')") && motor.includes("'COMPOSICIÓN BALANCEADA: ' + v.layout + ' · ' + v.distribucionTexto"), 'BALANCEADO debe conservar su composición con proporciones estrictas');
+ok(motor.includes("if (v.jerarquiaVisual === 'BALANCEADO')") && motor.includes("'COMPOSICIÓN BALANCEADA: arquitectura dominante = LAYOUT (' + v.layout"), 'BALANCEADO debe conservar su composición con proporciones estrictas');
 ok(motor.includes("texto y símbolo tienen igual importancia y ocupan cada uno 45–55%") && motor.includes("ninguno puede quedar como adorno secundario"), 'BALANCEADO debe fijar dos protagonistas visuales con peso equivalente');
-ok(motor.includes("COMPOSICIÓN BALANCEADA: ' + v.layout + ' · ' + v.distribucionTexto") && motor.includes("La arquitectura define colocación/relación, nunca cambia la proporción"), 'BALANCEADO debe adaptar layout y arquitectura sin alterar la proporción');
+ok(motor.includes("'). El bloque tipográfico (' + v.distribucionTexto + ') se ejecuta DENTRO de esa ubicación") && motor.includes("si sugiere una posición distinta, prevalece el LAYOUT"), 'BALANCEADO debe adaptar layout y arquitectura sin alterar la proporción');
 ok(motor.includes("evita dos bloques desconectados") && motor.includes("unidad compositiva"), 'BALANCEADO debe integrar texto y símbolo en una unidad compositiva');
 ok(motor.includes("if (v.jerarquiaVisual === 'SOLO_TEXTO')") && motor.includes('CONTROL ABSOLUTO: no dibujar personas'), 'SOLO_TEXTO debe seguir excluyendo objetos y escenas');
 
