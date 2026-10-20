@@ -98,14 +98,11 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 ### DEBT-007 — `main` sin protección de rama
 
 - **Origen:** rama `main` sin reglas de protección en GitHub.
-- **Riesgo:** push directo o merge sin checks verdes.
-- **Impacto:** Alto.
-- **Mitigación actual:** disciplina de flujo (fuera del control del repositorio).
-- **Solución definitiva:** activar protección de rama con checks de CI obligatorios.
-- **Responsable:** Administración del repositorio.
-- **Fecha objetivo:** pendiente de decisión del propietario.
-- **Estado:** open.
-- **Revisión:** cada release.
+- **Cierre (2026-10-20):** protección activada vía API y verificada —
+  obligatorio PR a `main` (0 aprobaciones requeridas, por ser trabajo unipersonal),
+  administradores incluidos (`enforce_admins`), sin force-push ni borrado de la rama,
+  historia lineal. Los checks de CI obligatorios quedan como mejora posterior (DEBT-008).
+- **Estado:** closed (verificado con GET de protection; `required_pull_request_reviews` activo).
 
 ### DEBT-008 — CI no corre en `push` a `main`
 
