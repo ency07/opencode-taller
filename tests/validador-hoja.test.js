@@ -25,7 +25,7 @@ global.document = {
 const JS = path.join(ROOT, 'js');
 ['data-mercados.js', 'data-audiencias.js', 'data-bancos.js', 'data-estilos.js',
  'dominios.js', 'data-productos.js', 'memoria-local.js', 'motor-nucleo.js',
- 'ia-analisis.js', 'ia-validador.js'
+ 'ia-client.js', 'ia-analisis.js', 'ia-validador.js'
 ].forEach(function (f) {
   vm.runInThisContext(fs.readFileSync(path.join(JS, f), 'utf8'), { filename: f });
 });

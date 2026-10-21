@@ -35,6 +35,7 @@ global.localStorage = {
   removeItem: function (k) { delete this._m[k]; }
 };
 
+const cliente = fs.readFileSync(path.join(JS, 'ia-client.js'), 'utf8');
 const analisis = fs.readFileSync(path.join(JS, 'ia-analisis.js'), 'utf8');
 const revisor = fs.readFileSync(path.join(JS, 'ia-revisor.js'), 'utf8');
 
@@ -48,7 +49,7 @@ const revisor = fs.readFileSync(path.join(JS, 'ia-revisor.js'), 'utf8');
   ok(analisis.indexOf(name) !== -1, 'ia-analisis.js sin ' + name);
 });
 ok(analisis.indexOf('45000') === -1, 'ia-analisis.js conserva el timeout ciego de 45s');
-ok(/openrouter\.ai\/api\/v1\/chat\/completions/.test(analisis), 'falta endpoint OpenAI-compatible de OpenRouter');
+ok(/openrouter\.ai\/api\/v1\/chat\/completions/.test(cliente) || /openrouter\.ai\/api\/v1\/chat\/completions/.test(analisis), 'falta endpoint OpenAI-compatible de OpenRouter');
 ok(/max-width|1024/.test(analisis) && /toDataURL\('image\/jpeg'/.test(analisis), 'downscale debe reducir a ~1024px JPEG');
 ok(/google\/gemma-4-31b-it:free/.test(analisis), 'falta default verificado gemma-4-31b-it:free');
 ok(/gemini-3\.5-flash-lite/.test(analisis), 'falta default verificado gemini-3.5-flash-lite');
@@ -68,6 +69,7 @@ ok(revisor.indexOf('pod2_vision_cfg') !== -1, 'panel no guarda pod2_vision_cfg')
 ok(/window\.getAISlots\s*=\s*getSlots/.test(revisor), 'ia-revisor.js no expone getAISlots (visión no reutiliza migrate)');
 
 /* ---------- 3. Runtime: lógica pura en vm ---------- */
+vm.runInThisContext(cliente, { filename: 'ia-client.js' });
 vm.runInThisContext(analisis, { filename: 'ia-analisis.js' });
 const V = global.PODVision;
 ok(V && typeof V.pickVisionTarget === 'function', 'window.PODVision no expuesto');
