@@ -77,13 +77,27 @@
     return DEAD_TEXT_MODELS[m] || m;
   }
 
-  /* Pista de diagnóstico SIN exponer la clave: longitud y formato esperado. */
+  /* Pista de diagnóstico SIN exponer la clave. No asume formatos "de futuro":
+     solo avisa cuando la clave parece de OTRO proveedor del panel. */
+  var MARCAS_CLAVE = {
+    Groq: ['gsk_'],
+    OpenRouter: ['sk-or-'],
+    Gemini: ['AIza', 'AQ.']
+  };
   function pistaClave(provider, key) {
     var k = String(key || '');
     if (!k) return '';
-    var esperado = { Groq: 'gsk_', OpenRouter: 'sk-or-', Gemini: 'AIza' }[provider];
-    if (!esperado || k.indexOf(esperado) === 0) return 'clave de ' + k.length + ' caracteres';
-    return 'clave de ' + k.length + ' caracteres con formato inesperado (una clave de ' + provider + ' suele empezar por ' + esperado + ')';
+    var base = 'clave de ' + k.length + ' caracteres';
+    var ajena = '';
+    Object.keys(MARCAS_CLAVE).forEach(function (p) {
+      if (p === provider) return;
+      var marcas = MARCAS_CLAVE[p];
+      for (var i = 0; i < marcas.length; i++) {
+        if (k.indexOf(marcas[i]) === 0) ajena = p;
+      }
+    });
+    if (ajena) return base + ' que parece de ' + ajena + ' (revisa el proveedor de ese slot)';
+    return base;
   }
 
   function llamarSlots(promptText) {
@@ -99,7 +113,7 @@
       if (!url) {
         diagnosticos.push(slot.provider + ': proveedor desconocido');
         return resto.length ? intento(resto[0], resto.slice(1))
-          : Promise.resolve({ error: 'sin-proveedor', diagnosticos: diagnosticos.slice() });
+          : Promise.resolve({ error: 'sin-proveedor', diagnosticos: diagnosticos.slice(), proveedores: slots.length });
       }
       var ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
       var timeoutMs = parseInt(slot.timeoutMs, 10) || 15000;
@@ -154,7 +168,7 @@
         }
         diagnosticos.push(slot.provider + ': ' + motivo);
         if (resto.length) return intento(resto[0], resto.slice(1));
-        return { error: 'respuesta-invalida', diagnosticos: diagnosticos.slice() };
+        return { error: 'respuesta-invalida', diagnosticos: diagnosticos.slice(), proveedores: slots.length };
       });
     };
     return intento(slots[0], slots.slice(1));
@@ -205,9 +219,13 @@
       var diag = r && Array.isArray(r.diagnosticos) && r.diagnosticos.length
         ? ' Causa: ' + r.diagnosticos.join(' · ') + '.'
         : '';
+      var activos = r && typeof r.proveedores === 'number' ? r.proveedores : 0;
+      var avisoProv = (activos > 0 && activos < 3)
+        ? ' Solo ' + activos + ' de 3 proveedores tiene clave en esta pestaña; los vacíos no pueden usarse como respaldo (panel IA).'
+        : '';
       var msg = r && r.error === 'sin-clave' ? 'Configura una clave en el panel IA para proponer copy.'
         : r && r.error === 'sin-slots' ? 'Carga ia-revisor.js para usar los slots del panel IA.'
-        : 'La IA no devolvió una frase usable.' + diag + ' Nada cambió; puedes escribir el mensaje a mano.';
+        : 'La IA no devolvió una frase usable.' + diag + avisoProv + ' Nada cambió; puedes escribir el mensaje a mano.';
       tellStatus(msg, r && (r.error === 'sin-clave' || r.error === 'sin-slots') ? 'warn' : 'bad');
       return r;
     } finally {
