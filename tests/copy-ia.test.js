@@ -120,6 +120,7 @@ const JS = path.join(ROOT, 'js');
   ok(bGem.generationConfig && bGem.generationConfig.responseMimeType === 'application/json', 'Gemini pide respuesta JSON');
   ok(bGem.generationConfig.maxOutputTokens >= 300, 'Gemini con presupuesto de tokens suficiente');
   ok(!!llamadas[0].opt.signal, 'la llamada lleva AbortSignal (timeout real)');
+  ok(llamadas[0].url.indexOf('gemini-3.5-flash-lite') !== -1, 'serie 2.5 no existe para claves nuevas: usa el modelo vivo (3.x)');
 
   /* --- 8) compatible OpenAI: JSON mode + tokens, y fallback entre slots --- */
   llamadas = [];
@@ -192,6 +193,44 @@ const JS = path.join(ROOT, 'js');
   const rSlow = await PODCopyIA.sugerirCopy();
   ok(Date.now() - t0 < 5000, 'el timeout corta la espera (no cuelga el botón)');
   ok((rSlow.diagnosticos || []).join(' ').indexOf('sin respuesta en 1s') !== -1, 'el diagnóstico reporta el timeout del slot');
+
+  /* --- 11) Gemini serie 2.5 (retirada para claves nuevas) → modelo vivo --- */
+  llamadas = [];
+  global.fetch = function (url, opt) {
+    llamadas.push({ url: url, opt: opt });
+    return Promise.resolve({
+      ok: true,
+      json: function () { return Promise.resolve({ candidates: [{ content: { parts: [{ text: '{"frase":"Vivir el dia","alternativas":[]}' }] } }] }); }
+    });
+  };
+  window.getAISlots = function () { return [{ provider: 'Gemini', model: 'gemini-2.5-flash', key: 'AQ.Ab123', timeoutMs: 8000 }]; };
+  outEl.value = '';
+  const rVivo = await PODCopyIA.sugerirCopy();
+  ok(rVivo && rVivo.frase === 'Vivir el dia', 'el slot 2.5 se redirige al modelo vivo y devuelve frase');
+  ok(llamadas[0].url.indexOf('gemini-3.5-flash-lite') !== -1, 'la URL llama al modelo de visión por defecto (3.x)');
+
+  /* --- 12) el vivo da 404: reintento único con el alterno --- */
+  llamadas = [];
+  let cuenta12 = 0;
+  global.fetch = function (url) {
+    llamadas.push({ url: url });
+    cuenta12++;
+    if (cuenta12 === 1) return Promise.resolve({ ok: false, status: 404 });
+    return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ candidates: [{ content: { parts: [{ text: '{"frase":"Segundo intento","alternativas":[]}' }] } }] }); } });
+  };
+  outEl.value = '';
+  const rAlt = await PODCopyIA.sugerirCopy();
+  ok(rAlt && rAlt.frase === 'Segundo intento', 'reintenta con el modelo alterno tras 404');
+  ok(llamadas.length === 2 && llamadas[1].url.indexOf('gemini-2.5-flash') !== -1, 'el reintento llama exactamente al alterno');
+
+  /* --- 13) ambos 404: error nombrando el modelo, sin bucle --- */
+  llamadas = [];
+  global.fetch = function (url) { llamadas.push({ url: url }); return Promise.resolve({ ok: false, status: 404 }); };
+  outEl.value = '';
+  const r404 = await PODCopyIA.sugerirCopy();
+  ok(r404 && r404.error === 'respuesta-invalida', 'ambos modelos 404 → respuesta-invalida');
+  ok(llamadas.length === 2, 'exactamente 2 intentos (sin bucle infinito)');
+  ok((r404.diagnosticos || []).join(' ').indexOf('HTTP 404 (el modelo gemini-2.5-flash no existe para esta clave)') !== -1, 'el diagnóstico nombra el modelo caído');
 
   console.log((failures.length ? 'FAIL' : 'PASS') + ' copy-ia (' + checks + ' aserciones, ' + failures.length + ' fallos)');
   failures.forEach(function (msg) { console.error(' - ' + msg); });
