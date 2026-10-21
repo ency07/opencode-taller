@@ -192,6 +192,27 @@ function readStateFromDOM() {
 }
 
 /* --- Resolución de audiencias --- */
+/* true cuando el subnicho elegido NO restringe el catálogo: el pool mostrado
+   es exactamente el del mercado (sin perfiles propios o sin coincidencia).
+   El usuario debe verlo, no asumir un filtro que no existe (DEBT-006). */
+function _audiencePoolIsMarketFallback(region, market, subniche) {
+  if (!subniche || subniche === 'auto') return false;
+  try {
+    const marketPool = (typeof getAudiencesForMarketRegion === 'function')
+      ? (getAudiencesForMarketRegion(market, region) || []) : [];
+    const subPool = (typeof getAudiencesForSubniche === 'function')
+      ? (getAudiencesForSubniche(subniche, region, market) || []) : [];
+    if (!subPool.length) return true;
+    if (!marketPool.length) return false;
+    const allowed = new Set(subPool);
+    const compatible = marketPool.filter(function (aud) { return allowed.has(aud); });
+    // Sin coincidencia el motor usa el pool del mercado entero; sin filtro
+    // propio (subPool ⊇ mercado) tampoco se estrecha nada.
+    if (!compatible.length) return true;
+    return compatible.length === marketPool.length;
+  } catch (e) { return false; }
+}
+
 /* Audiencias permitidas por mercado + region + subnicho. */
 function getCurrentAudiencePool() {
   const market = MOTOR_STATE.market;
@@ -213,6 +234,9 @@ function getCurrentAudiencePool() {
     // Nunca abrir la lista a perfiles de otros mercados como recuperación silenciosa.
     pool = compatible.length ? compatible : pool;
   }
+  MOTOR_STATE._audPoolFallback = (typeof _audiencePoolIsMarketFallback === 'function')
+    ? _audiencePoolIsMarketFallback(region, market, subniche)
+    : false;
   return pool.filter(function (id) { return !!id; });
 }
 
@@ -330,7 +354,7 @@ function _styleCandidatesForContext() {
 function _getStyleUsageScore(style) {
   try {
     if (typeof getStyleUsageCounter === 'function') {
-      const c = getStyleUsageCounter(MOTOR_STATE.market, MOTOR_STATE.product) || {};
+      const c = getStyleUsageCounter(memLocksMarket(), MOTOR_STATE.product) || {};
       const usage = c[style] || 0;
       return Math.max(0, 100 - usage * 15);
     }
@@ -348,7 +372,7 @@ function _getStyleUsageScore(style) {
  */
 function _recordStyleUse(style) {
   try {
-    if (typeof recordStyleUse === 'function') { recordStyleUse(MOTOR_STATE.market, MOTOR_STATE.product, style); return; }
+    if (typeof recordStyleUse === 'function') { recordStyleUse(memLocksMarket(), MOTOR_STATE.product, style); return; }
     const memKeyFn = typeof memKey === 'function' ? memKey : _memKey;
     const key = memKeyFn(['styleUsage', MOTOR_STATE.market, MOTOR_STATE.region || 'global', MOTOR_STATE.product]);
     const c = _memGetJSON(key, {}) || {};
@@ -3085,6 +3109,22 @@ window.readStateFromDOM = readStateFromDOM;
     const allowed = Array.from(select.options).some(function (option) { return option.value === previous; });
     select.value = allowed ? previous : 'Auto';
     if (typeof MOTOR_STATE !== 'undefined') MOTOR_STATE.audienceSet = select.value;
+
+    const helpEl = document.getElementById('audienceHelp');
+    if (helpEl) {
+      const subVal = subniche ? subniche.value : 'auto';
+      const fallback = subVal && subVal !== 'auto'
+        && typeof _audiencePoolIsMarketFallback === 'function'
+        && _audiencePoolIsMarketFallback(
+          region ? region.value : 'global',
+          market ? market.value : 'global_en',
+          subVal
+        );
+      helpEl.textContent = fallback
+        ? 'El subnicho elegido no tiene perfiles propios en este mercado: el selector muestra el catálogo del mercado, no un filtro del subnicho.'
+        : 'Auto resuelve según contexto; con «Explorar 3 audiencias» cada Auto usa la suya.';
+      helpEl.className = fallback ? 'hint warn' : 'hint';
+    }
   }
 
   function refreshPrintMethodSelector() {
