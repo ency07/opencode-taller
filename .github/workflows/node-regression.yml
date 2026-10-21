@@ -3,6 +3,7 @@ name: Node regression tests
 on:
   push:
     branches:
+      - main
       - fix/redteam-semantic-identity
   pull_request:
     branches:

@@ -138,8 +138,11 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Solución definitiva:** añadir `main` a los `branches` de `push`.
 - **Responsable:** Administración del repositorio.
 - **Fecha objetivo:** pendiente de decisión del propietario.
-- **Estado:** open.
+- **Estado:** closed (2026-10-21, rama `fix/debt-008-ci-main`).
 - **Revisión:** cada release.
+- **Cierre:** `on.push.branches` ahora incluye `main` además de la rama legacy
+  de redteam; el push resultante del merge dispara `regression` en `main`
+  (verificado con el check-run del push de merge).
 
 ### DEBT-009 — Falta test de integración del ciclo de locks y validación visual real
 
