@@ -61,7 +61,9 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Solución definitiva:** unificar el valor del selector con la comparación del motor.
 - **Responsable:** Motor / UI.
 - **Fecha objetivo:** próxima rama de fixes del selector de variación.
-- **Estado:** open.
+- **Estado:** closed (2026-10-20; fix ya aplicado en `78d62a8`, verificado con
+  `tests/selector-texto.test.js` — el valor `nuevo_texto` del `<option>` y la
+  rama de SELECTORES coinciden y el fallback contradictorio ya no se alcanza).
 - **Revisión:** cada release.
 
 ### DEBT-004 — DISPLATE hereda `cara = 'espalda'`
@@ -90,8 +92,13 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Solución definitiva:** incluir la región en la clave del contador, como en los locks.
 - **Responsable:** Motor.
 - **Fecha objetivo:** próxima revisión de memoria de rotación.
-- **Estado:** open.
+- **Estado:** closed (2026-10-20, rama `fix/debt-005-006`).
 - **Revisión:** cada release.
+- **Cierre:** `_getStyleUsageScore`/`_recordStyleUse` usan `memLocksMarket()`
+  (market|region), la misma convención que los locks; las regiones de un
+  mercado ya no comparten contador. Nota: el fallback interno del motor ya
+  incluía región; el problema era el camino principal hacia memoria-local.
+  Test: `tests/region-estilos-audiencias.test.js`.
 
 ### DEBT-006 — El pool de audiencias se amplía al mercado en silencio
 
@@ -103,8 +110,14 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Solución definitiva:** indicar en la UI cuándo el pool es de mercado por falta de coincidencia.
 - **Responsable:** UI / Motor.
 - **Fecha objetivo:** próxima revisión del selector de audiencia.
-- **Estado:** open.
+- **Estado:** closed (2026-10-20, rama `fix/debt-005-006`).
 - **Revisión:** cada release.
+- **Cierre:** `_audiencePoolIsMarketFallback(region, market, subnicho)` detecta
+  el caso (subnicho sin perfiles, sin coincidencia con el mercado o sin filtro
+  propio) y `getCurrentAudiencePool` lo expone en `MOTOR_STATE._audPoolFallback`;
+  `refreshAudienceSelector` avisa en `#audienceHelp` (hint «warn») cuando el
+  subnicho elegido no restringe el catálogo. Test:
+  `tests/region-estilos-audiencias.test.js`.
 
 ### DEBT-007 — `main` sin protección de rama
 
