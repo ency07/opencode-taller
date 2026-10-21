@@ -156,19 +156,23 @@ const JS = path.join(ROOT, 'js');
   ok(diagTxt.indexOf('Groq: HTTP 401') !== -1, 'el diagnóstico nombra Groq y su status');
   ok(diagTxt.indexOf('Gemini: HTTP 401') !== -1, 'el diagnóstico nombra Gemini y su status');
   ok(diagTxt.indexOf('k-groq') === -1 && diagTxt.indexOf('k-gem2') === -1, 'el diagnóstico nunca expone claves');
-  ok(diagTxt.indexOf('formato inesperado') !== -1, 'avisa si la clave no tiene el formato del proveedor');
+  ok(rFail.proveedores === 2, 'informa cuántos proveedores tienen clave (2 de 3)');
+  ok(diagTxt.indexOf('que parece de') === -1, 'claves de formato desconocido no se acusan (sin falsos positivos)');
 
-  /* --- 9b) clave con formato correcto: solo longitud, sin volcar la clave --- */
+  /* --- 9b) clave de OTRO proveedor en el slot: se detecta la confusión --- */
   global.fetch = function () { return Promise.resolve({ ok: false, status: 401 }); };
   window.getAISlots = function () {
-    return [{ provider: 'OpenRouter', model: 'google/gemini-2.5-flash', key: 'sk-or-v1-0123456789abcdef', timeoutMs: 8000 }];
+    return [
+      { provider: 'Groq', model: 'openai/gpt-oss-20b', key: 'sk-or-v1-0123456789abcdef', timeoutMs: 8000 },
+      { provider: 'Gemini', model: 'gemini-2.5-flash', key: 'AQ.Ab8newformat123', timeoutMs: 8000 }
+    ];
   };
   outEl.value = '';
-  const rOr401 = await PODCopyIA.sugerirCopy();
-  const dOr401 = (rOr401.diagnosticos || []).join(' ');
-  ok(dOr401.indexOf('clave de 25 caracteres') !== -1, 'diagnóstico reporta longitud de la clave');
-  ok(dOr401.indexOf('formato inesperado') === -1, 'no marca formato cuando el prefijo es el correcto');
-  ok(dOr401.indexOf('0123456789abcdef') === -1, 'nunca imprime el cuerpo de la clave');
+  const rCruz = await PODCopyIA.sugerirCopy();
+  const dCruz = (rCruz.diagnosticos || []).join(' | ');
+  ok(dCruz.indexOf('Groq: HTTP 401 (clave de 25 caracteres que parece de OpenRouter') !== -1, 'detecta clave de OpenRouter en slot Groq');
+  ok(dCruz.indexOf('Gemini: HTTP 401 (clave de 18 caracteres)') !== -1, 'acepta claves nuevas de Gemini (AQ.Ab…) sin falsos positivos');
+  ok(dCruz.indexOf('AQ.Ab8newformat123') === -1 && dCruz.indexOf('0123456789abcdef') === -1, 'nunca imprime el cuerpo de la clave');
 
   /* --- 10) timeout real: slot colgado se aborta y pasa al siguiente --- */
   global.fetch = function (url, opt) {
