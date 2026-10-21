@@ -1046,15 +1046,38 @@ function _rankCompatibleMotifs(pools, concept) {
   return ranked.map(function (r) { return r.label; });
 }
 
+/* Concepto textual: referencia de versículo o cita numerada («jeremias 3. 33»,
+   «salmo 23», «1 corintios 13, 4»). Nunca coincide por palabras con los motivos
+   de un banco y no debe declararse incompatible ni recibir un motivo al azar. */
+function _isVerseReference(text) {
+  const s = String(text || '').trim();
+  if (s.length < 3 || s.length > 60) return false;
+  return /^(?:\d{1,2}\s+)?[\p{L}][\p{L}\s]{1,42}?\d{1,3}(?:\s*[\s.,:/-]\s*\d{1,3})?$/u.test(s);
+}
+
+/* Instrucción de símbolo cuando el concepto es textual y ningún motivo del
+   banco encaja: el símbolo se deriva del mensaje literal (o del concepto si no
+   hay mensaje), sin motivos ajenos y sin conflicto falso. */
+function _motifSceneFromMessage(concept, message) {
+  const c = String(concept || '').trim();
+  const m = String(message || '').trim();
+  return 'símbolo derivado del mensaje'
+    + (m ? ' literal «' + m + '»' : '')
+    + (c ? ' y del concepto «' + c + '»' : '')
+    + ': crea una escena o metáfora coherente con la familia y la doctrina del mercado; no inventes motivos ajenos al concepto ni objetos no solicitados';
+}
+
 /* Plan de motivos de la SERIE (exploración). Se calcula UNA vez por set:
    1. Si el concepto ya es un motivo del banco de la familia → ese es el ANCLA
-      semántica de TODA la serie: se dibuja ESE motivo en las fichas que
-      representan. La representación (tratamiento, composición, tipografía)
-      cambia por ficha; la escena no. Sin sustituciones por afinidad superficial:
-      «calor» no autoriza a dibujar fuego, brasas ni un sol.
+       semántica de TODA la serie: se dibuja ESE motivo en las fichas que
+       representan. La representación (tratamiento, composición, tipografía)
+       cambia por ficha; la escena no. Sin sustituciones por afinidad superficial:
+       «calor» no autoriza a dibujar fuego, brasas ni un sol.
    2. Si no → los motivos de familia compatibles (afinidad de palabras), en orden.
-   3. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
-      existe, UN conflicto para toda la serie con un motivo provisional.
+   3. Si el concepto es textual (versículo/cita) o el MENSAJE es afín a un motivo
+       → el símbolo se deriva de esas palabras del usuario, sin conflicto.
+   4. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
+       existe, UN conflicto para toda la serie con un motivo provisional.
    La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
 function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
   const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
@@ -1067,6 +1090,20 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
     ? _userNamedObject((userConcept || '') + ' ' + (userMessage || ''), objectPool)
     : '';
   if (userObj) return { list: [userObj], anchor: userObj, conflict: '' };
+  const messageMotifs = (userMessage || '').trim()
+    ? _rankCompatibleMotifs(familyObjs, userMessage)
+    : [];
+  if (messageMotifs.length) return { list: messageMotifs, anchor: messageMotifs[0], conflict: '' };
+  const conceptText = String(anchor || userConcept || '').trim();
+  if (typeof _isVerseReference === 'function' && _isVerseReference(conceptText)) {
+    return {
+      list: [(typeof _motifSceneFromMessage === 'function')
+        ? _motifSceneFromMessage(conceptText, userMessage)
+        : conceptText],
+      anchor: conceptText,
+      conflict: ''
+    };
+  }
   const fallback = (typeof _pick === 'function') ? _pick(familyObjs) : '';
   if (!fallback) return { list: [], anchor: anchor, conflict: '' };
   return {
@@ -1324,12 +1361,23 @@ function buildCandidate(audsPerKey, fixedIdentity) {
         } else {
           // Ningún motivo de la familia es compatible con el concepto → conflicto.
           // Si el usuario nombró un objeto, se conserva; si no, motivo provisional.
-          const userObj = _userNamedObject(pConcept + ' ' + String(MOTOR_STATE.message || ''), objectPool);
+          const pMessage = String(MOTOR_STATE.message || '').trim();
+          const userObj = _userNamedObject(pConcept + ' ' + pMessage, objectPool);
           if (userObj) {
             patronMotif = userObj;
           } else {
-            patronMotif = _pick(pPool);
-            if (patronMotif) objectConflicts.push('Patrón: el concepto «' + pConcept + '» no encaja con ningún motivo de la familia; se usó «' + patronMotif + '» como motivo provisional.');
+            const rankedMsg = pMessage ? _rankCompatibleMotifs(pPool, pMessage) : [];
+            if (rankedMsg.length) {
+              patronMotif = rankedMsg[0];
+            } else if (typeof _isVerseReference === 'function' && _isVerseReference(pConcept)) {
+              // Concepto textual (versículo/cita): símbolo del mensaje, sin conflicto.
+              patronMotif = (typeof _motifSceneFromMessage === 'function')
+                ? _motifSceneFromMessage(pConcept, pMessage)
+                : pConcept;
+            } else {
+              patronMotif = _pick(pPool);
+              if (patronMotif) objectConflicts.push('Patrón: el concepto «' + pConcept + '» no encaja con ningún motivo de la familia; se usó «' + patronMotif + '» como motivo provisional.');
+            }
           }
         }
       }

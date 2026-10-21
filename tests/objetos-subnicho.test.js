@@ -26,7 +26,7 @@ global.window = global;
 global.document = { getElementById: function () { return null; }, querySelectorAll: function () { return []; } };
 
 const JS = path.join(ROOT, 'js');
-['data-mercados.js', 'data-audiencias.js', 'data-bancos.js', 'banco-global.js', 'data-estilos.js',
+['data-mercados.js', 'data-audiencias.js', 'data-bancos.js', 'banco-global.js', 'banco-gospel-es.js', 'data-estilos.js',
  'dominios.js', 'data-productos.js', 'memoria-local.js', 'motor-nucleo.js'
 ].forEach(function (f) {
   vm.runInThisContext(fs.readFileSync(path.join(JS, f), 'utf8'), { filename: f });
@@ -316,6 +316,70 @@ ok(plan1.list[0] === 'puesto de fritanga donde el calor firma la conversación',
 const plan2 = _planExploreMotifs(['sombra que agrupa', 'otra cosa'],
   ['sombra que agrupa', 'otra cosa', 'arbol de biblioteca'], 'una sombra que agrupa', '', '');
 ok(plan2.conflict === '' && plan2.list[0] === 'sombra que agrupa', 'concepto compatible debe elegir el motivo afín sin conflicto');
+
+/* --- 10) Concepto textual (versículo/cita): símbolo del mensaje, sin conflicto falso --- */
+const famVerso = ['manos que oran junto a la ventana', 'cruz sobre la colina al alba', 'ancla firme en fondo movedizo'];
+
+const planV = _planExploreMotifs(famVerso, famVerso, 'jeremias 3. 33', 'jeremias 3. 33', 'Clamé y me respondió');
+ok(planV.conflict === '', 'un versículo NO genera conflicto falso de motivos');
+ok(planV.list.length === 1 && planV.list[0].indexOf('Clamé y me respondió') !== -1,
+  'el símbolo se deriva del MENSAJE literal (obtenido: ' + planV.list[0] + ')');
+ok(planV.list[0].indexOf('motivos ajenos') !== -1, 'la instrucción prohíbe motivos ajenos al concepto');
+ok(planV.anchor === 'jeremias 3. 33', 'el ancla conserva el concepto literal del usuario');
+ok(_isVerseReference('jeremias 3. 33') && _isVerseReference('salmo 23') && _isVerseReference('1 corintios 13, 4'),
+  'detección de referencias numeradas (libro + capítulo[:versículo])');
+ok(!_isVerseReference('zzz qqq vvv uuu') && !_isVerseReference('camisa 3d') && !_isVerseReference(''),
+  'la detección no se come conceptos basura ni palabras con números incrustados');
+
+const planV2 = _planExploreMotifs(famVerso, famVerso, 'salmo 23', 'salmo 23', '');
+ok(planV2.conflict === '' && planV2.list[0].indexOf('salmo 23') !== -1,
+  'versículo sin mensaje deriva el símbolo del propio concepto, sin conflicto');
+
+const planMsg = _planExploreMotifs(famVerso, famVerso, 'concepto qq zz vv', 'concepto qq zz vv', 'manos que oran junto a la ventana');
+ok(planMsg.conflict === '' && planMsg.list[0] === 'manos que oran junto a la ventana',
+  'mensaje afín a un motivo de familia resuelve el motivo sin conflicto');
+
+const planBasura = _planExploreMotifs(famVerso, famVerso, 'zzz qqq vvv', 'zzz qqq vvv', '');
+ok(planBasura.conflict !== '', 'concepto basura SIN mensaje sigue declarando conflicto (provisional controlado)');
+ok(famVerso.indexOf(planBasura.list[0]) !== -1, 'el motivo provisional sigue saliendo de la familia');
+
+/* --- 11) E2E exploración gospel: versículo + mensaje literal → sin AVISO OBJETO --- */
+baseState();
+MOTOR_STATE.market = 'gospel_es';
+MOTOR_STATE.region = 'universal';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.subniche = 'gospel_es';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+MOTOR_STATE.concept = 'jeremias 3. 33';
+MOTOR_STATE.message = 'Clamé y me respondió';
+const rVerso = buildCandidate(resolveAudiences(), null);
+ok(!(rVerso.objectConflicts || []).length,
+  'versículo gospel en exploración: cero conflictos de motivo (obtenido: ' + JSON.stringify(rVerso.objectConflicts || []) + ')');
+const promptVerso = formatPrompt(asResult(rVerso));
+ok(promptVerso.indexOf('AVISO OBJETO (conflicto)') === -1, 'el prompt NO declara conflicto falso (sin AVISO OBJETO)');
+ok(promptVerso.indexOf('símbolo derivado del mensaje') !== -1, 'el prompt instruye el símbolo derivado del mensaje');
+ok(promptVerso.indexOf('«Clamé y me respondió»') !== -1, 'la instrucción cita el mensaje literal del usuario');
+ok(promptVerso.indexOf('jeremias 3. 33') !== -1, 'la instrucción conserva el concepto literal del usuario');
+
+/* --- 12) E2E patrón gospel: mismo caso, también sin conflicto --- */
+baseState();
+MOTOR_STATE.market = 'gospel_es';
+MOTOR_STATE.region = 'universal';
+MOTOR_STATE.product = 'MOCHILA';
+MOTOR_STATE.subniche = 'gospel_es';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+MOTOR_STATE.designMode = 'patron';
+MOTOR_STATE.workflowMode = 'new';
+MOTOR_STATE.concept = 'jeremias 3. 33';
+MOTOR_STATE.message = 'Clamé y me respondió';
+const rPatVerso = buildCandidate(resolveAudiences(), null);
+ok(!(rPatVerso.objectConflicts || []).length,
+  'versículo gospel en patrón: cero conflictos (obtenido: ' + JSON.stringify(rPatVerso.objectConflicts || []) + ')');
+const promptPatVerso = formatPrompt(asResult(rPatVerso));
+ok(promptPatVerso.indexOf('AVISO OBJETO (conflicto)') === -1, 'patrón: el prompt sin AVISO OBJETO falso');
+ok(promptPatVerso.indexOf('símbolo derivado del mensaje') !== -1, 'patrón: el símbolo se deriva del mensaje');
 
 function finish() {
   const passed = failures.length === 0;
