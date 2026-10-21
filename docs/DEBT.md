@@ -226,3 +226,27 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Responsable:** Motor.
 - **Estado:** open (bloqueada: pendiente envío de bancos).
 - **Revisión:** cada release.
+
+### DEBT-014 — El prompt del copy-IA no recibe directivas de idioma ni cultura del mercado
+
+- **Origen:** `construirPromptContexto()` (`js/copy-ia.js:29-30`) inyecta solo el
+  id de `mercado`, producto, familia (subnicho), concepto y audiencia, más reglas
+  genéricas ("nativa del idioma del mercado", "no mezcles idiomas"). No incluye
+  `getLanguageDirective()` ni `getCulturalDirective()` (`js/data-mercados.js:944`
+  y `js/data-mercados.js:965`), que sí reciben los prompts del motor de imágenes
+  (`js/motor-nucleo.js:2080-2085`, `js/motor-nucleo.js:2834-2835`). Tampoco
+  existe un banco de jerga/localismos por mercado o subnicho en el repo.
+- **Riesgo:** frases generadas fuera del registro natural del mercado (costeños
+  mexicanos, spanglish mal calibrado, regionalismos prohibidos en global_es) o
+  versión literal de modismos; el modelo depende solo de su conocimiento previo
+  del id de mercado.
+- **Impacto:** Medio (calidad del copy, no rompe funciones).
+- **Mitigación actual:** reglas prohibitivas del propio prompt y revisión
+  manual del usuario.
+- **Solución definitiva:** inyectar en `construirPromptContexto` las directivas
+  de idioma/cultura del mercado activo; como mejora, banco de vocabulario
+  (jerga/localismos) por mercado/subnicho reutilizable por el copy-IA.
+- **Responsable:** Motor / IA.
+- **Fecha objetivo:** próxima revisión del subsistema de copy.
+- **Estado:** open.
+- **Revisión:** cada release.
