@@ -60,20 +60,24 @@
     'gemini-1.5-pro': 'gemini-2.5-flash'
   };
 
-  /* Gemini de texto alineado a la generación que el panel de visión ya usa
-     (evita llamar a modelos de la serie 1.x/2.0 retirados). */
+  /* Gemini de texto alineado a la generación que el panel de visión ya usa.
+     Proyectos con claves nuevas (AQ.Ab…) no reciben la serie 2.5 ni anteriores:
+     responderían 404. Si tampoco sirviera el modelo vivo, se reintenta una vez
+     con el alterno (reintento inteligente, sin bucle). */
+  function modeloGeminiVivo() {
+    try {
+      if (window.PODVision && window.PODVision.getVisionConfig) {
+        var vc = window.PODVision.getVisionConfig();
+        if (vc && vc.geminiModel) return vc.geminiModel;
+      }
+    } catch (e) { /* sin visión cargada */ }
+    return 'gemini-3.5-flash-lite';
+  }
+
   function modeloVivo(provider, model) {
     var m = String(model || '').trim();
     if (provider !== 'Gemini') return m;
-    if (/^gemini-(1\.|2\.0)/i.test(m)) {
-      try {
-        if (window.PODVision && window.PODVision.getVisionConfig) {
-          var vc = window.PODVision.getVisionConfig();
-          if (vc && vc.geminiModel) return vc.geminiModel;
-        }
-      } catch (e) { /* sin visión cargada */ }
-      return 'gemini-2.5-flash';
-    }
+    if (m === 'gemini-2.5-flash' || /^gemini-(1\.|2\.0)/i.test(m)) return modeloGeminiVivo();
     return DEAD_TEXT_MODELS[m] || m;
   }
 
@@ -108,7 +112,7 @@
     if (!slots.length) return Promise.resolve({ error: 'sin-clave' });
     var diagnosticos = [];
     var intento = function (slot, resto) {
-      var model = modeloVivo(slot.provider, slot.model);
+      var model = slot._intentoAlt ? String(slot.model) : modeloVivo(slot.provider, slot.model);
       var url = ep(slot.provider, model);
       if (!url) {
         diagnosticos.push(slot.provider + ': proveedor desconocido');
@@ -162,9 +166,15 @@
         var motivo = (e && e.name === 'AbortError')
           ? ('sin respuesta en ' + Math.round(timeoutMs / 1000) + 's')
           : String((e && e.message) || e);
+        if (/HTTP 404/.test(motivo)) motivo = 'HTTP 404 (el modelo ' + model + ' no existe para esta clave)';
         if (/HTTP 40[13]/.test(motivo)) {
           var pista = pistaClave(slot.provider, slot.key);
           if (pista) motivo += ' (' + pista + ')';
+        }
+        /* 404 en Gemini: reintento único con el modelo alterno (2.5 ↔ vivo). */
+        if (slot.provider === 'Gemini' && /HTTP 404/.test(motivo) && !slot._intentoAlt) {
+          var alt = (model === modeloGeminiVivo()) ? 'gemini-2.5-flash' : modeloGeminiVivo();
+          if (alt && alt !== model) return intento(Object.assign({}, slot, { model: alt, _intentoAlt: true }), resto);
         }
         diagnosticos.push(slot.provider + ': ' + motivo);
         if (resto.length) return intento(resto[0], resto.slice(1));
