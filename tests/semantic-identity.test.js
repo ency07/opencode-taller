@@ -91,29 +91,33 @@ const structuralPools = {
   const profileCard = _applyStructuralProfile({}, profileKey, {});
   const spec = structuralPools[profileKey];
   ok(profileCard.perfilEstructural === profileKey, profileKey + ' debe declararse como perfil estructural explícito');
-  ok(_LAYOUTS.indexOf(profileCard.layout) !== -1, profileKey + ' debe elegir un layout del catálogo completo, sin restringirlo al perfil');
+  ok(spec.layout.some(function (hint) { return profileCard.layout.indexOf(hint) === 0; }), profileKey + ' debe elegir un layout del pool del perfil estructural (DEBT-015)');
   ok(spec.type.some(function (hint) { return profileCard.tipografia.indexOf(hint) === 0; }), profileKey + ' debe seleccionar tipografía permitida por el perfil');
   ok(spec.density.indexOf(profileCard.densidad) !== -1, profileKey + ' debe seleccionar densidad coherente');
   ok(spec.form.some(function (hint) { return profileCard.formaSimbolo === hint; }), profileKey + ' debe seleccionar una forma compatible');
   ok(_POOLS.negativeSpace.indexOf(profileCard.negativeSpace) !== -1, profileKey + ' debe usar espacio negativo del pool registrado');
-  ok(_POOLS.jerarquia.indexOf(profileCard.jerarquia) !== -1, profileKey + ' debe usar jerarquía interna registrada');
   ok(_INTEGRACION.indexOf(profileCard.integracionTexto) !== -1, profileKey + ' debe usar integración tipográfica registrada');
 });
+// DEBT-015: el texto jerárquico deriva del modo asignado; el modo manda.
+const modoCard = _applyStructuralProfile({ jerarquiaVisual: 'OBJETO_DOMINANTE' }, 'HEAVY', {});
+ok(modoCard.jerarquia === _JERARQUIA_FRANJA_DE_MODO.OBJETO_DOMINANTE, 'el texto jerárquico debe derivarse del modo asignado');
+const soloTextCard = _applyStructuralProfile({ jerarquiaVisual: 'SOLO_TEXTO' }, 'SOFT', {});
+ok(soloTextCard.jerarquia === 'Texto 100% / Símbolo 0%', 'SOLO_TEXTO debe fijar la franja de texto 100%');
 // Las diferencias se comprueban entre tarjetas, no solo contra el perfil individual.
-const distinctProfileAxes = { layout: [], tipografia: [], formaSimbolo: [], integracionTexto: [], densidad: [], negativeSpace: [], jerarquia: [] };
+const distinctProfileAxes = { layout: [], tipografia: [], formaSimbolo: [], integracionTexto: [], densidad: [], negativeSpace: [] };
 const distinctProfileCards = ['HEAVY', 'SOFT', 'MODERN'].map(function (profileKey) {
   const card = _applyStructuralProfile({}, profileKey, {}, {}, distinctProfileAxes);
   Object.keys(distinctProfileAxes).forEach(function (axis) { distinctProfileAxes[axis].push(card[axis === 'tipografia' ? 'tipografia' : axis]); });
   return card;
 });
-['layout', 'tipografia', 'formaSimbolo', 'integracionTexto', 'densidad', 'negativeSpace', 'jerarquia'].forEach(function (axis) {
+['layout', 'tipografia', 'formaSimbolo', 'integracionTexto', 'densidad', 'negativeSpace'].forEach(function (axis) {
   const values = distinctProfileCards.map(function (card) { return card[axis]; });
   ok(new Set(values).size === values.length, 'HEAVY/SOFT/MODERN deben evitar repetir ' + axis + ' cuando hay opciones compatibles');
 });
 
 const productConstrainedProfile = _applyStructuralProfile({ jerarquiaVisual: 'TEXTO_DOMINANTE' }, 'HEAVY', { layout: ['Axial centrado'], density: ['Heavy'] });
-ok(_LAYOUTS.indexOf(productConstrainedProfile.layout) !== -1, 'la preferencia de producto debe elegir del catálogo completo sin bloquear otras opciones');
-ok(productConstrainedProfile.jerarquia === 'TEXTO_DOMINANTE', 'el perfil estructural nunca debe sobrescribir la jerarquía del selector');
+ok(structuralPools.HEAVY.layout.some(function (h) { return productConstrainedProfile.layout.indexOf(h) === 0; }), 'la preferencia de producto debe sesgar sin salir del layout del perfil');
+ok(productConstrainedProfile.jerarquia === _JERARQUIA_FRANJA_DE_MODO.TEXTO_DOMINANTE, 'el texto jerárquico debe derivar del modo asignado');
 ok(productConstrainedProfile.densidad === 'Heavy', 'si producto y perfil comparten densidad permitida, debe respetarse');
 const audienceConstrainedProfile = _applyStructuralProfile({}, 'SOFT', {}, {
   layoutPref: ['Editorial asimétrica'],
@@ -121,7 +125,7 @@ const audienceConstrainedProfile = _applyStructuralProfile({}, 'SOFT', {}, {
   densityPref: ['Minimal'],
   formaPref: ['contorno lineal calibrado']
 });
-ok(_LAYOUTS.indexOf(audienceConstrainedProfile.layout) !== -1, 'el perfil estructural debe elegir del catálogo completo y tratar la preferencia de audiencia como sesgo, no candado');
+ok(_LAYOUTS.indexOf(audienceConstrainedProfile.layout) !== -1, 'el perfil estructural debe elegir del pool del perfil y tratar la preferencia de audiencia como sesgo, no candado');
 ok(audienceConstrainedProfile.tipografia.indexOf('Sans humanista limpia') === 0, 'el perfil estructural debe conservar la tipografía preferida por la audiencia cuando es compatible');
 ok(audienceConstrainedProfile.densidad === 'Minimal', 'el perfil estructural debe conservar la densidad preferida por la audiencia cuando es compatible');
 ok(audienceConstrainedProfile.formaSimbolo === 'contorno lineal calibrado', 'el perfil estructural debe conservar la forma simbólica preferida por la audiencia cuando es compatible');
@@ -152,8 +156,8 @@ for (let sample = 0; sample < 12; sample++) {
 }
 const motorSourceForTextDiversity = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
 ok(motorSourceForTextDiversity.includes('const textCompositionByKey = _assignTextCompositions();'), 'la asignación textual se debe crear por conjunto, no por tratamiento');
-ok(motorSourceForTextDiversity.includes('todo layout registrado sigue elegible'), 'el perfil estructural no debe limitar el catálogo de layouts');
-ok(motorSourceForTextDiversity.includes('v.jerarquia = v.jerarquiaVisual ||'), 'la jerarquía elegida en el selector debe prevalecer sobre el perfil');
+ok(motorSourceForTextDiversity.includes('profileLayoutPool'), 'el layout debe salir del pool del perfil estructural (DEBT-015)');
+ok(motorSourceForTextDiversity.includes('v.jerarquia = _jerarquiaTextoDeModo(v.jerarquiaVisual)'), 'el texto jerárquico se deriva del modo asignado');
 ok(motorSourceForTextDiversity.includes('ÚNICOS elementos permitidos: letras del copy literal'), 'SOLO_TEXTO debe excluir ilustraciones desde el bloque de objeto');
 ok(motorSourceForTextDiversity.includes("'integracionTexto', 'distribucionTexto', 'familiaColor'"), 'la distribución textual debe participar en la puntuación de diversidad');
 ok(motorSourceForTextDiversity.includes('return set[k].distribucionTexto; })).size === 3'), 'la aceptación del conjunto debe exigir tres arquitecturas textuales distintas');

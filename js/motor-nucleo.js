@@ -502,7 +502,31 @@ function resolveEstilos(audsPerKey) {
   else _memSetJSON(recentKey, recentSets.concat([usedStyles]).slice(-3));
   return fixed;
 }
-function resolveTextImageModes(estilos, audsPerKey) {
+/* DEBT-015: el perfil estructural delimita los modos jerárquicos que puede
+   recibir cada ficha en Auto (los locks manuales siempre ganan). Se asigna por
+   permutaciones: se elige la combinación de 3 modos distintos con mayor
+   puntaje total, no el mejor modo por ficha (evita callejones del greedy). */
+const PROFILE_VISUAL_MODES = {
+  HEAVY: ['TEXTO_DOMINANTE', 'OBJETO_DOMINANTE'],
+  SOFT: ['BALANCEADO', 'TEXTO_DOMINANTE'],
+  MODERN: ['OBJETO_DOMINANTE', 'BALANCEADO', 'TEXTO_DOMINANTE']
+};
+
+/* Franja descriptiva de jerarquía derivada del modo asignado (revisor/UI).
+   El modo manda; el texto es consecuencia, nunca una elección aparte. */
+const _JERARQUIA_FRANJA_DE_MODO = {
+  SOLO_TEXTO: 'Texto 100% / Símbolo 0%',
+  TEXTO_DOMINANTE: 'Texto 70-80% / Símbolo 20-30%',
+  BALANCEADO: 'Texto 45-55% / Símbolo 45-55%',
+  OBJETO_DOMINANTE: 'Símbolo 70-80% / Texto 20-30%',
+  SOLO_OBJETO: 'Símbolo 100% / Texto 0% (cero letras)'
+};
+
+function _jerarquiaTextoDeModo(modoVisual) {
+  return _JERARQUIA_FRANJA_DE_MODO[modoVisual] || modoVisual || 'Texto 45-55% / Símbolo 45-55%';
+}
+
+function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
   const locks = _loadLocks(memLocksMarket(), MOTOR_STATE.product);
   const MODES = {
     SOLO_TEXTO: 'TIPO 1 · Solo texto',
@@ -516,7 +540,7 @@ function resolveTextImageModes(estilos, audsPerKey) {
 
   K.forEach(function (k) {
     if (locks.jerarquia[k] && locks.jerarquia[k] !== 'Auto' && MODES[locks.jerarquia[k]]) {
-      result[k] = locks.jerarquia[k];
+      result[k] = locks.jerarquia[k]; // el lock manual manda aunque el modo no pertenezca al perfil
     } else {
       auto.push(k);
     }
@@ -525,31 +549,58 @@ function resolveTextImageModes(estilos, audsPerKey) {
   if (!auto.length) return result;
 
   const words = ((MOTOR_STATE.message || MOTOR_STATE.concept || '').trim().match(/\S+/g) || []).length;
+  const productBias = _PRODUCT_BIAS[MOTOR_STATE.product] || {};
 
-  auto.forEach(function (k) {
-    const available = Object.keys(MODES).filter(function (x) {
-      return Object.values(result).indexOf(x) === -1;
-    });
-    if (!available.length) {
-      result[k] = 'BALANCEADO';
-      return;
-    }
-
+  function baseScores(key) {
     const score = { SOLO_TEXTO: 0, TEXTO_DOMINANTE: 0, BALANCEADO: 0, OBJETO_DOMINANTE: 0, SOLO_OBJETO: 0 };
     if (words <= 3) { score.SOLO_TEXTO += 2; score.TEXTO_DOMINANTE += 1; }
     else if (words >= 8) { score.OBJETO_DOMINANTE += 2; score.BALANCEADO += 1; score.SOLO_OBJETO += 1; score.SOLO_TEXTO -= 4; }
-
-    const productBias = _PRODUCT_BIAS[MOTOR_STATE.product] || {};
     (productBias.hierarchy || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 3 : 1); });
-    const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[audsPerKey[k]] : []) || [];
+    const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[audsPerKey[key]] : []) || [];
     audHierarchy.forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : 1); });
+    // Preferencia del perfil: +2 primera opción, +1 segunda, +0 tercera.
+    const profileModes = (profileByKey && PROFILE_VISUAL_MODES[profileByKey[key]]) || null;
+    (profileModes || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : (i === 1 ? 1 : 0)); });
+    return score;
+  }
 
-    const ranked = available.map(function (x) {
-      return { x: x, s: (score[x] || 0) + Math.random() * 0.3 };
-    }).sort(function (a, b) { return b.s - a.s; });
-
-    result[k] = ranked[0].x;
+  const allowedByKey = {};
+  auto.forEach(function (k) {
+    const profileModes = (profileByKey && PROFILE_VISUAL_MODES[profileByKey[k]]) || null;
+    allowedByKey[k] = profileModes ? profileModes.slice() : Object.keys(MODES);
   });
+
+  let bestTotal = -Infinity;
+  let bestCombo = null;
+  function enumerate(index, chosen, total, avoidLocked) {
+    if (index === auto.length) {
+      const values = auto.map(function (k) { return chosen[k]; });
+      if (new Set(values).size !== values.length) return;
+      if (total > bestTotal) { bestTotal = total; bestCombo = Object.assign({}, chosen); }
+      return;
+    }
+    const k = auto[index];
+    const score = baseScores(k);
+    const lockedModes = Object.values(result);
+    allowedByKey[k].forEach(function (mode) {
+      if (!avoidLocked && lockedModes.indexOf(mode) !== -1) return;
+      chosen[k] = mode;
+      enumerate(index + 1, chosen, total + (score[mode] || 0) + Math.random() * 0.3, avoidLocked);
+      delete chosen[k];
+    });
+  }
+  enumerate(0, {}, 0, false);
+  if (!bestCombo) {
+    // Último recurso: permitir reutilizar el modo fijado por un lock (el gate
+    // solo exige modes distintos entre tarjetas Auto).
+    bestTotal = -Infinity;
+    enumerate(0, {}, 0, true);
+  }
+  if (bestCombo) {
+    auto.forEach(function (k) { result[k] = bestCombo[k]; });
+  } else {
+    auto.forEach(function (k, i) { result[k] = allowedByKey[k][i % allowedByKey[k].length]; });
+  }
 
   return result;
 }
@@ -832,16 +883,16 @@ function _pickFreshTreatment(biasPool, fullPool, used) {
 }
 
 /* --- Perfiles estructurales universales HEAVY / SOFT / MODERN --- */
-/* El tratamiento deja de ser solo una etiqueta artística: gobierna decisiones
-   de composición, densidad, tipografía y espacio negativo. No cambia el concepto,
-   el mercado, la familia, el producto ni una jerarquía explícitamente elegida. */
+/* El tratamiento deja de ser solo una etiqueta artística: manda decisiones de
+   layout, tipografía, densidad, espacio negativo, formas e integración, y
+   delimita los modos jerárquicos permitidos (PROFILE_VISUAL_MODES). No cambia
+   el concepto, el mercado, la familia ni el producto. */
 const _STRUCTURAL_PROFILES = {
   HEAVY: {
     density: ['Heavy'],
     layout: ['Axial centrado', 'Emblema circular', 'Banda horizontal', 'Sangrado total', 'Arco y cúpula', 'Escalinata'],
     type: ['Grotesca black condensada', 'Slab pesada de oficio', 'Stencil de plantilla', 'Gótica blackletter', 'Rounded amable'],
     negative: ['Campo de tinta con margen vivo', 'Perímetro simétrico controlado', 'Cortes diagonales de aire'],
-    hierarchy: ['Símbolo 70% / Texto 30%', 'Símbolo dominante + texto descubrible', 'Texto dominante + símbolo descubrible'],
     form: ['silueta sólida a una tinta', 'tallado en bloque', 'fragmentado en planos'],
     integration: ['la palabra principal es un elemento más del objeto', 'el título abraza y parte el símbolo', 'el título rompe la silueta del símbolo']
   },
@@ -850,7 +901,6 @@ const _STRUCTURAL_PROFILES = {
     layout: ['Editorial asimétrica', 'Retícula áurea', 'Sello descentrado', 'Columna apilada', 'Split 2/3-1/3'],
     type: ['Sans humanista limpia', 'Rounded amable', 'Serif clásica titulada', 'Manuscrita de cuaderno'],
     negative: ['Vacío como protagonista', 'Aire alrededor del motivo principal', 'Bloques de respiración laterales', 'Fragmentos separados por silencio visual'],
-    hierarchy: ['Símbolo dominante + texto descubrible', '50 / 50 equilibrado', 'Jerarquía en capas de lectura'],
     form: ['contorno lineal calibrado', 'orgánico gestual con pincel', 'caligráfico de un solo trazo'],
     integration: ['el texto corre por el contorno del símbolo', 'texto y símbolo comparten una sola línea de dibujo', 'el texto principal cruza un eje de la composición']
   },
@@ -859,7 +909,6 @@ const _STRUCTURAL_PROFILES = {
     layout: ['Editorial asimétrica', 'Split 2/3-1/3', 'Retícula áurea', 'Diagonal ascendente', 'Diagonal descendente', 'Tarjeta interior'],
     type: ['Sans humanista limpia', 'Mono técnica', 'Geométrica deconstructivista', 'Custom modular geométrica'],
     negative: ['Vacíos verticales que guían la lectura', 'Cortes diagonales de aire', 'Aire alrededor del motivo principal'],
-    hierarchy: ['Jerarquía en capas de lectura', '50 / 50 equilibrado', 'Texto dominante + símbolo descubrible'],
     form: ['geometrizado por módulos', 'construido por retícula visible', 'fragmentado en planos'],
     integration: ['las letras habitan la estructura del objeto', 'el título rompe la silueta del símbolo', 'el texto principal cruza un eje de la composición']
   }
@@ -898,9 +947,9 @@ function _styleTreatmentDirective(styleValue, profileKey) {
   const style = _getStyleBase(styleValue).toLowerCase();
   const key = String(profileKey || '').toUpperCase();
   const profileRules = {
-    HEAVY: 'Prioriza masas visuales claras, contornos firmes y contraste alto. Evita que líneas finas, textura o detalles delicados debiliten la silueta. Mantén el carácter del estilo mediante su técnica aplicada en áreas amplias.',
-    SOFT: 'Prioriza aire, formas abiertas y jerarquía amable. Evita que el estilo convierta toda la superficie en una masa densa. Conserva su técnica en detalles selectivos y deja espacio negativo visible.',
-    MODERN: 'Prioriza geometría legible, bordes definidos y síntesis. Conserva los rasgos reconocibles del estilo como acentos controlados; no permitas que ornamento, textura, efectos o detalle secundario rompan la estructura limpia.'
+    HEAVY: 'Prioriza masas visuales claras, contornos firmes y contraste alto. Evita que líneas finas, textura o detalles delicados debiliten la silueta. Mantén el carácter del estilo mediante su técnica aplicada en áreas amplias. Prohibido: líneas finas, microdetalle, tramas uniformes que cierren el aire.',
+    SOFT: 'Prioriza aire, formas abiertas y jerarquía amable. Evita que el estilo convierta toda la superficie en una masa densa. Conserva su técnica en detalles selectivos y deja espacio negativo visible. Prohibido: salpicaduras agresivas, bordes desgarrados, masas de tinta que cierren el espacio negativo.',
+    MODERN: 'Prioriza geometría legible, bordes definidos y síntesis. Conserva los rasgos reconocibles del estilo como acentos controlados; no permitas que ornamento, textura, efectos o detalle secundario rompan la estructura limpia. Prohibido: ornamento, textura decorativa, ruido, asimetría accidental.'
   };
   const techniqueRules = [];
   if (/acuarela|watercolor|airbrush|glow|neon|neón|gradient|degrad/.test(style)) {
@@ -916,7 +965,8 @@ function _styleTreatmentDirective(styleValue, profileKey) {
     techniqueRules.push('Conserva el carácter expresivo o artesanal del estilo; el tratamiento cambia la arquitectura, no lo convierte en otro género visual.');
   }
   return (profileRules[key] || 'Respeta el lenguaje artístico elegido y evita instrucciones visuales contradictorias.')
-    + ' Estilo artístico activo: «' + _getStyleBase(styleValue) + '». ' + techniqueRules.join(' ');
+    + ' Estilo artístico activo: «' + _getStyleBase(styleValue) + '». ' + techniqueRules.join(' ')
+    + ' Si el estilo exige un recurso prohibido, redúcelo a acento controlado; no cambie el esqueleto.';
 }
 
 /* Layouts coherentes y producibles para el producto activo. Sin entrada en
@@ -938,9 +988,11 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
   if (!profile) return v;
   const bias = productBias || {};
   const audience = audienceProfile || {};
-  // El perfil estructural no restringe el catálogo: todo layout registrado sigue elegible.
-  // Producto y audiencia solo sesgan; cada tarjeta del conjunto recibe uno no repetido.
-  const layouts = _allowedLayoutPool() || (_LAYOUTS || []).slice();
+  // DEBT-015: el pool del perfil estructural delimita el layout; el pool del
+  // producto es límite duro y actúa como reserva si el perfil no cae en él.
+  const productLayoutPool = _allowedLayoutPool() || (_LAYOUTS || []).slice();
+  const profileLayoutPool = productLayoutPool.filter(function (x) { return (profile.layout || []).some(function (h) { return x.indexOf(h) === 0; }); });
+  const layouts = profileLayoutPool.length ? profileLayoutPool : productLayoutPool;
   const productLayouts = (bias.layout || []).length
     ? layouts.filter(function (x) { return bias.layout.some(function (h) { return x.indexOf(h) === 0; }); })
     : [];
@@ -950,8 +1002,7 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
   const distinctLayouts = layouts.filter(function (x) { return (used.layout || []).indexOf(x) === -1; });
   const preferredLayouts = new Set(productLayouts.concat(audienceLayouts));
   // Rotación entre generaciones: los layouts de los últimos sets pesan menos
-  // (×0.35, como los estilos recientes) pero nunca cero: los 16 aplican en
-  // todos los productos/mercados a lo largo de generaciones.
+  // (×0.35, como los estilos recientes) pero nunca cero, dentro del pool del perfil.
   let recentLayouts = null;
   try {
     const rkFn = typeof memKey === 'function' ? memKey : _memKey;
@@ -959,9 +1010,9 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
     const stored = (typeof getJSON === 'function' ? getJSON(rk, []) : _memGetJSON(rk, [])) || [];
     recentLayouts = new Set([].concat.apply([], stored.slice(-3)));
   } catch (e) { recentLayouts = new Set(); }
-  // Sesgo suave (1.5:1), no lista cerrada: cualquier layout puede salir y el
-  // catálogo completo se explora a lo largo de generaciones; dentro de A/B/C no
-  // se repite. El override manual (lock) siempre gana.
+  // Sesgo suave (1.5:1), no lista cerrada: todo layout del pool del perfil puede
+  // salir a lo largo de generaciones; dentro de A/B/C no se repite. El override
+  // manual (lock) siempre gana.
   const layoutWeights = distinctLayouts.map(function (layout) {
     const base = preferredLayouts.has(layout) ? 1.5 : 1;
     return recentLayouts.has(layout) ? base * 0.35 : base;
@@ -985,11 +1036,10 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
   v.densidad = _pickProfileDistinct([productDensity, audienceDensity], density.length ? density : (_POOLS.densidad || []), used.densidad);
 
   const negativeCandidates = _profileCandidates(_POOLS.negativeSpace, profile.negative, ['Aire alrededor del motivo principal']);
-  const hierarchyCandidates = _profileCandidates(_POOLS.jerarquia, profile.hierarchy, ['Jerarquía en capas de lectura']);
   const profileForms = _profileCandidates(_FORMAS, profile.form, _FORMAS);
   v.negativeSpace = _pickProfileDistinct([negativeCandidates], _POOLS.negativeSpace, used.negativeSpace);
-  // La jerarquía elegida en el selector prevalece sobre la jerarquía decorativa del perfil.
-  v.jerarquia = v.jerarquiaVisual || _pickProfileDistinct([hierarchyCandidates], _POOLS.jerarquia, used.jerarquia);
+  // DEBT-015: el modo jerárquico asignado manda; el texto descriptivo se deriva de él.
+  v.jerarquia = _jerarquiaTextoDeModo(v.jerarquiaVisual);
   const audienceForms = (audience.formaPref || []).length
     ? profileForms.filter(function (x) { return audience.formaPref.indexOf(x) !== -1; })
     : [];
@@ -1322,7 +1372,6 @@ function _assignTextCompositions() {
 
 function buildCandidate(audsPerKey, fixedIdentity) {
   const estilos = resolveEstilos(audsPerKey);
-  const hierarchyPerKey = resolveTextImageModes(estilos, audsPerKey);
   const objectPool = getObjectPool();
   const isVar = MOTOR_STATE.workflowMode === 'variation';
   const conservarSimb = isVar && !!MOTOR_STATE.imageReference && MOTOR_STATE.variationOptions.simbolo !== 'sustituir';
@@ -1338,10 +1387,16 @@ function buildCandidate(audsPerKey, fixedIdentity) {
   const set = {};
   const textCompositionByKey = _assignTextCompositions();
   const usedThisSet = new Set();
-  const usedAxes = { layout: [], tipografia: [], formaSimbolo: [], tratamiento: [], integracionTexto: [], densidad: [], negativeSpace: [], jerarquia: [], tecnica: [], familiaColor: [] };
+  const usedAxes = { layout: [], tipografia: [], formaSimbolo: [], tratamiento: [], integracionTexto: [], densidad: [], negativeSpace: [], tecnica: [], familiaColor: [] };
   const contactIdentity = _isLockedContactSet()
     ? (fixedIdentity || _resolveContactIdentity(objectPool))
     : null;
+  // DEBT-015: la asignación de modos jerárquicos conoce el perfil de cada ficha
+  // (explore/contacto/variación usan el orden fijo A/B/C; patrones no aplican perfil).
+  const profileModeKeys = (contactIdentity || MOTOR_STATE.workflowMode === 'explore' || MOTOR_STATE.workflowMode === 'variation')
+    ? Object.assign({}, _CONTACT_TREATMENT_ORDER)
+    : {};
+  const hierarchyPerKey = resolveTextImageModes(estilos, audsPerKey, profileModeKeys);
   const contactPrimaryText = String(MOTOR_STATE.message || '').trim().replace(/\s+/g, ' ');
   const contactSupportText = String(MOTOR_STATE.support || '').trim().replace(/\s+/g, ' ');
 
@@ -1545,7 +1600,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     // Arquitectura textual única por tarjeta, asignada al azar y sin vínculo con HEAVY/SOFT/MODERN.
     // El contenido literal del mensaje se conserva; solo cambia su estructura compositiva.
     v.distribucionTexto = textCompositionByKey[k];
-    v.jerarquia = _pick(_POOLS.jerarquia || ['Balanceado']);
+    v.jerarquia = _jerarquiaTextoDeModo(v.jerarquiaVisual); // texto derivado del modo (DEBT-015)
     if (contactIdentity) v.guiaSimbolo = contactIdentity.guiaSimbolo;
     const productDensity = productBias.density || [];
     const audienceDensity = (typeof AUD_DENSITY_PREF !== 'undefined' ? AUD_DENSITY_PREF[v.audiencia] : []) || [];
@@ -1564,8 +1619,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
         formaSimbolo: usedAxes.formaSimbolo.slice(0, -1),
         integracionTexto: usedAxes.integracionTexto.slice(0, -1),
         densidad: usedAxes.densidad,
-        negativeSpace: usedAxes.negativeSpace,
-        jerarquia: usedAxes.jerarquia
+        negativeSpace: usedAxes.negativeSpace
       };
       _applyStructuralProfile(v, _CONTACT_TREATMENT_ORDER[k], productBias, audProfile, priorProfileAxes, fixedLayout);
       usedAxes.layout[usedAxes.layout.length - 1] = v.layout;
@@ -1574,7 +1628,6 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       usedAxes.integracionTexto[usedAxes.integracionTexto.length - 1] = v.integracionTexto;
       usedAxes.densidad.push(v.densidad);
       usedAxes.negativeSpace.push(v.negativeSpace);
-      usedAxes.jerarquia.push(v.jerarquia);
     }
     v.funcionSimbolica = contactIdentity
       ? contactIdentity.funcionSimbolica
@@ -2375,9 +2428,11 @@ function formatPrompt(result) {
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento)) + '\n';
+    o += 'ESQUELETO ESTRUCTURAL (MANDA): perfil ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · jerarquía ' + v.jerarquiaVisual + ' · layout ' + String(v.layout || '').split(':')[0] + ' · arquitectura textual ' + v.distribucionTexto + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + ' · forma del símbolo ' + v.formaSimbolo + ' · integración ' + v.integracionTexto + ' · tipografía ' + v.tipografia + '\n';
+    o += 'ACABADO DE ESTILO (SUBORDINADO): «' + v.estilo + '» es la técnica de acabado sobre este esqueleto; no puede cambiar jerarquía, layout, proporción ni densidad. Si el estilo pide un recurso que rompe el esqueleto, reduce el acabado a acento controlado, no la estructura.\n';
     const styleIsLettering = /graffiti|street|lettering|sign paint/i.test(String(v.estilo || ''));
     o += 'TÉCNICA GLOBAL: todo el arte de esta ficha — símbolo, letras, fondo y detalles — se ejecuta con la técnica del estilo «' + v.estilo + '»' + (styleIsLettering ? '; aquí el lettering SÍ es el estilo activo.' : '. Prohibido dibujar el copy como graffiti, lettering streetwear, lettering retro o cualquier lenguaje de letras ajeno al estilo activo: las letras también llevan la técnica del estilo.') + '\n';
-    o += 'PRIORIDAD DE IDENTIDAD — decisiones FIJAS: jerarquía (' + v.jerarquiaVisual + '), tratamiento (' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ') y estilo («' + v.estilo + '», como técnica de acabado). Decisiones ADAPTABLES: paleta, textura y detalles secundarios, siempre que no anulen el contraste y la lectura que exige el tratamiento. Si dos decisiones compiten, manda este orden: jerarquía > tratamiento > estilo > paleta; no priorices el efecto del estilo (3D, neón, textura) por encima del tratamiento estructural.\n';
+    o += 'PRIORIDAD DE IDENTIDAD — decisiones FIJAS: jerarquía (' + v.jerarquiaVisual + '), tratamiento (' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ') y estilo («' + v.estilo + '», como técnica de acabado). Decisiones ADAPTABLES: paleta, textura y detalles secundarios, siempre que no anulen el contraste y la lectura que exige el tratamiento. Si dos decisiones compiten, manda este orden: jerarquía > tratamiento > estilo > paleta; no priorices el efecto del estilo (3D, neón, textura) por encima del esqueleto estructural.\n';
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
       o += 'OBJETO: NINGUNO (composición tipográfica pura).' + (seriesAnchor
         ? ' Identidad conceptual de la serie: «' + seriesAnchor + '». Esta ficha NO dibuja ese ancla: la expresa solo con tipografía, pero comunica el MISMO concepto que las demás fichas.'
@@ -2432,7 +2487,7 @@ function formatPrompt(result) {
       o += 'DIRECCIÓN: diseño tipográfico puro en ' + v.estilo + '. SOLO_TEXTO NO SIGNIFICA SIMPLE. Usa las letras como forma visual principal mediante escala, ritmo, composición; mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes. Solo letras del mensaje exacto; ' + v.tratamiento + '. Sin persona, árbol, objeto, icono, ilustración, marco, cinta, estrella, llama, floritura, textura figurativa ni fondo escénico.\n';
       o += 'TEXTO: ' + textLine + '\n';
     } else {
-      o += 'ARTE: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + ' · estilo «' + v.estilo + '» (manda). Ejecuta el estilo dentro de la jerarquía indicada; no inventes una estructura textual distinta.\n';
+      o += 'ARTE: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + ' · estilo «' + v.estilo + '» (acabado). Ejecuta el estilo dentro de la jerarquía y el esqueleto estructural indicados; si el estilo contradice el esqueleto, reduce el acabado, no la estructura. No inventes una estructura textual distinta.\n';
       o += v.jerarquiaVisual === 'SOLO_OBJETO'
         ? 'TEXTO: NINGUNO (jerarquía SOLO_OBJETO): solo arte visual; si el boceto salió con letras, entrega la versión sin letras.\n'
         : 'TEXTO: ' + textLine + '\n';
