@@ -54,6 +54,16 @@ MOTOR_STATE.stampSide = 'auto';
 MOTOR_STATE.product = 'FUNDA MÓVIL';
 ok(_stampSideForProduct() === 'espalda', 'un producto de colocación trasera (FUNDA) en auto debe resolver ESPALDA');
 
+/* --- 1b) DISPLATE (pieza de pared) no declara cara, ni con valor residual --- */
+MOTOR_STATE.product = 'DISPLATE';
+MOTOR_STATE.stampSide = 'auto';
+ok(_stampSideForProduct() === null, 'DISPLATE en auto no debe resolver cara');
+MOTOR_STATE.stampSide = 'espalda';
+ok(_stampSideForProduct() === null, 'DISPLATE debe ignorar el ESPALDA residual de otro producto');
+MOTOR_STATE.stampSide = 'frente';
+ok(_stampSideForProduct() === null, 'DISPLATE debe ignorar el FRENTE residual de otro producto');
+MOTOR_STATE.stampSide = 'auto';
+
 /* --- 2) buildCandidate asigna v.cara en las 3 fichas --- */
 baseState();
 MOTOR_STATE.workflowMode = 'new';
@@ -82,6 +92,21 @@ ok(prompt.indexOf('todas FRENTE') !== -1, 'sin espalda pedida, el set completo d
 ok(motorSource.includes('function _contrastBlock(set)'), 'el contraste A/B/C debe estar encapsulado en una función');
 ok(motorSource.includes('si dos columnas comparten encuadre, silueta global o distribución de masas'),
   'el contraste debe prohibir columnas con la misma estructura');
+
+/* --- 3b) El prompt de DISPLATE omite cara y CARAS DEL SET --- */
+baseState();
+MOTOR_STATE.workflowMode = 'new';
+MOTOR_STATE.product = 'DISPLATE';
+MOTOR_STATE.concept = 'lámina de inspiración sobre el escritorio';
+MOTOR_STATE.message = 'Sigue creando';
+set = buildCandidate(resolveAudiences(), null);
+ok(['A', 'B', 'C'].every(function (k) { return set[k].cara === null; }),
+  'las 3 fichas de DISPLATE no deben declarar cara');
+const promptDisplate = formatPrompt({ set: set });
+ok(promptDisplate.indexOf('CARA DEL ESTAMPADO:') === -1,
+  'el prompt de DISPLATE no debe incluir CARA DEL ESTAMPADO');
+ok(promptDisplate.indexOf('CARAS DEL SET:') === -1,
+  'el prompt de DISPLATE no debe incluir CARAS DEL SET');
 
 /* --- 4) Reglas de producto coherentes (frente por defecto) --- */
 ok(!/espalda completa/.test(getPlacement('CAMISETA SOFT')), 'la colocación de CAMISETA SOFT no debe ofrecer "espalda completa" por defecto');
