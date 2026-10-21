@@ -24,6 +24,7 @@
 
     return {
       getItem: function (k) {
+        if (Object.prototype.hasOwnProperty.call(mem, k)) return mem[k];
         if (ok) {
           try {
             return window.localStorage.getItem(k);
@@ -31,34 +32,41 @@
             return null;
           }
         }
-        return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null;
+        return null;
       },
       setItem: function (k, v) {
         if (ok) {
           try {
             window.localStorage.setItem(k, v);
-            return;
+            delete mem[k];
+            return true;
           } catch (e) {
-            // storage full or blocked; fallback to memory
+            // storage full or blocked; fallback to session memory (not durable)
+            mem[k] = String(v);
+            return false;
           }
         }
         mem[k] = String(v);
+        return true;
       },
       removeItem: function (k) {
+        delete mem[k];
         if (ok) {
           try {
             window.localStorage.removeItem(k);
-            return;
           } catch (e) {
             // ignore
           }
         }
-        delete mem[k];
       },
       keys: function () {
         if (ok) {
           try {
-            return Object.keys(window.localStorage);
+            const ks = Object.keys(window.localStorage);
+            Object.keys(mem).forEach(function (mk) {
+              if (ks.indexOf(mk) === -1) ks.push(mk);
+            });
+            return ks;
           } catch (e) {
             return Object.keys(mem);
           }
@@ -109,7 +117,7 @@
   }
 
   function setRaw(key, value) {
-    POD_LS.setItem(key, value);
+    return POD_LS.setItem(key, value) === true;
   }
 
   function removeRaw(key) {
@@ -128,8 +136,7 @@
 
   function setJSON(key, value) {
     try {
-      POD_LS.setItem(key, JSON.stringify(value));
-      return true;
+      return POD_LS.setItem(key, JSON.stringify(value)) === true;
     } catch (e) {
       return false;
     }
@@ -303,8 +310,8 @@
     const locks = loadLocks(market, product);
     if (!locks[field]) locks[field] = defaultLocks()[field];
     locks[field][card] = value;
-    saveLocks(market, product, locks);
-    return locks;
+    const persisted = saveLocks(market, product, locks);
+    return { locks: locks, persisted: persisted };
   }
 
   function clearLocks(market, product) {

@@ -21,8 +21,19 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Solución definitiva:** propagar el retorno y avisar en la UI cuando el lock no persista.
 - **Responsable:** Motor / UI.
 - **Fecha objetivo:** rama `fix/locks-merge-sync`.
-- **Estado:** planned.
+- **Estado:** closed (2026-10-20, PR de `fix/locks-merge-sync`).
 - **Revisión:** cada release.
+- **Cierre:** la raíz resultó más profunda que la entrada original:
+  `POD_LS.setItem` tragaba el rechazo de escritura y caía a `mem` sin señal,
+  `setJSON` devolvía `true` casi siempre, y el `mem` de sesión era ilegible
+  (`getItem` leía solo `localStorage`) — el lock se perdía hasta en la sesión.
+  Arreglado: `POD_LS` reporta `false` cuando `localStorage` (tienda activa)
+  rechaza la escritura, la última escritura de sesión manda sobre el valor
+  durable viejo y se limpia al persistir; `setRaw`/`setJSON`/`saveLocks`
+  propagan; `setLockValue` devuelve `{locks, persisted}`; `setCardLock` avisa
+  en `#status` (después del reroll) que el bloqueo vale solo para la sesión.
+  `saveTemplate` (editor-bancos) ahora emite su `ok:false` real.
+  Test: `tests/locks-persistencia.test.js` (21 aserciones); suite 38/38.
 
 ### DEBT-002 — El gate del set no exige unicidad de jerarquía, densidad y espacio negativo
 

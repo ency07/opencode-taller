@@ -2526,14 +2526,25 @@ function renderMatrix(result) {
   root.innerHTML = html;
 }
 
+function _avisoLockSinPersistir(r, field, card) {
+  if (!r || r.persisted !== false) return false;
+  var st = document.getElementById('status');
+  if (st) {
+    st.textContent = 'El bloqueo de ' + field + ' (' + card + ') no se pudo guardar en el navegador (almacenamiento lleno o bloqueado): se mantiene solo en esta sesión y volverá a «Auto» al recargar la página.';
+    st.className = 'bad';
+  }
+  return true;
+}
+
 function setCardLock(sel) {
   try {
     syncContext();
     var k = sel.getAttribute('data-card');
     var field = sel.getAttribute('data-lock');
     var lockMarket = memLocksMarket();
-    _setLockValue(lockMarket, MOTOR_STATE.product, field, k, sel.value);
+    var r = _setLockValue(lockMarket, MOTOR_STATE.product, field, k, sel.value);
     if (typeof rerollSingle === 'function') rerollSingle(k);
+    _avisoLockSinPersistir(r, field, k);
   } catch (e) { console.warn(e); }
 }
 
