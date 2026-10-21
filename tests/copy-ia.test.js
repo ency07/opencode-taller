@@ -15,7 +15,8 @@ function ok(cond, msg) { checks++; if (!cond) failures.push(msg); }
 global.window = global;
 global.sessionStorage = { getItem: function () { return '[]'; }, setItem: function () {}, removeItem: function () {} };
 let outEl = { value: '' };
-const els = { message: outEl };
+let suppEl = { value: '' };
+const els = { message: outEl, support: suppEl };
 function stubEl() {
   return {
     style: {},
@@ -231,6 +232,44 @@ const JS = path.join(ROOT, 'js');
   ok(r404 && r404.error === 'respuesta-invalida', 'ambos modelos 404 → respuesta-invalida');
   ok(llamadas.length === 2, 'exactamente 2 intentos (sin bucle infinito)');
   ok((r404.diagnosticos || []).join(' ').indexOf('HTTP 404 (el modelo gemini-2.5-flash no existe para esta clave)') !== -1, 'el diagnóstico nombra el modelo caído');
+
+  /* --- 14) frase de apoyo (feat/copy-ia-apoyo) --- */
+  const p14 = PODCopyIA.construirPromptContexto({ mercado: 'global_es', producto: 'CAMISETA SOFT', familia: 'viaje', concepto: 'maleta de primer viaje', audiencia: '' });
+  ok(p14.indexOf('"apoyo"') !== -1, 'el prompt pide el campo apoyo en el JSON');
+  ok(p14.indexOf('2 a 6 palabras') !== -1, 'el prompt define la frase de apoyo (corta, sin repetir)');
+  ok(idx.indexOf('id="support"') !== -1, 'index.html tiene el campo #support destino del apoyo');
+
+  /* 14b) apoyo válido → llena #support si está vacío */
+  global.fetch = function () {
+    return Promise.resolve({
+      ok: true,
+      json: function () { return Promise.resolve({ choices: [{ message: { content: '{"frase":"Sigue el mapa","apoyo":"Un viaje por empezar","alternativas":["Otra ruta"]}' } }] }); }
+    });
+  };
+  window.getAISlots = function () { return [{ provider: 'OpenRouter', model: 'google/gemini-2.5-flash', key: 'sk-or-v1-x', timeoutMs: 8000 }]; };
+  outEl.value = ''; suppEl.value = '';
+  const rApo = await PODCopyIA.sugerirCopy();
+  ok(rApo && rApo.frase === 'Sigue el mapa', 'la frase principal se propone normalmente');
+  ok(rApo && rApo.apoyo === 'Un viaje por empezar', 'el apoyo viaja en la respuesta');
+  ok(suppEl.value === 'Un viaje por empezar', 'el apoyo se propone en #support cuando está vacío');
+
+  /* 14c) apoyo del usuario existente → no se pisa */
+  outEl.value = ''; suppEl.value = 'Dato real: Cartagena';
+  const rApo2 = await PODCopyIA.sugerirCopy();
+  ok(rApo2 && rApo2.frase === 'Sigue el mapa', 'con apoyo existente sigue proponiendo la frase principal');
+  ok(suppEl.value === 'Dato real: Cartagena', 'el apoyo del usuario no se pisa nunca');
+
+  /* 14d) apoyo inválido o repetido → se descarta, la frase sí queda */
+  global.fetch = function () {
+    return Promise.resolve({
+      ok: true,
+      json: function () { return Promise.resolve({ choices: [{ message: { content: '{"frase":"Vuelve al norte","apoyo":"Vuelve al norte","alternativas":[]}' } }] }); }
+    });
+  };
+  outEl.value = ''; suppEl.value = '';
+  const rApo3 = await PODCopyIA.sugerirCopy();
+  ok(rApo3 && rApo3.frase === 'Vuelve al norte' && !rApo3.apoyo, 'apoyo idéntico a la frase se descarta');
+  ok(suppEl.value === '', '#support queda vacío cuando el apoyo no sirve');
 
   console.log((failures.length ? 'FAIL' : 'PASS') + ' copy-ia (' + checks + ' aserciones, ' + failures.length + ' fallos)');
   failures.forEach(function (msg) { console.error(' - ' + msg); });

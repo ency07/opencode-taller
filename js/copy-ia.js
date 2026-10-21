@@ -42,7 +42,8 @@
     var o = 'Eres redactor comercial de arte POD. El usuario no definió el mensaje visible del diseño. Escribe UNA frase original de 2 a 8 palabras para estampar en el producto.\n';
     o += 'CONTEXTO: mercado ' + (ctx.mercado || 'global') + '; producto ' + (ctx.producto || 'CAMISETA SOFT') + '; familia ' + (ctx.familia || 'sin definir') + (ctx.concepto ? '; concepto: ' + ctx.concepto : '') + (ctx.audiencia ? '; audiencia ' + ctx.audiencia : '') + '.\n';
     o += 'REGLAS: nativa del idioma del mercado; concreta y comercial; prohibidas citas doctrinales, versículos, fechas, cifras, nombres propios, datos factuales, claims medibles, marcas, tildes inventadas y palabras sueltas sin sentido; no mezcles idiomas; la frase debe existir por sí sola en el arte.\n';
-    o += 'Devuelve SOLO un JSON válido, sin markdown: {"frase":"frase final","alternativas":["frase","frase"]}.\n';
+    o += 'También propón una frase de APOYO: 2 a 6 palabras que amplíe la misma idea sin repetir la frase principal, sin datos; si no aporta, usa "" (vacío).\n';
+    o += 'Devuelve SOLO un JSON válido, sin markdown: {"frase":"frase final","apoyo":"frase de apoyo o vacía","alternativas":["frase","frase"]}.\n';
     return o;
   }
 
@@ -161,7 +162,10 @@
         var parsed = pJSON(texto);
         if (!parsed || !esFraseValida(parsed.frase)) throw new Error(texto ? 'respuesta sin frase válida' : 'respuesta vacía');
         limpiar();
-        return { frase: String(parsed.frase).trim(), alternativas: (parsed.alternativas || []).filter(esFraseValida).slice(0, 3) };
+        var apoyoCrudo = parsed.apoyo ? String(parsed.apoyo).trim() : '';
+        var apoyo = (apoyoCrudo && esFraseValida(apoyoCrudo) &&
+          apoyoCrudo.toLowerCase() !== String(parsed.frase).trim().toLowerCase()) ? apoyoCrudo : '';
+        return { frase: String(parsed.frase).trim(), apoyo: apoyo, alternativas: (parsed.alternativas || []).filter(esFraseValida).slice(0, 3) };
       }).catch(function (e) {
         limpiar();
         var motivo = (e && e.name === 'AbortError')
@@ -223,7 +227,17 @@
       var r = await llamarSlots(construirPromptContexto(contextoActual()));
       if (r && r.frase && field) {
         field.value = r.frase;
-        tellStatus('Propuesta: «' + r.frase + '». Revisala y edita a gusto; nada se generó sin tu revisión.', 'ok');
+        var supp = $('support');
+        var notaApoyo = '';
+        if (r.apoyo && supp) {
+          if (String(supp.value || '').trim()) {
+            notaApoyo = ' Tu apoyo existente se conservó (no lo toqué).';
+          } else {
+            supp.value = r.apoyo;
+            notaApoyo = ' Apoyo propuesto: «' + r.apoyo + '» (revísalo).';
+          }
+        }
+        tellStatus('Propuesta: «' + r.frase + '».' + notaApoyo + ' Revisala y edita a gusto; nada se generó sin tu revisión.', 'ok');
         drawAlternatives(r.alternativas || [], field);
         return r;
       }
