@@ -26,7 +26,7 @@
     return [
       { provider: 'Groq', model: 'openai/gpt-oss-20b', key: '', timeoutMs: 15000 },
       { provider: 'OpenRouter', model: 'google/gemini-2.5-flash', key: '', timeoutMs: 15000 },
-      { provider: 'Gemini', model: 'gemini-2.5-flash', key: '', timeoutMs: 15000 }
+      { provider: 'Gemini', model: 'gemini-3.5-flash-lite', key: '', timeoutMs: 15000 }
     ];
   }
 
@@ -35,13 +35,14 @@
   var DEAD_MODELS = {
     'llama-3.3-70b-versatile': 'openai/gpt-oss-20b',
     'google/gemini-2.0-flash-exp': 'google/gemini-2.5-flash',
-    'gemini-2.0-flash': 'gemini-2.5-flash',
-    'gemini-2.0-flash-001': 'gemini-2.5-flash',
-    'gemini-2.0-flash-lite': 'gemini-2.5-flash',
-    'gemini-2.0-flash-lite-001': 'gemini-2.5-flash',
-    'gemini-1.5-flash': 'gemini-2.5-flash',
-    'gemini-1.5-flash-001': 'gemini-2.5-flash',
-    'gemini-1.5-pro': 'gemini-2.5-flash'
+    'gemini-2.5-flash': 'gemini-3.5-flash-lite',
+    'gemini-2.0-flash': 'gemini-3.5-flash-lite',
+    'gemini-2.0-flash-001': 'gemini-3.5-flash-lite',
+    'gemini-2.0-flash-lite': 'gemini-3.5-flash-lite',
+    'gemini-2.0-flash-lite-001': 'gemini-3.5-flash-lite',
+    'gemini-1.5-flash': 'gemini-3.5-flash-lite',
+    'gemini-1.5-flash-001': 'gemini-3.5-flash-lite',
+    'gemini-1.5-pro': 'gemini-3.5-flash-lite'
   };
 
   function readSessionKeys() {

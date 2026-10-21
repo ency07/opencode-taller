@@ -99,8 +99,9 @@ ok(fo && fo.kind === 'openrouter', 'failover de gemini debe ir a openrouter');
 const fo2 = V.otherVisionTarget(slots, cfgAuto, { kind: 'openrouter', model: 'm', key: 'k', timeoutMs: 20000 });
 ok(fo2 && fo2.kind === 'gemini', 'failover de openrouter debe ir a gemini');
 ok(V.otherVisionTarget([{ provider: 'Gemini', key: 'k', model: 'm' }], cfgAuto, cur) === null, 'sin slot alterno no hay failover');
-// migrate modelos muertos
-ok(V.migrateVisionModel('gemini-2.0-flash') === 'gemini-2.5-flash', 'migrate no mapea gemini-2.0-flash');
+// migrate modelos muertos (2.5 no sirve a claves nuevas → vivo 3.x)
+ok(V.migrateVisionModel('gemini-2.0-flash') === 'gemini-3.5-flash-lite', 'migrate no mapea gemini-2.0-flash al vivo 3.x');
+ok(V.migrateVisionModel('gemini-2.5-flash') === 'gemini-3.5-flash-lite', 'migrate debe mover 2.5 (404 en claves nuevas) al vivo');
 ok(V.migrateVisionModel('gemini-3.5-flash-lite') === 'gemini-3.5-flash-lite', 'migrate no debe tocar modelos vivos');
 // defaults sin localStorage configurado
 const dc = V.getVisionConfig();
