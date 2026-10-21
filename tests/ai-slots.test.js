@@ -38,16 +38,19 @@ ok(/provider === 'Gemini'/.test(analisis), 'getGeminiSlot no filtra por proveedo
 ok(/\.key && .*\.model|\.model && .*\.key/.test(analisis), 'getGeminiSlot no exige clave+modelo');
 
 /* Modelos muertos (verificado oct-2026): gemini-2.0-flash apagado 2026-06-01 (404),
+   gemini-2.5-flash no sirve a proyectos con claves nuevas (AQ.Ab…, 404),
    llama-3.3-70b-versatile fuera del catálogo Groq, gemini-2.0-flash-exp fuera de OpenRouter.
    Formato de API intacto: el endpoint :generateContent + responseMimeType JSON siguen vivos. */
-const DEAD = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'llama-3.3-70b-versatile'];
+const DEAD = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'llama-3.3-70b-versatile'];
 DEAD.forEach(function (m) {
   const inDefSlot = new RegExp("model: '" + m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "'").test(revisor);
   ok(!inDefSlot, 'modelo muerto como default: ' + m);
 });
-ok(revisor.indexOf("model: 'gemini-2.5-flash'") !== -1, 'falta default vivo gemini-2.5-flash');
+ok(revisor.indexOf("model: 'gemini-3.5-flash-lite'") !== -1, 'falta default vivo gemini-3.5-flash-lite (serie 3.x p/ claves nuevas)');
 ok(revisor.indexOf("model: 'google/gemini-2.5-flash'") !== -1, 'falta default vivo google/gemini-2.5-flash');
 ok(revisor.indexOf("model: 'openai/gpt-oss-20b'") !== -1, 'falta default vivo openai/gpt-oss-20b');
+ok(/'gemini-2\.5-flash': 'gemini-3\.5-flash-lite'/.test(revisor), 'DEAD_MODELS debe migrar 2.5 → 3.5 (slots guardados con claves nuevas)');
+ok(!/:\s*'gemini-2\.5-flash'/.test(codeWithoutComments(revisor).replace(/'gemini-2\.5-flash':/g, '')), 'ningún objetivo muerto debe apuntar a 2.5');
 ok(/function migrateSlots/.test(revisor), 'falta migrateSlots (slots guardados con modelos muertos quedarían rotos)');
 ok(/DEAD_MODELS\[s\.model\]/.test(revisor), 'migrateSlots no mapea modelos muertos');
 
