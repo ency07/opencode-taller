@@ -77,8 +77,16 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Solución definitiva:** excluir DISPLATE del cálculo de cara y omitir la línea en la ficha.
 - **Responsable:** Motor / Producto.
 - **Fecha objetivo:** próxima revisión de reglas de producto.
-- **Estado:** open.
+- **Estado:** closed (2026-10-21, rama `fix/debt-004-displate-side`).
 - **Revisión:** cada release.
+- **Cierre:** `_stampSideForProduct()` devuelve `null` para DISPLATE (ignora el
+  valor residual del selector oculto), la ficha omite `CARA DEL ESTAMPADO` y
+  `formatPrompt` omite `CARAS DEL SET` cuando alguna cara es `null`. El
+  validador (`js/ia-validador.js`) trata la ausencia de cara como "sin
+  declaración" y no impone "frente" a un producto sin caras. Tests:
+  `tests/contactsheet-cara.test.js` (DISPLATE: cara null en el set y prompt sin
+  las líneas de cara) y `tests/validador-hoja.test.js` (contrato DISPLATE sin
+  cara). Suite 40/40.
 
 ### DEBT-005 — El contador de uso de estilos ignora la región
 

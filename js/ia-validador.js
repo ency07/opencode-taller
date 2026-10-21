@@ -51,7 +51,7 @@
         objeto: String(f.objeto || ''),
         audiencia: String(f.audiencia || ''),
         tratamiento: String(f.tratamiento || ''),
-        cara: String(f.cara || 'frente'),
+        cara: f.cara ? String(f.cara) : '',
         peso: pesoExigido(f.jerarquiaVisual)
       };
     });
@@ -87,7 +87,9 @@
         objeto: r.objeto,
         audiencia: (m[3] || '').trim(),
         tratamiento: '',
-        cara: /CARA DEL ESTAMPADO:\s*ESPALDA/.test(secciones[id] || '') ? 'espalda' : 'frente',
+        cara: !/CARA DEL ESTAMPADO:/.test(secciones[id] || '')
+          ? ''
+          : (/CARA DEL ESTAMPADO:\s*ESPALDA/.test(secciones[id] || '') ? 'espalda' : 'frente'),
         peso: pesoExigido(r.jerarquia)
       });
     }
@@ -106,7 +108,9 @@
         '; jerarquía ' + (f.jerarquia || '?') + ' (peso exigido ' + (f.peso || '?') + ')' +
         (f.objeto ? '; objeto autorizado «' + f.objeto + '»' : '; sin objeto autorizado') +
         (f.tratamiento ? '; tratamiento ' + f.tratamiento : '') +
-        '; cara ' + (f.cara === 'espalda' ? 'espalda (pide lifestyle de espaldas y recuadro de espalda en esta columna)' : 'frente (prohibida espalda de persona o prenda en esta columna)')
+        '; cara ' + (!f.cara
+          ? 'sin declaración (producto sin caras: no exijas vistas traseras ni espaldas de persona)'
+          : (f.cara === 'espalda' ? 'espalda (pide lifestyle de espaldas y recuadro de espalda en esta columna)' : 'frente (prohibida espalda de persona o prenda en esta columna)'))
       );
     });
     var o = 'Eres director de arte POD. Compara la imagen adjunta con este CONTRATO generado por el motor y devuelve SOLO un JSON válido (sin markdown ni explicaciones).\n';

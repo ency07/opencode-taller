@@ -83,6 +83,24 @@ ok(vPrompt.indexOf('objetos_inventados') !== -1 && vPrompt.indexOf('textos_inven
 ok(vPrompt.indexOf('NO marques ejecuciones propias del estilo asignado') !== -1, 'el validador respeta la técnica de taller del estilo');
 ok(vPrompt.indexOf('"fichas":[{"ficha":"01A"') !== -1, 'formato exacto con ejemplo 01A');
 
+/* --- 3b) DISPLATE: sin cara en la ficha, el validador no exige vistas --- */
+MOTOR_STATE.product = 'DISPLATE';
+MOTOR_STATE.stampSide = 'espalda'; /* residual del selector oculto de otro producto */
+const setDP = buildCandidate(resolveAudiences(), null);
+const promptDP = formatPrompt({ set: setDP });
+ok(promptDP.indexOf('CARA DEL ESTAMPADO:') === -1, 'la ficha de DISPLATE no declara cara');
+const contratoDP = PODValidador.extraerDePrompt(promptDP);
+ok(Array.isArray(contratoDP) && contratoDP.length === 3, 'extraerDePrompt reconstruye las 3 fichas de DISPLATE');
+ok(contratoDP && contratoDP.every(function (f) { return f.cara === ''; }),
+  'las fichas de DISPLATE extraídas del prompt no declaran cara');
+const vPromptDP = PODValidador.construirPromptValidador(contratoDP, 'tres columnas');
+ok(vPromptDP.indexOf('sin declaración (producto sin caras') !== -1,
+  'el prompt del validador no exige cara para DISPLATE');
+ok(vPromptDP.indexOf('frente (prohibida espalda de persona') === -1,
+  'el validador no debe imponer "frente" a un producto sin caras');
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.stampSide = 'auto';
+
 /* --- 4) parser de veredictos --- */
 ok(PODValidador.parseVerdict('```json\n{"resumen":"x"}\n```').resumen === 'x', 'JSON con cerca de markdown ok');
 ok(PODValidador.parseVerdict('prefacio texto {"resumen":"y"} colón').resumen === 'y', 'JSON entremezclado ok');

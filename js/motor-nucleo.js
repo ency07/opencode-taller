@@ -630,8 +630,11 @@ function subnicheForDominio(dom) {
 }
 
 /* Cara del estampado (frente/espalda/auto). Auto resuelve la cara natural del
-   producto: FRENTE salvo en soportes cuya colocación canónica es la trasera. */
+   producto: FRENTE salvo en soportes cuya colocación canónica es la trasera.
+   DEVUELVE null para productos sin caras (DISPLATE: pieza de pared), aunque
+   quede un valor residual del selector oculto de otro producto. */
 function _stampSideForProduct() {
+  if (MOTOR_STATE.product === 'DISPLATE') return null;
   const sel = MOTOR_STATE.stampSide || 'auto';
   if (sel === 'frente' || sel === 'espalda') return sel;
   const pl = String(_PLACEMENT[MOTOR_STATE.product] || '').toLowerCase();
@@ -2292,10 +2295,12 @@ function formatPrompt(result) {
       ? 'las 3 columnas se encabezan por AUDIENCIA, en palabras simples del idioma del mercado.'
       : 'las 3 columnas se encabezan por FICHA (01A · 01B · 01C) con su estilo.') + '\n';
     const caras = new Set(K.map(function (k) { return set[k].cara; }));
-    o += 'CARAS DEL SET: ' + (caras.size === 1
-      ? 'todas ' + (set.A.cara === 'espalda' ? 'ESPALDA' : 'FRENTE')
-      : K.map(function (k) { return N[K.indexOf(k)] + ' ' + (set[k].cara === 'espalda' ? 'espalda' : 'frente'); }).join(' · '))
-      + '. La hoja de presentación respeta la cara de cada columna y dibuja la vista frontal solo cuando corresponde.\n';
+    if (!caras.has(null) && !caras.has(undefined)) {
+      o += 'CARAS DEL SET: ' + (caras.size === 1
+        ? 'todas ' + (set.A.cara === 'espalda' ? 'ESPALDA' : 'FRENTE')
+        : K.map(function (k) { return N[K.indexOf(k)] + ' ' + (set[k].cara === 'espalda' ? 'espalda' : 'frente'); }).join(' · '))
+        + '. La hoja de presentación respeta la cara de cada columna y dibuja la vista frontal solo cuando corresponde.\n';
+    }
   }
   // Template activo (banco de templates: mochila/bolso/funda). Ancla el diseño
   // a zonas reales en vez de generar a ciegas.
@@ -2364,7 +2369,9 @@ function formatPrompt(result) {
           : 'modelo acorde al perfil (edad y género del perfil) con el corte y la talla que le corresponden'));
     o += 'AUDIENCIA DE LA FICHA: «' + (audPerfil.label || v.audiencia) + '» (' + (audPerfil.edad || 'edad del perfil') + ', ' + (audPerfil.genero || 'género del perfil') + '). Perfil: ' + (audPerfil.perfil || 'el declarado en el motor') + '. Contexto de uso: ' + (audPerfil.contexto || 'cotidiano') + '. Códigos que le hablan: ' + (audPerfil.codigos || 'los de la familia') + '. Evita: ' + (audPerfil.rechaza || 'lo ajeno al perfil') + '. Directiva: ' + (audPerfil.directiva || 'la del perfil') + '. OBLIGATORIO: el arte se siente hecho para esta persona y el mockup muestra ' + perfilMockup + '; un modelo adulto genérico invalida la ficha.\n';
     o += 'ID DE VALIDACIÓN DE AUDIENCIA: ' + v.audiencia + '\n';
-    o += 'CARA DEL ESTAMPADO: ' + (v.cara === 'espalda' ? 'ESPALDA' : 'FRENTE') + ' — ubica el arte en esa cara; en la hoja de presentación muestra esa vista y no inventes la cara contraria.\n';
+    if (v.cara) {
+      o += 'CARA DEL ESTAMPADO: ' + (v.cara === 'espalda' ? 'ESPALDA' : 'FRENTE') + ' — ubica el arte en esa cara; en la hoja de presentación muestra esa vista y no inventes la cara contraria.\n';
+    }
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento)) + '\n';
