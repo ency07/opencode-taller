@@ -46,7 +46,7 @@ global.fetch = function () { throw new Error('la prueba no debe hacer red'); };
 const JS = path.join(ROOT, 'js');
 ['data-mercados.js', 'data-audiencias.js', 'data-bancos.js', 'data-estilos.js',
  'dominios.js', 'data-productos.js', 'memoria-local.js', 'motor-nucleo.js',
- 'ia-revisor.js', 'copy-ia.js'
+ 'ia-client.js', 'ia-revisor.js', 'copy-ia.js'
 ].forEach(function (f) {
   vm.runInThisContext(fs.readFileSync(path.join(JS, f), 'utf8'), { filename: f });
 });

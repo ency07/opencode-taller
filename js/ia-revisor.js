@@ -30,20 +30,8 @@
     ];
   }
 
-  /* Modelos muertos -> reemplazo vivo. Se aplica a slots guardados con
-     modelos retirados (ej. gemini-2.0-flash, apagado el 2026-06-01). */
-  var DEAD_MODELS = {
-    'llama-3.3-70b-versatile': 'openai/gpt-oss-20b',
-    'google/gemini-2.0-flash-exp': 'google/gemini-2.5-flash',
-    'gemini-2.5-flash': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash-001': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash-lite': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash-lite-001': 'gemini-3.5-flash-lite',
-    'gemini-1.5-flash': 'gemini-3.5-flash-lite',
-    'gemini-1.5-flash-001': 'gemini-3.5-flash-lite',
-    'gemini-1.5-pro': 'gemini-3.5-flash-lite'
-  };
+  /* Modelos muertos -> reemplazo vivo: el mapa y las reglas viven en
+     js/ia-client.js (window.IAClient.DEAD_MODELS / migrateModel). */
 
   function readSessionKeys() {
     try {
@@ -64,9 +52,12 @@
   }
 
   function migrateSlots(a) {
+    var IC = window.IAClient;
     var changed = false;
     (a || []).forEach(function (s) {
-      if (s && DEAD_MODELS[s.model]) { s.model = DEAD_MODELS[s.model]; changed = true; }
+      if (!s || !IC) return;
+      var next = IC.migrateModel(s.provider, s.model);
+      if (next !== s.model) { s.model = next; changed = true; }
     });
     if (changed) {
       try { LS.setItem(SLOTS_KEY, JSON.stringify(a.map(function (s) { return Object.assign({}, s, { key: '' }); }))); } catch (e) { /* no crítico */ }
@@ -109,24 +100,7 @@
     return LS.getItem(APPLY_KEY) === '1';
   }
 
-  /* --- Endpoints --- */
-  function ep(p, m) {
-    if (p === 'Groq') return 'https://api.groq.com/openai/v1/chat/completions';
-    if (p === 'OpenRouter') return 'https://openrouter.ai/api/v1/chat/completions';
-    if (p === 'Gemini') return 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(m) + ':generateContent';
-    return '';
-  }
-
-  function pJSON(t) {
-    var s = String(t || '').trim();
-    if (s.indexOf('```') === 0) {
-      s = s.slice(3);
-      var e = s.lastIndexOf('```');
-      if (e > -1) s = s.slice(0, e);
-    }
-    if (s.slice(0, 4).toLowerCase() === 'json') s = s.slice(4);
-    return JSON.parse(s.trim());
-  }
+  /* Endpoints, auth y parser JSON: window.IAClient (js/ia-client.js). */
 
   /* --- Construcción del prompt de auditoría --- */
   function vPrompt(v, label) {
@@ -188,73 +162,23 @@
       'Responde SOLO JSON: {"veredicto":"COHERENTE|PARCIAL|INCOHERENTE","problemas":["..."],"correcciones":{"campo":"valor nuevo"}}';
   }
 
-  /* --- Llamada a un solo proveedor --- */
+  /* --- Llamada a un solo proveedor (red/auth/JSON: window.IAClient) --- */
   async function callOne(s, sys, user) {
-    var c = new AbortController();
-    var t = setTimeout(function () { c.abort(); }, s.timeoutMs || 12000);
-
-    try {
-      var body;
-
-      if (s.provider === 'Gemini') {
-        body = {
-          contents: [{
-            role: 'user',
-            parts: [{ text: sys + '\n' + user }]
-          }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 4096,
-            responseMimeType: 'application/json'
-          }
-        };
-
-        var r = await fetch(ep(s.provider, s.model), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': s.key },
-          body: JSON.stringify(body),
-          signal: c.signal
-        });
-
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        var d = await r.json();
-        var txt = d.candidates && d.candidates[0] && d.candidates[0].content &&
-          d.candidates[0].content.parts && d.candidates[0].content.parts[0] &&
-          d.candidates[0].content.parts[0].text;
-        if (!txt) throw new Error('respuesta vacía');
-        return pJSON(txt);
-
-      } else {
-        body = {
-          model: s.model,
-          messages: [
-            { role: 'system', content: sys },
-            { role: 'user', content: user }
-          ],
-          max_tokens: 4096,
-          temperature: 0.2,
-          response_format: { type: 'json_object' }
-        };
-
-        var r2 = await fetch(ep(s.provider, s.model), {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + s.key,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body),
-          signal: c.signal
-        });
-
-        if (!r2.ok) throw new Error('HTTP ' + r2.status);
-        var d2 = await r2.json();
-        var t2 = d2.choices && d2.choices[0] && d2.choices[0].message && d2.choices[0].message.content;
-        if (!t2) throw new Error('respuesta vacía');
-        return pJSON(t2);
-      }
-    } finally {
-      clearTimeout(t);
-    }
+    var IC = window.IAClient;
+    if (!IC) throw new Error('ia-client.js no cargado');
+    var data = await IC.chat(s, {
+      sys: sys,
+      user: user,
+      temperature: 0.2,
+      maxTokens: 4096,
+      jsonMode: true,
+      timeoutMs: s.timeoutMs || 12000
+    });
+    var txt = IC.textOf(s.provider, data);
+    if (!txt) throw new Error('respuesta vacía');
+    var res = IC.pJSON(txt);
+    if (!res || typeof res !== 'object') throw new Error('respuesta sin JSON auditable');
+    return res;
   }
 
   /* --- Failover entre proveedores --- */

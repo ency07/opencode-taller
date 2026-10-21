@@ -472,18 +472,9 @@
        OpenAI-compatible. Modelos visión verificados oct-2026.
      - Groq: SIN visión free (modelos retirados 2025-04) → no se usa aquí. */
   var VISION_KEY = 'pod2_vision_cfg';
-  var VISION_DEAD_MODELS = {
-    'llama-3.3-70b-versatile': 'openai/gpt-oss-20b',
-    'google/gemini-2.0-flash-exp': 'google/gemini-2.5-flash',
-    'gemini-2.5-flash': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash-001': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash-lite': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash-lite-001': 'gemini-3.5-flash-lite',
-    'gemini-1.5-flash': 'gemini-3.5-flash-lite',
-    'gemini-1.5-flash-001': 'gemini-3.5-flash-lite',
-    'gemini-1.5-pro': 'gemini-3.5-flash-lite'
-  };
+  /* Mapa de modelos muertos ÚNICO en js/ia-client.js (IAClient.DEAD_MODELS);
+     aquí queda solo el alias para no romper lecturas existentes. */
+  var VISION_DEAD_MODELS = (window.IAClient && window.IAClient.DEAD_MODELS) || {};
   var VISION_DEFAULTS = {
     provider: 'auto',
     geminiModel: 'gemini-3.5-flash-lite',
@@ -507,6 +498,7 @@
   }
 
   function migrateVisionModel(m) {
+    if (window.IAClient) return window.IAClient.migrateModel('Gemini', m);
     return (m && VISION_DEAD_MODELS[m]) ? VISION_DEAD_MODELS[m] : m;
   }
 
@@ -577,6 +569,7 @@
   }
 
   async function fetchWithTimeout(url, opts, ms) {
+    if (window.IAClient) return window.IAClient.fetchWithTimeout(url, opts, ms);
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const t = controller ? setTimeout(function () { controller.abort(); }, ms || 20000) : null;
     try {
@@ -650,35 +643,24 @@
   }
 
   async function callGeminiVision(target, fileData, prompt) {
-    const body = {
-      contents: [{ role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType: fileData.mimeType, data: fileData.base64 } }] }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 2048, responseMimeType: 'application/json' }
-    };
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
-      encodeURIComponent(target.model) + ':generateContent';
+    const IC = window.IAClient;
+    if (!IC) throw new Error('ia-client.js no cargado');
     let lastErr = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const response = await fetchWithTimeout(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': target.key },
-          body: JSON.stringify(body)
-        }, target.timeoutMs);
-        if (!response.ok) {
-          let detail = '';
-          try {
-            const eb = await response.json();
-            detail = eb && eb.error && eb.error.message ? ': ' + eb.error.message : '';
-          } catch (e) {}
-          const err = new Error(visionHttpMessage(response.status, 'Gemini') + detail);
-          err.httpStatus = response.status;
-          throw err;
-        }
-        const data = await response.json();
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-          throw new Error('Respuesta vacía de Gemini.');
-        }
-        return parseVisionJson(data.candidates[0].content.parts[0].text, 'Gemini');
+        const data = await IC.chat({ provider: 'Gemini', model: target.model, key: target.key }, {
+          user: prompt,
+          geminiParts: [{ inlineData: { mimeType: fileData.mimeType, data: fileData.base64 } }],
+          temperature: 0.2,
+          maxTokens: 2048,
+          timeoutMs: target.timeoutMs,
+          httpMessage: function (status, detail) {
+            return visionHttpMessage(status, 'Gemini') + (detail ? ': ' + detail : '');
+          }
+        });
+        const txt = IC.textOf('Gemini', data);
+        if (!txt) throw new Error('Respuesta vacía de Gemini.');
+        return parseVisionJson(txt, 'Gemini');
       } catch (e) {
         if (e && (e.httpStatus === 401 || e.httpStatus === 403 || e.httpStatus === 404)) throw e;
         lastErr = e;
@@ -691,47 +673,33 @@
   }
 
   async function callOpenRouterVision(target, fileData, prompt) {
-    const url = 'https://openrouter.ai/api/v1/chat/completions';
-    const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + target.key };
+    const IC = window.IAClient;
+    if (!IC) throw new Error('ia-client.js no cargado');
+    let extraHeaders = {};
     try {
       if (typeof location !== 'undefined' && location.href) {
-        headers['HTTP-Referer'] = location.href;
-        headers['X-Title'] = 'Taller POD';
+        extraHeaders = { 'HTTP-Referer': location.href, 'X-Title': 'Taller POD' };
       }
     } catch (e) {}
-    const body = {
-      model: target.model,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          { type: 'image_url', image_url: { url: 'data:' + fileData.mimeType + ';base64,' + fileData.base64 } }
-        ]
-      }],
-      temperature: 0.2,
-      max_tokens: 2048
-    };
     let lastErr = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const response = await fetchWithTimeout(url, {
-          method: 'POST', headers: headers, body: JSON.stringify(body)
-        }, target.timeoutMs);
-        if (!response.ok) {
-          let detail = '';
-          try {
-            const eb = await response.json();
-            detail = eb && eb.error && eb.error.message ? ': ' + eb.error.message : '';
-          } catch (e) {}
-          const err = new Error(visionHttpMessage(response.status, 'OpenRouter') + detail);
-          err.httpStatus = response.status;
-          throw err;
-        }
-        const data = await response.json();
-        const text = data.choices && data.choices[0] && data.choices[0].message
-          ? data.choices[0].message.content : '';
-        if (!text) throw new Error('Respuesta vacía de OpenRouter.');
-        return parseVisionJson(text, 'OpenRouter');
+        const data = await IC.chat({ provider: 'OpenRouter', model: target.model, key: target.key }, {
+          openaiContent: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: 'data:' + fileData.mimeType + ';base64,' + fileData.base64 } }
+          ],
+          temperature: 0.2,
+          maxTokens: 2048,
+          timeoutMs: target.timeoutMs,
+          extraHeaders: extraHeaders,
+          httpMessage: function (status, detail) {
+            return visionHttpMessage(status, 'OpenRouter') + (detail ? ': ' + detail : '');
+          }
+        });
+        const txt = IC.textOf('OpenRouter', data);
+        if (!txt) throw new Error('Respuesta vacía de OpenRouter.');
+        return parseVisionJson(txt, 'OpenRouter');
       } catch (e) {
         if (e && (e.httpStatus === 401 || e.httpStatus === 403 || e.httpStatus === 404)) throw e;
         lastErr = e;
@@ -753,21 +721,18 @@
     if (!target) return { ok: false, message: 'Sin claves con modelo. Configura la barra IA.' };
     try {
       if (target.kind === 'gemini') {
-        const url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
-          encodeURIComponent(target.model) + ':generateContent';
-        const r = await fetchWithTimeout(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': target.key },
-          body: JSON.stringify({ contents: [{ parts: [{ text: 'Responde solo: ok' }] }] })
-        }, 15000);
-        if (!r.ok) return { ok: false, message: visionHttpMessage(r.status, 'Gemini') };
+        await window.IAClient.chat({ provider: 'Gemini', model: target.model, key: target.key }, {
+          user: 'Responde solo: ok',
+          timeoutMs: 15000,
+          httpMessage: function (status) { return visionHttpMessage(status, 'Gemini'); }
+        });
       } else {
-        const r = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + target.key },
-          body: JSON.stringify({ model: target.model, messages: [{ role: 'user', content: 'Responde solo: ok' }], max_tokens: 5 })
-        }, 15000);
-        if (!r.ok) return { ok: false, message: visionHttpMessage(r.status, 'OpenRouter') };
+        await window.IAClient.chat({ provider: 'OpenRouter', model: target.model, key: target.key }, {
+          user: 'Responde solo: ok',
+          maxTokens: 5,
+          timeoutMs: 15000,
+          httpMessage: function (status) { return visionHttpMessage(status, 'OpenRouter'); }
+        });
       }
       return { ok: true, message: target.kind + ' / ' + target.model + ' responde (red OK).' };
     } catch (e) {

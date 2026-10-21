@@ -18,6 +18,7 @@ function ok(cond, msg) { checks++; if (!cond) failures.push(msg); }
 
 const revisor = fs.readFileSync(path.join(ROOT, 'js', 'ia-revisor.js'), 'utf8');
 const analisis = fs.readFileSync(path.join(ROOT, 'js', 'ia-analisis.js'), 'utf8');
+const cliente = fs.readFileSync(path.join(ROOT, 'js', 'ia-client.js'), 'utf8');
 
 const m = revisor.match(/var SLOTS_KEY = '([^']+)'/);
 ok(m && m[1] === 'pod2_ai_slots', 'SLOTS_KEY inesperada en ia-revisor.js');
@@ -49,10 +50,12 @@ DEAD.forEach(function (m) {
 ok(revisor.indexOf("model: 'gemini-3.5-flash-lite'") !== -1, 'falta default vivo gemini-3.5-flash-lite (serie 3.x p/ claves nuevas)');
 ok(revisor.indexOf("model: 'google/gemini-2.5-flash'") !== -1, 'falta default vivo google/gemini-2.5-flash');
 ok(revisor.indexOf("model: 'openai/gpt-oss-20b'") !== -1, 'falta default vivo openai/gpt-oss-20b');
-ok(/'gemini-2\.5-flash': 'gemini-3\.5-flash-lite'/.test(revisor), 'DEAD_MODELS debe migrar 2.5 → 3.5 (slots guardados con claves nuevas)');
-ok(!/:\s*'gemini-2\.5-flash'/.test(codeWithoutComments(revisor).replace(/'gemini-2\.5-flash':/g, '')), 'ningún objetivo muerto debe apuntar a 2.5');
+ok(/'gemini-2\.5-flash': 'gemini-3\.5-flash-lite'/.test(cliente), 'DEAD_MODELS (ia-client) debe migrar 2.5 → 3.5 (slots guardados con claves nuevas)');
+ok(!/:\s*'gemini-2\.5-flash'/.test(codeWithoutComments(cliente).replace(/'gemini-2\.5-flash':/g, '')), 'ningún objetivo muerto debe apuntar a 2.5 (ia-client)');
+ok(!/:\s*'gemini-2\.5-flash'/.test(codeWithoutComments(revisor).replace(/'gemini-2\.5-flash':/g, '')), 'el revisor ya no debe tener mapa propio de modelos');
 ok(/function migrateSlots/.test(revisor), 'falta migrateSlots (slots guardados con modelos muertos quedarían rotos)');
-ok(/DEAD_MODELS\[s\.model\]/.test(revisor), 'migrateSlots no mapea modelos muertos');
+ok(/var IC = window\.IAClient/.test(revisor) && /IC\.migrateModel\(/.test(revisor),
+  'migrateSlots no delega en el cliente compartido (DEBT-011)');
 
 /* Puente motor->revisor (regresión: runAudit leía window.V pero el motor nunca
    lo exponía, así que "Revisar con IA" siempre pedía crear los 3 diseños). */

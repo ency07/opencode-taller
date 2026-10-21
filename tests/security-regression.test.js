@@ -10,12 +10,17 @@ function ok(cond, msg) { checks++; if (!cond) failures.push(msg); }
 
 const analysis = fs.readFileSync(path.join(ROOT, 'js/ia-analisis.js'), 'utf8');
 const reviewer = fs.readFileSync(path.join(ROOT, 'js/ia-revisor.js'), 'utf8');
+const client = fs.readFileSync(path.join(ROOT, 'js/ia-client.js'), 'utf8');
 
 ok(/function tell\(msg\)[\s\S]*?statusEl\.textContent/.test(analysis), 'analysis status must render plain text');
 ok(!/function tell\(msg\)[\s\S]*?statusEl\.innerHTML\s*=\s*msg/.test(analysis), 'analysis tell must not insert arbitrary message as HTML');
 ok(!analysis.includes('AIzaSyTESTCONNECTIVITY'), 'preflight must not contain a fake API key');
 ok(!/generativelanguage\.googleapis\.com\/v1beta\/models\/[^'\n]*\?key=/.test(analysis), 'Gemini requests should not append API key to URL');
-ok((analysis.match(/x-goog-api-key/g) || []).length >= 2, 'Gemini vision and connection test must send key via header');
+ok(client.includes('x-goog-api-key') && !analysis.includes('x-goog-api-key'),
+  'Gemini key header must live only in shared ia-client (vision delegates, DEBT-011)');
+ok(!/x-goog-api-key/.test(reviewer), 'reviewer must delegate Gemini auth to ia-client');
+ok((analysis.match(/(?:IAClient|IC)\.chat\(/g) || []).length >= 3,
+  'vision calls and connection test must go through the shared client');
 ok(/function tellStatus\(msg\)[\s\S]*?st\.textContent\s*=\s*String\(msg/.test(reviewer), 'reviewer status must render plain text');
 ok(!/function tellStatus\(msg\)[\s\S]*?st\.innerHTML\s*=/.test(reviewer), 'reviewer status must not use message as HTML');
 ok(/SESSION_KEYS_KEY\s*=/.test(reviewer) && /window\.sessionStorage\.setItem\(SESSION_KEYS_KEY/.test(reviewer), 'API keys must be saved to sessionStorage');

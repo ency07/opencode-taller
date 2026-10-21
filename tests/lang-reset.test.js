@@ -70,7 +70,7 @@ global.document = {
 };
 
 ['data-mercados.js', 'data-audiencias.js', 'data-bancos.js', 'dominios.js',
- 'memoria-local.js', 'motor-nucleo.js'].forEach(function (f) {
+ 'memoria-local.js', 'motor-nucleo.js', 'ia-client.js'].forEach(function (f) {
   vm.runInThisContext(fs.readFileSync(path.join(JS, f), 'utf8'), { filename: f });
 });
 vm.runInThisContext(analisisSrc, { filename: 'ia-analisis.js' });

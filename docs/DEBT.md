@@ -184,8 +184,19 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
   timeouts y parseo) usado por copy, revisor y visión.
 - **Responsable:** Motor/IA.
 - **Fecha objetivo:** próxima revisión del subsistema IA.
-- **Estado:** open.
+- **Estado:** closed (2026-10-21, rama `fix/debt-011-ia-client`).
 - **Revisión:** cada release.
+- **Cierre:** nuevo `js/ia-client.js` expone `window.IAClient` con `ep`,
+  `headers` (Gemini → `x-goog-api-key`, resto Bearer; jamás llave en la URL),
+  `buildBody`, `chat` (timeout con `AbortController`, error `HTTP nnn` con
+  `httpStatus`/`detail`, `httpMessage` para la visión), `textOf`, `pJSON`,
+  `pistaClave`, `DEAD_MODELS` (único mapa), `migrateModel` y
+  `fetchWithTimeout`. `copy-ia.js`, `ia-revisor.js` e `ia-analisis.js` quedan
+  sin fetch/auth propios (solo lógica de negocio) y `index.html` carga
+  `ia-client.js` antes que los tres. Tests: nuevo
+  `tests/ia-client.test.js` (66 aserciones: contratos + guardas estáticas de
+  "una sola definición"), y `copy-ia`, `ai-slots`, `ai-vision-diag`,
+  `security-regression` + suites vm adaptadas. Suite 40/40.
 
 ### DEBT-012 — Sincronización en la nube (Supabase): bancos y frases entre dispositivos con login
 

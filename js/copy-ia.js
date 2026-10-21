@@ -11,22 +11,8 @@
 
   function $(id) { return document.getElementById(id); }
 
-  function ep(p, m) {
-    if (p === 'Groq') return 'https://api.groq.com/openai/v1/chat/completions';
-    if (p === 'OpenRouter') return 'https://openrouter.ai/api/v1/chat/completions';
-    if (p === 'Gemini') return 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(m) + ':generateContent';
-    return '';
-  }
-
-  function pJSON(t) {
-    var s = String(t || '').trim();
-    s = s.replace(/^```(?:json)?/i, '').replace(/```\s*$/, '').trim();
-    var a = s.indexOf('{');
-    var b = s.lastIndexOf('}');
-    if (a === -1 || b === -1 || b <= a) return null;
-    try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return null; }
-  }
-
+  /* Red/auth/JSON/MIGRACIÓN viven en js/ia-client.js (ventana IAClient);
+     aquí solo queda la lógica propia del copy (frases, contexto, estado). */
   function esFraseValida(f) {
     var s = String(f || '').trim();
     if (s.length < 2 || s.length > 60) return false;
@@ -47,138 +33,52 @@
     return o;
   }
 
-  /* Modelos de texto retirados -> reemplazo vivo. Los slots guardados pueden
-     traer modelos apagados; aquí se migran antes de llamar. */
-  var DEAD_TEXT_MODELS = {
-    'llama-3.3-70b-versatile': 'openai/gpt-oss-20b',
-    'google/gemini-2.0-flash-exp': 'google/gemini-2.5-flash',
-    'gemini-2.5-flash': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash-001': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash-lite': 'gemini-3.5-flash-lite',
-    'gemini-2.0-flash-lite-001': 'gemini-3.5-flash-lite',
-    'gemini-1.5-flash': 'gemini-3.5-flash-lite',
-    'gemini-1.5-flash-001': 'gemini-3.5-flash-lite',
-    'gemini-1.5-pro': 'gemini-3.5-flash-lite'
-  };
-
-  /* Gemini de texto alineado a la generación que el panel de visión ya usa.
-     Proyectos con claves nuevas (AQ.Ab…) no reciben la serie 2.5 ni anteriores:
-     responderían 404. Si tampoco sirviera el modelo vivo, se reintenta una vez
-     con el alterno (reintento inteligente, sin bucle). */
-  function modeloGeminiVivo() {
-    try {
-      if (window.PODVision && window.PODVision.getVisionConfig) {
-        var vc = window.PODVision.getVisionConfig();
-        if (vc && vc.geminiModel) return vc.geminiModel;
-      }
-    } catch (e) { /* sin visión cargada */ }
-    return 'gemini-3.5-flash-lite';
-  }
-
-  function modeloVivo(provider, model) {
-    var m = String(model || '').trim();
-    if (provider !== 'Gemini') return m;
-    if (m === 'gemini-2.5-flash' || /^gemini-(1\.|2\.0)/i.test(m)) return modeloGeminiVivo();
-    return DEAD_TEXT_MODELS[m] || m;
-  }
-
-  /* Pista de diagnóstico SIN exponer la clave. No asume formatos "de futuro":
-     solo avisa cuando la clave parece de OTRO proveedor del panel. */
-  var MARCAS_CLAVE = {
-    Groq: ['gsk_'],
-    OpenRouter: ['sk-or-'],
-    Gemini: ['AIza', 'AQ.']
-  };
-  function pistaClave(provider, key) {
-    var k = String(key || '');
-    if (!k) return '';
-    var base = 'clave de ' + k.length + ' caracteres';
-    var ajena = '';
-    Object.keys(MARCAS_CLAVE).forEach(function (p) {
-      if (p === provider) return;
-      var marcas = MARCAS_CLAVE[p];
-      for (var i = 0; i < marcas.length; i++) {
-        if (k.indexOf(marcas[i]) === 0) ajena = p;
-      }
-    });
-    if (ajena) return base + ' que parece de ' + ajena + ' (revisa el proveedor de ese slot)';
-    return base;
-  }
+  /* Modelos retirados, auth por proveedor, parser JSON y pista de clave:
+     delegados a window.IAClient (módulo único compartido, DEBT-011). */
 
   function llamarSlots(promptText) {
     if (typeof window.getAISlots !== 'function') {
       return Promise.resolve({ error: 'sin-slots' });
     }
+    var IC = window.IAClient;
     var slots = (window.getAISlots() || []).filter(function (s) { return s.key && s.provider && s.model; });
     if (!slots.length) return Promise.resolve({ error: 'sin-clave' });
     var diagnosticos = [];
     var intento = function (slot, resto) {
-      var model = slot._intentoAlt ? String(slot.model) : modeloVivo(slot.provider, slot.model);
-      var url = ep(slot.provider, model);
-      if (!url) {
+      var model = slot._intentoAlt ? String(slot.model) : IC.migrateModel(slot.provider, slot.model);
+      if (!IC.ep(slot.provider, model)) {
         diagnosticos.push(slot.provider + ': proveedor desconocido');
         return resto.length ? intento(resto[0], resto.slice(1))
           : Promise.resolve({ error: 'sin-proveedor', diagnosticos: diagnosticos.slice(), proveedores: slots.length });
       }
-      var ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
       var timeoutMs = parseInt(slot.timeoutMs, 10) || 15000;
-      var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
-      function limpiar() { if (timer) clearTimeout(timer); }
-      var headers = { 'Content-Type': 'application/json' };
-      var body;
-      if (slot.provider === 'Gemini') {
-        /* Gemini NO acepta Authorization: Bearer; la clave va en x-goog-api-key. */
-        headers['x-goog-api-key'] = slot.key;
-        body = JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: promptText }] }],
-          generationConfig: { temperature: 0.6, maxOutputTokens: 400, responseMimeType: 'application/json' }
-        });
-      } else {
-        headers['Authorization'] = 'Bearer ' + slot.key;
-        body = JSON.stringify({
-          model: model,
-          messages: [{ role: 'user', content: promptText }],
-          max_tokens: 400,
-          temperature: 0.6,
-          response_format: { type: 'json_object' }
-        });
-      }
-      return fetch(url, {
-        method: 'POST',
-        headers: headers,
-        body: body,
-        signal: ctrl ? ctrl.signal : undefined
-      }).then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
+      return IC.chat(slot, {
+        model: model,
+        user: promptText,
+        temperature: 0.6,
+        maxTokens: 400,
+        jsonMode: true,
+        timeoutMs: timeoutMs
       }).then(function (j) {
-        var texto;
-        if (slot.provider === 'Gemini') {
-          texto = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text;
-        } else {
-          texto = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-        }
-        var parsed = pJSON(texto);
+        var texto = IC.textOf(slot.provider, j);
+        var parsed = IC.pJSON(texto);
         if (!parsed || !esFraseValida(parsed.frase)) throw new Error(texto ? 'respuesta sin frase válida' : 'respuesta vacía');
-        limpiar();
         var apoyoCrudo = parsed.apoyo ? String(parsed.apoyo).trim() : '';
         var apoyo = (apoyoCrudo && esFraseValida(apoyoCrudo) &&
           apoyoCrudo.toLowerCase() !== String(parsed.frase).trim().toLowerCase()) ? apoyoCrudo : '';
         return { frase: String(parsed.frase).trim(), apoyo: apoyo, alternativas: (parsed.alternativas || []).filter(esFraseValida).slice(0, 3) };
       }).catch(function (e) {
-        limpiar();
         var motivo = (e && e.name === 'AbortError')
           ? ('sin respuesta en ' + Math.round(timeoutMs / 1000) + 's')
           : String((e && e.message) || e);
         if (/HTTP 404/.test(motivo)) motivo = 'HTTP 404 (el modelo ' + model + ' no existe para esta clave)';
         if (/HTTP 40[13]/.test(motivo)) {
-          var pista = pistaClave(slot.provider, slot.key);
+          var pista = IC.pistaClave(slot.provider, slot.key);
           if (pista) motivo += ' (' + pista + ')';
         }
         /* 404 en Gemini: reintento único con el modelo alterno (2.5 ↔ vivo). */
         if (slot.provider === 'Gemini' && /HTTP 404/.test(motivo) && !slot._intentoAlt) {
-          var alt = (model === modeloGeminiVivo()) ? 'gemini-2.5-flash' : modeloGeminiVivo();
+          var alt = (model === IC.modeloGeminiVivo()) ? 'gemini-2.5-flash' : IC.modeloGeminiVivo();
           if (alt && alt !== model) return intento(Object.assign({}, slot, { model: alt, _intentoAlt: true }), resto);
         }
         diagnosticos.push(slot.provider + ': ' + motivo);
@@ -302,7 +202,7 @@
     sugerirCopy: sugerirCopy,
     construirPromptContexto: construirPromptContexto,
     esFraseValida: esFraseValida,
-    pJSON: pJSON,
+    pJSON: function (t) { return window.IAClient.pJSON(t); },
     contextoActual: contextoActual
   };
 
