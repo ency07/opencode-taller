@@ -162,3 +162,32 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Fecha objetivo:** próxima revisión del subsistema IA.
 - **Estado:** open.
 - **Revisión:** cada release.
+
+### DEBT-012 — Sincronización en la nube (Supabase): bancos y frases entre dispositivos con login
+
+- **Origen:** decisión del propietario (2026-10-20): los bancos y frases aprobadas
+  deben sincronizarse entre TODOS los dispositivos. `localStorage` solo cubre el
+  dispositivo actual; hace falta backend/DB en la nube con autenticación.
+- **Pendiente de entrada del propietario:** crear el proyecto en Supabase y pasar
+  Project URL + anon key (pública) y elegir login (email+contraseña o magic link).
+- **Solución definitiva:** cliente Supabase en el panel IA con auth y RLS;
+  tablas `frases` (user_id, subnicho, frase, apoyo, aprobada, fecha) y `bancos`
+  (id, mercado, subnicho, frases jsonb); sincronización bidireccional simple.
+  Sin URL/key no se puede avanzar (no se debe inventar credenciales).
+- **Responsable:** Producto + Motor.
+- **Estado:** open (bloqueada: pendiente credenciales del propietario).
+- **Revisión:** cada release.
+
+### DEBT-013 — Bancos de frases del propietario (Grok) aún no integrados en el repo
+
+- **Origen:** el propietario generó bancos con Grok a partir de un prompt dado y
+  aún no los ha enviado; mientras no estén en el repo pueden perderse.
+- **Solución definitiva:** integrar cada banco como `banco-personal-<nicho>.json`
+  (formato actual de `getBankForSubniche`) + cableo en `data-bancos.js` vía PR,
+  validando que el motor los lea y que el gate de unicidad no se vea afectado;
+  una vez en repo, serán los primeros datos que sincronice DEBT-012.
+- **Pendiente de entrada del propietario:** el contenido de los bancos
+  (mercado/subnicho de cada uno).
+- **Responsable:** Motor.
+- **Estado:** open (bloqueada: pendiente envío de bancos).
+- **Revisión:** cada release.
