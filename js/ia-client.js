@@ -173,16 +173,25 @@
     var url = ep(s.provider, model);
     if (!url) throw new Error('proveedor desconocido: ' + s.provider);
     var timeoutMs = parseInt(o.timeoutMs || s.timeoutMs, 10) || 15000;
+    if (s.provider === 'Gemini' && timeoutMs < 20000) timeoutMs = 20000; // Gemini free es lento: piso de 20s
     var ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
     var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
     function limpiar() { if (timer) clearTimeout(timer); }
     try {
-      var r = await fetch(url, {
-        method: 'POST',
-        headers: headers(s.provider, s.key, o.extraHeaders),
-        body: JSON.stringify(buildBody(s.provider, model, o)),
-        signal: ctrl ? ctrl.signal : undefined
-      });
+      var r;
+      try {
+        r = await fetch(url, {
+          method: 'POST',
+          headers: headers(s.provider, s.key, o.extraHeaders),
+          body: JSON.stringify(buildBody(s.provider, model, o)),
+          signal: ctrl ? ctrl.signal : undefined
+        });
+      } catch (fe) {
+        if (fe && fe.name === 'AbortError') throw fe;
+        var ne = new Error('sin conexión a ' + (String(url).split('/')[2] || 'el proveedor') + ' (red, VPN o DNS?): ' + String((fe && fe.message) || fe));
+        ne.netError = true;
+        throw ne;
+      }
       if (!r.ok) {
         var detail = '';
         try {

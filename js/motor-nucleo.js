@@ -949,7 +949,7 @@ function _styleTreatmentDirective(styleValue, profileKey) {
   const profileRules = {
     HEAVY: 'Prioriza masas visuales claras, contornos firmes y contraste alto. Evita que líneas finas, textura o detalles delicados debiliten la silueta. Mantén el carácter del estilo mediante su técnica aplicada en áreas amplias. Prohibido: líneas finas, microdetalle, tramas uniformes que cierren el aire.',
     SOFT: 'Prioriza aire, formas abiertas y jerarquía amable. Evita que el estilo convierta toda la superficie en una masa densa. Conserva su técnica en detalles selectivos y deja espacio negativo visible. Prohibido: salpicaduras agresivas, bordes desgarrados, masas de tinta que cierren el espacio negativo.',
-    MODERN: 'Prioriza geometría legible, bordes definidos y síntesis. Conserva los rasgos reconocibles del estilo como acentos controlados; no permitas que ornamento, textura, efectos o detalle secundario rompan la estructura limpia. Prohibido: ornamento, textura decorativa, ruido, asimetría accidental.'
+    MODERN: 'Prioriza geometría legible, bordes definidos y síntesis. Conserva los rasgos reconocibles del estilo como acentos controlados; no permitas que ornamento ajeno, ruido o asimetría accidental rompan la estructura limpia. La textura propia del estilo (p. ej. la puntada de un bordado) se conserva como técnica, sin recargar el fondo. Prohibido: ornamento decorativo, ruido de fondo y asimetría accidental.'
   };
   const techniqueRules = [];
   if (/acuarela|watercolor|airbrush|glow|neon|neón|gradient|degrad/.test(style)) {
@@ -1370,6 +1370,33 @@ function _assignTextCompositions() {
   return out;
 }
 
+/* P1 (desconexión prompt): la arquitectura textual debe encajar con el layout
+   final de cada ficha. Columna apilada no admite «texto dividido a ambos lados»,
+   diagonal no admite «columna lateral», etc. */
+const _ARQ_COMPAT = {
+  lateral: /^(TEXTO ARRIBA|COLUMNA LATERAL|PILA VERTICAL|BLOQUE VERTICAL|BLOQUE INFERIOR|BANDA SUPERIOR|FRANJA INFERIOR|PALABRA CLAVE|ESQUINA SUPERIOR|TEXTO sigue un solo lado|BLOQUES MODULARES)/,
+  diagonal: /^(DIAGONAL|CINTA ABIERTA|DOS BLOQUES|TEXTO DIVIDIDO|TEXTO detrás|BLOQUES MODULARES|TEXTO ARRIBA|BLOQUE INFERIOR|ESQUINA SUPERIOR)/,
+  central: /^(TEXTO ARRIBA|BLOQUE INFERIOR|BANDA SUPERIOR|FRANJA INFERIOR|ARCO SUPERIOR|TEXTO dentro de un vacío|BLOQUE VERTICAL|ESQUINA SUPERIOR|PALABRA CLAVE|TEXTO DIVIDIDO|BLOQUES MODULARES|DOS BLOQUES|TEXTO detrás|CINTA ABIERTA|SÍMBOLO integrado|ARCO LATERAL)/
+};
+function _familiaLayoutArq(layout) {
+  var l = String(layout || '');
+  if (/Diagonal/.test(l)) return 'diagonal';
+  if (/Columna apilada|Columna lateral|Editorial/.test(l)) return 'lateral';
+  return 'central';
+}
+function _arquitecturaCompatible(arch, layout) {
+  var fam = _ARQ_COMPAT[_familiaLayoutArq(layout)];
+  return !!(fam && fam.test(String(arch || '')));
+}
+/* Integración envolvente (cinta/contorno) contra disposición vertical (P1). */
+function _integracionCompatible(layout, integracion) {
+  if (_familiaLayoutArq(layout) !== 'lateral') return integracion;
+  if (/cinta|contorno|envuelve|entrelazan|brotan/i.test(String(integracion || ''))) {
+    return 'el texto y el símbolo se relacionan por tema y técnica en zonas separadas limpias; sin cintas ni envolturas que contradigan la disposición vertical';
+  }
+  return integracion;
+}
+
 function buildCandidate(audsPerKey, fixedIdentity) {
   const estilos = resolveEstilos(audsPerKey);
   const objectPool = getObjectPool();
@@ -1723,6 +1750,36 @@ function buildCandidate(audsPerKey, fixedIdentity) {
 
     set[k] = v;
   });
+
+  /* P1: arquitectura e integración coherentes con el layout final de cada ficha,
+     para que el prompt declare una sola voz de distribución. */
+  (function () {
+    var keep = {}, fixes = [];
+    ['A', 'B', 'C'].forEach(function (k) {
+      var v = set[k];
+      if (!v) return;
+      if (_arquitecturaCompatible(v.distribucionTexto, v.layout)) keep[v.distribucionTexto] = true;
+      else fixes.push(k);
+    });
+    var tomadas = Object.assign({}, keep);
+    var recientes = _recentArchitectures();
+    fixes.forEach(function (k) {
+      var v = set[k];
+      var elegible = _TEXT_COMPOSITION_BANK.filter(function (a) {
+        return _arquitecturaCompatible(a, v.layout) && !tomadas[a];
+      });
+      if (elegible.length) {
+        var pesos = elegible.map(function (a) { return recientes.has(a) ? 0.35 : 1; });
+        var pick = _pickWeighted(elegible, pesos);
+        tomadas[pick] = true;
+        v.distribucionTexto = pick;
+      }
+    });
+    ['A', 'B', 'C'].forEach(function (k) {
+      var v = set[k];
+      if (v) v.integracionTexto = _integracionCompatible(v.layout, v.integracionTexto);
+    });
+  })();
 
   set.objectConflicts = objectConflicts;
   set.seriesAnchor = seriesAnchor;
@@ -2124,6 +2181,18 @@ function _contrastBlock(set) {
   return s;
 }
 
+/* Firma de la configuración de entrada: si cambia después de generar,
+   el prompt en pantalla quedó obsoleto (desconexión interfaz ↔ prompt). */
+function _promptSignature() {
+  const g = function (id) { const el = document.getElementById(id); return el ? String(el.value || '') : ''; };
+  let img = '';
+  try {
+    const fi = document.getElementById('imageUpload');
+    if (fi && fi.files && fi.files[0]) { const f = fi.files[0]; img = [f.name, f.size, f.lastModified].join('|'); }
+  } catch (e) {}
+  return [g('workflowMode'), g('market'), g('product'), g('subniche'), g('concept'), g('message'), g('support'), g('serie'), g('audienceSet'), img].join('§');
+}
+
 function formatPrompt(result) {
   if (!result || !result.set) return '';
   const set = result.set;
@@ -2331,7 +2400,7 @@ function formatPrompt(result) {
     o += 'VARIACIÓN VISUAL REAL: crea una nueva solución gráfica basada en la referencia, no una copia ni una limpieza de la misma. Cambia obligatoriamente composición, silueta global, encuadre, distribución de masas y jerarquía tipográfica. Conserva solo los elementos que exigen los selectores. No basta recolorear, cambiar textura, añadir borde ni aplicar filtro. No inventes objetos, texto, datos o símbolos fuera de las reglas anteriores.\n';
   }
   o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto. La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
-  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado. FONDO DEL ARTE: liso, plano o transparente; prohibido añadir cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas, marcos ni escenas de fondo no solicitadas, aunque el estilo los use habitualmente.\n';
+  o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado. FONDO DEL ARTE: liso, plano o transparente; prohibido añadir cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas, marcos ni escenas de fondo no solicitadas, aunque el estilo los use habitualmente. Si la hoja completa no cabe en una sola imagen, entrega por prioridad: 1) los tres estampados frontales, 2) los mockups por columna, 3) los colores rotulados, 4) detalles de impresión y paleta; mejor un parcial limpio que columnas incompletas o texto deforme.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (result.objectConflicts && result.objectConflicts.length) {
     o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
@@ -2399,11 +2468,23 @@ function formatPrompt(result) {
   }
   o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + (_PLACEMENT[MOTOR_STATE.product] || _PLACEMENT['CAMISETA SOFT'] || 'pecho centrado') + '; ' + ((_PRODUCT_BIAS[MOTOR_STATE.product] || {}).scale || 'escala adecuada al producto') + '\n\n';
 
+  o += 'REGLAS COMUNES A LAS 3 FICHAS: ';
+  o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos. ';
+  o += 'INTERPRETACIÓN DEL CONCEPTO: si el concepto es ambiguo o metafórico, elige la lectura más literal de sus palabras; una parte del cuerpo nombrada se dibuja solo si es imprescindible y de forma parcial/estilizada; no inventes personas, rostros ni escenas no narradas. ';
+  const _figurasPorFicha = K.map(function (k) {
+    const v = set[k];
+    return (v && v.jerarquiaVisual !== 'SOLO_TEXTO') ? _figureDirective(v.objeto) : '';
+  });
+  const _figurasNoVacias = _figurasPorFicha.filter(Boolean);
+  const _figurasUnicas = _figurasNoVacias.length > 0 && _figurasNoVacias.every(function (t) { return t === _figurasNoVacias[0]; });
+  if (_figurasUnicas) o += _figurasNoVacias[0] + ' ';
+  o += 'ARQUITECTURA DOMINANTE — una sola estructura por ficha: el LAYOUT fija la ubicación y la ARQUITECTURA TEXTUAL solo define la forma del bloque tipográfico DENTRO de esa ubicación; si dos instrucciones estructurales sugieren ubicaciones distintas, prevalece el LAYOUT. La jerarquía fija tamaño, área y peso; el layout solo ubicación. Si hay conflicto, prevalece este orden.\n\n';
+
   K.forEach(function (k, i) {
     const v = set[k];
     o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + _audienceDisplay(v.audiencia) + '\n';
     o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
-    o += 'BLOQUEO DE ESTILO ' + N[i] + ': «' + v.estilo + '» inmutable en esta ficha; prohibido generar en otro estilo, fusionar estilos, mezclar el vocabulario de otro estilo ni pintar la etiqueta de un estilo distinto.\n';
+    o += 'BLOQUEO DE ESTILO ' + N[i] + ': «' + v.estilo + '» inmutable en esta ficha; prohibido generar en otro estilo, fusionar o mezclar el vocabulario de otro.\n';
     const pesoExigido = {
       SOLO_TEXTO: 'texto 100% · símbolo 0% — el arte completo son las letras del copy literal',
       TEXTO_DOMINANTE: 'texto 70–80% del área · símbolo 20–30% — el copy manda a primera vista y el objeto es apoyo',
@@ -2429,10 +2510,10 @@ function formatPrompt(result) {
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento)) + '\n';
     o += 'ESQUELETO ESTRUCTURAL (MANDA): perfil ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · jerarquía ' + v.jerarquiaVisual + ' · layout ' + String(v.layout || '').split(':')[0] + ' · arquitectura textual ' + v.distribucionTexto + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + ' · forma del símbolo ' + v.formaSimbolo + ' · integración ' + v.integracionTexto + ' · tipografía ' + v.tipografia + '\n';
-    o += 'ACABADO DE ESTILO (SUBORDINADO): «' + v.estilo + '» es la técnica de acabado sobre este esqueleto; no puede cambiar jerarquía, layout, proporción ni densidad. Si el estilo pide un recurso que rompe el esqueleto, reduce el acabado a acento controlado, no la estructura.\n';
+    o += 'ACABADO DE ESTILO (SUBORDINADO): «' + v.estilo + '» es solo la técnica de acabado sobre este esqueleto; no cambia jerarquía, layout, proporción ni densidad. Si pide un recurso que lo rompa, reduce el acabado a acento controlado.\n';
     const styleIsLettering = /graffiti|street|lettering|sign paint/i.test(String(v.estilo || ''));
     o += 'TÉCNICA GLOBAL: todo el arte de esta ficha — símbolo, letras, fondo y detalles — se ejecuta con la técnica del estilo «' + v.estilo + '»' + (styleIsLettering ? '; aquí el lettering SÍ es el estilo activo.' : '. Prohibido dibujar el copy como graffiti, lettering streetwear, lettering retro o cualquier lenguaje de letras ajeno al estilo activo: las letras también llevan la técnica del estilo.') + '\n';
-    o += 'PRIORIDAD DE IDENTIDAD — decisiones FIJAS: jerarquía (' + v.jerarquiaVisual + '), tratamiento (' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ') y estilo («' + v.estilo + '», como técnica de acabado). Decisiones ADAPTABLES: paleta, textura y detalles secundarios, siempre que no anulen el contraste y la lectura que exige el tratamiento. Si dos decisiones compiten, manda este orden: jerarquía > tratamiento > estilo > paleta; no priorices el efecto del estilo (3D, neón, textura) por encima del esqueleto estructural.\n';
+    o += 'PRIORIDAD DE IDENTIDAD — FIJOS: jerarquía (' + v.jerarquiaVisual + '), tratamiento (' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + '), estilo («' + v.estilo + '», acabado). ADAPTABLES: paleta, textura y detalles secundarios sin anular contraste ni lectura. Orden: jerarquía > tratamiento > estilo > paleta; el efecto del estilo (3D, neón, textura) nunca por encima del esqueleto.\n';
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
       o += 'OBJETO: NINGUNO (composición tipográfica pura).' + (seriesAnchor
         ? ' Identidad conceptual de la serie: «' + seriesAnchor + '». Esta ficha NO dibuja ese ancla: la expresa solo con tipografía, pero comunica el MISMO concepto que las demás fichas.'
@@ -2441,8 +2522,7 @@ function formatPrompt(result) {
       o += 'SIN EXCEPCIONES: aunque el concepto nombre un objeto concreto (fogata, animal, vehículo, paisaje), está prohibido dibujarlo: ni grande ni pequeño, ni como fondo ni integrado entre letras. El objeto solo existe como palabras del copy literal.\n';
     } else {
       o += 'OBJETO: ' + v.objeto + '\n';
-      o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos.\n';
-      o += _figureDirective(v.objeto) + '\n';
+      if (!_figurasUnicas) o += _figureDirective(v.objeto) + '\n';
       if (v.jerarquiaVisual === 'SOLO_OBJETO') {
         o += 'CERO TEXTO (SOLO_OBJETO): prohibido cualquier letra, cifra, número, logo tipográfico, microtexto o sellos con rótulos, incluso decorativos. Los recursos del estilo que normalmente portan texto (cintas, cartelas, banderines, sellos, escudos) aparecen SIN rótulo alguno; si un elemento necesita un rótulo para leerse, no lo uses.\n';
         o += 'ELEMENTOS SECUNDARIOS ADMITIDOS: únicamente recursos visuales NO textuales del estilo asignado (ornamentos, marco, filete, textura, recursos gráficos de taller) que no introduzcan texto y respeten el contrato de elementos del concepto; ningún elemento secundario puede competir con el objeto.\n';
@@ -2465,9 +2545,8 @@ function formatPrompt(result) {
       SOLO_OBJETO: 'SOLO_OBJETO: el objeto autorizado («' + v.objeto + '») ocupa el 100% visual de la ficha y NO HAY TEXTO en absoluto: ni letras, ni cifras, ni tipografía decorativa ni accidental. Diferéncialo de OBJETO_DOMINANTE (allí el copy ocupa 20–30%; aquí ninguna letra existe). ADMITE elementos secundarios visuales no textuales del estilo asignado (ornamentos, marcos, filetes, texturas, recursos gráficos de taller) siempre que no introduzcan texto y respeten el contrato de elementos del concepto.',
       BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva; evita dos bloques desconectados. La arquitectura define colocación/relación, nunca cambia la proporción.'
     }[v.jerarquiaVisual] || '';
-    o += 'JERARQUÍA: ' + hierarchyDirective + ' La jerarquía fija tamaño, área y peso; el layout solo ubicación. Si hay conflicto, prevalece esta regla.\n';
+    o += 'JERARQUÍA: ' + hierarchyDirective + '\n';
     o += 'LAYOUT (ubicación): ' + v.layout + '. El layout rige dónde se ubica cada elemento y dónde respira el vacío; no cambia tamaño, área ni jerarquía.\n';
-    o += 'ARQUITECTURA DOMINANTE — una sola estructura por ficha: el LAYOUT fija la ubicación y la ARQUITECTURA TEXTUAL solo define la forma del bloque tipográfico DENTRO de esa ubicación. Ninguna otra regla introduce una segunda composición; si dos instrucciones estructurales sugieren ubicaciones distintas, prevalece el LAYOUT y la arquitectura se adapta a él.\n';
     if (v.jerarquiaVisual === 'BALANCEADO') {
       // COMPOSICIÓN: el layout manda la ubicación; la arquitectura textual se adapta
       o += 'COMPOSICIÓN BALANCEADA: arquitectura dominante = LAYOUT (' + v.layout + '). El bloque tipográfico (' + v.distribucionTexto + ') se ejecuta DENTRO de esa ubicación; si sugiere una posición distinta, prevalece el LAYOUT. La arquitectura nunca cambia la proporción.\n';
@@ -2477,7 +2556,7 @@ function formatPrompt(result) {
       o += _compatibleCompositionDirective(v.jerarquiaVisual, v.distribucionTexto) + '\n';
     }
     if (v.jerarquiaVisual === 'TEXTO_DOMINANTE') {
-      o += 'INTEGRACIÓN TEXTO-SÍMBOLO: integra el objeto descrito en el concepto ("' + v.objeto + '") en el lettering usando su forma física y acción reales; elige una unión visual clara y natural, sin imponer metáforas genéricas ni partes que el objeto no posee. El texto exacto ocupa 70–80% del área y es la primera lectura; el símbolo ocupa como máximo 20–30%, queda integrado y nunca aparece como ilustración separada. La arquitectura cambia ubicación, no proporción.\n';
+      o += 'INTEGRACIÓN TEXTO-SÍMBOLO: integra el objeto descrito en el concepto ("' + v.objeto + '") en el lettering usando su forma física y acción reales; elige una unión visual clara y natural, sin imponer metáforas genéricas ni partes que el objeto no posee. El texto exacto ocupa 70–80% del área y es la primera lectura; el símbolo ocupa como máximo 20–30%, queda integrado y nunca aparece como ilustración separada. La arquitectura cambia ubicación, no proporción. Si la integración elegida no es viable con la forma real del objeto, conserva el área de la jerarquía y une texto y objeto por solapamiento simple; no bloquees la lectura.\n';
     }
     if (v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
       o += 'TEXTO SUBORDINADO: el copy ocupa como máximo 20–30% en la zona que le asigne el layout; prohibido lettering gigante que compita con el símbolo. Si al mirar el arte el texto domina, encogerlo hasta que el objeto autorizado mande a primera vista.\n';
@@ -2502,6 +2581,7 @@ function formatPrompt(result) {
     o += '\n';
   });
 
+  try { window._PROMPT_SIG = _promptSignature(); } catch (e) { /* sin DOM real */ }
   return o;
 }
 
@@ -3057,6 +3137,14 @@ async function copiarPrompt() {
     if (statusEl) statusEl.innerHTML = '<span class="bad">No hay prompt. Primero crea los 3 diseños.</span>';
     return;
   }
+  // Prompt obsoleto: la configuración cambió después de generar. Bloquear
+  // para que no se pegue un prompt viejo desconectado de la interfaz.
+  try {
+    if (window._PROMPT_SIG && typeof _promptSignature === 'function' && _promptSignature() !== window._PROMPT_SIG) {
+      if (statusEl) statusEl.innerHTML = '<span class="bad">La configuración cambió después de generar: este prompt ya no corresponde a la interfaz. Pulsa «Crear los 3 diseños» para refrescar antes de copiar.</span>';
+      return;
+    }
+  } catch (e) {}
   // El copiado nunca se bloquea: el umbral es un aviso, no una puerta.
   // Antes, un set por debajo del umbral no se copiaba y el botón parecía roto.
   let aviso = '';

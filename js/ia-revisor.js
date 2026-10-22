@@ -312,7 +312,7 @@
       '<div><label>Modelo</label><input data-f="model" value="' + escA(s.model) + '"></div></div>' +
       '<div class="frow"><div><label>Clave API (solo esta pestaña)</label><input data-f="key" type="password" autocomplete="off" value="' + escA(s.key) + '" placeholder="pegar clave…"></div>' +
       '<div><label>Espera</label><select data-f="timeoutMs">' +
-      [8000, 10000, 12000, 15000].map(function (t) {
+      [8000, 10000, 12000, 15000, 20000, 30000].map(function (t) {
         return '<option value="' + t + '"' + (s.timeoutMs === t ? ' selected' : '') + '>' + (t / 1000) + 's</option>';
       }).join('') +
       '</select></div></div></div>';

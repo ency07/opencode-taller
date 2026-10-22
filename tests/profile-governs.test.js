@@ -113,7 +113,8 @@ ok(motorSrc.includes('ACABADO DE ESTILO (SUBORDINADO)'), 'el estilo debe declara
 ok(!/\(manda\)/.test(motorSrc), 'el prompt ya no da la última palabra al estilo con (mandas)');
 ok(motorSrc.includes('Prohibido: salpicaduras agresivas'), 'SOFT prohibe salpicaduras agresivas y bordes desgarrados');
 ok(motorSrc.includes('Prohibido: líneas finas, microdetalle'), 'HEAVY prohibe líneas finas y microdetalle');
-ok(motorSrc.includes('Prohibido: ornamento, textura decorativa'), 'MODERN prohibe ornamentación y ruido');
+ok(motorSrc.includes('Prohibido: ornamento decorativo, ruido de fondo y asimetría accidental.'), 'MODERN prohibe ornamentación y ruido');
+ok(motorSrc.includes('textura propia del estilo') && motorSrc.includes('se conserva como técnica'), 'MODERN conserva la textura propia del estilo (p. ej. puntada de bordado) sin recargar el fondo');
 ok(motorSrc.includes('Si el estilo exige un recurso prohibido, redúcelo a acento controlado'), 'los recursos prohibidos se reducen a acento, no se rompe el esqueleto');
 
 if (failures.length) {
