@@ -2503,6 +2503,12 @@ function formatPrompt(result) {
           : 'modelo acorde al perfil (edad y género del perfil) con el corte y la talla que le corresponden'));
     o += 'AUDIENCIA DE LA FICHA: «' + (audPerfil.label || v.audiencia) + '» (' + (audPerfil.edad || 'edad del perfil') + ', ' + (audPerfil.genero || 'género del perfil') + '). Perfil: ' + (audPerfil.perfil || 'el declarado en el motor') + '. Contexto de uso: ' + (audPerfil.contexto || 'cotidiano') + '. Códigos que le hablan: ' + (audPerfil.codigos || 'los de la familia') + '. Evita: ' + (audPerfil.rechaza || 'lo ajeno al perfil') + '. Directiva: ' + (audPerfil.directiva || 'la del perfil') + '. OBLIGATORIO: el arte se siente hecho para esta persona y el mockup muestra ' + perfilMockup + '; un modelo adulto genérico invalida la ficha.\n';
     o += 'ID DE VALIDACIÓN DE AUDIENCIA: ' + v.audiencia + '\n';
+    const cargaEdad = {
+      adulto: 'adulto → sobrio y de peso: pocos elementos, aire, jerarquía clara; nada de adornos juveniles ni ruido de moda.',
+      joven: 'joven → impacto inmediato pero limpio: composición viva y tipografía firme; sin recargar; nada de estética corporativa fría.',
+      infantil: 'infantil → simple y redondeada: formas suaves, pocos elementos, colores claros; sin textura agresiva ni letras amenazantes.'
+    }[{ adulto: 'adulto', '35-55': 'adulto', '29-55': 'adulto', joven: 'joven', '18-34': 'joven', '16-28': 'joven', infantil: 'infantil' }[audPerfil.edad]];
+    if (cargaEdad) o += 'CARGA POR EDAD: ' + cargaEdad + ' Es tono de la audiencia: no cambia el esqueleto estructural ni la jerarquía de la ficha.\n';
     if (v.cara) {
       o += 'CARA DEL ESTAMPADO: ' + (v.cara === 'espalda' ? 'ESPALDA' : 'FRENTE') + ' — ubica el arte en esa cara; en la hoja de presentación muestra esa vista y no inventes la cara contraria.\n';
     }
