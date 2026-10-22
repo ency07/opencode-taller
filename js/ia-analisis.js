@@ -163,9 +163,13 @@
       const compatible = audiences.filter(function (a) { return subPool.indexOf(a) !== -1; });
       if (compatible.length) audiences = compatible;
     }
+    // Origen visible al elegir: ¿este pool lo filtró el subnicho o es el
+    // catálogo del mercado sin filtro efectivo? (DEBT-006/C2)
+    const audSuf = subniche !== 'auto' && typeof audiencePoolOriginSuffix === 'function'
+      ? audiencePoolOriginSuffix(effRegion, marketId, subniche) : '';
     audiences.forEach(function (a) {
       const label = (typeof getAudienceLabel === 'function') ? getAudienceLabel(a) : a;
-      html += '<option value="' + _escapeOptionText(a) + '">' + _escapeOptionText(label) + '</option>';
+      html += '<option value="' + _escapeOptionText(a) + '">' + _escapeOptionText(label) + audSuf + '</option>';
     });
     audSel.innerHTML = html;
     if (_marketResetPending || prev === 'Auto' || !audiences.includes(prev)) audSel.value = 'Auto';
