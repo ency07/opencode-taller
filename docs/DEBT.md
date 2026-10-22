@@ -261,3 +261,32 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Fecha objetivo:** próxima revisión del subsistema de copy.
 - **Estado:** open.
 - **Revisión:** cada release.
+
+### DEBT-015 — El perfil estructural no gobernaba layout ni jerarquía y el prompt daba la última palabra al estilo
+
+- **Origen:** auditoría red-team sobre código real: `_applyStructuralProfile`
+  eligía el layout del catálogo completo (`profile.layout` era dato muerto) y
+  `v.jerarquia = v.jerarquiaVisual || ...` hacía que la jerarquía del perfil
+  nunca se aplicara en producción. El prompt de ficha declaraba
+  `estilo «X» (manda)` contra el orden `jerarquía > tratamiento > estilo`
+  de `PRIORIDAD DE IDENTIDAD`, y la hoja separaba estilos con «/» igual que
+  los nombres tipo `Grunge / DIY`.
+- **Riesgo:** fichas HEAVY/SOFT/MODERN estructuralmente intercambiables
+  (SOFT comportándose como HEAVY), misma jerarquía visual en las tres
+  columnas cuando el copy es corto (sesgo por nº de palabras en
+  `resolveTextImageModes`) y hojas de presentación ambiguas.
+- **Impacto:** Alto (calidad del set completo; contrato del producto).
+- **Solución aplicada:** modos jerárquicos delimitados por perfil
+  (`PROFILE_VISUAL_MODES`; HEAVY texto/símbolo, SOFT balanceado/texto,
+  MODERN símbolo/balanceado/texto como tercera opción) con asignación por
+  permutaciones de 3 modos distintos y locks manuales siempre ganando;
+  layout elegido del pool del perfil con `PRODUCT_LAYOUT_ALLOW` como límite
+  duro; texto jerárquico descriptivo derivado del modo
+  (`_jerarquiaTextoDeModo`); prompt con `ESQUELETO ESTRUCTURAL (MANDA)` y
+  `ACABADO DE ESTILO (SUBORDINADO)` sin `(manda)`; prohibiciones específicas
+  por perfil en `_styleTreatmentDirective`.
+- **Tests:** `tests/semantic-identity.test.js` actualizado + nuevo
+  `tests/profile-governs.test.js` (modos, locks, layouts y contrato del prompt).
+- **Responsable:** Motor.
+- **Estado:** closed (ramas DEBT-017/016 siguen por separado).
+- **Revisión:** cada release.

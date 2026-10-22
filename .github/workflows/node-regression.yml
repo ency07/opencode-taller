@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - fix/redteam-semantic-identity
+      - fix/debt-015-profile-governs
   pull_request:
     branches:
       - main

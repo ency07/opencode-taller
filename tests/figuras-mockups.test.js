@@ -64,7 +64,7 @@ function set3(objeto) {
 /* Gesto facial: autoriza SOLO rostro + calidad anatómica */
 setup('carcajada que se escucha de esquina a esquina');
 const outGesto = formatPrompt({ set: set3('carcajada que se escucha de esquina a esquina') });
-ok(count(outGesto, 'FIGURAS HUMANAS:') === 3, 'gesto: las 3 fichas deben traer línea FIGURAS (hay ' + count(outGesto, 'FIGURAS HUMANAS:') + ')');
+ok(count(outGesto, 'FIGURAS HUMANAS:') === 1, 'gesto: la línea FIGURAS se emite una sola vez en REGLAS COMUNES (hay ' + count(outGesto, 'FIGURAS HUMANAS:') + ')');
 ok(outGesto.indexOf('autorizado SOLO el rostro en gesto') !== -1, 'gesto: debe autorizar solo rostro en gesto');
 ok(outGesto.indexOf('prohibidos manos, brazos, cuerpo') !== -1, 'gesto: debe prohibir manos/brazos/cuerpo');
 ok(outGesto.indexOf('CALIDAD ANATÓMICA OBLIGATORIA') !== -1, 'gesto: debe exigir calidad anatómica');
@@ -85,7 +85,7 @@ ok(outNombrado.indexOf('CALIDAD ANATÓMICA OBLIGATORIA') !== -1, 'nombrado: debe
 
 /* SOLO_TEXTO no lleva línea FIGURAS (no hay objeto) */
 const outSolo = formatPrompt({ set: { A: ficha('SOLO_TEXTO', 'x'), B: ficha('TEXTO_DOMINANTE', 'x'), C: ficha('BALANCEADO', 'x') } });
-ok(count(outSolo, 'FIGURAS HUMANAS:') === 2, 'SOLO_TEXTO no debe llevar FIGURAS (2/3 esperado)');
+ok(count(outSolo, 'FIGURAS HUMANAS:') === 1, 'SOLO_TEXTO no debe traer FIGURAS por ficha (1 único en REGLAS COMUNES esperado)');
 
 /* FICHA SERIE: franja metadata + 3 columnas por audiencia + colores + adicionales + paleta */
 ok(outGesto.indexOf('FICHA SERIE (CAMISETA SOFT)') !== -1, 'mockups: contrato de ficha serie');

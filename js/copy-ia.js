@@ -68,8 +68,9 @@
           apoyoCrudo.toLowerCase() !== String(parsed.frase).trim().toLowerCase()) ? apoyoCrudo : '';
         return { frase: String(parsed.frase).trim(), apoyo: apoyo, alternativas: (parsed.alternativas || []).filter(esFraseValida).slice(0, 3) };
       }).catch(function (e) {
+        var efectivo = (slot.provider === 'Gemini' && timeoutMs < 20000) ? 20000 : timeoutMs;
         var motivo = (e && e.name === 'AbortError')
-          ? ('sin respuesta en ' + Math.round(timeoutMs / 1000) + 's')
+          ? ('sin respuesta en ' + Math.round(efectivo / 1000) + 's')
           : String((e && e.message) || e);
         if (/HTTP 404/.test(motivo)) motivo = 'HTTP 404 (el modelo ' + model + ' no existe para esta clave)';
         if (/HTTP 40[13]/.test(motivo)) {
@@ -146,7 +147,7 @@
         : '';
       var activos = r && typeof r.proveedores === 'number' ? r.proveedores : 0;
       var avisoProv = (activos > 0 && activos < 3)
-        ? ' Solo ' + activos + ' de 3 proveedores tiene clave en esta pestaña; los vacíos no pueden usarse como respaldo (panel IA).'
+        ? ' Solo ' + activos + ' de 3 proveedores tiene clave en esta pestaña; sin respaldo no hay failover. Añade una clave de Groq u OpenRouter en el panel IA (con la de Gemini sola no hay respaldo).'
         : '';
       var msg = r && r.error === 'sin-clave' ? 'Configura una clave en el panel IA para proponer copy.'
         : r && r.error === 'sin-slots' ? 'Carga ia-revisor.js para usar los slots del panel IA.'

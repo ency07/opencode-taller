@@ -98,7 +98,7 @@ ok(!/ARQUITECTURA TIPOGRÁFICA: '\\s*' \+ v\.distribucionTexto/.test(motor), 'SO
 ok(!/COMPOSICIÓN TEXTUAL/.test(motor), 'la dirección artística no debe referirse a una composición textual inexistente');
 ok(!/Arquitectura tipográfica de referencia:/.test(motor), 'TEXTO_DOMINANTE no debe volver a introducir un motivo debajo del texto');
 ok(!/Arquitectura de referencia:/.test(motor), 'OBJETO_DOMINANTE no debe reintroducir layouts ornamentales en el prompt final');
-ok(/Ejecuta el estilo dentro de la jerarquía indicada/.test(motor), 'la dirección artística debe subordinarse a la jerarquía');
+ok(/Ejecuta el estilo dentro de la jerarquía y el esqueleto estructural indicados/.test(motor) && /reduce el acabado, no la estructura/.test(motor), 'la dirección artística debe subordinarse a la jerarquía y al esqueleto estructural');
 ok(motor.includes("TEXTO_DOMINANTE: 'TEXTO_DOMINANTE:") && motor.includes("OBJETO_DOMINANTE: 'OBJETO_DOMINANTE:"), 'el bloque directivo debe conservar una definición compacta por jerarquía');
 
 ok(!/ORDEN VISUAL:/.test(motor), 'no deben existir bloques secundarios redundantes de orden visual');

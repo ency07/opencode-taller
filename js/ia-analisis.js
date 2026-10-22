@@ -663,11 +663,13 @@
         return parseVisionJson(txt, 'Gemini');
       } catch (e) {
         if (e && (e.httpStatus === 401 || e.httpStatus === 403 || e.httpStatus === 404)) throw e;
+        if (e && e.netError) throw e;
         lastErr = e;
       }
     }
     if (lastErr && lastErr.name === 'AbortError') {
-      throw new Error('Gemini no respondió en ' + Math.round(target.timeoutMs / 1000) + 's (2 intentos). ¿Red bloqueada hacia Google? Prueba OpenRouter en la barra IA.');
+      const espera = Math.max(target.timeoutMs || 0, 20000);
+      throw new Error('Gemini no respondió en ' + Math.round(espera / 1000) + 's efectivos (2 intentos). ¿Red bloqueada hacia Google o conexión lenta? Prueba OpenRouter en la barra IA o sube la espera en la barra IA.');
     }
     throw lastErr;
   }
@@ -702,6 +704,7 @@
         return parseVisionJson(txt, 'OpenRouter');
       } catch (e) {
         if (e && (e.httpStatus === 401 || e.httpStatus === 403 || e.httpStatus === 404)) throw e;
+        if (e && e.netError) throw e;
         lastErr = e;
       }
     }
