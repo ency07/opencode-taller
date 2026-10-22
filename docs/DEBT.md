@@ -290,3 +290,22 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
 - **Responsable:** Motor.
 - **Estado:** closed (ramas DEBT-017/016 siguen por separado).
 - **Revisión:** cada release.
+
+### DEBT-018 — El prompt creció con las líneas nuevas y falta compactar
+
+- **Origen:** el bloque CARGA POR EDAD (rama `feat/carga-por-edad`) suma ~500
+  caracteres al prompt; el usuario exigió que el crecimiento quede anotado y se
+  compacte en un ticket aparte, nunca "de paso" con otra rama.
+- **Riesgo:** prompts más largos consumen más contexto y favorecen la aparición
+  de duplicados viejos que los tests aún blindan.
+- **Impacto:** Medio (calidad/eficiencia del prompt, no rompe funciones).
+- **Mitigación actual:** recortes previos (DEBT-015) dejaron el prompt en
+  ~29.700 caracteres con conteos exactos fijados por tests.
+- **Solución definitiva:** dedupe y trims de líneas que los tests permitan,
+  sin perder reglas fijadas; rama propia, suite completa, sin mezclar con
+  bloques A/C del selector de subnicho.
+- **Responsable:** Motor.
+- **Fecha objetivo:** después de cerrar los bloques A (carga por edad) y
+  C2/C3 (selector de audiencias).
+- **Estado:** open.
+- **Revisión:** cada release.
