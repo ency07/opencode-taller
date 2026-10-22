@@ -2606,6 +2606,12 @@ function renderCards(result) {
   const set = result.set;
   var audPool = [];
   try { audPool = getCurrentAudiencePool(); } catch (e) { audPool = _AUD_NAMES.slice(); }
+  const audSuf = typeof audiencePoolOriginSuffix === 'function'
+    ? audiencePoolOriginSuffix(MOTOR_STATE.region, MOTOR_STATE.market,
+      (MOTOR_STATE.subniche && MOTOR_STATE.subniche !== 'auto')
+        ? MOTOR_STATE.subniche
+        : (typeof effectiveSubniche === 'function' ? (effectiveSubniche() || 'auto') : 'auto'))
+    : '';
   var stylePool = _styleCandidatesForContext();
   var modeLocks = _loadLocks(memLocksMarket(), MOTOR_STATE.product);
   var styleLocks = modeLocks.estilo || {};
@@ -2654,7 +2660,7 @@ function renderCards(result) {
 
     html += '<div class="vrow"><span class="vk">Audiencia</span><span class="vv"><select data-card="' + k + '" data-lock="audiencia" onchange="setCardLock(this)">'
       + '<option value="Auto"' + ((!_loadLocks(memLocksMarket(), MOTOR_STATE.product).audiencia[k] || _loadLocks(memLocksMarket(), MOTOR_STATE.product).audiencia[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(v.audiencia) + ')</option>'
-      + audPool.map(function (a) { return '<option value="' + escHtml(a) + '"' + (_loadLocks(memLocksMarket(), MOTOR_STATE.product).audiencia[k] === a ? ' selected' : '') + '>' + escHtml(a) + '</option>'; }).join('')
+      + audPool.map(function (a) { return '<option value="' + escHtml(a) + '"' + (_loadLocks(memLocksMarket(), MOTOR_STATE.product).audiencia[k] === a ? ' selected' : '') + '>' + escHtml(a) + audSuf + '</option>'; }).join('')
       + '</select></span></div>';
     html += '<div class="vrow"><span class="vk">Jerarquia</span><span class="vv"><select data-card="' + k + '" data-lock="jerarquia" onchange="setCardLock(this)">'
       + '<option value="Auto"' + ((!_loadLocks(memLocksMarket(), MOTOR_STATE.product).jerarquia[k] || _loadLocks(memLocksMarket(), MOTOR_STATE.product).jerarquia[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(v.jerarquiaVisual) + ')</option>'

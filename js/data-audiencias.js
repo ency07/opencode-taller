@@ -1214,10 +1214,21 @@ function getAudiencesForSubniche(subniche, region, marketId) {
   return compatible.length ? compatible : base;
 }
 
+/* Sufijo de origen para los selectores de audiencia: si el subnicho filtra de
+   verdad o si solo se está mostrando el catálogo del mercado (DEBT-006/C2).
+   El usuario debe verlo al elegir, no solo en un letrero aparte. */
+function audiencePoolOriginSuffix(region, marketId, subniche) {
+  if (!subniche || subniche === "auto") return "";
+  const fallback = typeof _audiencePoolIsMarketFallback === "function"
+    && _audiencePoolIsMarketFallback(region, marketId, subniche);
+  return fallback ? " (mercado — sin filtro del subnicho)" : " (del subnicho)";
+}
+
 function getAudienceSelectOptions(region, marketId, subniche) {
   const pool = getAudiencesForSubniche(subniche || "auto", region, marketId);
+  const suf = audiencePoolOriginSuffix(region, marketId, subniche || "auto");
   const options = pool.map(function (id) {
-    return '<option value="' + id + '">' + getAudienceLabel(id) + '</option>';
+    return '<option value="' + id + '">' + getAudienceLabel(id) + suf + '</option>';
   }).join("");
   return '<option value="Auto">Auto — resolver según contexto</option>' + options;
 }
@@ -1262,6 +1273,7 @@ window.getAudiencesForRegion = getAudiencesForRegion;
 window.getAudiencesForMarketRegion = getAudiencesForMarketRegion;
 window.getAudiencesForSubniche = getAudiencesForSubniche;
 window.getAudienceSelectOptions = getAudienceSelectOptions;
+window.audiencePoolOriginSuffix = audiencePoolOriginSuffix;
 window.AUD_NAMES = AUD_NAMES;
 window.REGION_AUDIENCES = REGION_AUDIENCES;
 window.AUD_HIERARCHY_PREF = AUD_HIERARCHY_PREF;
