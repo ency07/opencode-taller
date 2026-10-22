@@ -3137,12 +3137,12 @@ async function copiarPrompt() {
     if (statusEl) statusEl.innerHTML = '<span class="bad">No hay prompt. Primero crea los 3 diseños.</span>';
     return;
   }
-  // Prompt obsoleto: la configuración cambió después de generar. Bloquear
-  // para que no se pegue un prompt viejo desconectado de la interfaz.
+  // Prompt obsoleto: la configuración cambió después de generar. El copiado
+  // NUNCA se bloquea; solo se avisa para no pegar un prompt desconectado.
+  let avisoObsoleto = '';
   try {
     if (window._PROMPT_SIG && typeof _promptSignature === 'function' && _promptSignature() !== window._PROMPT_SIG) {
-      if (statusEl) statusEl.innerHTML = '<span class="bad">La configuración cambió después de generar: este prompt ya no corresponde a la interfaz. Pulsa «Crear los 3 diseños» para refrescar antes de copiar.</span>';
-      return;
+      avisoObsoleto = 'La configuración cambió tras generar: si este prompt ya no corresponde a la interfaz, pulsa «Crear los 3 diseños».';
     }
   } catch (e) {}
   // El copiado nunca se bloquea: el umbral es un aviso, no una puerta.
@@ -3152,7 +3152,8 @@ async function copiarPrompt() {
     const lastScore = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.score) ? LAST_RESULT.score : null;
     aviso = _mensajeUmbral(lastScore) || '';
   } catch (e) {}
-  const avisoHtml = aviso ? ' <span class="warn">Aviso: ' + aviso + '</span>' : '';
+  const avisoHtml = (aviso ? ' <span class="warn">Aviso: ' + aviso + '</span>' : '')
+    + (avisoObsoleto ? ' <span class="warn">' + avisoObsoleto + '</span>' : '');
   try {
     await navigator.clipboard.writeText(outEl.value);
     if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>' + avisoHtml;
