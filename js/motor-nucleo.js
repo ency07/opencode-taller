@@ -3175,6 +3175,60 @@ async function copiarPrompt() {
   }
 }
 
+/* --- Copiar prompt por partes --- Los chats y las IAs web cortan entradas
+   largas (~30K caracteres). Parte 1 = hasta «### 01B» sin incluirla; parte 2 =
+   el resto. «Copiar el prompt» sigue copiando el 100%: esto es solo un atajo
+   para pegados largos. Si el texto del prompt cambia, vuelve a empezar. */
+var _promptParteCopia = 1;
+var _promptParteTexto = null;
+function _splitPrompt(texto) {
+  if (!texto) return [];
+  const i = texto.indexOf('### 01B');
+  if (i > 0 && i < texto.length) return [texto.slice(0, i), texto.slice(i)];
+  const mid = Math.ceil(texto.length / 2);
+  return [texto.slice(0, mid), texto.slice(mid)];
+}
+async function copiarPartePrompt() {
+  const outEl = document.getElementById('out');
+  const statusEl = document.getElementById('status');
+  const btn = document.getElementById('btnCopyPart');
+  if (!outEl || !outEl.value) {
+    if (statusEl) statusEl.innerHTML = '<span class="bad">No hay prompt. Primero crea los 3 diseños.</span>';
+    return;
+  }
+  const actual = outEl.value;
+  if (_promptParteTexto !== actual) { _promptParteCopia = 1; _promptParteTexto = actual; }
+  const partes = _splitPrompt(actual);
+  const idx = _promptParteCopia === 2 ? 1 : 0;
+  const texto = partes[idx] || '';
+  let ok = false;
+  try {
+    await navigator.clipboard.writeText(texto);
+    ok = true;
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = texto;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok = true;
+    } catch (e2) {}
+  }
+  const n = idx + 1;
+  _promptParteCopia = n === 1 ? 2 : 1;
+  if (btn) btn.textContent = 'Copiar parte ' + _promptParteCopia + '/2';
+  if (statusEl) {
+    statusEl.innerHTML = ok
+      ? '<span class="good">Parte ' + n + '/2 copiada (' + texto.length + ' caracteres).</span> '
+        + (n === 1
+          ? '<span class="warn">Pégala en el chat y vuelve a pulsar para copiar la parte 2/2.</span>'
+          : '<span class="info">Pega la parte 1 antes: parte 1 + parte 2 = prompt íntegro.</span>')
+      : '<span class="bad">No se pudo copiar. Selecciona el área del prompt y usa Ctrl+C.</span>';
+  }
+}
+
 /* --- Limpiar fichas --- */
 function limpiarFichas() {
   const cards = document.getElementById('cards');
@@ -3204,6 +3258,8 @@ function borrarMemoria() {
 /* --- Exponer funciones globales --- */
 window.crearLos3Disenos = crearLos3Disenos;
 window.copiarPrompt = copiarPrompt;
+window.copiarPartePrompt = copiarPartePrompt;
+window._splitPrompt = _splitPrompt;
 window.limpiarFichas = limpiarFichas;
 window.borrarMemoria = borrarMemoria;
 window.rerollSingle = rerollSingle;
