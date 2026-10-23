@@ -10,10 +10,14 @@ let checks = 0;
 const failures = [];
 function ok(condition, message) { checks++; if (!condition) failures.push(message); }
 
-const expectedGospel = ['gospel_hombre','gospel_mujer','gospel_infantil','gospel_familia','gospel_pareja','gospel_comunidad'];
+const expectedGospelBase = ['gospel_hombre','gospel_mujer','gospel_infantil','gospel_familia','gospel_pareja','gospel_comunidad'];
+const expectedGospel = {
+  gospel_es: expectedGospelBase.concat(['gospel_antiherejia']),
+  gospel_en: expectedGospelBase
+};
 ['gospel_es','gospel_en'].forEach(function (market) {
   const ids = getAudiencesForMarketRegion(market, 'global');
-  ok(JSON.stringify(ids) === JSON.stringify(expectedGospel), market + ' debe exponer el catálogo Gospel canónico compacto');
+  ok(JSON.stringify(ids) === JSON.stringify(expectedGospel[market]), market + ' debe exponer el catálogo Gospel canónico compacto (ES incluye la persona propia anti herejía; EN intacto)');
   ids.forEach(function (id) {
     ok(!!AUD_PROFILES[id], market + ': perfil existente para ' + id);
     ok(!!AUD_STYLE_PREF[id] && AUD_STYLE_PREF[id].length > 0, market + ': preferencias de estilo funcionales para ' + id);
