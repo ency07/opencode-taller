@@ -1064,6 +1064,12 @@
       }
     });
 
+    on('btnCopyPart', 'click', function () {
+      if (typeof copiarPartePrompt === 'function') {
+        copiarPartePrompt();
+      }
+    });
+
     on('btnBuild', 'click', function () {
       // Validar y generar: con diseños en pantalla valida sin regenerar;
       // vacío genera los 3 por primera vez (comportamiento anterior).
