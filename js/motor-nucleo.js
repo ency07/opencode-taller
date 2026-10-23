@@ -3169,10 +3169,28 @@ async function copiarPrompt() {
   try {
     await navigator.clipboard.writeText(outEl.value);
     if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>' + avisoHtml;
+    _feedbackCopiado(document.getElementById('btnCopy'));
   } catch (e) {
-    try { outEl.focus(); outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>' + avisoHtml; }
+    try { outEl.focus(); outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>' + avisoHtml; _feedbackCopiado(document.getElementById('btnCopy')); }
     catch (e2) { if (statusEl) statusEl.innerHTML = '<span class="bad">No se pudo copiar. Usa Ctrl+C.</span>'; }
   }
+}
+
+/* Confirmación visual de copiado: el botón se pinta con la clase .btn-copiado,
+   muestra «✓ Copiado» y vuelve a su texto y color a los ~1.5s. Sirve para el
+   prompt, las partes y cualquier otro botón (p. ej. JSON de sync). */
+function _feedbackCopiado(btn, ms) {
+  if (!btn) return;
+  if (btn._copT) clearTimeout(btn._copT);
+  if (!btn._copPrev) btn._copPrev = btn.textContent;
+  if (btn.classList && btn.classList.add) btn.classList.add('btn-copiado');
+  btn.textContent = '✓ Copiado';
+  btn._copT = setTimeout(function () {
+    if (btn.classList && btn.classList.remove) btn.classList.remove('btn-copiado');
+    btn.textContent = btn._copPrev || btn.textContent;
+    btn._copPrev = '';
+    btn._copT = null;
+  }, ms || 1500);
 }
 
 /* --- Copiar prompt por partes --- Los chats y las IAs web cortan entradas
@@ -3227,6 +3245,7 @@ async function copiarPartePrompt() {
           : '<span class="info">Pega la parte 1 antes: parte 1 + parte 2 = prompt íntegro.</span>')
       : '<span class="bad">No se pudo copiar. Selecciona el área del prompt y usa Ctrl+C.</span>';
   }
+  if (ok) _feedbackCopiado(btn);
 }
 
 /* --- Limpiar fichas --- */
@@ -3260,6 +3279,7 @@ window.crearLos3Disenos = crearLos3Disenos;
 window.copiarPrompt = copiarPrompt;
 window.copiarPartePrompt = copiarPartePrompt;
 window._splitPrompt = _splitPrompt;
+window._feedbackCopiado = _feedbackCopiado;
 window.limpiarFichas = limpiarFichas;
 window.borrarMemoria = borrarMemoria;
 window.rerollSingle = rerollSingle;

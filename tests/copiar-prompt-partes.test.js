@@ -32,7 +32,13 @@ ok(motorSrc.includes('clipboard.writeText(outEl.value)'), 'garantía: «Copiar e
 const els = {
   out: { value: '', focus: function () {}, select: function () {} },
   status: { innerHTML: '', textContent: '' },
-  btnCopyPart: { textContent: 'Copiar parte 1/2' }
+  btnCopyPart: {
+    textContent: 'Copiar parte 1/2',
+    classList: (function () {
+      const s = new Set();
+      return { add: function (c) { s.add(c); }, remove: function (c) { s.delete(c); }, contains: function (c) { return s.has(c); } };
+    })()
+  }
 };
 global.window = global;
 global.document = {
@@ -108,19 +114,26 @@ ok(partesReal[1].slice(0, 7) === '### 01B', 'prompt real: la parte 2 arranca en 
 ok(real.length > 5000, 'prompt real es largo (' + real.length + ' chars) — motivo de las partes');
 
 /* --- 3) copiarPartePrompt end-to-end (2 llamadas = prompt íntegro) --- */
+const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+
 (async function () {
   els.out.value = real;
 
   await copiarPartePrompt();
   ok(captured.length === 1 && captured[0] === partesReal[0], '1ª pulsación copia la parte 1 (' + (captured[0] || '').length + ' chars)');
-  ok(els.btnCopyPart.textContent === 'Copiar parte 2/2', 'el botón pasa a «Copiar parte 2/2»');
+  ok(els.btnCopyPart.textContent === '✓ Copiado' && els.btnCopyPart.classList.contains('btn-copiado'),
+    'feedback: «✓ Copiado» + clase .btn-copiado durante la animación');
   ok(els.status.innerHTML.indexOf('Parte 1/2 copiada') !== -1, 'el estado anuncia Parte 1/2');
+  await sleep(1650);
+  ok(els.btnCopyPart.textContent === 'Copiar parte 2/2', 'el botón pasa a «Copiar parte 2/2»');
 
   await copiarPartePrompt();
   ok(captured.length === 2 && captured[1] === partesReal[1], '2ª pulsación copia la parte 2 (' + (captured[1] || '').length + ' chars)');
   ok(captured[0] + captured[1] === real, 'las 2 partes copiadas suman el prompt ÍNTEGRO');
-  ok(els.btnCopyPart.textContent === 'Copiar parte 1/2', 'el botón vuelve a «Copiar parte 1/2»');
+  ok(els.btnCopyPart.textContent === '✓ Copiado', 'feedback también en la parte 2');
   ok(els.status.innerHTML.indexOf('Parte 2/2 copiada') !== -1, 'el estado anuncia Parte 2/2');
+  await sleep(1650);
+  ok(els.btnCopyPart.textContent === 'Copiar parte 1/2', 'el botón vuelve a «Copiar parte 1/2»');
 
   /* Si el prompt cambia, vuelve a empezar por la parte 1 */
   els.out.value = real + '\nCAMBIO';

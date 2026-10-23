@@ -138,7 +138,7 @@ button,
   align-items: center;
   justify-content: center;
   gap: 7px;
-  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.18s ease;
   text-align: center;
 }
 
@@ -184,6 +184,17 @@ button.ghost:hover,
   color: var(--text);
   background: var(--panel);
   border-color: var(--acc);
+}
+
+/* Confirmación visual de copiado: el botón se pinta, dice «✓ Copiado»
+   y vuelve a su color/estado original (ver _feedbackCopiado en motor-nucleo). */
+button.btn-copiado,
+.btn.btn-copiado {
+  background: var(--good);
+  border-color: var(--good);
+  color: #07281B;
+  font-weight: 700;
+  transform: scale(1.05);
 }
 
 button.icon-btn {
