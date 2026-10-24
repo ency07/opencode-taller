@@ -81,7 +81,8 @@ const POD_SUBNICHES = {
       "coste_joven_f",
       "coste_adulto_m",
       "coste_adulta_f",
-      "unisex_nacional"
+      "unisex_nacional",
+      "costeno_costenol"
     ],
     keywords: [
       "no joda",
