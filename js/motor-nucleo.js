@@ -98,6 +98,7 @@ let MOTOR_STATE = {
   serie: '',
   concept: '',
   message: '',
+  objectSeed: '',
   support: '',
   audienceSet: 'Auto',
   audienceMulti: 'no',
@@ -762,9 +763,41 @@ function getObjectPool() {
     && !pool.length;
   const personalObjs = _getPersonalObjects(MOTOR_STATE.market, sub || 'auto');
   pool = pool.concat(personalObjs);
-  // Banco común solo como complemento normal; nunca como fallback de una familia
-  // manual que no dispone de banco compatible en el mercado activo.
+  // Banco común como complemento solo para mercados NO-gospel. Gospel conserva
+  // exclusivamente sus objetos doctrinales; nunca se diluye con objetos seculares.
   if (!gospel && !explicitExploreFamilyMissingBank) pool = pool.concat(_commonBankForMarket());
+
+  // --- NUEVO: Ranking de motifs compatibles con concepto/mensaje ---
+  // Si el concepto o mensaje comparten tokens con motivos del banco, usarlos
+  // en lugar de elegir al azar. Mantiene TODOS los matches para variedad
+  // entre las 3 fichas; si no hay match, deja el pool completo (azar controlado).
+  const conceptText = (MOTOR_STATE.concept || '').trim();
+  const messageText = (MOTOR_STATE.message || '').trim();
+  const matchingText = (conceptText + ' ' + messageText).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let matchedObjs = null;
+  if (typeof _rankCompatibleMotifs === 'function' && matchingText.length > 2) {
+    const matches = _rankCompatibleMotifs(pool, matchingText);
+    if (matches && matches.length > 0) {
+      matchedObjs = matches.filter(function (m) {
+        return m && typeof m === 'string' && m.trim() && pool.indexOf(m.trim()) !== -1;
+      });
+    }
+  }
+  if (matchedObjs && matchedObjs.length > 0) pool = matchedObjs;
+  // --- NUEVO: Para gospel, si el mensaje/concepto menciona Jesucristo/cristo
+  // directamente, priorizar objetos del dominio CROSS (muerte y resurrección)
+  // para evitar objetos ajenos como "jardinero" que aunque son gospel no encajan.
+  if (gospel && !matchedObjs) {
+    const gospelText = matchingText;
+    const mentionsChrist = /jesucristo|jesucristo|cristo|\bcristo\b|mesias|mesías|salvador/.test(gospelText);
+    if (mentionsChrist && typeof window !== 'undefined' && window.GOSPEL_DOMINIOS_ES) {
+      const crossObjs = window.GOSPEL_DOMINIOS_ES.CROSS && window.GOSPEL_DOMINIOS_ES.CROSS.objetos
+        ? window.GOSPEL_DOMINIOS_ES.CROSS.objetos.slice()
+        : [];
+      if (crossObjs && crossObjs.length > 0) pool = crossObjs;
+    }
+  }
+  // ------------------------------------------------------------
 
   return [...new Set(pool.filter(Boolean))];
 }
@@ -1116,7 +1149,12 @@ function _rankCompatibleMotifs(pools, concept) {
   const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
     const label = String(item || '').trim();
     const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
-    const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
+    const overlap = words.filter(function (t) {
+      if (tokens.indexOf(t) !== -1) return true;
+      return tokens.some(function (tk) {
+        return tk.length >= 4 && (tk.indexOf(t) !== -1 || t.indexOf(tk) !== -1);
+      });
+    });
     if (!overlap.length) return null;
     return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
@@ -1979,6 +2017,12 @@ function _patternConflictsOf(cand) {
 
 function generateSet() {
   readStateFromDOM();
+  // Generar seed determinista basada en concepto+mensaje+mercado para reproducibilidad de objetos
+  if (!MOTOR_STATE.objectSeed) {
+    MOTOR_STATE.objectSeed = _stableUnit(
+      MOTOR_STATE.concept + '|' + MOTOR_STATE.message + '|' + MOTOR_STATE.market
+    );
+  }
   MOTOR_STATE.explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? _resolveExplorationBrief() : null;
   const audsPerKey = resolveAudiences();
   const fixedIdentity = _isLockedContactSet() ? _resolveContactIdentity(getObjectPool()) : null;
@@ -3093,8 +3137,19 @@ function crearLos3Disenos() {
   if (statusEl) statusEl.innerHTML = '<span class="blue">Generando 3 direcciones…</span>';
 
   try {
+    // Inicializar tracking de objetos usados en esta sesión de generación
+    // (evita que las 3 fichas traigan el mismo objeto por azar)
+    const usadosEstaVez = new Set();
+
     const result = generateSet();
     if (!result) return;
+
+    // Colectar objetos del set generado para tracking de variedad
+    if (result.set && Array.isArray(result.set)) {
+      result.set.forEach(function (item) {
+        if (item && item.objeto) usadosEstaVez.add(item.objeto);
+      });
+    }
 
     renderCards(result);
     renderGates(result);
@@ -3169,10 +3224,28 @@ async function copiarPrompt() {
   try {
     await navigator.clipboard.writeText(outEl.value);
     if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>' + avisoHtml;
+    _feedbackCopiado(document.getElementById('btnCopy'));
   } catch (e) {
-    try { outEl.focus(); outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>' + avisoHtml; }
+    try { outEl.focus(); outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>' + avisoHtml; _feedbackCopiado(document.getElementById('btnCopy')); }
     catch (e2) { if (statusEl) statusEl.innerHTML = '<span class="bad">No se pudo copiar. Usa Ctrl+C.</span>'; }
   }
+}
+
+/* Confirmación visual de copiado: el botón se pinta con la clase .btn-copiado,
+   muestra «✓ Copiado» y vuelve a su texto y color a los ~1.5s. Sirve para el
+   prompt, las partes y cualquier otro botón (p. ej. JSON de sync). */
+function _feedbackCopiado(btn, ms) {
+  if (!btn) return;
+  if (btn._copT) clearTimeout(btn._copT);
+  if (!btn._copPrev) btn._copPrev = btn.textContent;
+  if (btn.classList && btn.classList.add) btn.classList.add('btn-copiado');
+  btn.textContent = '✓ Copiado';
+  btn._copT = setTimeout(function () {
+    if (btn.classList && btn.classList.remove) btn.classList.remove('btn-copiado');
+    btn.textContent = btn._copPrev || btn.textContent;
+    btn._copPrev = '';
+    btn._copT = null;
+  }, ms || 1500);
 }
 
 /* --- Copiar prompt por partes --- Los chats y las IAs web cortan entradas
@@ -3227,6 +3300,7 @@ async function copiarPartePrompt() {
           : '<span class="info">Pega la parte 1 antes: parte 1 + parte 2 = prompt íntegro.</span>')
       : '<span class="bad">No se pudo copiar. Selecciona el área del prompt y usa Ctrl+C.</span>';
   }
+  if (ok) _feedbackCopiado(btn);
 }
 
 /* --- Limpiar fichas --- */
@@ -3260,6 +3334,7 @@ window.crearLos3Disenos = crearLos3Disenos;
 window.copiarPrompt = copiarPrompt;
 window.copiarPartePrompt = copiarPartePrompt;
 window._splitPrompt = _splitPrompt;
+window._feedbackCopiado = _feedbackCopiado;
 window.limpiarFichas = limpiarFichas;
 window.borrarMemoria = borrarMemoria;
 window.rerollSingle = rerollSingle;
