@@ -763,31 +763,40 @@ function getObjectPool() {
     && !pool.length;
   const personalObjs = _getPersonalObjects(MOTOR_STATE.market, sub || 'auto');
   pool = pool.concat(personalObjs);
-  // Banco común solo como complemento normal; nunca como fallback de una familia
-  // manual que no dispone de banco compatible en el mercado activo.
+  // Banco común como complemento solo para mercados NO-gospel. Gospel conserva
+  // exclusivamente sus objetos doctrinales; nunca se diluye con objetos seculares.
   if (!gospel && !explicitExploreFamilyMissingBank) pool = pool.concat(_commonBankForMarket());
 
   // --- NUEVO: Ranking de motifs compatibles con concepto/mensaje ---
   // Si el concepto o mensaje comparten tokens con motivos del banco, usarlos
-  // en lugar de elegir al azar. Esto evita que "Declaración anti-mérito." saque
-  // trompeta al no compartir nada (el ranking devuelve fallback aleatorio).
+  // en lugar de elegir al azar. Mantiene TODOS los matches para variedad
+  // entre las 3 fichas; si no hay match, deja el pool completo (azar controlado).
   const conceptText = (MOTOR_STATE.concept || '').trim();
   const messageText = (MOTOR_STATE.message || '').trim();
   const matchingText = (conceptText + ' ' + messageText).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  let matchedObj = null;
+  let matchedObjs = null;
   if (typeof _rankCompatibleMotifs === 'function' && matchingText.length > 2) {
     const matches = _rankCompatibleMotifs(pool, matchingText);
     if (matches && matches.length > 0) {
-      // Usar el primer match que no sea undefined/null
-      for (const m of matches) {
-        if (m && typeof m === 'string' && m.trim() && pool.indexOf(m.trim()) !== -1) {
-          matchedObj = m.trim();
-          break;
-        }
-      }
+      matchedObjs = matches.filter(function (m) {
+        return m && typeof m === 'string' && m.trim() && pool.indexOf(m.trim()) !== -1;
+      });
     }
   }
-  if (matchedObj) pool = [matchedObj];
+  if (matchedObjs && matchedObjs.length > 0) pool = matchedObjs;
+  // --- NUEVO: Para gospel, si el mensaje/concepto menciona Jesucristo/cristo
+  // directamente, priorizar objetos del dominio CROSS (muerte y resurrección)
+  // para evitar objetos ajenos como "jardinero" que aunque son gospel no encajan.
+  if (gospel && !matchedObjs) {
+    const gospelText = matchingText;
+    const mentionsChrist = /jesucristo|jesucristo|cristo|\bcristo\b|mesias|mesías|salvador/.test(gospelText);
+    if (mentionsChrist && typeof window !== 'undefined' && window.GOSPEL_DOMINIOS_ES) {
+      const crossObjs = window.GOSPEL_DOMINIOS_ES.CROSS && window.GOSPEL_DOMINIOS_ES.CROSS.objetos
+        ? window.GOSPEL_DOMINIOS_ES.CROSS.objetos.slice()
+        : [];
+      if (crossObjs && crossObjs.length > 0) pool = crossObjs;
+    }
+  }
   // ------------------------------------------------------------
 
   return [...new Set(pool.filter(Boolean))];
@@ -1140,7 +1149,12 @@ function _rankCompatibleMotifs(pools, concept) {
   const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
     const label = String(item || '').trim();
     const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
-    const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
+    const overlap = words.filter(function (t) {
+      if (tokens.indexOf(t) !== -1) return true;
+      return tokens.some(function (tk) {
+        return tk.length >= 4 && (tk.indexOf(t) !== -1 || t.indexOf(tk) !== -1);
+      });
+    });
     if (!overlap.length) return null;
     return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
