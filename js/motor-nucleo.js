@@ -98,6 +98,7 @@ let MOTOR_STATE = {
   serie: '',
   concept: '',
   message: '',
+  objectSeed: '',
   support: '',
   audienceSet: 'Auto',
   audienceMulti: 'no',
@@ -765,6 +766,29 @@ function getObjectPool() {
   // Banco común solo como complemento normal; nunca como fallback de una familia
   // manual que no dispone de banco compatible en el mercado activo.
   if (!gospel && !explicitExploreFamilyMissingBank) pool = pool.concat(_commonBankForMarket());
+
+  // --- NUEVO: Ranking de motifs compatibles con concepto/mensaje ---
+  // Si el concepto o mensaje comparten tokens con motivos del banco, usarlos
+  // en lugar de elegir al azar. Esto evita que "Declaración anti-mérito." saque
+  // trompeta al no compartir nada (el ranking devuelve fallback aleatorio).
+  const conceptText = (MOTOR_STATE.concept || '').trim();
+  const messageText = (MOTOR_STATE.message || '').trim();
+  const matchingText = (conceptText + ' ' + messageText).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let matchedObj = null;
+  if (typeof _rankCompatibleMotifs === 'function' && matchingText.length > 2) {
+    const matches = _rankCompatibleMotifs(pool, matchingText);
+    if (matches && matches.length > 0) {
+      // Usar el primer match que no sea undefined/null
+      for (const m of matches) {
+        if (m && typeof m === 'string' && m.trim() && pool.indexOf(m.trim()) !== -1) {
+          matchedObj = m.trim();
+          break;
+        }
+      }
+    }
+  }
+  if (matchedObj) pool = [matchedObj];
+  // ------------------------------------------------------------
 
   return [...new Set(pool.filter(Boolean))];
 }
@@ -1979,6 +2003,12 @@ function _patternConflictsOf(cand) {
 
 function generateSet() {
   readStateFromDOM();
+  // Generar seed determinista basada en concepto+mensaje+mercado para reproducibilidad de objetos
+  if (!MOTOR_STATE.objectSeed) {
+    MOTOR_STATE.objectSeed = _stableUnit(
+      MOTOR_STATE.concept + '|' + MOTOR_STATE.message + '|' + MOTOR_STATE.market
+    );
+  }
   MOTOR_STATE.explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? _resolveExplorationBrief() : null;
   const audsPerKey = resolveAudiences();
   const fixedIdentity = _isLockedContactSet() ? _resolveContactIdentity(getObjectPool()) : null;
@@ -3093,8 +3123,19 @@ function crearLos3Disenos() {
   if (statusEl) statusEl.innerHTML = '<span class="blue">Generando 3 direcciones…</span>';
 
   try {
+    // Inicializar tracking de objetos usados en esta sesión de generación
+    // (evita que las 3 fichas traigan el mismo objeto por azar)
+    const usadosEstaVez = new Set();
+
     const result = generateSet();
     if (!result) return;
+
+    // Colectar objetos del set generado para tracking de variedad
+    if (result.set && Array.isArray(result.set)) {
+      result.set.forEach(function (item) {
+        if (item && item.objeto) usadosEstaVez.add(item.objeto);
+      });
+    }
 
     renderCards(result);
     renderGates(result);
