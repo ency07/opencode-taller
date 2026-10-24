@@ -2499,7 +2499,7 @@ function formatPrompt(result) {
     o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada')
       + (explicitExploreMessage
         ? ' | MENSAJE EXACTO: ' + explicitExploreMessage + ' (obligatorio en modos con texto)'
-        : ' | COPY PROPUESTO PARA MODOS CON TEXTO: ' + exploreHeaderCopy
+        : ' | MENSAJE EXACTO: ' + exploreHeaderCopy
           + ' · SOLO_OBJETO no imprime ese copy') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
     o += 'CONTRATO CREATIVO: conserva el concepto y la función; si el usuario dio mensaje exacto, consérvalo literalmente en todos los modos con texto. Si no dio mensaje, el copy propuesto solo se imprime en modos que admiten texto; SOLO_OBJETO no lleva letras. El motivo principal debe representar directamente el concepto; puede resolverse con una metáfora visual original solo si su relación semántica es clara y explicable. Usa elementos explícitos, derivados del significado o imprescindibles para construir esa metáfora. Prohibido rellenar con símbolos del nicho sin relación, decoración genérica o motivos secundarios que cambien la lectura. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
