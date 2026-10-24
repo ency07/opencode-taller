@@ -1,5 +1,5 @@
-/* DEBT-015: el perfil estructural manda de verdad.
-   - Modos jerárquicos delimitados por perfil + asignación por permutaciones.
+/* DEBT-015: el perfil estructural orienta la asignación.
+   - Los cinco modos siguen disponibles; el perfil los pondera + asignación por permutaciones.
    - Layout del pool del perfil (el pool del producto es límite duro).
    - Texto jerárquico derivado del modo asignado.
    - Prompt: ESQUELETO ESTRUCTURAL (MANDA) + ACABADO (SUBORDINADO), sin (manda).
@@ -35,9 +35,12 @@ MOTOR_STATE.region = 'todas';
 
 /* --- 1) Mapa de modos por perfil (decisión aprobada, MODERN con tercera opción) --- */
 ok(typeof PROFILE_VISUAL_MODES === 'object', 'debe existir el mapa PROFILE_VISUAL_MODES');
-ok(JSON.stringify(PROFILE_VISUAL_MODES.HEAVY) === JSON.stringify(['TEXTO_DOMINANTE', 'OBJETO_DOMINANTE']), 'HEAVY: texto o símbolo dominante');
-ok(JSON.stringify(PROFILE_VISUAL_MODES.SOFT) === JSON.stringify(['BALANCEADO', 'TEXTO_DOMINANTE']), 'SOFT: balanceado o texto dominante (nunca símbolo macizo)');
-ok(JSON.stringify(PROFILE_VISUAL_MODES.MODERN) === JSON.stringify(['OBJETO_DOMINANTE', 'BALANCEADO', 'TEXTO_DOMINANTE']), 'MODERN: símbolo/balanceado y TEXTO_DOMINANTE como tercera opción');
+ok(PROFILE_VISUAL_MODES.HEAVY[0] === 'TEXTO_DOMINANTE' && PROFILE_VISUAL_MODES.HEAVY[1] === 'OBJETO_DOMINANTE'
+  && new Set(PROFILE_VISUAL_MODES.HEAVY).size === 5, 'HEAVY prioriza texto/objeto dominante pero permite los cinco modos');
+ok(PROFILE_VISUAL_MODES.SOFT[0] === 'BALANCEADO' && PROFILE_VISUAL_MODES.SOFT[1] === 'TEXTO_DOMINANTE'
+  && new Set(PROFILE_VISUAL_MODES.SOFT).size === 5, 'SOFT prioriza balanceado/texto dominante sin bloquear modos válidos');
+ok(PROFILE_VISUAL_MODES.MODERN[0] === 'OBJETO_DOMINANTE' && PROFILE_VISUAL_MODES.MODERN[1] === 'BALANCEADO'
+  && new Set(PROFILE_VISUAL_MODES.MODERN).size === 5, 'MODERN prioriza objeto/balanceado pero permite los cinco modos');
 
 /* --- 2) Producción explore, 2 palabras: 3 modos distintos y dentro del perfil --- */
 MOTOR_STATE.workflowMode = 'explore';
@@ -60,12 +63,10 @@ for (let ronda = 0; ronda < 40; ronda++) {
   const modos = resolveTextImageModes({}, {}, Object.assign({}, _CONTACT_TREATMENT_ORDER));
   const vals = [modos.A, modos.B, modos.C];
   ok(vals.every(function (x) { return x; }), 'explore: todas las fichas reciben modo jerárquico');
-  ok(vals.every(function (x, i) { return PROFILE_VISUAL_MODES[porClave[i]].indexOf(x) !== -1; }),
-    'A/B/C deben usar modos de su pool de perfil (ronda ' + ronda + ')');
+  ok(vals.every(function (x) { return _allowedVisualModes(true).indexOf(x) !== -1; }),
+    'A/B/C usan modos compatibles con el copy obligatorio (ronda ' + ronda + ')');
   ok(new Set(vals).size === 3, 'explore: los 3 modos Auto deben ser distintos (ronda ' + ronda + ')');
-  if (PROFILE_VISUAL_MODES[porClave[0]].indexOf(vals[0]) !== -1
-    && PROFILE_VISUAL_MODES[porClave[1]].indexOf(vals[1]) !== -1
-    && PROFILE_VISUAL_MODES[porClave[2]].indexOf(vals[2]) !== -1
+  if (vals.every(function (x) { return _allowedVisualModes(true).indexOf(x) !== -1; })
     && new Set(vals).size === 3) combosValidos++;
 }
 ok(combosValidos === 40, 'las 40 rondas deben producir combinaciones válidas (3/permutación permitida)');
@@ -76,7 +77,8 @@ setLockValue(memLocksMarket(), 'CAMISETA SOFT', 'jerarquia', 'A', 'SOLO_OBJETO')
 const conLock = resolveTextImageModes({}, {}, Object.assign({}, _CONTACT_TREATMENT_ORDER));
 ok(conLock.A === 'SOLO_OBJETO', 'el lock jerárquico manual manda incluso fuera del pool del perfil');
 ok(new Set([conLock.B, conLock.C]).size === 2, 'las fichas Auto siguen distintas entre sí');
-ok(PROFILE_VISUAL_MODES.SOFT.indexOf(conLock.B) !== -1 && PROFILE_VISUAL_MODES.MODERN.indexOf(conLock.C) !== -1, 'B y C siguen respetando su perfil');
+ok(_allowedVisualModes(true).indexOf(conLock.B) !== -1 && _allowedVisualModes(true).indexOf(conLock.C) !== -1,
+  'B y C siguen en modos compatibles con el mensaje y distintos entre sí');
 clearLocks(memLocksMarket(), 'CAMISETA SOFT');
 
 /* --- 4) buildCandidate real: modos por perfil y layout dentro del pool del perfil --- */
@@ -86,8 +88,8 @@ for (let ronda = 0; ronda < 6; ronda++) {
   const res = buildCandidate(resolveAudiences(), null);
   ['A', 'B', 'C'].forEach(function (k, i) {
     const fk = res[k];
-    ok(fk.jerarquiaVisual === undefined || PROFILE_VISUAL_MODES[porClave[i]].indexOf(fk.jerarquiaVisual) !== -1,
-      'cada ficha solo recibe modos de su perfil (ficha ' + k + ', ronda ' + ronda + ')');
+    ok(fk.jerarquiaVisual === undefined || _allowedVisualModes(true).indexOf(fk.jerarquiaVisual) !== -1,
+      'cada ficha recibe un modo compatible con el copy obligatorio (ficha ' + k + ', ronda ' + ronda + ')');
     ok(fk.jerarquia === _JERARQUIA_FRANJA_DE_MODO[fk.jerarquiaVisual], 'texto jerárquico derivado del modo (ficha ' + k + ')');
     ok(_STRUCTURAL_PROFILES[porClave[i]].layout.some(function (h) { return String(fk.layout || '').indexOf(h) === 0; }),
       'layout dentro del pool del perfil (ficha ' + k + ', ronda ' + ronda + ')');
