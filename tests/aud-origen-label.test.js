@@ -86,7 +86,7 @@ ok(motorSrc.includes('audiencePoolOriginSuffix(MOTOR_STATE.region'), 'audSuf del
 ok(audiencePoolOriginSuffix('todas', 'colombia', 'auto') === '', 'auto no etiqueta (pool sin subnicho)');
 ok(audiencePoolOriginSuffix('todas', 'colombia', '') === '', 'sin subnicho no etiqueta');
 ok(audiencePoolOriginSuffix('todas', 'colombia', 'humor_costeno') === SUF_SUB, 'subnicho que estrecha el pool etiqueta «del subnicho»');
-ok(audiencePoolOriginSuffix('todas', 'colombia', 'comida_sabor') === SUF_MERC, 'subnicho cuyo pool cubre todo el mercado etiqueta «mercado»');
+ok(audiencePoolOriginSuffix('todas', 'colombia', 'comida_sabor') === SUF_SUB, 'subnicho que no incluye la persona propia costeña estrecha y etiqueta «del subnicho» (C3)');
 
 /* --- 2) Selector global REAL: updateAudienceSelect vía cascadeUpdate --- */
 els.market.value = 'colombia';
@@ -107,8 +107,8 @@ els.subniche.value = 'humor_costeno';
 global.cascadeUpdate();
 const htmlHumor = els.audienceSet._html;
 const poolHumor = poolOptions(htmlHumor);
-ok(poolHumor.length === 5, 'humor_costeno estrecha el pool a 5 (hay ' + poolHumor.length + ')');
-ok(poolHumor.every(function (o) { return o.slice(-SUF_SUB.length) === SUF_SUB; }), 'las 5 opciones terminan con «(del subnicho)»');
+ok(poolHumor.length === 6, 'humor_costeno estrecha el pool a 6 (5 + costeno_costenol; hay ' + poolHumor.length + ')');
+ok(poolHumor.every(function (o) { return o.slice(-SUF_SUB.length) === SUF_SUB; }), 'las 6 opciones terminan con «(del subnicho)»');
 ok(htmlHumor.indexOf(SUF_MERC) === -1, 'con humor_costeno NO aparece «(mercado…)»');
 ok(valuesDe(htmlHumor).indexOf('Auto') !== -1, 'Auto sigue presente tras filtrar');
 ok(valuesDe(htmlHumor).slice(1).join() === getAudiencesForSubniche('humor_costeno', regActiva, 'colombia').join(),
@@ -123,11 +123,11 @@ els.subniche.value = 'comida_sabor';
 global.cascadeUpdate();
 const htmlComida = els.audienceSet._html;
 const poolComida = poolOptions(htmlComida);
-ok(poolComida.length === poolAutenticos.length && poolComida.length > 0,
-  'comida_sabor cubre el mercado entero (' + poolComida.length + ' = ' + poolAutenticos.length + ' opciones)');
-ok(poolComida.every(function (o) { return o.slice(-SUF_MERC.length) === SUF_MERC; }),
-  'todas las opciones terminan con «(mercado — sin filtro del subnicho)» (' + poolComida.length + ' opciones)');
-ok(htmlComida.indexOf(SUF_SUB) === -1, 'con comida_sabor NO aparece «(del subnicho)»');
+ok(poolComida.length === 13 && poolComida.length < poolAutenticos.length,
+  'comida_sabor estrecha a sus 13 (excluye costeno_costenol; ' + poolComida.length + ' < mercado ' + poolAutenticos.length + ')');
+ok(poolComida.every(function (o) { return o.slice(-SUF_SUB.length) === SUF_SUB; }),
+  'todas las opciones terminan con «(del subnicho)» (' + poolComida.length + ' opciones)');
+ok(htmlComida.indexOf(SUF_MERC) === -1, 'con comida_sabor NO aparece «(mercado.)»');
 
 els.subniche.value = 'auto';
 global.cascadeUpdate();
@@ -140,8 +140,8 @@ ok(optSubPool.length > 0 && optSubPool.every(function (o) { return o.slice(-SUF_
   'getAudienceSelectOptions etiqueta «del subnicho» (' + optSubPool.length + ' opciones)');
 const optMerc = getAudienceSelectOptions('todas', 'colombia', 'comida_sabor');
 const optMercPool = poolOptions(optMerc);
-ok(optMercPool.length > 0 && optMercPool.every(function (o) { return o.slice(-SUF_MERC.length) === SUF_MERC }),
-  'getAudienceSelectOptions etiqueta «mercado» (' + optMercPool.length + ' opciones)');
+ok(optMercPool.length > 0 && optMercPool.every(function (o) { return o.slice(-SUF_SUB.length) === SUF_SUB }),
+  'getAudienceSelectOptions etiqueta «del subnicho» para comida_sabor (' + optMercPool.length + ' opciones)');
 const optAuto = getAudienceSelectOptions('todas', 'colombia', 'auto');
 ok(optAuto.indexOf('value="Auto"') !== -1 && sinSuffix(optAuto), 'getAudienceSelectOptions con auto: Auto presente y sin sufijos');
 
