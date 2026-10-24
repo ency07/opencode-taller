@@ -700,6 +700,58 @@ Object.assign(AUD_PROFILES, {
 /* Las nuevas audiencias heredan preferencias visuales deliberadas.
    Se agregan antes de exportar, sin eliminar las claves legacy. */
 
+/* C3 — audiencias propias (contenido redactado por Grok, validado en forma
+   contra los catálogos del motor). Solo entradas nuevas: no se modifican
+   perfiles existentes. Se asigna ANTES de AUD_NAMES para que el snapshot
+   de Object.keys los incluya. */
+Object.assign(AUD_PROFILES, {
+  costeno_costenol: {
+    label: "Costeño costeñol",
+    region: "costa_caribe",
+    genero: "unisex",
+    edad: "joven",
+    perfil: "Costeño de esquina que vive el mamagallismo diario y el picó de barrio sin filtro",
+    codigos: "qué lo que, bochinche, mamadera de gallo, corroncho cariñoso, paseo de olla, picó, calor de calle, champeta",
+    rechaza: "burla a otras regiones, tono corporativo, acento andino de chiste, formalismo frío",
+    contexto: "camiseta de salida, taza de café en la esquina, sticker en el nevera, regalo entre panas",
+    directiva: "Humor cálido de esquina, tipografía gruesa que grite, color vivo que se sienta en la piel",
+    tipoPref: ["Grotesca black condensada", "Stencil de plantilla", "Lettering brush gestual"],
+    modoCol: ["Contraste duro", "Medio con acento", "Oscuro profundo"],
+    tratPref: ["HEAVY", "MODERN"],
+    formaPref: ["silueta sólida a una tinta", "orgánico gestual con pincel"]
+  },
+  gospel_antiherejia: {
+    label: "Gospel anti herejía",
+    region: "universal",
+    genero: "unisex",
+    edad: "todas",
+    perfil: "Creyente que busca claridad doctrinal trinitaria y cristocéntrica sin adornos mágicos",
+    codigos: "cruz, palabra, doctrina, trinidad, apologética limpia, fe cotidiana, comunidad",
+    rechaza: "sincretismo, decretos de prosperidad, mensajes tibios, santos mediadores, esoterismo",
+    contexto: "camiseta de uso diario, taza de estudio bíblico, sticker en biblia o laptop, regalo de discipulado",
+    directiva: "Tipografía limpia y firme, contraste claro, mensaje que se lea de una y no se confunda",
+    tipoPref: ["Sans humanista limpia", "Serif clásica titulada", "Grotesca black condensada"],
+    modoCol: ["Contraste duro", "Claro editorial", "Bicolor monocromo"],
+    tratPref: ["MODERN", "HEAVY", "SOFT"],
+    formaPref: ["silueta sólida a una tinta", "contorno lineal calibrado"]
+  },
+  global_tattoo_es: {
+    label: "Tattoo lifestyle",
+    region: "global_es",
+    genero: "unisex",
+    edad: "18-34",
+    perfil: "Joven adulto de tinta real que vive el taller de barrio, el flash y el aftercare sin postureo",
+    codigos: "tinta, flash, tradicional, neotrad, blackwork, aguja, aftercare, tienda de barrio, piel marcada",
+    rechaza: "estética corporativa pulcra, tatuaje de moda de juguete, glamour de revista",
+    contexto: "camiseta de taller, taza del estudio, sticker en botella o máquina, uso diario de calle",
+    directiva: "Negro denso, línea gruesa de flash, textura de piel y tinta que se sienta real",
+    tipoPref: ["Grotesca black condensada", "Stencil de plantilla", "Slab pesada de oficio"],
+    modoCol: ["Oscuro profundo", "Contraste duro", "Bicolor monocromo"],
+    tratPref: ["HEAVY", "MODERN"],
+    formaPref: ["silueta sólida a una tinta", "grabado a buril con tramas"]
+  }
+});
+
 const AUD_NAMES = Object.keys(AUD_PROFILES);
 
 /* ============================================================
@@ -714,7 +766,8 @@ const REGION_AUDIENCES = {
     "coste_adulto_m",
     "coste_adulta_f",
     "infantil_col",
-    "unisex_nacional"
+    "unisex_nacional",
+    "costeno_costenol"
   ],
   andina: [
     "andino_joven_m",
@@ -768,7 +821,8 @@ const REGION_AUDIENCES = {
   global_es: [
     "global_joven_es",
     "global_adulto_es",
-    "global_familia_es"
+    "global_familia_es",
+    "global_tattoo_es"
   ],
   universal_es: [
     "gospel_joven_fe",
@@ -1102,6 +1156,28 @@ const AUD_LAYOUT_PREF = {
   gospel_family_faith: ["Tarjeta interior", "Órbita radial", "Arco y cúpula"]
 };
 
+/* C3 — preferencias visuales de las audiencias propias (tras los mapas base). */
+Object.assign(AUD_HIERARCHY_PREF, {
+  costeno_costenol: ["TEXTO_DOMINANTE", "OBJETO_DOMINANTE"],
+  gospel_antiherejia: ["TEXTO_DOMINANTE", "BALANCEADO"],
+  global_tattoo_es: ["OBJETO_DOMINANTE", "BALANCEADO"]
+});
+Object.assign(AUD_DENSITY_PREF, {
+  costeno_costenol: ["Heavy", "Balanced"],
+  gospel_antiherejia: ["Minimal", "Balanced"],
+  global_tattoo_es: ["Heavy", "Balanced"]
+});
+Object.assign(AUD_STYLE_PREF, {
+  costeno_costenol: ["Stencil Urbano", "Grunge / DIY", "Cómic / Halftone", "Folk Popular", "Hand-Drawn", "Paste-up Wheatpaste", "Risograph", "Vintage Desgastado", "Distress Production / Desgaste de producción", "Knockout / Reserva blanca", "Halftone Controlled / Tramado controlado"],
+  gospel_antiherejia: ["Minimal Modern", "Vector Flat / Plano vectorial", "Knockout / Reserva blanca", "White Ink Optimized / Tinta blanca optimizada", "CMYK Safe Gamut / Gamut CMYK seguro", "Spot Color Simulated / Tintas planas simuladas", "Blueprint / Technical", "Hand-Drawn", "Vintage Desgastado", "Grabado / Linóleo", "Risograph"],
+  global_tattoo_es: ["Tattoo Old School", "Dark Tattoo", "Grabado / Linóleo", "Grunge / DIY", "Stencil Urbano", "Vintage Desgastado", "Distress Production / Desgaste de producción", "Halftone Controlled / Tramado controlado", "Knockout / Reserva blanca", "White Ink Optimized / Tinta blanca optimizada", "Irezumi / Wabori", "Risograph"]
+});
+Object.assign(AUD_LAYOUT_PREF, {
+  costeno_costenol: ["Sangrado total", "Banda horizontal", "Sello descentrado"],
+  gospel_antiherejia: ["Axial centrado", "Emblema circular", "Tarjeta interior"],
+  global_tattoo_es: ["Emblema circular", "Sello descentrado", "Sangrado total"]
+});
+
 /* ============================================================
    HELPERS PÚBLICOS
    ============================================================ */
@@ -1143,8 +1219,11 @@ const MARKET_AUDIENCES = {
 };
 
 function getAudiencesForMarketRegion(marketId, regionId) {
-  // Gospel ES/EN comparte un catálogo compacto; solo cambia el idioma/mercado.
-  if (marketId === "gospel_es" || marketId === "gospel_en") {
+  // Gospel ES incluye la audiencia propia anti herejía; EN se queda intacto.
+  if (marketId === "gospel_es") {
+    return ["gospel_hombre", "gospel_mujer", "gospel_infantil", "gospel_familia", "gospel_pareja", "gospel_comunidad", "gospel_antiherejia"];
+  }
+  if (marketId === "gospel_en") {
     return ["gospel_hombre", "gospel_mujer", "gospel_infantil", "gospel_familia", "gospel_pareja", "gospel_comunidad"];
   }
 
@@ -1159,7 +1238,8 @@ function getAudiencesForMarketRegion(marketId, regionId) {
       "coste_joven_m", "coste_joven_f", "coste_adulto_m", "coste_adulta_f",
       "andino_joven_m", "andino_joven_f", "andino_adulto_m", "andino_adulta_f",
       "pacifico_raiz", "llanos_identidad", "amazonia_territorio",
-      "infantil_col", "unisex_nacional"
+      "infantil_col", "unisex_nacional",
+      "costeno_costenol"
     ];
   }
 
@@ -1168,7 +1248,9 @@ function getAudiencesForMarketRegion(marketId, regionId) {
 
   // Mercados hispanos globales y LATAM no deben heredar perfiles regionales colombianos.
   if (marketId === "latam" || marketId === "spain" || marketId === "global_es") {
-    return MARKET_AUDIENCE_LISTS.neutral_es.slice();
+    const baseEs = MARKET_AUDIENCE_LISTS.neutral_es.slice();
+    if (marketId === "global_es") baseEs.push("global_tattoo_es");
+    return baseEs;
   }
   if (marketId === "global_en" || marketId === "anglo") {
     return MARKET_AUDIENCE_LISTS.neutral_en.slice();

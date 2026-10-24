@@ -293,11 +293,13 @@
     };
 
     panel.querySelector('#btnCopyJSON').onclick = function () {
+      var btnJson = this;
       if (typeof exportMemoryJSON === 'function') {
         var txt = exportMemoryJSON();
         try {
           navigator.clipboard.writeText(txt).then(function () {
             statusMsg('JSON copiado al portapapeles.');
+            if (typeof _feedbackCopiado === 'function') _feedbackCopiado(btnJson);
           });
         } catch (e) {
           statusMsg('No se pudo copiar. Usa descargar.', true);

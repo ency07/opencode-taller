@@ -81,7 +81,8 @@ const POD_SUBNICHES = {
       "coste_joven_f",
       "coste_adulto_m",
       "coste_adulta_f",
-      "unisex_nacional"
+      "unisex_nacional",
+      "costeno_costenol"
     ],
     keywords: [
       "no joda",
@@ -976,7 +977,10 @@ const POD_SUBNICHES = {
         "la postal enviada desde el lugar equivocado y amada igual",
         "carretera que se hace nube al horizonte",
         "el sello del pasaporte como tatuaje de época",
-        "acampar bajo un cielo que no cobra por las estrellas"
+        "acampar bajo un cielo que no cobra por las estrellas",
+        "motero con motocicleta siguiendo una ruta de carretera",
+        "motero de perfil y motocicleta sobre una carretera curva hacia el horizonte",
+        "motocicleta en primer plano con motero recorriendo una ruta abierta"
       ]
     }
   },

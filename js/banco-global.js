@@ -937,6 +937,10 @@
       if (POD_SUBNICHES.coffee_culture.audiencias.indexOf(a) === -1) POD_SUBNICHES.coffee_culture.audiencias.push(a);
     });
   }
+  /* C3: audiencia propia del subnicho tattoo (solo ES). */
+  if (POD_SUBNICHES.tattoo_lifestyle) {
+    if (POD_SUBNICHES.tattoo_lifestyle.audiencias.indexOf('global_tattoo_es') === -1) POD_SUBNICHES.tattoo_lifestyle.audiencias.push('global_tattoo_es');
+  }
     var _si = POD_SUBNICHES.surf_culture.regiones.indexOf('todas');
   if (_si !== -1) POD_SUBNICHES.surf_culture.regiones.splice(_si, 1);
 if (POD_SUBNICHES.surf_culture) {
