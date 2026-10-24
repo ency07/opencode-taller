@@ -423,7 +423,7 @@
       }));
 
       var b = document.getElementById('aiCfgB');
-      if (b) b.textContent = activeSlots().length + ' activos';
+      if (b) b.textContent = 'Configurar IA · ' + activeSlots().length + ' activos';
       panel.style.display = 'none';
     };
 
