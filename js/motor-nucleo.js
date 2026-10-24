@@ -1336,6 +1336,8 @@ const _TEXT_COMPOSITION_BANK = [
   'ARCO SUPERIOR abierto; motivo dentro del vacío; curva parcial, sin círculo ni emblema cerrado.',
   'BLOQUE INFERIOR desplazado a un lado; motivo arriba y fuera del eje central.',
   'DIAGONAL ascendente izquierda-derecha; cruza espacio negativo sin tapar la silueta.',
+  'DIAGONAL descendente izquierda-derecha; sigue el eje de caída sin tapar la silueta.',
+  'ÓRBITA PARCIAL alrededor del motivo; deja una abertura amplia y conserva lectura natural.',
   'BANDA SUPERIOR estrecha y centrada; motivo debajo separado por un intervalo limpio.',
   'TEXTO DIVIDIDO a ambos lados del motivo; lectura natural y pausa visual central.',
   'TEXTO dentro de un vacío real de la silueta; no deformar letras ni inventar huecos.',
@@ -1364,6 +1366,8 @@ function _soloTextCompositionDirective(architecture) {
     [/^ARCO SUPERIOR/, 'palabras siguiendo un arco superior abierto creado por la propia línea tipográfica; no cierres el arco como marco'],
     [/^BLOQUE INFERIOR/, 'bloque tipográfico en la parte inferior y desplazado lateralmente; reserva espacio negativo arriba'],
     [/^DIAGONAL ascendente/, 'composición de palabras en diagonal ascendente, con inclinación y escala graduadas para conservar el orden de lectura'],
+    [/^DIAGONAL descendente/, 'composición de palabras en diagonal descendente, con inclinación y escala graduadas para conservar el orden de lectura'],
+    [/^ÓRBITA PARCIAL/, 'distribuye las palabras en una trayectoria curva parcial alrededor del espacio central creado por las propias letras; deja una abertura clara y no dibujes un círculo'],
     [/^BANDA SUPERIOR/, 'franja tipográfica superior compacta, centrada y de escala contenida; el resto del copy forma un segundo nivel tipográfico debajo'],
     [/^TEXTO DIVIDIDO/, 'divide el copy en dos grupos tipográficos a izquierda y derecha, usando solo saltos de línea y espacio negativo para crear la pausa central'],
     [/^TEXTO dentro de un vacío real/, 'distribuye las palabras alrededor de una contraforma generada por las propias letras; no dibujes ni rellenes una silueta externa'],
@@ -1398,6 +1402,8 @@ function _compatibleCompositionDirective(hierarchy, architecture) {
     [/arco superior|arco lateral|texto sigue un solo lado/, 'texto siguiendo un tramo del contorno'],
     [/bloque inferior|franja inferior/, 'texto en la zona inferior, desplazado del centro'],
     [/diagonal ascendente/, 'texto en diagonal ascendente'],
+    [/diagonal descendente/, 'texto en diagonal descendente'],
+    [/órbita parcial/, 'texto en trayectoria curva parcial alrededor de un vacío central, con abertura clara'],
     [/texto dividido|dos bloques|zigzag/, 'texto distribuido en bloques separados con lectura natural'],
     [/vacío real|contraforma tipográfica/, 'texto integrado en un vacío real de la silueta, sin deformar letras'],
     [/palabra clave|esquina superior/, 'palabra clave en un lateral y el resto en un bloque separado'],
@@ -1471,10 +1477,16 @@ function _arquitecturaCompatible(arch, layout) {
 
   // Clasificar por estructura concreta evita que un layout axial acepte
   // instrucciones laterales/diagonales, pero mantiene suficientes opciones.
-  if (/Axial centrado|Emblema circular|Arco y cúpula|Escalinata/i.test(l)) {
+  if (/Órbita radial/i.test(l)) {
+    return /^(ÓRBITA PARCIAL|ARCO SUPERIOR|ARCO LATERAL|TEXTO dentro de un vacío real|SÍMBOLO integrado|BLOQUES MODULARES)/i.test(a);
+  }
+  if (/Escalinata/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|TEXTO DIVIDIDO|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|FRANJA INFERIOR|PALABRA CLAVE)/i.test(a);
+  }
+  if (/Axial centrado|Emblema circular|Arco y cúpula/i.test(l)) {
     return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
   }
-  if (/Banda horizontal/i.test(l)) {
+  if (/Banda horizontal|Tríptico de bandas/i.test(l)) {
     return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|BANDA SUPERIOR|TEXTO DIVIDIDO|DOS BLOQUES|PALABRA CLAVE|TEXTO detrás|SÍMBOLO integrado)/i.test(a);
   }
   if (/Sangrado total/i.test(l)) {
@@ -1483,8 +1495,11 @@ function _arquitecturaCompatible(arch, layout) {
   if (/Retícula áurea/i.test(l)) {
     return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|COLUMNA LATERAL|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
   }
-  if (/Diagonal ascendente|Diagonal descendente/i.test(l)) {
+  if (/Diagonal ascendente/i.test(l)) {
     return /^(TEXTO ARRIBA|DIAGONAL ascendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
+  }
+  if (/Diagonal descendente/i.test(l)) {
+    return /^(TEXTO ARRIBA|DIAGONAL descendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
   }
   if (/Sello descentrado|Editorial asimétrica|Columna apilada|Split 2\/3-1\/3|Tarjeta interior/i.test(l)) {
     return /^(TEXTO ARRIBA|COLUMNA LATERAL|BLOQUE INFERIOR|DIAGONAL ascendente|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR|TEXTO DIVIDIDO)/i.test(a);
@@ -1498,10 +1513,16 @@ function _arquitecturaCompatible(arch, layout) {
    se deriva una instrucción breve del layout; nunca se conserva una contradicción. */
 function _fallbackTextArchitectureForLayout(layout) {
   var l = String(layout || '');
-  if (/Axial centrado|Emblema circular|Arco y cúpula|Escalinata/i.test(l)) {
+  if (/Escalinata/i.test(l)) {
+    return 'BLOQUES MODULARES en celdas irregulares; motivo ocupa un módulo independiente.';
+  }
+  if (/Órbita radial/i.test(l)) {
+    return 'ÓRBITA PARCIAL alrededor del motivo; deja una abertura amplia y conserva lectura natural.';
+  }
+  if (/Axial centrado|Emblema circular|Arco y cúpula/i.test(l)) {
     return 'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio y separación amplia.';
   }
-  if (/Banda horizontal/i.test(l)) {
+  if (/Banda horizontal|Tríptico de bandas/i.test(l)) {
     return 'BANDA SUPERIOR estrecha y centrada; motivo debajo separado por un intervalo limpio.';
   }
   if (/Diagonal ascendente|Diagonal descendente/i.test(l)) {
