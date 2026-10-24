@@ -1525,7 +1525,10 @@ function _fallbackTextArchitectureForLayout(layout) {
   if (/Banda horizontal|Tríptico de bandas/i.test(l)) {
     return 'BANDA SUPERIOR estrecha y centrada; motivo debajo separado por un intervalo limpio.';
   }
-  if (/Diagonal ascendente|Diagonal descendente/i.test(l)) {
+  if (/Diagonal descendente/i.test(l)) {
+    return 'DIAGONAL descendente izquierda-derecha; sigue el eje de caída sin tapar la silueta.';
+  }
+  if (/Diagonal ascendente/i.test(l)) {
     return 'DIAGONAL ascendente izquierda-derecha; cruza espacio negativo sin tapar la silueta.';
   }
   if (/Sangrado total/i.test(l)) {
