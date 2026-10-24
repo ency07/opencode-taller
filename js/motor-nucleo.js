@@ -1446,8 +1446,24 @@ function _familiaLayoutArq(layout) {
   return 'central';
 }
 function _arquitecturaCompatible(arch, layout) {
-  var fam = _ARQ_COMPAT[_familiaLayoutArq(layout)];
-  return !!(fam && fam.test(String(arch || '')));
+  var a = String(arch || '');
+  var l = String(layout || '');
+
+  // La compatibilidad debe respetar el layout concreto, no solo su familia.
+  // Antes, cualquier composición "central" aceptaba texto dividido, cintas
+  // oblicuas o alineaciones laterales, generando órdenes contradictorias.
+  if (/Axial centrado|Composición central/i.test(l)) {
+    return /^(ARCO SUPERIOR|BANDA SUPERIOR|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Retícula áurea/i.test(l)) {
+    return /^(TEXTO ARRIBA|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|BANDA SUPERIOR|TEXTO dentro de un vacío real|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|ESQUINA SUPERIOR|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Diagonal descendente/i.test(l)) {
+    return /^(TEXTO ARRIBA|DIAGONAL ascendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
+  }
+
+  var fam = _ARQ_COMPAT[_familiaLayoutArq(l)];
+  return !!(fam && fam.test(a));
 }
 /* Integración envolvente (cinta/contorno) contra disposición vertical (P1). */
 function _integracionCompatible(layout, integracion) {
