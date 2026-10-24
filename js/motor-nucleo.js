@@ -503,14 +503,14 @@ function resolveEstilos(audsPerKey) {
   else _memSetJSON(recentKey, recentSets.concat([usedStyles]).slice(-3));
   return fixed;
 }
-/* DEBT-015: el perfil estructural delimita los modos jerárquicos que puede
-   recibir cada ficha en Auto (los locks manuales siempre ganan). Se asigna por
-   permutaciones: se elige la combinación de 3 modos distintos con mayor
-   puntaje total, no el mejor modo por ficha (evita callejones del greedy). */
+/* El perfil visual pondera la jerarquía, pero no debe bloquear modos válidos.
+   Las cinco direcciones quedan disponibles; solo se excluye SOLO_OBJETO en Auto
+   cuando hay copy obligatorio, porque borraría el mensaje que el usuario pidió
+   conservar. Los locks manuales siempre prevalecen. */
 const PROFILE_VISUAL_MODES = {
-  HEAVY: ['TEXTO_DOMINANTE', 'OBJETO_DOMINANTE'],
-  SOFT: ['BALANCEADO', 'TEXTO_DOMINANTE'],
-  MODERN: ['OBJETO_DOMINANTE', 'BALANCEADO', 'TEXTO_DOMINANTE']
+  HEAVY: ['TEXTO_DOMINANTE', 'OBJETO_DOMINANTE', 'SOLO_TEXTO', 'BALANCEADO', 'SOLO_OBJETO'],
+  SOFT: ['BALANCEADO', 'TEXTO_DOMINANTE', 'SOLO_TEXTO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'],
+  MODERN: ['OBJETO_DOMINANTE', 'BALANCEADO', 'SOLO_OBJETO', 'TEXTO_DOMINANTE', 'SOLO_TEXTO']
 };
 
 /* Franja descriptiva de jerarquía derivada del modo asignado (revisor/UI).
@@ -559,16 +559,25 @@ function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
     (productBias.hierarchy || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 3 : 1); });
     const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[audsPerKey[key]] : []) || [];
     audHierarchy.forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : 1); });
-    // Preferencia del perfil: +2 primera opción, +1 segunda, +0 tercera.
+    // Preferencias, no restricciones: perfil > producto > audiencia solo como sesgos.
+    // Tres niveles permiten que el perfil influya sin borrar la variedad estructural.
     const profileModes = (profileByKey && PROFILE_VISUAL_MODES[profileByKey[key]]) || null;
-    (profileModes || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : (i === 1 ? 1 : 0)); });
+    (profileModes || []).forEach(function (x, i) {
+      score[x] = (score[x] || 0) + (i === 0 ? 4 : (i === 1 ? 2 : (i === 2 ? 1 : 0)));
+    });
     return score;
   }
 
+  const hasRequiredCopy = !!String(MOTOR_STATE.message || '').trim()
+    || !!String(MOTOR_STATE.support || '').trim();
+  const allModes = Object.keys(MODES);
   const allowedByKey = {};
   auto.forEach(function (k) {
-    const profileModes = (profileByKey && PROFILE_VISUAL_MODES[profileByKey[k]]) || null;
-    allowedByKey[k] = profileModes ? profileModes.slice() : Object.keys(MODES);
+    // No se puede borrar un mensaje explícito con SOLO_OBJETO.
+    // Sin copy obligatorio, los cinco modos compiten según perfil/producto/audiencia.
+    allowedByKey[k] = allModes.filter(function (mode) {
+      return !(hasRequiredCopy && mode === 'SOLO_OBJETO');
+    });
   });
 
   let bestTotal = -Infinity;
@@ -1316,6 +1325,8 @@ function _resolveContactIdentity(objectPool) {
    Cada ficha recibe una solución distinta; las asignaciones cambian entre generaciones. */
 const _TEXT_COMPOSITION_BANK = [
   'TEXTO ARRIBA, motivo debajo; alineación izquierda irregular; franja horizontal y separación amplia.',
+  'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio y separación amplia.',
+  'TEXTO CENTRADO DEBAJO del motivo; título compacto y eje vertical continuo.',
   'COLUMNA LATERAL izquierda; motivo al lado opuesto; líneas cortas y corredor de espacio negativo.',
   'ARCO SUPERIOR abierto; motivo dentro del vacío; curva parcial, sin círculo ni emblema cerrado.',
   'BLOQUE INFERIOR desplazado a un lado; motivo arriba y fuera del eje central.',
@@ -1342,6 +1353,8 @@ function _soloTextCompositionDirective(architecture) {
   const lower = source.toLocaleLowerCase();
   const rules = [
     [/^TEXTO ARRIBA/, 'bloque tipográfico en la parte superior, alineado a la izquierda de forma irregular; deja una franja amplia de espacio negativo debajo'],
+    [/^TEXTO CENTRADO ARRIBA/, 'bloque tipográfico centrado en la parte superior; motivo solo si existe queda centrado debajo, con eje vertical limpio'],
+    [/^TEXTO CENTRADO DEBAJO/, 'bloque tipográfico centrado debajo del motivo, en el mismo eje vertical; no desplazarlo a un lateral'],
     [/^COLUMNA LATERAL/, 'columna tipográfica estrecha a la izquierda, con líneas cortas y un corredor amplio de espacio negativo al lado opuesto'],
     [/^ARCO SUPERIOR/, 'palabras siguiendo un arco superior abierto creado por la propia línea tipográfica; no cierres el arco como marco'],
     [/^BLOQUE INFERIOR/, 'bloque tipográfico en la parte inferior y desplazado lateralmente; reserva espacio negativo arriba'],
@@ -1373,6 +1386,8 @@ function _soloTextCompositionDirective(architecture) {
 function _compatibleCompositionDirective(hierarchy, architecture) {
   const lower = String(architecture || '').toLocaleLowerCase();
   const placements = [
+    [/texto centrado arriba/, 'texto centrado en la zona superior y motivo centrado debajo'],
+    [/texto centrado debajo/, 'texto centrado debajo del motivo en el mismo eje vertical'],
     [/texto arriba|banda superior|franja superior/, 'texto en la zona superior'],
     [/columna lateral|bloque vertical lateral|pila vertical/, 'texto en una columna lateral'],
     [/arco superior|arco lateral|texto sigue un solo lado/, 'texto siguiendo un tramo del contorno'],
@@ -1449,22 +1464,53 @@ function _arquitecturaCompatible(arch, layout) {
   var a = String(arch || '');
   var l = String(layout || '');
 
-  // La compatibilidad debe respetar el layout concreto, no solo su familia.
-  // Antes, cualquier composición "central" aceptaba texto dividido, cintas
-  // oblicuas o alineaciones laterales, generando órdenes contradictorias.
-  if (/Axial centrado|Composición central/i.test(l)) {
-    return /^(ARCO SUPERIOR|BANDA SUPERIOR|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
+  // Clasificar por estructura concreta evita que un layout axial acepte
+  // instrucciones laterales/diagonales, pero mantiene suficientes opciones.
+  if (/Axial centrado|Emblema circular|Arco y cúpula|Escalinata/i.test(l)) {
+    return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Banda horizontal/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|BANDA SUPERIOR|TEXTO DIVIDIDO|DOS BLOQUES|PALABRA CLAVE|TEXTO detrás|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Sangrado total/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
   }
   if (/Retícula áurea/i.test(l)) {
-    return /^(TEXTO ARRIBA|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|BANDA SUPERIOR|TEXTO dentro de un vacío real|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|ESQUINA SUPERIOR|SÍMBOLO integrado)/i.test(a);
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|COLUMNA LATERAL|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
   }
-  if (/Diagonal descendente/i.test(l)) {
+  if (/Diagonal ascendente|Diagonal descendente/i.test(l)) {
     return /^(TEXTO ARRIBA|DIAGONAL ascendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
+  }
+  if (/Sello descentrado|Editorial asimétrica|Columna apilada|Split 2\/3-1\/3|Tarjeta interior/i.test(l)) {
+    return /^(TEXTO ARRIBA|COLUMNA LATERAL|BLOQUE INFERIOR|DIAGONAL ascendente|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR|TEXTO DIVIDIDO)/i.test(a);
   }
 
   var fam = _ARQ_COMPAT[_familiaLayoutArq(l)];
   return !!(fam && fam.test(a));
 }
+
+/* Fallback estructural seguro: si el banco no ofrece una arquitectura compatible,
+   se deriva una instrucción breve del layout; nunca se conserva una contradicción. */
+function _fallbackTextArchitectureForLayout(layout) {
+  var l = String(layout || '');
+  if (/Axial centrado|Emblema circular|Arco y cúpula|Escalinata/i.test(l)) {
+    return 'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio y separación amplia.';
+  }
+  if (/Banda horizontal/i.test(l)) {
+    return 'BANDA SUPERIOR estrecha y centrada; motivo debajo separado por un intervalo limpio.';
+  }
+  if (/Diagonal ascendente|Diagonal descendente/i.test(l)) {
+    return 'DIAGONAL ascendente izquierda-derecha; cruza espacio negativo sin tapar la silueta.';
+  }
+  if (/Sangrado total/i.test(l)) {
+    return 'TEXTO detrás de la silueta como fondo parcial; superposición controlada y lectura intacta.';
+  }
+  if (/Retícula áurea/i.test(l)) {
+    return 'BLOQUES MODULARES en celdas irregulares; motivo ocupa un módulo independiente.';
+  }
+  return 'COLUMNA LATERAL izquierda; motivo al lado opuesto; líneas cortas y corredor de espacio negativo.';
+}
+
 /* Integración envolvente (cinta/contorno) contra disposición vertical (P1). */
 function _integracionCompatible(layout, integracion) {
   if (_familiaLayoutArq(layout) !== 'lateral') return integracion;
@@ -1850,6 +1896,11 @@ function buildCandidate(audsPerKey, fixedIdentity) {
         var pick = _pickWeighted(elegible, pesos);
         tomadas[pick] = true;
         v.distribucionTexto = pick;
+      } else {
+        // Nunca conservar una arquitectura que contradiga el layout solo porque
+        // el banco no tenga una opción compatible.
+        v.distribucionTexto = _fallbackTextArchitectureForLayout(v.layout);
+        tomadas[v.distribucionTexto] = true;
       }
     });
     ['A', 'B', 'C'].forEach(function (k) {
