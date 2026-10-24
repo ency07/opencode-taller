@@ -1397,6 +1397,8 @@ function _compatibleCompositionDirective(hierarchy, architecture) {
   const placements = [
     [/texto centrado arriba/, 'texto centrado en la zona superior y motivo centrado debajo'],
     [/texto centrado debajo/, 'texto centrado debajo del motivo en el mismo eje vertical'],
+    [/órbita parcial/, 'texto en trayectoria curva parcial alrededor de un vacío central, con abertura clara'],
+    [/diagonal descendente/, 'texto en diagonal descendente'],
     [/texto arriba|banda superior|franja superior/, 'texto en la zona superior'],
     [/columna lateral|bloque vertical lateral|pila vertical/, 'texto en una columna lateral'],
     [/arco superior|arco lateral|texto sigue un solo lado/, 'texto siguiendo un tramo del contorno'],
@@ -1493,7 +1495,7 @@ function _arquitecturaCompatible(arch, layout) {
     return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
   }
   if (/Retícula áurea/i.test(l)) {
-    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|COLUMNA LATERAL|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|COLUMNA LATERAL|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|DIAGONAL descendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
   }
   if (/Diagonal ascendente/i.test(l)) {
     return /^(TEXTO ARRIBA|DIAGONAL ascendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
