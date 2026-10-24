@@ -1154,11 +1154,10 @@ function _rankCompatibleMotifs(pools, concept) {
   const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
     const label = String(item || '').trim();
     const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+    // Coincidencia por palabra completa únicamente. Las subcadenas producen
+    // falsos positivos (p. ej. fragmentos dentro de palabras sin relación).
     const overlap = words.filter(function (t) {
-      if (tokens.indexOf(t) !== -1) return true;
-      return tokens.some(function (tk) {
-        return tk.length >= 4 && (tk.indexOf(t) !== -1 || t.indexOf(tk) !== -1);
-      });
+      return tokens.indexOf(t) !== -1;
     });
     if (!overlap.length) return null;
     return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
@@ -1199,38 +1198,45 @@ function _motifSceneFromMessage(concept, message) {
    4. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
        existe, UN conflicto para toda la serie con un motivo provisional.
    La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
+/* Plan semántico de la serie de exploración.
+   El banco aporta recursos, nunca permiso para sustituir el concepto por un motivo
+   aleatorio. Si no hay coincidencia sólida, preservar el concepto como ancla y
+   pedir una metáfora/composición derivada de él. */
 function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
-  const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
-  if (inBank) {
-    return { list: [anchor], anchor: anchor, conflict: '' };
+  const conceptText = String(userConcept || anchor || '').trim();
+  const exact = conceptText && Array.isArray(familyObjs) && familyObjs.indexOf(conceptText) !== -1;
+  if (exact) return { list: [conceptText], anchor: conceptText, conflict: '' };
+
+  // Solo coincidencias de palabras completas con afinidad fuerte pueden elegir
+  // un motivo del banco. No usar el mensaje como sustituto de un concepto explícito.
+  const compatibles = _rankCompatibleMotifs(familyObjs, conceptText);
+  if (compatibles.length) {
+    return { list: [compatibles[0]], anchor: compatibles[0], conflict: '' };
   }
-  const compatibles = _rankCompatibleMotifs(familyObjs, anchor || userConcept || '');
-  if (compatibles.length) return { list: compatibles, anchor: compatibles[0], conflict: '' };
+
   const userObj = (typeof _userNamedObject === 'function')
-    ? _userNamedObject((userConcept || '') + ' ' + (userMessage || ''), objectPool)
+    ? _userNamedObject(conceptText, objectPool)
     : '';
   if (userObj) return { list: [userObj], anchor: userObj, conflict: '' };
-  const messageMotifs = (userMessage || '').trim()
-    ? _rankCompatibleMotifs(familyObjs, userMessage)
-    : [];
-  if (messageMotifs.length) return { list: messageMotifs, anchor: messageMotifs[0], conflict: '' };
-  const conceptText = String(anchor || userConcept || '').trim();
+
   if (typeof _isVerseReference === 'function' && _isVerseReference(conceptText)) {
+    const scene = (typeof _motifSceneFromMessage === 'function')
+      ? _motifSceneFromMessage(conceptText, userMessage)
+      : conceptText;
+    return { list: [scene], anchor: conceptText, conflict: '' };
+  }
+
+  // Fallback creativo controlado: conservar la intención literal completa.
+  // No seleccionar jardinero/cruz/corona/etc. al azar por pertenecer al nicho.
+  if (conceptText) {
     return {
-      list: [(typeof _motifSceneFromMessage === 'function')
-        ? _motifSceneFromMessage(conceptText, userMessage)
-        : conceptText],
+      list: [conceptText],
       anchor: conceptText,
-      conflict: ''
+      conflict: 'El banco no contiene un motivo con afinidad semántica suficiente para «' + conceptText + '». Se conserva el concepto como ancla y se requiere una representación visual derivada de su significado, sin sustituirlo por un objeto ajeno.'
     };
   }
-  const fallback = (typeof _pick === 'function') ? _pick(familyObjs) : '';
-  if (!fallback) return { list: [], anchor: anchor, conflict: '' };
-  return {
-    list: [fallback],
-    anchor: fallback,
-    conflict: 'el concepto «' + (anchor || userConcept || '') + '» no encaja con ningún motivo de la familia; se usó «' + fallback + '» como motivo provisional de la serie.'
-  };
+
+  return { list: [], anchor: '', conflict: 'Falta un concepto principal para decidir la escena visual.' };
 }
 
 function _resolveContactIdentity(objectPool) {
