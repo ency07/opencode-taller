@@ -98,6 +98,10 @@ ok(modesWithRequiredCopy.indexOf('SOLO_TEXTO') !== -1
 ok(modesWithoutRequiredCopy.length === 5
   && modesWithoutRequiredCopy.indexOf('SOLO_OBJETO') !== -1,
   'sin copy obligatorio permite competir a los cinco modos visuales');
+ok(new Set(PROFILE_VISUAL_MODES.HEAVY).size === 5
+  && new Set(PROFILE_VISUAL_MODES.SOFT).size === 5
+  && new Set(PROFILE_VISUAL_MODES.MODERN).size === 5,
+  'los perfiles HEAVY, SOFT y MODERN ponderan los cinco modos sin prohibirlos');
 
 ok(_arquitecturaCompatible(
   'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio',
@@ -107,6 +111,18 @@ ok(_arquitecturaCompatible(
   'TEXTO CENTRADO DEBAJO del motivo; título compacto y eje vertical continuo',
   'Emblema circular'
 ), 'permite texto centrado bajo el motivo en emblema circular');
+ok(_arquitecturaCompatible(
+  'DIAGONAL descendente izquierda-derecha; sigue el eje de caída',
+  'Diagonal descendente'
+), 'la arquitectura diagonal descendente coincide con el layout descendente');
+ok(!_arquitecturaCompatible(
+  'DIAGONAL ascendente izquierda-derecha; cruza espacio negativo',
+  'Diagonal descendente'
+), 'no acepta una dirección diagonal opuesta al layout');
+ok(_arquitecturaCompatible(
+  'ÓRBITA PARCIAL alrededor del motivo; deja una abertura amplia',
+  'Órbita radial'
+), 'la órbita radial recibe una arquitectura específica y abierta');
 ok(!_arquitecturaCompatible(
   'COLUMNA LATERAL izquierda; motivo al lado opuesto',
   'Axial centrado'
