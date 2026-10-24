@@ -73,10 +73,10 @@ ok(!_arquitecturaCompatible(
   'TEXTO ARRIBA, motivo debajo; alineación izquierda irregular',
   'Axial centrado'
 ), 'no permite alineación izquierda irregular dentro de un layout axial centrado');
-ok(!_arquitecturaCompatible(
+ok(_arquitecturaCompatible(
   'TEXTO DIVIDIDO a ambos lados del motivo',
   'Axial centrado'
-), 'no permite texto dividido a ambos lados dentro de un layout axial centrado');
+), 'permite texto dividido simétricamente dentro de un eje axial centrado');
 ok(_arquitecturaCompatible(
   'CINTA ABIERTA oblicua cruza un borde del motivo',
   'Retícula áurea'
