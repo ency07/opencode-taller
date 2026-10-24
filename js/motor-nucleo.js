@@ -98,6 +98,7 @@ let MOTOR_STATE = {
   serie: '',
   concept: '',
   message: '',
+  objectSeed: '',
   support: '',
   audienceSet: 'Auto',
   audienceMulti: 'no',
@@ -502,14 +503,14 @@ function resolveEstilos(audsPerKey) {
   else _memSetJSON(recentKey, recentSets.concat([usedStyles]).slice(-3));
   return fixed;
 }
-/* DEBT-015: el perfil estructural delimita los modos jerárquicos que puede
-   recibir cada ficha en Auto (los locks manuales siempre ganan). Se asigna por
-   permutaciones: se elige la combinación de 3 modos distintos con mayor
-   puntaje total, no el mejor modo por ficha (evita callejones del greedy). */
+/* El perfil visual pondera la jerarquía, pero no debe bloquear modos válidos.
+   Las cinco direcciones quedan disponibles; solo se excluye SOLO_OBJETO en Auto
+   cuando hay copy obligatorio, porque borraría el mensaje que el usuario pidió
+   conservar. Los locks manuales siempre prevalecen. */
 const PROFILE_VISUAL_MODES = {
-  HEAVY: ['TEXTO_DOMINANTE', 'OBJETO_DOMINANTE'],
-  SOFT: ['BALANCEADO', 'TEXTO_DOMINANTE'],
-  MODERN: ['OBJETO_DOMINANTE', 'BALANCEADO', 'TEXTO_DOMINANTE']
+  HEAVY: ['TEXTO_DOMINANTE', 'OBJETO_DOMINANTE', 'SOLO_TEXTO', 'BALANCEADO', 'SOLO_OBJETO'],
+  SOFT: ['BALANCEADO', 'TEXTO_DOMINANTE', 'SOLO_TEXTO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'],
+  MODERN: ['OBJETO_DOMINANTE', 'BALANCEADO', 'SOLO_OBJETO', 'TEXTO_DOMINANTE', 'SOLO_TEXTO']
 };
 
 /* Franja descriptiva de jerarquía derivada del modo asignado (revisor/UI).
@@ -524,6 +525,13 @@ const _JERARQUIA_FRANJA_DE_MODO = {
 
 function _jerarquiaTextoDeModo(modoVisual) {
   return _JERARQUIA_FRANJA_DE_MODO[modoVisual] || modoVisual || 'Texto 45-55% / Símbolo 45-55%';
+}
+
+function _allowedVisualModes(hasRequiredCopy) {
+  const modes = ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
+  return modes.filter(function (mode) {
+    return !(hasRequiredCopy && mode === 'SOLO_OBJETO');
+  });
 }
 
 function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
@@ -550,24 +558,32 @@ function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
 
   const words = ((MOTOR_STATE.message || MOTOR_STATE.concept || '').trim().match(/\S+/g) || []).length;
   const productBias = _PRODUCT_BIAS[MOTOR_STATE.product] || {};
+  const hasRequiredCopy = !!String(MOTOR_STATE.message || '').trim()
+    || !!String(MOTOR_STATE.support || '').trim();
 
   function baseScores(key) {
     const score = { SOLO_TEXTO: 0, TEXTO_DOMINANTE: 0, BALANCEADO: 0, OBJETO_DOMINANTE: 0, SOLO_OBJETO: 0 };
     if (words <= 3) { score.SOLO_TEXTO += 2; score.TEXTO_DOMINANTE += 1; }
     else if (words >= 8) { score.OBJETO_DOMINANTE += 2; score.BALANCEADO += 1; score.SOLO_OBJETO += 1; score.SOLO_TEXTO -= 4; }
+    if (!hasRequiredCopy) score.SOLO_OBJETO += 3;
     (productBias.hierarchy || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 3 : 1); });
     const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[audsPerKey[key]] : []) || [];
     audHierarchy.forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : 1); });
-    // Preferencia del perfil: +2 primera opción, +1 segunda, +0 tercera.
+    // Preferencias, no restricciones: perfil > producto > audiencia solo como sesgos.
+    // Tres niveles permiten que el perfil influya sin borrar la variedad estructural.
     const profileModes = (profileByKey && PROFILE_VISUAL_MODES[profileByKey[key]]) || null;
-    (profileModes || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : (i === 1 ? 1 : 0)); });
+    (profileModes || []).forEach(function (x, i) {
+      score[x] = (score[x] || 0) + (i === 0 ? 4 : (i === 1 ? 2 : (i === 2 ? 1 : 0)));
+    });
     return score;
   }
 
+  const allModes = _allowedVisualModes(hasRequiredCopy);
   const allowedByKey = {};
   auto.forEach(function (k) {
-    const profileModes = (profileByKey && PROFILE_VISUAL_MODES[profileByKey[k]]) || null;
-    allowedByKey[k] = profileModes ? profileModes.slice() : Object.keys(MODES);
+    // No se puede borrar un mensaje explícito con SOLO_OBJETO.
+    // Sin copy obligatorio, los cinco modos compiten según perfil/producto/audiencia.
+    allowedByKey[k] = allModes.slice();
   });
 
   let bestTotal = -Infinity;
@@ -762,9 +778,46 @@ function getObjectPool() {
     && !pool.length;
   const personalObjs = _getPersonalObjects(MOTOR_STATE.market, sub || 'auto');
   pool = pool.concat(personalObjs);
-  // Banco común solo como complemento normal; nunca como fallback de una familia
-  // manual que no dispone de banco compatible en el mercado activo.
+  // Banco común como complemento solo para mercados NO-gospel. Gospel conserva
+  // exclusivamente sus objetos doctrinales; nunca se diluye con objetos seculares.
   if (!gospel && !explicitExploreFamilyMissingBank) pool = pool.concat(_commonBankForMarket());
+
+  // --- NUEVO: Ranking de motifs compatibles con concepto/mensaje ---
+  // Si el concepto o mensaje comparten tokens con motivos del banco, usarlos
+  // en lugar de elegir al azar. Mantiene TODOS los matches para variedad
+  // entre las 3 fichas; si no hay match, deja el pool completo (azar controlado).
+  const conceptText = (MOTOR_STATE.concept || '').trim();
+  const messageText = (MOTOR_STATE.message || '').trim();
+  // El concepto define la escena; el mensaje literal no debe arrastrar el
+  // ranking hacia motivos ajenos. El mensaje solo sirve si falta concepto.
+  const matchingSource = conceptText || messageText;
+  const matchingText = matchingSource.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let matchedObjs = null;
+  if (typeof _rankCompatibleMotifs === 'function' && matchingText.length > 2) {
+    const matches = _rankCompatibleMotifs(pool, matchingText);
+    if (matches && matches.length > 0) {
+      matchedObjs = matches.filter(function (m) {
+        return m && typeof m === 'string' && m.trim() && pool.indexOf(m.trim()) !== -1;
+      });
+    }
+  }
+  if (matchedObjs && matchedObjs.length > 0) pool = matchedObjs;
+  // --- NUEVO: Para gospel, si el mensaje/concepto menciona Jesucristo/cristo
+  // directamente, priorizar objetos del dominio CROSS (muerte y resurrección)
+  // para evitar objetos ajenos como "jardinero" que aunque son gospel no encajan.
+  if (gospel) {
+    // La preferencia CROSS depende del concepto principal, no de una frase
+    // literal secundaria que podría contradecir la escena solicitada.
+    const gospelText = (conceptText || messageText).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const mentionsChrist = /jesucristo|jesus|cristo|\bcristo\b|mesias|salvador/.test(gospelText);
+    if (mentionsChrist && typeof window !== 'undefined' && window.GOSPEL_DOMINIOS_ES) {
+      const crossObjs = window.GOSPEL_DOMINIOS_ES.CROSS && window.GOSPEL_DOMINIOS_ES.CROSS.objetos
+        ? window.GOSPEL_DOMINIOS_ES.CROSS.objetos.slice()
+        : [];
+      if (crossObjs && crossObjs.length > 0) pool = crossObjs;
+    }
+  }
+  // ------------------------------------------------------------
 
   return [...new Set(pool.filter(Boolean))];
 }
@@ -1075,7 +1128,9 @@ function _chooseConceptCompatibleObject(objectPool, concept) {
     const label = String(item || '').trim();
     const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
     const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
+    const minMatches = tokens.length <= 1 ? 1 : Math.max(2, Math.ceil(tokens.length * 0.5));
+    return { label: label, score: overlap.length >= minMatches
+      ? overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0) : 0, matches: overlap.length };
   }).filter(function (x) { return x.score > 0; }).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
   if (ranked.length && (!ranked[1] || ranked[0].score > ranked[1].score)) return ranked[0].label;
   return String(concept).trim();
@@ -1116,9 +1171,23 @@ function _rankCompatibleMotifs(pools, concept) {
   const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
     const label = String(item || '').trim();
     const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
-    const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    if (!overlap.length) return null;
-    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
+    // Coincidencia por palabra completa únicamente. Las subcadenas producen
+    // falsos positivos (p. ej. fragmentos dentro de palabras sin relación).
+    const overlap = words.filter(function (t) {
+      return tokens.indexOf(t) !== -1;
+    });
+    // Una sola palabra compartida no basta para adjudicar un motivo a un
+    // concepto compuesto: «Eterno rey» no equivale automáticamente a cualquier
+    // objeto que mencione «rey». Para conceptos de una palabra sí vale una
+    // coincidencia exacta; para conceptos compuestos exigimos al menos dos.
+    const minMatches = tokens.length <= 1 ? 1 : Math.max(2, Math.ceil(tokens.length * 0.5));
+    if (overlap.length < minMatches) return null;
+    return {
+      label: label,
+      score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0),
+      matches: overlap.length,
+      coverage: overlap.length / tokens.length
+    };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
   return ranked.map(function (r) { return r.label; });
 }
@@ -1156,38 +1225,45 @@ function _motifSceneFromMessage(concept, message) {
    4. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
        existe, UN conflicto para toda la serie con un motivo provisional.
    La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
+/* Plan semántico de la serie de exploración.
+   El banco aporta recursos, nunca permiso para sustituir el concepto por un motivo
+   aleatorio. Si no hay coincidencia sólida, preservar el concepto como ancla y
+   pedir una metáfora/composición derivada de él. */
 function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
-  const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
-  if (inBank) {
-    return { list: [anchor], anchor: anchor, conflict: '' };
+  const conceptText = String(userConcept || anchor || '').trim();
+  const exact = conceptText && Array.isArray(familyObjs) && familyObjs.indexOf(conceptText) !== -1;
+  if (exact) return { list: [conceptText], anchor: conceptText, conflict: '' };
+
+  // Solo coincidencias de palabras completas con afinidad fuerte pueden elegir
+  // un motivo del banco. No usar el mensaje como sustituto de un concepto explícito.
+  const compatibles = _rankCompatibleMotifs(familyObjs, conceptText);
+  if (compatibles.length) {
+    return { list: [compatibles[0]], anchor: compatibles[0], conflict: '' };
   }
-  const compatibles = _rankCompatibleMotifs(familyObjs, anchor || userConcept || '');
-  if (compatibles.length) return { list: compatibles, anchor: compatibles[0], conflict: '' };
+
   const userObj = (typeof _userNamedObject === 'function')
-    ? _userNamedObject((userConcept || '') + ' ' + (userMessage || ''), objectPool)
+    ? _userNamedObject(conceptText, objectPool)
     : '';
   if (userObj) return { list: [userObj], anchor: userObj, conflict: '' };
-  const messageMotifs = (userMessage || '').trim()
-    ? _rankCompatibleMotifs(familyObjs, userMessage)
-    : [];
-  if (messageMotifs.length) return { list: messageMotifs, anchor: messageMotifs[0], conflict: '' };
-  const conceptText = String(anchor || userConcept || '').trim();
+
   if (typeof _isVerseReference === 'function' && _isVerseReference(conceptText)) {
+    const scene = (typeof _motifSceneFromMessage === 'function')
+      ? _motifSceneFromMessage(conceptText, userMessage)
+      : conceptText;
+    return { list: [scene], anchor: conceptText, conflict: '' };
+  }
+
+  // Fallback creativo controlado: conservar la intención literal completa.
+  // No seleccionar jardinero/cruz/corona/etc. al azar por pertenecer al nicho.
+  if (conceptText) {
     return {
-      list: [(typeof _motifSceneFromMessage === 'function')
-        ? _motifSceneFromMessage(conceptText, userMessage)
-        : conceptText],
+      list: [conceptText],
       anchor: conceptText,
-      conflict: ''
+      conflict: 'El banco no contiene un motivo con afinidad semántica suficiente para «' + conceptText + '». Se conserva el concepto como ancla y se requiere una representación visual derivada de su significado, sin sustituirlo por un objeto ajeno.'
     };
   }
-  const fallback = (typeof _pick === 'function') ? _pick(familyObjs) : '';
-  if (!fallback) return { list: [], anchor: anchor, conflict: '' };
-  return {
-    list: [fallback],
-    anchor: fallback,
-    conflict: 'el concepto «' + (anchor || userConcept || '') + '» no encaja con ningún motivo de la familia; se usó «' + fallback + '» como motivo provisional de la serie.'
-  };
+
+  return { list: [], anchor: '', conflict: 'Falta un concepto principal para decidir la escena visual.' };
 }
 
 function _resolveContactIdentity(objectPool) {
@@ -1255,10 +1331,14 @@ function _resolveContactIdentity(objectPool) {
    Cada ficha recibe una solución distinta; las asignaciones cambian entre generaciones. */
 const _TEXT_COMPOSITION_BANK = [
   'TEXTO ARRIBA, motivo debajo; alineación izquierda irregular; franja horizontal y separación amplia.',
+  'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio y separación amplia.',
+  'TEXTO CENTRADO DEBAJO del motivo; título compacto y eje vertical continuo.',
   'COLUMNA LATERAL izquierda; motivo al lado opuesto; líneas cortas y corredor de espacio negativo.',
   'ARCO SUPERIOR abierto; motivo dentro del vacío; curva parcial, sin círculo ni emblema cerrado.',
   'BLOQUE INFERIOR desplazado a un lado; motivo arriba y fuera del eje central.',
   'DIAGONAL ascendente izquierda-derecha; cruza espacio negativo sin tapar la silueta.',
+  'DIAGONAL descendente izquierda-derecha; sigue el eje de caída sin tapar la silueta.',
+  'ÓRBITA PARCIAL alrededor del motivo; deja una abertura amplia y conserva lectura natural.',
   'BANDA SUPERIOR estrecha y centrada; motivo debajo separado por un intervalo limpio.',
   'TEXTO DIVIDIDO a ambos lados del motivo; lectura natural y pausa visual central.',
   'TEXTO dentro de un vacío real de la silueta; no deformar letras ni inventar huecos.',
@@ -1281,10 +1361,14 @@ function _soloTextCompositionDirective(architecture) {
   const lower = source.toLocaleLowerCase();
   const rules = [
     [/^TEXTO ARRIBA/, 'bloque tipográfico en la parte superior, alineado a la izquierda de forma irregular; deja una franja amplia de espacio negativo debajo'],
+    [/^TEXTO CENTRADO ARRIBA/, 'bloque tipográfico centrado en la parte superior; motivo solo si existe queda centrado debajo, con eje vertical limpio'],
+    [/^TEXTO CENTRADO DEBAJO/, 'bloque tipográfico centrado debajo del motivo, en el mismo eje vertical; no desplazarlo a un lateral'],
     [/^COLUMNA LATERAL/, 'columna tipográfica estrecha a la izquierda, con líneas cortas y un corredor amplio de espacio negativo al lado opuesto'],
     [/^ARCO SUPERIOR/, 'palabras siguiendo un arco superior abierto creado por la propia línea tipográfica; no cierres el arco como marco'],
     [/^BLOQUE INFERIOR/, 'bloque tipográfico en la parte inferior y desplazado lateralmente; reserva espacio negativo arriba'],
     [/^DIAGONAL ascendente/, 'composición de palabras en diagonal ascendente, con inclinación y escala graduadas para conservar el orden de lectura'],
+    [/^DIAGONAL descendente/, 'composición de palabras en diagonal descendente, con inclinación y escala graduadas para conservar el orden de lectura'],
+    [/^ÓRBITA PARCIAL/, 'distribuye las palabras en una trayectoria curva parcial alrededor del espacio central creado por las propias letras; deja una abertura clara y no dibujes un círculo'],
     [/^BANDA SUPERIOR/, 'franja tipográfica superior compacta, centrada y de escala contenida; el resto del copy forma un segundo nivel tipográfico debajo'],
     [/^TEXTO DIVIDIDO/, 'divide el copy en dos grupos tipográficos a izquierda y derecha, usando solo saltos de línea y espacio negativo para crear la pausa central'],
     [/^TEXTO dentro de un vacío real/, 'distribuye las palabras alrededor de una contraforma generada por las propias letras; no dibujes ni rellenes una silueta externa'],
@@ -1312,11 +1396,17 @@ function _soloTextCompositionDirective(architecture) {
 function _compatibleCompositionDirective(hierarchy, architecture) {
   const lower = String(architecture || '').toLocaleLowerCase();
   const placements = [
+    [/texto centrado arriba/, 'texto centrado en la zona superior y motivo centrado debajo'],
+    [/texto centrado debajo/, 'texto centrado debajo del motivo en el mismo eje vertical'],
+    [/órbita parcial/, 'texto en trayectoria curva parcial alrededor de un vacío central, con abertura clara'],
+    [/diagonal descendente/, 'texto en diagonal descendente'],
     [/texto arriba|banda superior|franja superior/, 'texto en la zona superior'],
     [/columna lateral|bloque vertical lateral|pila vertical/, 'texto en una columna lateral'],
     [/arco superior|arco lateral|texto sigue un solo lado/, 'texto siguiendo un tramo del contorno'],
     [/bloque inferior|franja inferior/, 'texto en la zona inferior, desplazado del centro'],
     [/diagonal ascendente/, 'texto en diagonal ascendente'],
+    [/diagonal descendente/, 'texto en diagonal descendente'],
+    [/órbita parcial/, 'texto en trayectoria curva parcial alrededor de un vacío central, con abertura clara'],
     [/texto dividido|dos bloques|zigzag/, 'texto distribuido en bloques separados con lectura natural'],
     [/vacío real|contraforma tipográfica/, 'texto integrado en un vacío real de la silueta, sin deformar letras'],
     [/palabra clave|esquina superior/, 'palabra clave en un lateral y el resto en un bloque separado'],
@@ -1385,9 +1475,82 @@ function _familiaLayoutArq(layout) {
   return 'central';
 }
 function _arquitecturaCompatible(arch, layout) {
-  var fam = _ARQ_COMPAT[_familiaLayoutArq(layout)];
-  return !!(fam && fam.test(String(arch || '')));
+  var a = String(arch || '');
+  var l = String(layout || '');
+
+  // Clasificar por estructura concreta evita que un layout axial acepte
+  // instrucciones laterales/diagonales, pero mantiene suficientes opciones.
+  if (/Órbita radial/i.test(l)) {
+    return /^(ÓRBITA PARCIAL|ARCO SUPERIOR|ARCO LATERAL|TEXTO dentro de un vacío real|SÍMBOLO integrado|BLOQUES MODULARES)/i.test(a);
+  }
+  if (/Escalinata/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|TEXTO DIVIDIDO|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|FRANJA INFERIOR|PALABRA CLAVE)/i.test(a);
+  }
+  if (/Axial centrado/i.test(l)) {
+    // Un texto dividido simétricamente a ambos lados puede conservar el eje axial;
+    // lo incompatible es la alineación lateral irregular o una diagonal ajena.
+    return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Emblema circular|Arco y cúpula/i.test(l)) {
+    return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Banda horizontal|Tríptico de bandas/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|BANDA SUPERIOR|TEXTO DIVIDIDO|DOS BLOQUES|PALABRA CLAVE|TEXTO detrás|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Sangrado total/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
+  }
+  if (/Retícula áurea/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|COLUMNA LATERAL|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|DIAGONAL descendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
+  }
+  if (/Diagonal ascendente/i.test(l)) {
+    return /^(TEXTO ARRIBA|DIAGONAL ascendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
+  }
+  if (/Diagonal descendente/i.test(l)) {
+    return /^(TEXTO ARRIBA|DIAGONAL descendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
+  }
+  if (/Columna apilada/i.test(l)) {
+    return /^(TEXTO ARRIBA|COLUMNA LATERAL|BLOQUE INFERIOR|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|FRANJA INFERIOR|PILA VERTICAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
+  }
+  if (/Sello descentrado|Editorial asimétrica|Split 2\/3-1\/3|Tarjeta interior/i.test(l)) {
+    return /^(TEXTO ARRIBA|COLUMNA LATERAL|BLOQUE INFERIOR|DIAGONAL ascendente|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR|TEXTO DIVIDIDO)/i.test(a);
+  }
+
+  var fam = _ARQ_COMPAT[_familiaLayoutArq(l)];
+  return !!(fam && fam.test(a));
 }
+
+/* Fallback estructural seguro: si el banco no ofrece una arquitectura compatible,
+   se deriva una instrucción breve del layout; nunca se conserva una contradicción. */
+function _fallbackTextArchitectureForLayout(layout) {
+  var l = String(layout || '');
+  if (/Escalinata/i.test(l)) {
+    return 'BLOQUES MODULARES en celdas irregulares; motivo ocupa un módulo independiente.';
+  }
+  if (/Órbita radial/i.test(l)) {
+    return 'ÓRBITA PARCIAL alrededor del motivo; deja una abertura amplia y conserva lectura natural.';
+  }
+  if (/Axial centrado|Emblema circular|Arco y cúpula/i.test(l)) {
+    return 'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio y separación amplia.';
+  }
+  if (/Banda horizontal|Tríptico de bandas/i.test(l)) {
+    return 'BANDA SUPERIOR estrecha y centrada; motivo debajo separado por un intervalo limpio.';
+  }
+  if (/Diagonal descendente/i.test(l)) {
+    return 'DIAGONAL descendente izquierda-derecha; sigue el eje de caída sin tapar la silueta.';
+  }
+  if (/Diagonal ascendente/i.test(l)) {
+    return 'DIAGONAL ascendente izquierda-derecha; cruza espacio negativo sin tapar la silueta.';
+  }
+  if (/Sangrado total/i.test(l)) {
+    return 'TEXTO detrás de la silueta como fondo parcial; superposición controlada y lectura intacta.';
+  }
+  if (/Retícula áurea/i.test(l)) {
+    return 'BLOQUES MODULARES en celdas irregulares; motivo ocupa un módulo independiente.';
+  }
+  return 'COLUMNA LATERAL izquierda; motivo al lado opuesto; líneas cortas y corredor de espacio negativo.';
+}
+
 /* Integración envolvente (cinta/contorno) contra disposición vertical (P1). */
 function _integracionCompatible(layout, integracion) {
   if (_familiaLayoutArq(layout) !== 'lateral') return integracion;
@@ -1773,6 +1936,11 @@ function buildCandidate(audsPerKey, fixedIdentity) {
         var pick = _pickWeighted(elegible, pesos);
         tomadas[pick] = true;
         v.distribucionTexto = pick;
+      } else {
+        // Nunca conservar una arquitectura que contradiga el layout solo porque
+        // el banco no tenga una opción compatible.
+        v.distribucionTexto = _fallbackTextArchitectureForLayout(v.layout);
+        tomadas[v.distribucionTexto] = true;
       }
     });
     ['A', 'B', 'C'].forEach(function (k) {
@@ -1979,6 +2147,12 @@ function _patternConflictsOf(cand) {
 
 function generateSet() {
   readStateFromDOM();
+  // Generar seed determinista basada en concepto+mensaje+mercado para reproducibilidad de objetos
+  if (!MOTOR_STATE.objectSeed) {
+    MOTOR_STATE.objectSeed = _stableUnit(
+      MOTOR_STATE.concept + '|' + MOTOR_STATE.message + '|' + MOTOR_STATE.market
+    );
+  }
   MOTOR_STATE.explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? _resolveExplorationBrief() : null;
   const audsPerKey = resolveAudiences();
   const fixedIdentity = _isLockedContactSet() ? _resolveContactIdentity(getObjectPool()) : null;
@@ -2318,9 +2492,17 @@ function formatPrompt(result) {
     const conceptAnchor = String(brief.concept || '').trim();
     o += '/EXPLORACIÓN — 3 DIRECCIONES DEL MISMO CONCEPTO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
-    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || sharedExploreCopy || 'propón copy breve') + '\n';
+    const explicitExploreMessage = String(MOTOR_STATE.message || '').trim();
+    const exploreHeaderCopy = conceptAnchor || String(MOTOR_STATE.concept || '').trim()
+      ? _resolveSharedCopy(conceptAnchor || MOTOR_STATE.concept, MOTOR_STATE.market)
+      : (sharedExploreCopy || 'propón copy breve');
+    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada')
+      + (explicitExploreMessage
+        ? ' | MENSAJE EXACTO: ' + explicitExploreMessage + ' (obligatorio en modos con texto)'
+        : ' | COPY PROPUESTO PARA MODOS CON TEXTO: ' + exploreHeaderCopy
+          + ' · SOLO_OBJETO no imprime ese copy') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
-    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
+    o += 'CONTRATO CREATIVO: conserva el concepto y la función; si el usuario dio mensaje exacto, consérvalo literalmente en todos los modos con texto. Si no dio mensaje, el copy propuesto solo se imprime en modos que admiten texto; SOLO_OBJETO no lleva letras. El motivo principal debe representar directamente el concepto; puede resolverse con una metáfora visual original solo si su relación semántica es clara y explicable. Usa elementos explícitos, derivados del significado o imprescindibles para construir esa metáfora. Prohibido rellenar con símbolos del nicho sin relación, decoración genérica o motivos secundarios que cambien la lectura. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
   } else {
     o += '/CONTACTSHEET — 3 DIRECCIONES · MISMO CONCEPTO · NADA CLONADO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + ' | SERIE: ' + (MOTOR_STATE.serie || '—') + '\n';
@@ -2403,7 +2585,7 @@ function formatPrompt(result) {
   o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado. FONDO DEL ARTE: liso, plano o transparente; prohibido añadir cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas, marcos ni escenas de fondo no solicitadas, aunque el estilo los use habitualmente. Si la hoja completa no cabe en una sola imagen, entrega por prioridad: 1) los tres estampados frontales, 2) los mockups por columna, 3) los colores rotulados, 4) detalles de impresión y paleta; mejor un parcial limpio que columnas incompletas o texto deforme.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (result.objectConflicts && result.objectConflicts.length) {
-    o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
+    o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El banco no tiene un motivo suficientemente pertinente: no sustituyas el concepto por un objeto provisional. Construye una representación o metáfora visual derivada del concepto completo y verifica que cada elemento refuerce su significado; si no puedes justificar un elemento por su relación con el concepto, elimínalo.\n';
   }
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
   if (cultDir) o += 'CULTURA: ' + cultDir + '\n';
@@ -3093,8 +3275,19 @@ function crearLos3Disenos() {
   if (statusEl) statusEl.innerHTML = '<span class="blue">Generando 3 direcciones…</span>';
 
   try {
+    // Inicializar tracking de objetos usados en esta sesión de generación
+    // (evita que las 3 fichas traigan el mismo objeto por azar)
+    const usadosEstaVez = new Set();
+
     const result = generateSet();
     if (!result) return;
+
+    // Colectar objetos del set generado para tracking de variedad
+    if (result.set && Array.isArray(result.set)) {
+      result.set.forEach(function (item) {
+        if (item && item.objeto) usadosEstaVez.add(item.objeto);
+      });
+    }
 
     renderCards(result);
     renderGates(result);
@@ -3169,10 +3362,28 @@ async function copiarPrompt() {
   try {
     await navigator.clipboard.writeText(outEl.value);
     if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>' + avisoHtml;
+    _feedbackCopiado(document.getElementById('btnCopy'));
   } catch (e) {
-    try { outEl.focus(); outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>' + avisoHtml; }
+    try { outEl.focus(); outEl.select(); document.execCommand('copy'); if (statusEl) statusEl.innerHTML = '<span class="good">Copiado con fallback.</span>' + avisoHtml; _feedbackCopiado(document.getElementById('btnCopy')); }
     catch (e2) { if (statusEl) statusEl.innerHTML = '<span class="bad">No se pudo copiar. Usa Ctrl+C.</span>'; }
   }
+}
+
+/* Confirmación visual de copiado: el botón se pinta con la clase .btn-copiado,
+   muestra «✓ Copiado» y vuelve a su texto y color a los ~1.5s. Sirve para el
+   prompt, las partes y cualquier otro botón (p. ej. JSON de sync). */
+function _feedbackCopiado(btn, ms) {
+  if (!btn) return;
+  if (btn._copT) clearTimeout(btn._copT);
+  if (!btn._copPrev) btn._copPrev = btn.textContent;
+  if (btn.classList && btn.classList.add) btn.classList.add('btn-copiado');
+  btn.textContent = '✓ Copiado';
+  btn._copT = setTimeout(function () {
+    if (btn.classList && btn.classList.remove) btn.classList.remove('btn-copiado');
+    btn.textContent = btn._copPrev || btn.textContent;
+    btn._copPrev = '';
+    btn._copT = null;
+  }, ms || 1500);
 }
 
 /* --- Copiar prompt por partes --- Los chats y las IAs web cortan entradas
@@ -3227,6 +3438,7 @@ async function copiarPartePrompt() {
           : '<span class="info">Pega la parte 1 antes: parte 1 + parte 2 = prompt íntegro.</span>')
       : '<span class="bad">No se pudo copiar. Selecciona el área del prompt y usa Ctrl+C.</span>';
   }
+  if (ok) _feedbackCopiado(btn);
 }
 
 /* --- Limpiar fichas --- */
@@ -3260,6 +3472,7 @@ window.crearLos3Disenos = crearLos3Disenos;
 window.copiarPrompt = copiarPrompt;
 window.copiarPartePrompt = copiarPartePrompt;
 window._splitPrompt = _splitPrompt;
+window._feedbackCopiado = _feedbackCopiado;
 window.limpiarFichas = limpiarFichas;
 window.borrarMemoria = borrarMemoria;
 window.rerollSingle = rerollSingle;
