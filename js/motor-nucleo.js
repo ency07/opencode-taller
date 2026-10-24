@@ -1485,7 +1485,12 @@ function _arquitecturaCompatible(arch, layout) {
   if (/Escalinata/i.test(l)) {
     return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|TEXTO DIVIDIDO|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|FRANJA INFERIOR|PALABRA CLAVE)/i.test(a);
   }
-  if (/Axial centrado|Emblema circular|Arco y cúpula/i.test(l)) {
+  if (/Axial centrado/i.test(l)) {
+    // Un texto dividido simétricamente a ambos lados puede conservar el eje axial;
+    // lo incompatible es la alineación lateral irregular o una diagonal ajena.
+    return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Emblema circular|Arco y cúpula/i.test(l)) {
     return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
   }
   if (/Banda horizontal|Tríptico de bandas/i.test(l)) {
@@ -1503,7 +1508,10 @@ function _arquitecturaCompatible(arch, layout) {
   if (/Diagonal descendente/i.test(l)) {
     return /^(TEXTO ARRIBA|DIAGONAL descendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
   }
-  if (/Sello descentrado|Editorial asimétrica|Columna apilada|Split 2\/3-1\/3|Tarjeta interior/i.test(l)) {
+  if (/Columna apilada/i.test(l)) {
+    return /^(TEXTO ARRIBA|COLUMNA LATERAL|BLOQUE INFERIOR|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|FRANJA INFERIOR|PILA VERTICAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
+  }
+  if (/Sello descentrado|Editorial asimétrica|Split 2\/3-1\/3|Tarjeta interior/i.test(l)) {
     return /^(TEXTO ARRIBA|COLUMNA LATERAL|BLOQUE INFERIOR|DIAGONAL ascendente|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR|TEXTO DIVIDIDO)/i.test(a);
   }
 
