@@ -453,18 +453,23 @@
 
   /* --- Construcción de la barra flotante --- */
   function build() {
-    bar = document.createElement('div');
-    bar.id = 'aiBar';
+    // index.html ya reserva #aiBar. Reutilizarlo evita IDs duplicados y mantiene
+    // la barra visible con sus dos acciones: analizar y configurar IA.
+    bar = document.getElementById('aiBar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'aiBar';
+      bar.className = 'ai-bar';
+      document.body.appendChild(bar);
+    }
 
     bar.innerHTML =
       '<div id="aiBarBody">' +
-      '<button id="aiRevB" class="primary" style="font-size:12.5px;padding:8px 13px">Revisar con IA</button>' +
-      '<button id="aiCfgB" class="ghost" style="font-size:12px;padding:8px 11px">' + activeSlots().length + ' activos</button>' +
+      '<button id="aiRevB" class="primary" style="font-size:12.5px;padding:8px 13px">Analizar con IA</button>' +
+      '<button id="aiCfgB" class="ghost" style="font-size:12px;padding:8px 11px">Configurar IA · ' + activeSlots().length + ' activos</button>' +
       '<button id="aiMinB" class="ghost" style="font-size:12px;padding:8px 11px" title="Minimizar">—</button>' +
       '</div>' +
       '<button id="aiChipB" class="primary" style="font-size:13px;padding:8px 12px" title="Expandir">IA</button>';
-
-    document.body.appendChild(bar);
 
     bar.querySelector('#aiRevB').onclick = function () {
       this.disabled = true;
