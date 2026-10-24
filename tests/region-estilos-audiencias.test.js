@@ -83,7 +83,7 @@ MOTOR_STATE.subniche = 'humor_costeno';
 pool = getCurrentAudiencePool();
 ok(MOTOR_STATE._audPoolFallback === false, 'con subnicho restringido no se marca fallback');
 ok(pool.length < marketPool.length, 'el pool del subnicho humor costeño es más estrecho que el mercado');
-ok(pool.length === 5, 'humor_costeno aporta sus 5 perfiles propios (obtenido: ' + pool.length + ')');
+ok(pool.length === 6, 'humor_costeno aporta sus 6 perfiles propios (5 + costeno_costenol; obtenido: ' + pool.length + ')');
 
 /* ---------- Resultado ---------- */
 if (failures.length) {
