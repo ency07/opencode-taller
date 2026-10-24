@@ -1113,7 +1113,9 @@ function _chooseConceptCompatibleObject(objectPool, concept) {
     const label = String(item || '').trim();
     const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
     const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
+    const minMatches = tokens.length <= 1 ? 1 : Math.max(2, Math.ceil(tokens.length * 0.5));
+    return { label: label, score: overlap.length >= minMatches
+      ? overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0) : 0, matches: overlap.length };
   }).filter(function (x) { return x.score > 0; }).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
   if (ranked.length && (!ranked[1] || ranked[0].score > ranked[1].score)) return ranked[0].label;
   return String(concept).trim();
@@ -1159,8 +1161,18 @@ function _rankCompatibleMotifs(pools, concept) {
     const overlap = words.filter(function (t) {
       return tokens.indexOf(t) !== -1;
     });
-    if (!overlap.length) return null;
-    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
+    // Una sola palabra compartida no basta para adjudicar un motivo a un
+    // concepto compuesto: «Eterno rey» no equivale automáticamente a cualquier
+    // objeto que mencione «rey». Para conceptos de una palabra sí vale una
+    // coincidencia exacta; para conceptos compuestos exigimos al menos dos.
+    const minMatches = tokens.length <= 1 ? 1 : Math.max(2, Math.ceil(tokens.length * 0.5));
+    if (overlap.length < minMatches) return null;
+    return {
+      label: label,
+      score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0),
+      matches: overlap.length,
+      coverage: overlap.length / tokens.length
+    };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
   return ranked.map(function (r) { return r.label; });
 }
