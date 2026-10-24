@@ -2495,7 +2495,7 @@ function formatPrompt(result) {
     const explicitExploreMessage = String(MOTOR_STATE.message || '').trim();
     o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada')
       + (explicitExploreMessage
-        ? ' | MENSAJE EXACTO (obligatorio en modos con texto): ' + explicitExploreMessage
+        ? ' | MENSAJE EXACTO: ' + explicitExploreMessage + ' (obligatorio en modos con texto)'
         : ' | COPY PROPUESTO PARA MODOS CON TEXTO: ' + (sharedExploreCopy || 'propón copy breve')
           + ' · SOLO_OBJETO no imprime ese copy') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
