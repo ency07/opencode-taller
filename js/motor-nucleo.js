@@ -527,6 +527,13 @@ function _jerarquiaTextoDeModo(modoVisual) {
   return _JERARQUIA_FRANJA_DE_MODO[modoVisual] || modoVisual || 'Texto 45-55% / Símbolo 45-55%';
 }
 
+function _allowedVisualModes(hasRequiredCopy) {
+  const modes = ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
+  return modes.filter(function (mode) {
+    return !(hasRequiredCopy && mode === 'SOLO_OBJETO');
+  });
+}
+
 function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
   const locks = _loadLocks(memLocksMarket(), MOTOR_STATE.product);
   const MODES = {
@@ -570,14 +577,12 @@ function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
 
   const hasRequiredCopy = !!String(MOTOR_STATE.message || '').trim()
     || !!String(MOTOR_STATE.support || '').trim();
-  const allModes = Object.keys(MODES);
+  const allModes = _allowedVisualModes(hasRequiredCopy);
   const allowedByKey = {};
   auto.forEach(function (k) {
     // No se puede borrar un mensaje explícito con SOLO_OBJETO.
     // Sin copy obligatorio, los cinco modos compiten según perfil/producto/audiencia.
-    allowedByKey[k] = allModes.filter(function (mode) {
-      return !(hasRequiredCopy && mode === 'SOLO_OBJETO');
-    });
+    allowedByKey[k] = allModes.slice();
   });
 
   let bestTotal = -Infinity;
