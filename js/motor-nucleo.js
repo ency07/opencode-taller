@@ -558,11 +558,14 @@ function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
 
   const words = ((MOTOR_STATE.message || MOTOR_STATE.concept || '').trim().match(/\S+/g) || []).length;
   const productBias = _PRODUCT_BIAS[MOTOR_STATE.product] || {};
+  const hasRequiredCopy = !!String(MOTOR_STATE.message || '').trim()
+    || !!String(MOTOR_STATE.support || '').trim();
 
   function baseScores(key) {
     const score = { SOLO_TEXTO: 0, TEXTO_DOMINANTE: 0, BALANCEADO: 0, OBJETO_DOMINANTE: 0, SOLO_OBJETO: 0 };
     if (words <= 3) { score.SOLO_TEXTO += 2; score.TEXTO_DOMINANTE += 1; }
     else if (words >= 8) { score.OBJETO_DOMINANTE += 2; score.BALANCEADO += 1; score.SOLO_OBJETO += 1; score.SOLO_TEXTO -= 4; }
+    if (!hasRequiredCopy) score.SOLO_OBJETO += 3;
     (productBias.hierarchy || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 3 : 1); });
     const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[audsPerKey[key]] : []) || [];
     audHierarchy.forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : 1); });
@@ -575,8 +578,6 @@ function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
     return score;
   }
 
-  const hasRequiredCopy = !!String(MOTOR_STATE.message || '').trim()
-    || !!String(MOTOR_STATE.support || '').trim();
   const allModes = _allowedVisualModes(hasRequiredCopy);
   const allowedByKey = {};
   auto.forEach(function (k) {
