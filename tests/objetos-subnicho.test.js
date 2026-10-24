@@ -160,7 +160,7 @@ for (let i = 0; i < 10; i++) {
 }
 ok(sinFamilia > 0, 'debe producir al menos un objeto-ancla');
 
-/* --- 5) Conflicto declarado: concepto que no encaja con ningún motivo de familia --- */
+/* --- 5) Conflicto declarado: concepto sin motivo compatible conserva el ancla --- */
 baseState();
 MOTOR_STATE.market = 'global_es';
 MOTOR_STATE.region = 'global';
@@ -172,20 +172,20 @@ MOTOR_STATE.concept = 'zzz qqq vvv uuu';
 MOTOR_STATE.message = '';
 const skateBankES = getBankForSubniche('skate_culture', 'global', 'global_es');
 let foundConflict = false;
-let conflictoFueraDeFamilia = false;
+let conceptoPerdido = false;
 let conflictoSinAviso = false;
 for (let i = 0; i < 20 && !foundConflict; i++) {
   const r = buildCandidate(resolveAudiences(), null);
   if (r.objectConflicts && r.objectConflicts.length) {
     foundConflict = true;
     symbols(r).forEach(function (s) {
-      if (skateBankES.indexOf(s) === -1) conflictoFueraDeFamilia = true;
+      if (s !== MOTOR_STATE.concept) conceptoPerdido = true;
     });
     if (formatPrompt(asResult(r)).indexOf('AVISO OBJETO (conflicto)') === -1) conflictoSinAviso = true;
   }
 }
 ok(foundConflict, 'debe declarar conflicto cuando ningún motivo de la familia encaja con el concepto');
-ok(!conflictoFueraDeFamilia, 'en conflicto sin objeto del usuario, el OBJETO debe caer a un motivo de la familia');
+ok(!conceptoPerdido, 'si el banco no encaja, conserva el concepto explícito en vez de imponer un motivo aleatorio');
 ok(!conflictoSinAviso, 'el prompt debe mostrar el aviso de conflicto');
 
 /* --- 6) Preservar el objeto que el usuario nombró, aunque no sea de la familia --- */
@@ -272,7 +272,7 @@ const planAncla = _planExploreMotifs(familyBankHC, [], escena, '', '');
 ok(planAncla.list.length === 1 && planAncla.list[0] === escena,
   'concepto literal del banco: plan con UN solo motivo (el ancla), sin sustituciones');
 
-/* --- 9) Conflicto resuelto a nivel de SERIE: un solo aviso, un motivo provisional único --- */
+/* --- 9) Conflicto resuelto a nivel de SERIE: un solo aviso y el concepto compartido --- */
 baseState();
 MOTOR_STATE.market = 'global_es';
 MOTOR_STATE.region = 'global';
@@ -295,7 +295,7 @@ for (let i = 0; i < 8; i++) {
   const distintos = {};
   symbols(r).forEach(function (s) {
     distintos[s] = 1;
-    ok(skateBankES2.indexOf(s) !== -1, 'en conflicto, el motivo provisional debe ser de la familia: "' + s + '"');
+    ok(s === MOTOR_STATE.concept, 'en conflicto, cada ficha conserva el concepto como ancla: "' + s + '"');
   });
   if (Object.keys(distintos).length > 1) motivosDistintosEnConflicto = true;
   break;
@@ -336,12 +336,13 @@ ok(planV2.conflict === '' && planV2.list[0].indexOf('salmo 23') !== -1,
   'versículo sin mensaje deriva el símbolo del propio concepto, sin conflicto');
 
 const planMsg = _planExploreMotifs(famVerso, famVerso, 'concepto qq zz vv', 'concepto qq zz vv', 'manos que oran junto a la ventana');
-ok(planMsg.conflict === '' && planMsg.list[0] === 'manos que oran junto a la ventana',
-  'mensaje afín a un motivo de familia resuelve el motivo sin conflicto');
+ok(planMsg.conflict !== '' && planMsg.list[0] === 'concepto qq zz vv',
+  'un mensaje afín no sustituye un concepto explícito distinto');
 
 const planBasura = _planExploreMotifs(famVerso, famVerso, 'zzz qqq vvv', 'zzz qqq vvv', '');
 ok(planBasura.conflict !== '', 'concepto basura SIN mensaje sigue declarando conflicto (provisional controlado)');
-ok(famVerso.indexOf(planBasura.list[0]) !== -1, 'el motivo provisional sigue saliendo de la familia');
+ok(planBasura.list.length === 1 && planBasura.list[0] === 'zzz qqq vvv',
+  'sin motivo compatible, conserva el concepto y no elige una ilustración aleatoria de la familia');
 
 /* --- 11) E2E exploración gospel: versículo + mensaje literal → sin AVISO OBJETO --- */
 baseState();
