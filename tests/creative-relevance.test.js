@@ -46,6 +46,23 @@ const messageConflict = _planExploreMotifs(
 ok(messageConflict.anchor === 'eternamente rey',
   'un mensaje religioso no reemplaza un concepto explícito distinto');
 
+const weakKingMatch = _rankCompatibleMotifs(
+  ['trono ocupado por Rey con toalla de siervo'],
+  'Eterno rey'
+);
+ok(weakKingMatch.length === 0,
+  '«Eterno rey» no selecciona un objeto solo porque menciona «Rey»');
+
+const kingPlan = _planExploreMotifs(
+  ['trono ocupado por Rey con toalla de siervo', 'corona real'],
+  ['trono ocupado por Rey con toalla de siervo', 'corona real'],
+  'Eterno rey',
+  'Eterno rey',
+  'Jesucristo nombre sobre todo nombre'
+);
+ok(kingPlan.anchor === 'Eterno rey' && kingPlan.list[0] === 'Eterno rey',
+  'si el banco solo ofrece coincidencias débiles, conserva el concepto y no impone una escena');
+
 const substring = _rankCompatibleMotifs(['soldado romano', 'sol naciente'], 'sol');
 ok(substring.indexOf('soldado romano') === -1,
   'no acepta coincidencia parcial dentro de una palabra');
