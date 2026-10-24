@@ -54,8 +54,8 @@ MOTOR_STATE.concept = 'zapato dejado en la puerta de la iglesia';
 MOTOR_STATE.message = '';
 let set = buildCandidate(resolveAudiences(), null);
 let prompt = formatPrompt({ set: set });
-ok(prompt.indexOf('MENSAJE EXACTO: Zapato dejado en la puerta de la iglesia') !== -1,
-  'el header de explore cita el concepto natural');
+ok(prompt.indexOf('COPY PROPUESTO PARA MODOS CON TEXTO: Zapato dejado en la puerta de la iglesia') !== -1,
+  'el header de explore cita el concepto natural como copy propuesto, no como mensaje exacto del usuario');
 ok(prompt.toLowerCase().indexOf('ZAPATO DEJADO EN LA PUERTA') === -1,
   'la IA de imagen nunca recibe el concepto convertido en VERSALES');
 ok(prompt.indexOf('COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «Zapato dejado en la puerta de la iglesia»') !== -1,
