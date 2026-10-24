@@ -86,6 +86,37 @@ ok(_arquitecturaCompatible(
   'Diagonal descendente'
 ), 'permite texto dividido en una composición diagonal descendente');
 
+const modesWithRequiredCopy = _allowedVisualModes(true);
+const modesWithoutRequiredCopy = _allowedVisualModes(false);
+ok(modesWithRequiredCopy.length === 4 && modesWithRequiredCopy.indexOf('SOLO_OBJETO') === -1,
+  'no borra el mensaje obligatorio con SOLO_OBJETO en asignación automática');
+ok(modesWithRequiredCopy.indexOf('SOLO_TEXTO') !== -1
+  && modesWithRequiredCopy.indexOf('TEXTO_DOMINANTE') !== -1
+  && modesWithRequiredCopy.indexOf('BALANCEADO') !== -1
+  && modesWithRequiredCopy.indexOf('OBJETO_DOMINANTE') !== -1,
+  'con copy obligatorio conserva las cuatro jerarquías compatibles con el mensaje');
+ok(modesWithoutRequiredCopy.length === 5
+  && modesWithoutRequiredCopy.indexOf('SOLO_OBJETO') !== -1,
+  'sin copy obligatorio permite competir a los cinco modos visuales');
+
+ok(_arquitecturaCompatible(
+  'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio',
+  'Axial centrado'
+), 'ofrece arquitectura realmente centrada para el layout axial');
+ok(_arquitecturaCompatible(
+  'TEXTO CENTRADO DEBAJO del motivo; título compacto y eje vertical continuo',
+  'Emblema circular'
+), 'permite texto centrado bajo el motivo en emblema circular');
+ok(!_arquitecturaCompatible(
+  'COLUMNA LATERAL izquierda; motivo al lado opuesto',
+  'Axial centrado'
+), 'rechaza columna lateral en layout axial');
+ok(
+  _fallbackTextArchitectureForLayout('Axial centrado') ===
+    'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio y separación amplia.',
+  'fallback axial genera arquitectura compatible y no conserva una instrucción contradictoria'
+);
+
 console.log('creative-relevance: ' + (checks - failures.length) + '/' + checks + ' checks passed');
 if (failures.length) {
   failures.forEach(function (f) { console.error('FAIL: ' + f); });
