@@ -773,7 +773,10 @@ function getObjectPool() {
   // entre las 3 fichas; si no hay match, deja el pool completo (azar controlado).
   const conceptText = (MOTOR_STATE.concept || '').trim();
   const messageText = (MOTOR_STATE.message || '').trim();
-  const matchingText = (conceptText + ' ' + messageText).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // El concepto define la escena; el mensaje literal no debe arrastrar el
+  // ranking hacia motivos ajenos. El mensaje solo sirve si falta concepto.
+  const matchingSource = conceptText || messageText;
+  const matchingText = matchingSource.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   let matchedObjs = null;
   if (typeof _rankCompatibleMotifs === 'function' && matchingText.length > 2) {
     const matches = _rankCompatibleMotifs(pool, matchingText);
@@ -787,9 +790,11 @@ function getObjectPool() {
   // --- NUEVO: Para gospel, si el mensaje/concepto menciona Jesucristo/cristo
   // directamente, priorizar objetos del dominio CROSS (muerte y resurrección)
   // para evitar objetos ajenos como "jardinero" que aunque son gospel no encajan.
-  if (gospel && !matchedObjs) {
-    const gospelText = matchingText;
-    const mentionsChrist = /jesucristo|jesucristo|cristo|\bcristo\b|mesias|mesías|salvador/.test(gospelText);
+  if (gospel) {
+    // La preferencia CROSS depende del concepto principal, no de una frase
+    // literal secundaria que podría contradecir la escena solicitada.
+    const gospelText = (conceptText || messageText).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const mentionsChrist = /jesucristo|jesus|cristo|\bcristo\b|mesias|salvador/.test(gospelText);
     if (mentionsChrist && typeof window !== 'undefined' && window.GOSPEL_DOMINIOS_ES) {
       const crossObjs = window.GOSPEL_DOMINIOS_ES.CROSS && window.GOSPEL_DOMINIOS_ES.CROSS.objetos
         ? window.GOSPEL_DOMINIOS_ES.CROSS.objetos.slice()
