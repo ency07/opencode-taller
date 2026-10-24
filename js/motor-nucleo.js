@@ -2492,9 +2492,14 @@ function formatPrompt(result) {
     const conceptAnchor = String(brief.concept || '').trim();
     o += '/EXPLORACIÓN — 3 DIRECCIONES DEL MISMO CONCEPTO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
-    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || sharedExploreCopy || 'propón copy breve') + '\n';
+    const explicitExploreMessage = String(MOTOR_STATE.message || '').trim();
+    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada')
+      + (explicitExploreMessage
+        ? ' | MENSAJE EXACTO (obligatorio en modos con texto): ' + explicitExploreMessage
+        : ' | COPY PROPUESTO PARA MODOS CON TEXTO: ' + (sharedExploreCopy || 'propón copy breve')
+          + ' · SOLO_OBJETO no imprime ese copy') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
-    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. El motivo principal debe representar directamente el concepto; puede resolverse con una metáfora visual original solo si su relación semántica es clara y explicable. Usa elementos explícitos, derivados del significado o imprescindibles para construir esa metáfora. Prohibido rellenar con símbolos del nicho sin relación, decoración genérica o motivos secundarios que cambien la lectura. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
+    o += 'CONTRATO CREATIVO: conserva el concepto y la función; si el usuario dio mensaje exacto, consérvalo literalmente en todos los modos con texto. Si no dio mensaje, el copy propuesto solo se imprime en modos que admiten texto; SOLO_OBJETO no lleva letras. El motivo principal debe representar directamente el concepto; puede resolverse con una metáfora visual original solo si su relación semántica es clara y explicable. Usa elementos explícitos, derivados del significado o imprescindibles para construir esa metáfora. Prohibido rellenar con símbolos del nicho sin relación, decoración genérica o motivos secundarios que cambien la lectura. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
   } else {
     o += '/CONTACTSHEET — 3 DIRECCIONES · MISMO CONCEPTO · NADA CLONADO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + ' | SERIE: ' + (MOTOR_STATE.serie || '—') + '\n';
