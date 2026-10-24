@@ -398,7 +398,7 @@
       '<div style="display:flex;gap:6px;align-items:center;margin:0 0 8px"><button id="ai-vtest" class="ghost">Probar conexión</button><span id="ai-vstatus" class="hint" style="margin:0"></span></div>' +
       '<label style="display:flex;align-items:center;gap:6px;margin:10px 0 4px"><input type="checkbox" id="ai-auto"' + (isAuto() ? ' checked' : '') + '> Revisar automáticamente al crear (usa veredicto COHERENTE/PARCIAL/INCOHERENTE cada generación)</label>' +
       '<label style="display:flex;align-items:center;gap:6px;margin:0 0 8px"><input type="checkbox" id="ai-apply"' + (autoApply() ? ' checked' : '') + '> IA aplica cambios automáticamente (sobreescribe campos: objeto, jerarquía, layout, etc.)</label>' +
-      '<div class="hint" style="margin:4px 0 6px; font-size:11px;">Modos: <span style="color:var(--mut)">COHERENTE</span> = diseño OK; <span style="color:var(--acc)">PARCIAL</span> = ajustes sugeridos; <span style="color:var(--bad)">INCOHERENTE</span> = problema grave. Sin toggle: IA guarda sugerencias para que tú decidas.</div>' +
+      '<div class="hint" style="margin:4px 0 6px; font-size:11px;">Modos: <span style="color:var(--mut)">COHERENTE</span> = diseño OK; <span style="color:var(--acc)">PARCIAL</span> = ajustes sugeridos; <span style="color:var(--bad)">INCOHERENTE</span> = problema grave. Sin toggle: IA guarda sugerencias para que tú decidas.</div>'
 
 (Showing the full edited line would exceed the maximum length for this tool, but the edit was applied successfully.)
 
