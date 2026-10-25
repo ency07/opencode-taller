@@ -2247,7 +2247,7 @@ function _buildOutputContract(workflowMode, product, set) {
   if (workflowMode !== 'explore' || product !== 'CAMISETA SOFT' || !set) return '';
   const audienceSet = ['A', 'B', 'C'].every(function (k) { return !!(set[k] && set[k].audiencia); });
   const columnRule = audienceSet
-    ? 'Tres columnas verticales, encabezadas por la audiencia de cada ficha.'
+    ? 'Tres columnas verticales, encabezadas por la audiencia de cada ficha: A = ' + set.A.audiencia + '; B = ' + set.B.audiencia + '; C = ' + set.C.audiencia + '.'
     : 'Tres columnas verticales, encabezadas por 01A, 01B y 01C con su estilo.';
   return [
     'CONTRATO FINAL DE SALIDA — PRIORIDAD MÁXIMA',
