@@ -1786,6 +1786,44 @@ function buildCandidate(audsPerKey, fixedIdentity) {
   return set;
 }
 
+/* --- Dirección artística: coherencia del conjunto, no diversidad de campos --- */
+/* Evalúa relaciones entre decisiones ya tomadas. No añade instrucciones al prompt:
+   mide si la arquitectura textual sirve al layout y si la integración, densidad y
+   espacio negativo forman una composición plausible. */
+function _artDirectionCoherence(v) {
+  if (!v) return { score: 0, issues: ['ficha ausente'] };
+  var score = 100;
+  var issues = [];
+  if (typeof _arquitecturaCompatible === 'function'
+      && !_arquitecturaCompatible(v.distribucionTexto, v.layout)) {
+    score -= 35;
+    issues.push('arquitectura textual no encaja con layout');
+  }
+  if (typeof _integracionCompatible === 'function') {
+    var integration = _integracionCompatible(v.layout, v.integracionTexto);
+    if (integration && integration !== v.integracionTexto) {
+      score -= 20;
+      issues.push('integración textual incompatible con layout');
+    }
+  }
+  var density = String(v.densidad || '').toLowerCase();
+  var negative = String(v.negativeSpace || '').toLowerCase();
+  if (/heavy|alta|densa/.test(density) && /amplio|abundante|mucho aire|espacio generoso/.test(negative)) {
+    score -= 12;
+    issues.push('densidad y espacio negativo se contradicen');
+  }
+  if (/light|soft|baja|ligera/.test(density) && /mínimo espacio|sin espacio|masa cerrada/.test(negative)) {
+    score -= 12;
+    issues.push('densidad y espacio negativo se contradicen');
+  }
+  if (v.jerarquiaVisual === 'SOLO_TEXTO'
+      && String(v.objeto || '').indexOf('SIN OBJETO') === -1) {
+    score -= 25;
+    issues.push('modo solo texto conserva un objeto dibujable');
+  }
+  return { score: Math.max(0, score), issues: issues };
+}
+
 /* --- Scoring y selección --- */
 function scoreSet(set) {
   // El objeto deja de ser eje de diversidad: el contactsheet debe conservarlo.
@@ -1815,6 +1853,10 @@ function scoreSet(set) {
     && new Set(treatmentKeys).size === 3
     && K.every(function (k) { return _treatmentSpecComplete(set[k].tratamiento); });
 
+  const artDirection = K.map(function (k) { return _artDirectionCoherence(set[k]); });
+  const artDirectionMin = Math.min.apply(null, artDirection.map(function (x) { return x.score; }));
+  const artDirectionAvg = Math.round(artDirection.reduce(function (sum, x) { return sum + x.score; }, 0) / artDirection.length);
+
   const fitAudMin = Math.min.apply(null, K.map(function (k) { return set[k].fitAudiencia || 0; }));
   const fitProdMin = Math.min.apply(null, K.map(function (k) { return set[k].fitProducto || 0; }));
 
@@ -1824,9 +1866,12 @@ function scoreSet(set) {
     familias: familias,
     symbolStable: symbolStable,
     treatmentsComplete: treatmentsComplete,
+    artDirectionMin: artDirectionMin,
+    artDirectionAvg: artDirectionAvg,
+    artDirection: artDirection,
     fitAudienciaMin: fitAudMin,
     fitProductoMin: fitProdMin,
-    total: dPct * 2 + (estilos.length === 3 ? 30 : 0) + (symbolRequired ? (symbolStable ? 20 : -50) : 0) + (treatmentsComplete ? 20 : -40) + fitAudMin * 0.5 + fitProdMin * 0.5
+    total: dPct * 2 + (estilos.length === 3 ? 30 : 0) + (symbolRequired ? (symbolStable ? 20 : -50) : 0) + (treatmentsComplete ? 20 : -40) + fitAudMin * 0.5 + fitProdMin * 0.5 + artDirectionAvg * 0.8
   };
 }
 
@@ -1901,14 +1946,16 @@ function evaluaSetOk(set) {
     && (set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3)
     && jerAutoDistintas && densAutoDistinta && negAutoDistinta;
   const pertinenciaOk = m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN && m.fitProductoMin >= UMBRAL_PRODUCTO_MIN;
+  const coherenciaArtisticaOk = m.artDirectionMin >= 65;
   const estilosOk = MOTOR_STATE.groupMode === 'mismo'
     ? m.estilos.length === 1
     : m.estilos.length === 3;
   const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
-  const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk
+  const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk && coherenciaArtisticaOk
     && _patternConflictsOf(set) === 0;
   const detalle = [];
   if (!(m.diversity >= 55)) detalle.push('diferencia ' + m.diversity + '/100 (mín 55)');
+  if (!coherenciaArtisticaOk) detalle.push('coherencia artística mín ' + m.artDirectionMin + '/100 (mín 65): ' + m.artDirection.map(function (x, i) { return x.issues.length ? K[i] + ': ' + x.issues.join(', ') : ''; }).filter(Boolean).join(' · '));
   [['layout', 'layout'], ['distribucionTexto', 'arquitectura textual'], ['tipografia', 'tipografía'], ['formaSimbolo', 'forma del símbolo'], ['integracionTexto', 'integración'], ['tratamiento', 'tratamiento'], ['tecnica', 'técnica']].forEach(function (e) {
     if (new Set(K.map(function (k) { return set[k][e[0]]; })).size !== 3) detalle.push(e[1] + ' repetida');
   });
@@ -2191,6 +2238,28 @@ function _promptSignature() {
     if (fi && fi.files && fi.files[0]) { const f = fi.files[0]; img = [f.name, f.size, f.lastModified].join('|'); }
   } catch (e) {}
   return [g('workflowMode'), g('market'), g('product'), g('subniche'), g('concept'), g('message'), g('support'), g('serie'), g('audienceSet'), img].join('§');
+}
+
+/* Contrato de salida explícito y verificable. La selección de fichas no debe
+   decidir por accidente el formato de entrega: explore + camiseta produce una
+   sola hoja comercial A/B/C, no un mockup individual. */
+function _buildOutputContract(workflowMode, product, set) {
+  if (workflowMode !== 'explore' || product !== 'CAMISETA SOFT' || !set) return '';
+  const audienceSet = ['A', 'B', 'C'].every(function (k) { return !!(set[k] && set[k].audiencia); });
+  const columnRule = audienceSet
+    ? 'Tres columnas verticales, encabezadas por la audiencia de cada ficha: A = ' + set.A.audiencia + '; B = ' + set.B.audiencia + '; C = ' + set.C.audiencia + '.'
+    : 'Tres columnas verticales, encabezadas por 01A, 01B y 01C con su estilo.';
+  return [
+    'CONTRATO FINAL DE SALIDA — PRIORIDAD MÁXIMA',
+    'Entrega UNA SOLA IMAGEN: una hoja comercial completa de la serie, en formato apaisado/editorial, con las tres columnas A/B/C simultáneamente visibles.',
+    columnRule,
+    'Cada columna debe contener: (1) mockup lifestyle FRONTAL de cuerpo completo de la audiencia asignada; (2) recuadro VISTA FRONTAL con el estampado plano exacto de esa ficha; (3) cinco variantes frontales de la misma camiseta en colores legibles, cada una con nombre de color.',
+    'Incluye la banda superior de datos de la serie y la fila inferior con detalles de impresión, mockups adicionales frontales y paleta general, según PRESENTACIÓN.',
+    'NO entregues una fotografía individual, un único modelo, una sola camiseta aislada, un solo estampado, un collage sin tres columnas ni tres imágenes separadas. No sustituyas la hoja comercial por un mockup lifestyle.',
+    'Las fichas A/B/C y sus estampados deben permanecer distintos y completos; no mezcles los estilos ni cambies el mensaje literal. Los rótulos solo pueden aparecer como encabezados editoriales de la hoja, nunca dentro del estampado.',
+    'Si no cabe toda la información, conserva en una sola imagen las tres columnas y los tres estampados frontales; omite primero los detalles secundarios. Nunca reduzcas la salida a una sola dirección.',
+    'Antes de finalizar, verifica: tres columnas presentes; tres audiencias correctas; tres estilos correctos; tres vistas planas; mensaje literal conservado. Si falta alguno, corrige la composición antes de entregar.'
+  ].join('\n') + '\n';
 }
 
 function formatPrompt(result) {
@@ -2586,6 +2655,8 @@ function formatPrompt(result) {
     }
     o += '\n';
   });
+
+  o += _buildOutputContract(MOTOR_STATE.workflowMode, MOTOR_STATE.product, set);
 
   try { window._PROMPT_SIG = _promptSignature(); } catch (e) { /* sin DOM real */ }
   return o;

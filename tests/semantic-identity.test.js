@@ -228,6 +228,24 @@ const indexSrc = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 ok(indexSrc.includes('placeholder="Vacío: el motor propone ideas"') && indexSrc.includes('title="Déjalo vacío para descubrir ideas; o escribe una idea concreta"'), 'concepto sin placeholder truncado y con ayuda completa');
 ok(/\.vk\s*\{[^}]*flex:\s*0 0 34%/.test(cssSource) && /\.vrow \.vv select\s*\{[^}]*max-width:\s*100%/.test(cssSource), 'las fichas deben dar espacio a los selects (etiqueta 34% + valor flexible)');
 
+// Contrato de salida: una hoja comercial no puede degradarse a un mockup individual.
+const sheetContract = _buildOutputContract('explore', 'CAMISETA SOFT', {
+  A: { audiencia: 'Infantil cristiana' },
+  B: { audiencia: 'Parejas cristianas' },
+  C: { audiencia: 'Hombre cristiano' }
+});
+ok(sheetContract.includes('UNA SOLA IMAGEN') && sheetContract.includes('hoja comercial completa'),
+  'explore + camiseta debe exigir una sola hoja comercial completa');
+ok(sheetContract.includes('Tres columnas verticales') && sheetContract.includes('Infantil cristiana')
+  && sheetContract.includes('Parejas cristianas') && sheetContract.includes('Hombre cristiano'),
+  'la hoja debe conservar las tres columnas y sus audiencias');
+ok(sheetContract.includes('NO entregues una fotografía individual')
+  && sheetContract.includes('tres estampados frontales')
+  && sheetContract.includes('mensaje literal conservado'),
+  'el contrato debe rechazar mockup individual y validar las vistas y el copy');
+ok(_buildOutputContract('variation', 'CAMISETA SOFT', { A: {}, B: {}, C: {} }) === '',
+  'el contrato de hoja comercial no debe imponerse al flujo de variación');
+
 console.log((failures.length ? 'FAIL' : 'PASS') + ' semantic-identity (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.forEach(function (msg) { console.error(' - ' + msg); });
 process.exit(failures.length ? 1 : 0);
