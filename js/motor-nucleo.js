@@ -2240,6 +2240,28 @@ function _promptSignature() {
   return [g('workflowMode'), g('market'), g('product'), g('subniche'), g('concept'), g('message'), g('support'), g('serie'), g('audienceSet'), img].join('§');
 }
 
+/* Contrato de salida explícito y verificable. La selección de fichas no debe
+   decidir por accidente el formato de entrega: explore + camiseta produce una
+   sola hoja comercial A/B/C, no un mockup individual. */
+function _buildOutputContract(workflowMode, product, set) {
+  if (workflowMode !== 'explore' || product !== 'CAMISETA SOFT' || !set) return '';
+  const audienceSet = ['A', 'B', 'C'].every(function (k) { return !!(set[k] && set[k].audiencia); });
+  const columnRule = audienceSet
+    ? 'Tres columnas verticales, encabezadas por la audiencia de cada ficha.'
+    : 'Tres columnas verticales, encabezadas por 01A, 01B y 01C con su estilo.';
+  return [
+    'CONTRATO FINAL DE SALIDA — PRIORIDAD MÁXIMA',
+    'Entrega UNA SOLA IMAGEN: una hoja comercial completa de la serie, en formato apaisado/editorial, con las tres columnas A/B/C simultáneamente visibles.',
+    columnRule,
+    'Cada columna debe contener: (1) mockup lifestyle FRONTAL de cuerpo completo de la audiencia asignada; (2) recuadro VISTA FRONTAL con el estampado plano exacto de esa ficha; (3) cinco variantes frontales de la misma camiseta en colores legibles, cada una con nombre de color.',
+    'Incluye la banda superior de datos de la serie y la fila inferior con detalles de impresión, mockups adicionales frontales y paleta general, según PRESENTACIÓN.',
+    'NO entregues una fotografía individual, un único modelo, una sola camiseta aislada, un solo estampado, un collage sin tres columnas ni tres imágenes separadas. No sustituyas la hoja comercial por un mockup lifestyle.',
+    'Las fichas A/B/C y sus estampados deben permanecer distintos y completos; no mezcles los estilos ni cambies el mensaje literal. Los rótulos solo pueden aparecer como encabezados editoriales de la hoja, nunca dentro del estampado.',
+    'Si no cabe toda la información, conserva en una sola imagen las tres columnas y los tres estampados frontales; omite primero los detalles secundarios. Nunca reduzcas la salida a una sola dirección.',
+    'Antes de finalizar, verifica: tres columnas presentes; tres audiencias correctas; tres estilos correctos; tres vistas planas; mensaje literal conservado. Si falta alguno, corrige la composición antes de entregar.'
+  ].join('\\n') + '\\n';
+}
+
 function formatPrompt(result) {
   if (!result || !result.set) return '';
   const set = result.set;
@@ -2633,6 +2655,8 @@ function formatPrompt(result) {
     }
     o += '\n';
   });
+
+  o += _buildOutputContract(MOTOR_STATE.workflowMode, MOTOR_STATE.product, set);
 
   try { window._PROMPT_SIG = _promptSignature(); } catch (e) { /* sin DOM real */ }
   return o;
