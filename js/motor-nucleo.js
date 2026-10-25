@@ -2259,7 +2259,7 @@ function _buildOutputContract(workflowMode, product, set) {
     'Las fichas A/B/C y sus estampados deben permanecer distintos y completos; no mezcles los estilos ni cambies el mensaje literal. Los rótulos solo pueden aparecer como encabezados editoriales de la hoja, nunca dentro del estampado.',
     'Si no cabe toda la información, conserva en una sola imagen las tres columnas y los tres estampados frontales; omite primero los detalles secundarios. Nunca reduzcas la salida a una sola dirección.',
     'Antes de finalizar, verifica: tres columnas presentes; tres audiencias correctas; tres estilos correctos; tres vistas planas; mensaje literal conservado. Si falta alguno, corrige la composición antes de entregar.'
-  ].join('\\n') + '\\n';
+  ].join('\n') + '\n';
 }
 
 function formatPrompt(result) {
