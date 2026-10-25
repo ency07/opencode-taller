@@ -240,7 +240,7 @@ ok(sheetContract.includes('Tres columnas verticales') && sheetContract.includes(
   && sheetContract.includes('Parejas cristianas') && sheetContract.includes('Hombre cristiano'),
   'la hoja debe conservar las tres columnas y sus audiencias');
 ok(sheetContract.includes('NO entregues una fotografía individual')
-  && sheetContract.includes('tres vistas planas')
+  && sheetContract.includes('tres estampados frontales')
   && sheetContract.includes('mensaje literal conservado'),
   'el contrato debe rechazar mockup individual y validar las vistas y el copy');
 ok(_buildOutputContract('variation', 'CAMISETA SOFT', { A: {}, B: {}, C: {} }) === '',
