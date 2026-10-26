@@ -2318,7 +2318,8 @@ function _validatePromptContract(o, modeCtx) {
   const missing = required.filter(function (marker) { return o == null || o.indexOf(marker) === -1; });
   const dupes = [];
   const markers = (modeCtx && modeCtx.markers) || [];
-  markers.forEach(function (m) { if (String(o == null ? '' : o).split(m).length - 1 > 1) dupes.push(m); });
+  const uniqueMarkers = (modeCtx && modeCtx.unique) || [];
+  markers.forEach(function (m) { if (uniqueMarkers.indexOf(m) !== -1) { if (String(o == null ? '' : o).split(m).length - 1 > 1) dupes.push(m); } });
   return { ok: missing.length === 0 && dupes.length === 0, missing: missing, dupes: dupes };
 }
 function _promptContractForMode(ctx) {
@@ -2336,7 +2337,7 @@ function _promptContractForMode(ctx) {
     return { required: ['/EXPLOR', 'CONTRATO CREATIVO', 'FAMILIA'], markers: ['/EXPLOR', 'CONTRATO CREATIVO', 'FAMILIA'] };
   }
   if (contactDNA) {
-    return { required: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY: conserva', 'SALIDA: produce', 'REGRAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGRAS COMUNES'], markers: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY:', 'SALIDA:', 'REGRAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGRAS COMUNES'] };
+    return { required: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY: conserva', 'SALIDA: produce', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGLAS COMUNES'], markers: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY:', 'SALIDA:', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGLAS COMUNES'] };
   }
   return { required: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY: conserva', 'SALIDA: produce', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGLAS COMUNES A LAS 3 FICHAS'], markers: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY:', 'SALIDA:', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGLAS COMUNES'] };
 }
@@ -2735,6 +2736,10 @@ function formatPrompt(result) {
     o += '\n';
   });
 
+  const promptContract = _validatePromptContract(o, _promptContractForMode({ isVar: isVar, isPatron: isPatron, isExplore: isExplore, contactDNA: contactDNA }));
+  if (!promptContract.ok) {
+    return 'CONTRATO CRITICO INCOMPLETO: faltan bloques criticos: ' + promptContract.missing.join(' | ');
+  }
   try { window._PROMPT_SIG = _promptSignature(); } catch (e) { /* sin DOM real */ }
   return o;
 }
