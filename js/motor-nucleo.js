@@ -1220,7 +1220,7 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
     };
   }
   const derived = (userMessage && String(userMessage).trim())
-    ? _motifSceneFromMessage(String(anchor || userConcept || '').trim(), userMessage)
+    ? _motifSceneFromMessage(String(userMessage).trim(), userMessage)
     : '';
   const fallback = (derived && String(derived).trim())
     ? derived
