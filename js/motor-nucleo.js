@@ -586,7 +586,7 @@ function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
     allowedByKey[k].forEach(function (mode) {
       if (!avoidLocked && lockedModes.indexOf(mode) !== -1) return;
       chosen[k] = mode;
-      enumerate(index + 1, chosen, total + (score[mode] || 0) + Math.random() * 0.3, avoidLocked);
+      enumerate(index + 1, chosen, total + (score[mode] || 0) + _stableUnit(String(k) + '|' + mode) * 0.3, avoidLocked);
       delete chosen[k];
     });
   }
@@ -1219,12 +1219,19 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
       conflict: ''
     };
   }
-  const fallback = (typeof _pick === 'function') ? _pick(familyObjs) : '';
+  const derived = (userMessage && String(userMessage).trim())
+    ? _motifSceneFromMessage(String(anchor || userConcept || '').trim(), userMessage)
+    : '';
+  const fallback = (derived && String(derived).trim())
+    ? derived
+    : ((typeof _pick === 'function') ? _pick(familyObjs) : '');
   if (!fallback) return { list: [], anchor: anchor, conflict: '' };
   return {
     list: [fallback],
     anchor: fallback,
-    conflict: 'el concepto «' + (anchor || userConcept || '') + '» no encaja con ningún motivo de la familia; se usó «' + fallback + '» como motivo provisional de la serie.'
+    conflict: (derived && String(derived).trim())
+      ? 'el concepto «' + (anchor || userConcept || '') + '» no encaja con ningún motivo de la familia; se propuso una interpretación derivada del concepto/mensaje («' + fallback + '») como motivo de la serie. Integra esa interpretación con coherencia antes de producir definitivos; no añadas objetos ajenos ni inventes un motivo propio.'
+      : 'el concepto «' + (anchor || userConcept || '') + '» no encaja con ningún motivo de la familia; se usó «' + fallback + '» como motivo provisional de la serie.'
   };
 }
 
@@ -1401,7 +1408,11 @@ function _assignTextCompositions() {
   const out = {};
   ['A', 'B', 'C'].forEach(function (k) {
     const weights = remaining.map(function (a) { return recent.has(a) ? 0.35 : 1; });
-    const pick = _pickWeighted(remaining, weights);
+    const seed = _stableUnit([
+      MOTOR_STATE.market, MOTOR_STATE.region, MOTOR_STATE.product,
+      MOTOR_STATE.concept, MOTOR_STATE.message, k, 'text-composition'
+    ].join('|'));
+    const pick = _pickWeightedStable(remaining, weights, seed);
     out[k] = pick;
     remaining.splice(remaining.indexOf(pick), 1);
   });
@@ -1825,6 +1836,40 @@ function buildCandidate(audsPerKey, fixedIdentity) {
 }
 
 /* --- Scoring y selección --- */
+function _artDirectionCoherence(v) {
+  if (!v) return { score: 0, issues: ['ficha ausente'] };
+  var score = 100;
+  var issues = [];
+  if (typeof _arquitecturaCompatible === 'function'
+      && !_arquitecturaCompatible(v.distribucionTexto, v.layout)) {
+    score -= 35;
+    issues.push('arquitectura textual no encaja con layout');
+  }
+  if (typeof _integracionCompatible === 'function') {
+    var integration = _integracionCompatible(v.layout, v.integracionTexto);
+    if (integration && integration !== v.integracionTexto) {
+      score -= 20;
+      issues.push('integración textual incompatible con layout');
+    }
+  }
+  var density = String(v.densidad || '').toLowerCase();
+  var negative = String(v.negativeSpace || '').toLowerCase();
+  if (/heavy|alta|densa/.test(density) && /amplio|abundante|mucho aire|espacio generoso/.test(negative)) {
+    score -= 12;
+    issues.push('densidad y espacio negativo se contradicen');
+  }
+  if (/light|soft|baja|ligera/.test(density) && /mínimo espacio|sin espacio|masa cerrada/.test(negative)) {
+    score -= 12;
+    issues.push('densidad y espacio negativo se contradicen');
+  }
+  if (v.jerarquiaVisual === 'SOLO_TEXTO'
+      && String(v.objeto || '').indexOf('SIN OBJETO') === -1) {
+    score -= 25;
+    issues.push('modo solo texto conserva un objeto dibujable');
+  }
+  return { score: Math.max(0, score), issues: issues };
+}
+
 function scoreSet(set) {
   // El objeto deja de ser eje de diversidad: el contactsheet debe conservarlo.
   const fields = ['estilo', 'layout', 'tipografia', 'formaSimbolo', 'tratamiento', 'integracionTexto', 'distribucionTexto', 'familiaColor'];
@@ -1853,6 +1898,10 @@ function scoreSet(set) {
     && new Set(treatmentKeys).size === 3
     && K.every(function (k) { return _treatmentSpecComplete(set[k].tratamiento); });
 
+  const artDirection = K.map(function (k) { return _artDirectionCoherence(set[k]); });
+  const artDirectionMin = Math.min.apply(null, artDirection.map(function (x) { return x.score; }));
+  const artDirectionAvg = Math.round(artDirection.reduce(function (sum, x) { return sum + x.score; }, 0) / artDirection.length);
+
   const fitAudMin = Math.min.apply(null, K.map(function (k) { return set[k].fitAudiencia || 0; }));
   const fitProdMin = Math.min.apply(null, K.map(function (k) { return set[k].fitProducto || 0; }));
 
@@ -1862,9 +1911,12 @@ function scoreSet(set) {
     familias: familias,
     symbolStable: symbolStable,
     treatmentsComplete: treatmentsComplete,
+    artDirectionMin: artDirectionMin,
+    artDirectionAvg: artDirectionAvg,
+    artDirection: artDirection,
     fitAudienciaMin: fitAudMin,
     fitProductoMin: fitProdMin,
-    total: dPct * 2 + (estilos.length === 3 ? 30 : 0) + (symbolRequired ? (symbolStable ? 20 : -50) : 0) + (treatmentsComplete ? 20 : -40) + fitAudMin * 0.5 + fitProdMin * 0.5
+    total: dPct * 2 + (estilos.length === 3 ? 30 : 0) + (symbolRequired ? (symbolStable ? 20 : -50) : 0) + (treatmentsComplete ? 20 : -40) + fitAudMin * 0.5 + fitProdMin * 0.5 + artDirectionAvg * 0.8
   };
 }
 
@@ -1939,11 +1991,12 @@ function evaluaSetOk(set) {
     && (set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3)
     && jerAutoDistintas && densAutoDistinta && negAutoDistinta;
   const pertinenciaOk = m.fitAudienciaMin >= UMBRAL_AUDIENCIA_MIN && m.fitProductoMin >= UMBRAL_PRODUCTO_MIN;
+  const coherenciaArtisticaOk = m.artDirectionMin >= 65;
   const estilosOk = MOTOR_STATE.groupMode === 'mismo'
     ? m.estilos.length === 1
     : m.estilos.length === 3;
   const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
-  const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk
+  const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk && coherenciaArtisticaOk
     && _patternConflictsOf(set) === 0;
   const detalle = [];
   if (!(m.diversity >= 55)) detalle.push('diferencia ' + m.diversity + '/100 (mín 55)');
@@ -1957,6 +2010,7 @@ function evaluaSetOk(set) {
   if (MOTOR_STATE.groupMode === 'mismo' ? m.estilos.length !== 1 : m.estilos.length !== 3) detalle.push('estilos no cumplen el modo');
   if (_isLockedContactSet() && !(m.symbolStable && m.treatmentsComplete)) detalle.push('identidad de contacto inestable');
   const umbralMsg = _mensajeUmbral(m);
+  if (!coherenciaArtisticaOk) detalle.push('coherencia artística mín ' + m.artDirectionMin + '/100 (mín 65): ' + m.artDirection.map(function (x, i) { return x.issues.length ? K[i] + ': ' + x.issues.join(', ') : ''; }).filter(Boolean).join(' · '));
   if (umbralMsg) detalle.push(umbralMsg);
   if (_patternConflictsOf(set) !== 0) detalle.push('patrones recientes repetidos');
   return { score: m, passed: ok, detalle: detalle };
@@ -2235,6 +2289,56 @@ function _promptSignature() {
     if (fi && fi.files && fi.files[0]) { const f = fi.files[0]; img = [f.name, f.size, f.lastModified].join('|'); }
   } catch (e) {}
   return [g('workflowMode'), g('market'), g('product'), g('subniche'), g('concept'), g('message'), g('support'), g('serie'), g('audienceSet'), img].join('§');
+}
+
+/* Fase 5 / Paso B: contrato de bloques del prompt final.
+   CRITICO: debe estar presente y ser valido. OBLIGATORIO_CON_VALOR_SEGURO: debe estar
+   presente o resolverse con un valor seguro documentado. OPCIONAL: se omite si no esta
+   disponible (dependencia opcional no invalida el prompt). */
+const PROMPT_BLOCK_LEVELS = Object.freeze({
+  variacion: 'critical', patron: 'critical', exploracion: 'critical', contactsheet: 'critical',
+  contratoEstilo: 'critical', bloqueoEstilo: 'critical', identidad: 'critical', copy: 'critical',
+  salida: 'critical', reglasInquebrantables: 'critical', diferenciaDura: 'critical', contraste: 'critical',
+  jerarquia: 'critical', textosIdentidad: 'critical',
+  idioma: 'mandatory', cultura: 'mandatory', legal: 'mandatory', producto: 'mandatory', acabado: 'mandatory',
+  presentacion: 'mandatory', doctrina: 'mandatory', sandbox: 'mandatory'
+});
+function _promptBlockLevel(id) { const l = PROMPT_BLOCK_LEVELS[id]; return (l === 'critical' || l === 'mandatory' || l === 'optional') ? l : 'mandatory'; }
+function _appendPromptBlock(o, level, text, ctx) {
+  let out = (o == null ? '' : o);
+  if (level === 'optional') {
+    const optionalCtx = (ctx && typeof ctx.optional === 'object') ? ctx.optional : null;
+    const available = optionalCtx ? !!optionalCtx.available : true;
+    if (!available) return out;
+  }
+  return out + (text == null ? '' : text);
+}
+function _validatePromptContract(o, modeCtx) {
+  const required = (modeCtx && modeCtx.required) || [];
+  const missing = required.filter(function (marker) { return o == null || o.indexOf(marker) === -1; });
+  const dupes = [];
+  const markers = (modeCtx && modeCtx.markers) || [];
+  markers.forEach(function (m) { if (String(o == null ? '' : o).split(m).length - 1 > 1) dupes.push(m); });
+  return { ok: missing.length === 0 && dupes.length === 0, missing: missing, dupes: dupes };
+}
+function _promptContractForMode(ctx) {
+  const isVar = ctx ? !!ctx.isVar : false;
+  const isPatron = ctx ? !!ctx.isPatron : false;
+  const isExplore = ctx ? !!ctx.isExplore : false;
+  const contactDNA = ctx ? !!ctx.contactDNA : false;
+  if (isVar) {
+    return { required: ['/VARIATION - TRES DIRECCIONES', 'CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY: conserva', 'SALIDA: produce', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA'], markers: ['/VARIATION', 'CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY:', 'SALIDA:', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA'] };
+  }
+  if (isPatron) {
+    return { required: ['/PATRON REPETIDO', 'CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'PATRON', 'TEXTO EN TILE'], markers: ['/PATRON', 'CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'PATRON', 'TEXTO EN TILE'] };
+  }
+  if (isExplore) {
+    return { required: ['/EXPLOR', 'CONTRATO CREATIVO', 'FAMILIA'], markers: ['/EXPLOR', 'CONTRATO CREATIVO', 'FAMILIA'] };
+  }
+  if (contactDNA) {
+    return { required: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY: conserva', 'SALIDA: produce', 'REGRAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGRAS COMUNES'], markers: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY:', 'SALIDA:', 'REGRAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGRAS COMUNES'] };
+  }
+  return { required: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY: conserva', 'SALIDA: produce', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGLAS COMUNES A LAS 3 FICHAS'], markers: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY:', 'SALIDA:', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGLAS COMUNES'] };
 }
 
 function formatPrompt(result) {

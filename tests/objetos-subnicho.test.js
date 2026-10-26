@@ -343,6 +343,25 @@ const planBasura = _planExploreMotifs(famVerso, famVerso, 'zzz qqq vvv', 'zzz qq
 ok(planBasura.conflict !== '', 'concepto basura SIN mensaje sigue declarando conflicto (provisional controlado)');
 ok(famVerso.indexOf(planBasura.list[0]) !== -1, 'el motivo provisional sigue saliendo de la familia');
 
+/* --- Fase 1 (Red Team): concepto con mensaje NO debe sustituirse por motivo
+      provisional al azar del banco (regresión «Puro vacilé efectivo» → «calor que une al barrio»). --- */
+baseState();
+MOTOR_STATE.market = 'colombia';
+MOTOR_STATE.region = 'costa_caribe';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.subniche = 'humor_costeno';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+MOTOR_STATE.concept = 'Puro vacilé efectivo';
+MOTOR_STATE.message = 'Puro vacilé efectivo';
+const humorBank = getBankForSubniche('humor_costeno', 'costa_caribe', 'colombia');
+const planHumor = _planExploreMotifs(humorBank, humorBank, 'Puro vacilé efectivo', 'Puro vacilé efectivo', 'Puro vacilé efectivo');
+ok(String(planHumor.list[0]).indexOf('calor que une al barrio') === -1,
+  'F1: «Puro vacilé efectivo» no debe reemplazarse por el motivo provisional «calor que une al barrio»');
+ok(String(planHumor.list[0]).indexOf('Puro vacilé efectivo') !== -1,
+  'F1: la propuesta debe derivarse del concepto/mensaje y no de un motivo del banco al azar');
+ok(planHumor.conflict !== '', 'F1: la derivación sigue declarando conflicto con motivo derivado, no sustituto arbitrario');
+
 /* --- 11) E2E exploración gospel: versículo + mensaje literal → sin AVISO OBJETO --- */
 baseState();
 MOTOR_STATE.market = 'gospel_es';
