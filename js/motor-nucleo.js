@@ -2405,6 +2405,8 @@ function formatPrompt(result) {
   const sharedExploreCopy = (isExplore && !String(MOTOR_STATE.message || '').trim())
     ? sharedDerivedCopy
     : '';
+  const designCopyText = typedMessage || sharedDerivedCopy || '';
+  const designCopyLanguage = (MOTOR_STATE.market === 'gospel_es' || /español natural/i.test(langDir)) ? 'español natural' : 'inglés nativo';
   const activeDomain = dominioEfectivo();
   let promptFamilyId = null;
   if (isGospelMarket()) promptFamilyId = activeDomain || null;
@@ -2448,12 +2450,12 @@ function formatPrompt(result) {
     const msgRule = ' La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.';
     if (MOTOR_STATE.variationOptions.textos === 'conservar_palabras') {
       o += typedMessage
-        ? 'TEXTOS: conservar LITERALMENTE el mensaje proporcionado «' + typedMessage + '»; no cambiar palabras, no traducir, no inventar texto.' + msgRule + '\n'
+        ? 'TEXTOS: conservar LITERALMENTE el mensaje proporcionado «' + designCopyText + '»; no cambiar palabras, no traducir, no inventar texto.' + msgRule + '\n'
         : 'TEXTOS: conservar literalmente las frases visibles de la referencia cuando se detecten con confianza. No sustituir, completar ni inventar texto; si una frase no se lee con seguridad, omitirla.' + msgRule + '\n';
     } else if (MOTOR_STATE.variationOptions.textos === 'mismo_mensaje') {
-      o += 'TEXTOS: mantener el significado, la intención y la audiencia del ' + (typedMessage ? 'mensaje proporcionado «' + typedMessage + '»' : 'mensaje de la referencia') + ', pero redactar una frase nueva y natural en ' + copyLanguage + ' para cada dirección 01A, 01B y 01C (redacción distinta permitida); no añadir mensajes secundarios, citas, versículos, datos ni afirmaciones no proporcionadas.' + msgRule + '\n';
+      o += 'TEXTOS: mantener el significado, la intención y la audiencia del ' + (typedMessage ? 'mensaje proporcionado «' + designCopyText + '»' : 'mensaje de la referencia') + ', pero redactar una frase nueva y natural en ' + copyLanguage + ' para cada dirección 01A, 01B y 01C (redacción distinta permitida); no añadir mensajes secundarios, citas, versículos, datos ni afirmaciones no proporcionadas.' + msgRule + '\n';
     } else {
-      o += 'TEXTOS: crear un mensaje NUEVO en ' + copyLanguage + ' desde el concepto, la familia y la audiencia (no obliga a conservar el mensaje original' + (typedMessage ? ' «' + typedMessage + '»' : '') + '). Una frase concreta por dirección. No añadir citas, versículos, datos ni afirmaciones no proporcionadas.' + msgRule + '\n';
+      o += 'TEXTOS: crear un mensaje NUEVO en ' + copyLanguage + ' desde el concepto, la familia y la audiencia (no obliga a conservar el mensaje original' + (typedMessage ? ' «' + designCopyText + '»' : '') + '). Una frase concreta por dirección. No añadir citas, versículos, datos ni afirmaciones no proporcionadas.' + msgRule + '\n';
     }
     o += 'ESQUEMAS: aplica las decisiones particulares de cada ficha.\n\n';
   } else if (isPatron) {
@@ -2529,10 +2531,10 @@ function formatPrompt(result) {
     o += 'TEXTO=' + textMode + '; ';
     if (textMode === 'conservar_palabras') {
       o += (typedMessage
-        ? 'conserva LITERALMENTE el mensaje proporcionado «' + typedMessage + '»; no reescribas, traduzcas ni inventes texto. '
+        ? 'conserva LITERALMENTE el mensaje proporcionado «' + designCopyText + '»; no reescribas, traduzcas ni inventes texto. '
         : 'transcribe y conserva exactamente las palabras legibles de la imagen; no reescribas, traduzcas ni inventes texto. Si una palabra no puede leerse con seguridad, omítela. ');
     } else if (textMode === 'mismo_mensaje') {
-      o += 'conserva el significado, la intención y la audiencia' + (typedMessage ? ' del mensaje «' + typedMessage + '»' : '') + ', pero redacta una frase nueva y exacta en el idioma del mercado; no añadas datos ni afirmaciones. ';
+      o += 'conserva el significado, la intención y la audiencia' + (typedMessage ? ' del mensaje «' + designCopyText + '»' : '') + ', pero redacta una frase nueva y exacta en el idioma del mercado; no añadas datos ni afirmaciones. ';
     } else if (textMode === 'nuevo_texto') {
       o += 'crea un copy nuevo, breve y pertinente al concepto, la familia y el mercado; no inventes datos, nombres, fechas ni citas. ';
     } else if (textMode === 'sin_texto') {
@@ -2550,6 +2552,8 @@ function formatPrompt(result) {
   }
   o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto. La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
   o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado. FONDO DEL ARTE: liso, plano o transparente; prohibido añadir cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas, marcos ni escenas de fondo no solicitadas, aunque el estilo los use habitualmente. Si la hoja completa no cabe en una sola imagen, entrega por prioridad: 1) los tres estampados frontales, 2) los mockups por columna, 3) los colores rotulados, 4) detalles de impresión y paleta; mejor un parcial limpio que columnas incompletas o texto deforme.\n';
+  o += 'COPY DE DISEÑO: el texto visible en el arte se escribe en ' + designCopyLanguage + '. La copia de diseño conserva sus palabras exactas en ese idioma.\n';
+  o += 'MOCKUP VS ARTE: los modelos humanos de lifestyle en los mockups son exclusivos de la PRESENTACION; el arte y los estampados no incluyen personas, manos, rostros ni soportes salvo que el concepto los autorice.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (result.objectConflicts && result.objectConflicts.length) {
     o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
@@ -2601,7 +2605,7 @@ function formatPrompt(result) {
     o += 'TEXTO EN TILE: mínimo o nulo; si hay texto debe funcionar repetido (sin lectura lineal, sin frase que se corte entre repeticiones).\n';
   } else if (contactDNA) {
     if (contactMainText) {
-      o += 'TEXTOS: conserva literalmente el mensaje principal «' + contactMainText + '». Si hay apoyo autorizado, consérvalo literalmente; si no lo hay, no inventes datos, fechas, cifras ni sellos. Legibilidad primero: letras grandes y correctas a escala real de ' + MOTOR_STATE.product + '.\n';
+      o += 'TEXTOS: conserva literalmente el mensaje principal «' + designCopyText + '». Si hay apoyo autorizado, consérvalo literalmente; si no lo hay, no inventes datos, fechas, cifras ni sellos. Legibilidad primero: letras grandes y correctas a escala real de ' + MOTOR_STATE.product + '.\n';
     } else {
       o += 'TEXTOS: no se proporcionó mensaje, pero NO se ha prohibido el copy. Propón para cada dirección una frase comercial original, concreta y nativa en el idioma del mercado; escribe el texto exacto final, no instrucciones ni placeholders. La jerarquía visual manda: TEXTO_DOMINANTE = frase protagonista; BALANCEADO = texto y símbolo equilibrados; OBJETO_DOMINANTE = símbolo protagonista y frase breve secundaria; SOLO_OBJETO = cero letras (sin copy). No inventes fechas, cifras, nombres propios ni afirmaciones factuales. Omite texto de apoyo si no aporta valor.\n';
     }
@@ -2686,12 +2690,12 @@ function formatPrompt(result) {
     if (contactDNA && v.jerarquiaVisual !== 'SOLO_TEXTO') o += 'FUNCIÓN CONSTANTE: ' + v.funcionSimbolica + ' · intención ' + v.intencionEmocional + '\n';
     const textLine = contactDNA
       ? (contactMainText
-        ? 'MENSAJE PRINCIPAL literal: «' + contactMainText + '»' + (contactSupportText ? ' · APOYO literal: «' + contactSupportText + '»' : '') + ' · sin texto terciario · ' + v.tipografia
-        : 'COPY LITERAL (derivado del concepto): «' + sharedDerivedCopy + '»; usarlo exacto en las tres direcciones; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia)
+        ? 'MENSAJE PRINCIPAL literal: «' + designCopyText + '»' + (contactSupportText ? ' · APOYO literal: «' + contactSupportText + '»' : '') + ' · sin texto terciario · ' + v.tipografia
+        : 'COPY LITERAL (derivado del concepto): «' + designCopyText + '»; usarlo exacto en las tres direcciones; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia)
       : (isExplore
         ? (String(MOTOR_STATE.message || '').trim()
-          ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
-          : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + sharedExploreCopy + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia)
+          ? 'COPY PRINCIPAL LITERAL: «' + designCopyText + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
+          : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + designCopyText + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia)
         : v.textoPrincipal + ' / ' + v.textoApoyo + ' / ' + v.textoTerciario + ' · ' + v.tipografia);
     const hierarchyDirective = {
       SOLO_TEXTO: 'SOLO_TEXTO: solo copy literal; 100% tipografía y cero imágenes, objetos o adornos independientes. ÚNICOS elementos permitidos: letras del copy literal. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.',
