@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🔥 Modelos Confirmados Puter.js - Gratis SIN API Key</title>
+  <style>
+    body{font-family:Arial,sans-serif;max-width:800px;margin:20px;background:#0d1117;color:#e8e6df}
+    h1{color:#b390e6}
+    .tarjeta{background:#14141b;padding:20px;margin:15px 0;border-radius:8px;border:1px solid #2a2a38}
+    .boton{background:#376147;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:14px;width:100%}
+    .resultado{margin-top:10px;padding:10px;background:#0d1117;border-radius:5px;white-space:pre-wrap;word-wrap:break-word;font-size:13px}
+    .etiqueta{background:#2a2a38;color:#65c88a;padding:5px 10px;border-radius:4px;font-size:12px;display:inline-block;margin:5px 0}
+  </style>
+</head>
+<body>
+ 
+  <h1>✅ Modelos Confirmados que SÍ Funcionan Gratis</h1>
+  <p><small>Hoy es 24/oct/2026 - Estos modelos SÍ funcionan según tutorial oficial Puter.js</small></p>
+ 
+  <!-- OpenAI GPT-5.5 -->
+  <div class="tarjeta">
+    <h3>🔵 OpenAI GPT-5.5 - Flagship OpenAI</h3>
+    <p class="etiqueta">modelo: openai/gpt-5.5</p>
+    <button class="boton" onclick="probarOpenAI()">Probar gratis ahora</button>
+    <div class="resultado" id="resultado-openai">Cargando...</div>
+  </div>
+ 
+  <!-- Anthropic Claude Opus 5.5 -->
+  <div class="tarjeta">
+    <h3>🟡 Anthropic Claude Opus 5.5 - Writing & Reasoning</h3>
+    <p class="etiqueta">modelo: anthropic/claude-opus-5-5</p>
+    <button class="boton" onclick="probarAnthropic()">Probar gratis ahora</button>
+    <div class="resultado" id="resultado-anthropic">Cargando...</div>
+  </div>
+ 
+  <!-- Google Gemini 3.8 Flash -->
+  <div class="tarjeta">
+    <h3>🟢 Google Gemini 3.8 Flash - Multimodal</h3>
+    <p class="etiqueta">modelo: google/gemini-3.8-flash</p>
+    <button class="boton" onclick="probarGoogle()">Probar gratis ahora</button>
+    <div class="resultado" id="resultado-google">Cargando...</div>
+  </div>
+ 
+  <script src="https://js.puter.com/v2/"></script>
+ 
+  <script>
+    // Probar OpenAI GPT-5.5
+    function probarOpenAI() {
+      document.getElementById('resultado-openai').textContent = "Probando OpenAI GPT-5.5...";
+      puter.ai.chat(
+        "Escribe una función TypeScript para ordenar un array de objetos por fecha",
+        { model: "openai/gpt-5.5" }
+      ).then(res => {
+        document.getElementById('resultado-openai').innerHTML = "<strong>✅ OpenAI GPT-5.5:</strong><br>" + res;
+      }).catch(err => {
+        document.getElementById('resultado-openai').innerHTML = "<strong>❌ Error:</strong><br>" + err.message;
+      });
+    }
+ 
+    // Probar Anthropic Claude Opus 5.5
+    function probarAnthropic() {
+      document.getElementById('resultado-anthropic').textContent = "Probando Anthropic Claude Opus 5.5...";
+      puter.ai.chat(
+        "Escribe un cuento corto sobre un detective que viaja en el tiempo en estilo noir",
+        { model: "anthropic/claude-opus-5-5" }
+      ).then(res => {
+        document.getElementById('resultado-anthropic').innerHTML = "<strong>✅ Anthropic Claude Opus 5.5:</strong><br>" + res;
+      }).catch(err => {
+        document.getElementById('resultado-anthropic').innerHTML = "<strong>❌ Error:</strong><br>" + err.message;
+      });
+    }
+ 
+    // Probar Google Gemini 3.8 Flash
+    function probarGoogle() {
+      document.getElementById('resultado-google').textContent = "Probando Google Gemini 3.8 Flash...";
+      puter.ai.chat(
+        "Diseña un componente CSS grid para un layout de tarjetas responsive",
+        { model: "google/gemini-3.8-flash" }
+      ).then(res => {
+        document.getElementById('resultado-google').innerHTML = "<strong>✅ Google Gemini 3.8 Flash:</strong><br>" + res;
+      }).catch(err => {
+        document.getElementById('resultado-google').innerHTML = "<strong>❌ Error:</strong><br>" + err.message;
+      });
+    }
+  </script>
+ 
+  <p style="margin-top: 20px; font-size: 12px; color: #65c88a;">
+    ✅ Estos modelos SÍ funcionan gratis sin API key | Según tutorial sep/2026 oficial
+  </p>
+ 
+</body>
+</html>

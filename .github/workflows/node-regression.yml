@@ -6,6 +6,7 @@ on:
       - main
       - fix/redteam-semantic-identity
       - fix/debt-015-profile-governs
+      - fix/redteam-prompt-engine
   pull_request:
     branches:
       - main

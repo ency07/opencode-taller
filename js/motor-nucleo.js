@@ -122,7 +122,8 @@ let MOTOR_STATE = {
   stampSide: 'auto',
   printMethod: 'auto',
   imageReference: null,
-  imageAnalysis: null
+  imageAnalysis: null,
+  approvedMotifMaster: ''
 };
 
 const K = ['A', 'B', 'C'];
@@ -1194,7 +1195,11 @@ function _motifSceneFromMessage(concept, message) {
    4. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
        existe, UN conflicto para toda la serie con un motivo provisional.
    La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
-function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
+function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage, approvedMotifMaster) {
+  const master = String(approvedMotifMaster || '').trim();
+  if (master) {
+    return { list: [master], anchor: master, conflict: '' };
+  }
   const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
   if (inBank) {
     return { list: [anchor], anchor: anchor, conflict: '' };
@@ -1493,7 +1498,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     const familyPlan = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBankPlan.indexOf(ob) === -1; });
     if (familyPlan.length) {
       setMotifPlan = (typeof _planExploreMotifs === 'function')
-        ? _planExploreMotifs(familyPlan, objectPool, anchorPlan, userConceptPlan, String(MOTOR_STATE.message || ''))
+        ? _planExploreMotifs(familyPlan, objectPool, anchorPlan, userConceptPlan, String(MOTOR_STATE.message || ''), MOTOR_STATE.approvedMotifMaster)
         : { list: [], anchor: anchorPlan, conflict: '' };
       if (setMotifPlan.conflict) objectConflicts.push(setMotifPlan.conflict);
       seriesAnchor = setMotifPlan.anchor || anchorPlan;
@@ -2344,12 +2349,34 @@ function _promptContractForMode(ctx) {
   return { required: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY: conserva', 'SALIDA: produce', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGLAS COMUNES A LAS 3 FICHAS'], markers: ['CONTRATO DE ESTILO', 'BLOQUEO DE ESTILO', 'COPY:', 'SALIDA:', 'REGLAS INQUEBRANTABLES', 'DIFERENCIA DURA', 'REGLAS COMUNES'] };
 }
 
+function _buildCreativeDirectorDirective(result) {
+  const set = (result && result.set) || {};
+  const concept = String(MOTOR_STATE.concept || '').trim() || String(MOTOR_STATE.message || '').trim();
+  const message = String(MOTOR_STATE.message || '').trim();
+  const familyId = (MOTOR_STATE.workflowMode === 'explore')
+    ? (MOTOR_STATE.explorationBrief && MOTOR_STATE.explorationBrief.familyId) || null
+    : null;
+  const motif = set.A ? String(set.A.objeto || '').trim() : '';
+  const fichaKey = (MOTOR_STATE.workflowMode === 'explore') ? String(set.A ? '01A' : '01A') : '';
+  const copyText = String(MOTOR_STATE.message || '').trim();
+  const audiencia = String(MOTOR_STATE.audienceSet || '').trim() || String(MOTOR_STATE.audienceMulti || '').trim();
+  const estilos = (MOTOR_STATE.workflowMode === 'explore')
+    ? String((MOTOR_STATE.explorationBrief && MOTOR_STATE.explorationBrief.familyLabel) || '').trim()
+    : String(set.A?.estilo || '').trim();
+  const precedencia = [
+    'Reglas inquebrantables > contrato de estilo/bloqueo > jerarquía > tratamiento > estilo > copy/audiencia > paleta/técnica',
+    'Concepto > mensaje > familia > motivo > ficha > copy > audiencia > estilos'
+  ];
+  return { concept, message, familyId, motif, fichaKey, copyText, audiencia, estilos, precedencia };
+}
+
 function formatPrompt(result) {
   if (!result || !result.set) return '';
   const set = result.set;
   const seriesAnchor = String(set.seriesAnchor || '').trim();
   const dense = MOTOR_STATE.fmtDense;
   const isVar = MOTOR_STATE.workflowMode === 'variation';
+  const creativeDirector = _buildCreativeDirectorDirective(result);
 
   // Directivas de idioma y cultura
   let langDir = '';
