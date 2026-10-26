@@ -1575,8 +1575,10 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       // composición/tratamiento/jerarquía, nunca de cambiar la escena.
       const options = (setMotifPlan && setMotifPlan.list) || [];
       if (options.length) {
-        const fresh = options.filter(function (o) { return !usedThisSet.has(o); });
-        const obj = fresh.length ? fresh[0] : options[0];
+        const uniqOptions = [];
+        options.forEach(function (o) { if (o && uniqOptions.indexOf(o) === -1) { uniqOptions.push(o); } });
+        const fresh = uniqOptions.filter(function (o) { return !usedThisSet.has(o); });
+        const obj = fresh.length ? fresh[0] : uniqOptions[0];
         v.objeto = obj || 'PROPUESTA CONCEPTUAL PENDIENTE PARA LA FAMILIA SELECCIONADA: definir concepto y símbolo coherentes antes de diseñar';
       } else {
         v.objeto = seriesAnchor
