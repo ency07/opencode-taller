@@ -151,6 +151,7 @@ function readStateFromDOM() {
   MOTOR_STATE.subniche = v('subniche', 'auto');
   MOTOR_STATE.serie = v('serie', '');
   MOTOR_STATE.concept = v('concept', '');
+  MOTOR_STATE.approvedMotifMaster = v('approvedMotifMaster', '');
   MOTOR_STATE.message = v('message', '');
   MOTOR_STATE.support = v('support', '');
   MOTOR_STATE.audienceSet = v('audienceSet', 'Auto');
@@ -768,38 +769,6 @@ function getObjectPool() {
   // exclusivamente sus objetos doctrinales; nunca se diluye con objetos seculares.
   if (!gospel && !explicitExploreFamilyMissingBank) pool = pool.concat(_commonBankForMarket());
 
-  // --- NUEVO: Ranking de motifs compatibles con concepto/mensaje ---
-  // Si el concepto o mensaje comparten tokens con motivos del banco, usarlos
-  // en lugar de elegir al azar. Mantiene TODOS los matches para variedad
-  // entre las 3 fichas; si no hay match, deja el pool completo (azar controlado).
-  const conceptText = (MOTOR_STATE.concept || '').trim();
-  const messageText = (MOTOR_STATE.message || '').trim();
-  const matchingText = (conceptText + ' ' + messageText).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  let matchedObjs = null;
-  if (typeof _rankCompatibleMotifs === 'function' && matchingText.length > 2) {
-    const matches = _rankCompatibleMotifs(pool, matchingText);
-    if (matches && matches.length > 0) {
-      matchedObjs = matches.filter(function (m) {
-        return m && typeof m === 'string' && m.trim() && pool.indexOf(m.trim()) !== -1;
-      });
-    }
-  }
-  if (matchedObjs && matchedObjs.length > 0) pool = matchedObjs;
-  // --- NUEVO: Para gospel, si el mensaje/concepto menciona Jesucristo/cristo
-  // directamente, priorizar objetos del dominio CROSS (muerte y resurrección)
-  // para evitar objetos ajenos como "jardinero" que aunque son gospel no encajan.
-  if (gospel && !matchedObjs) {
-    const gospelText = matchingText;
-    const mentionsChrist = /jesucristo|jesucristo|cristo|\bcristo\b|mesias|mesías|salvador/.test(gospelText);
-    if (mentionsChrist && typeof window !== 'undefined' && window.GOSPEL_DOMINIOS_ES) {
-      const crossObjs = window.GOSPEL_DOMINIOS_ES.CROSS && window.GOSPEL_DOMINIOS_ES.CROSS.objetos
-        ? window.GOSPEL_DOMINIOS_ES.CROSS.objetos.slice()
-        : [];
-      if (crossObjs && crossObjs.length > 0) pool = crossObjs;
-    }
-  }
-  // ------------------------------------------------------------
-
   return [...new Set(pool.filter(Boolean))];
 }
 
@@ -1150,12 +1119,8 @@ function _rankCompatibleMotifs(pools, concept) {
   const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
     const label = String(item || '').trim();
     const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
-    const overlap = words.filter(function (t) {
-      if (tokens.indexOf(t) !== -1) return true;
-      return tokens.some(function (tk) {
-        return tk.length >= 4 && (tk.indexOf(t) !== -1 || t.indexOf(tk) !== -1);
-      });
-    });
+    // Substring overlap is not evidence of semantic fit (e.g. "mar" in "amar").
+    const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
     if (!overlap.length) return null;
     return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
@@ -1243,6 +1208,19 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
 function _resolveContactIdentity(objectPool) {
   const concept = String(MOTOR_STATE.concept || '').trim();
   const message = String(MOTOR_STATE.message || '').trim();
+  const approvedMotif = String(MOTOR_STATE.approvedMotifMaster || '').trim();
+  if (approvedMotif) {
+    const protective = /\b(proteg\w*|protect\w*|guard\w*|defend\w*|cuid\w*|care\w*|safe\w*)\b/i.test(concept + ' ' + message);
+    return {
+      ok: true,
+      reason: '',
+      symbol: approvedMotif,
+      identityMode: 'user-approved-motif',
+      guiaSimbolo: 'El usuario fijó el motivo «' + approvedMotif + '». Represéntalo reconociblemente; no lo reemplaces, no derives otros objetos del estilo y no conviertas este campo en texto impreso.',
+      funcionSimbolica: protective ? 'Protección y cuidado' : 'Expresión visual del concepto indicado',
+      intencionEmocional: protective ? 'Seguridad y cuidado' : 'Interpretación coherente con el concepto indicado'
+    };
+  }
   // La identidad primaria debe venir del concepto del usuario.
   // Si no hay un único objeto, el concepto completo funciona como ancla semántica:
   // el motor puede crear una escena o metáfora coherente sin elegir un objeto al azar.
@@ -1511,7 +1489,9 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     const pConcept = String(MOTOR_STATE.concept || '').trim();
     const pCommon = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
     const pFamily = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return pCommon.indexOf(ob) === -1; });
-    if (pFamily.length) {
+    if (String(MOTOR_STATE.approvedMotifMaster || '').trim()) {
+      patronMotif = String(MOTOR_STATE.approvedMotifMaster).trim();
+    } else if (pFamily.length) {
       if (pConcept && pFamily.indexOf(pConcept) !== -1) {
         // El concepto ya es un motivo del banco: dibujar ESE motivo.
         patronMotif = pConcept;
@@ -2295,7 +2275,18 @@ function _promptSignature() {
     const fi = document.getElementById('imageUpload');
     if (fi && fi.files && fi.files[0]) { const f = fi.files[0]; img = [f.name, f.size, f.lastModified].join('|'); }
   } catch (e) {}
-  return [g('workflowMode'), g('market'), g('product'), g('subniche'), g('concept'), g('message'), g('support'), g('serie'), g('audienceSet'), img].join('§');
+  return [g('workflowMode'), g('market'), g('product'), g('subniche'), g('concept'), g('approvedMotifMaster') || MOTOR_STATE.approvedMotifMaster || '', g('message'), g('support'), g('serie'), g('audienceSet'), MOTOR_STATE.objectMode || 'simple', img].join('§');
+}
+
+function _objectModeDirective(mode) {
+  const selected = String(mode || 'simple');
+  if (selected === 'forzar_combinacion') {
+    return 'MODO DE OBJETOS: COMBINAR DOS. Integra dos motivos concretos solo si ambos están respaldados por el concepto o mensaje del usuario. Si no hay dos motivos defendibles, no inventes el segundo: declara que la combinación no pudo cumplirse.';
+  }
+  if (selected === 'mixto') {
+    return 'MODO DE OBJETOS: COMBINACIÓN SELECTIVA. Usa un motivo principal; añade un segundo solo cuando ambos estén respaldados por el concepto o mensaje y formen una relación visual comprensible. Nunca añadas un objeto para rellenar.';
+  }
+  return 'MODO DE OBJETOS: UNO POR DISEÑO. Representa únicamente el motivo autorizado de cada ficha; no lo sustituyas ni añadas motivos independientes.';
 }
 
 /* Fase 5 / Paso B: contrato de bloques del prompt final.
@@ -2581,6 +2572,11 @@ function formatPrompt(result) {
   }
   o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto. La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
   o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado. FONDO DEL ARTE: liso, plano o transparente; prohibido añadir cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas, marcos ni escenas de fondo no solicitadas, aunque el estilo los use habitualmente. Si la hoja completa no cabe en una sola imagen, entrega por prioridad: 1) los tres estampados frontales, 2) los mockups por columna, 3) los colores rotulados, 4) detalles de impresión y paleta; mejor un parcial limpio que columnas incompletas o texto deforme.\n';
+  o += _objectModeDirective(MOTOR_STATE.objectMode) + '\n';
+  const approvedMotif = String(MOTOR_STATE.approvedMotifMaster || '').trim();
+  if (approvedMotif && !isVar) {
+    o += 'OBJETO/SÍMBOLO FIJADO POR EL USUARIO: «' + approvedMotif + '». Este es el motivo visual autorizado para las fichas; represéntalo reconociblemente, no lo sustituyas por una interpretación libre y no imprimas esta instrucción como texto.\n';
+  }
   o += 'COPY DE DISEÑO: el texto visible en el arte se escribe en ' + designCopyLanguage + '. La copia de diseño conserva sus palabras exactas en ese idioma.\n';
   o += 'MOCKUP VS ARTE: los modelos humanos de lifestyle en los mockups son exclusivos de la PRESENTACION; el arte y los estampados no incluyen personas, manos, rostros ni soportes salvo que el concepto los autorice.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';

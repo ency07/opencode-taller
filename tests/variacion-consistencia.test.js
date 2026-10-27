@@ -30,12 +30,15 @@ const JS = path.join(ROOT, 'js');
 });
 
 const motor = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
+const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const NAMES = ['01A', '01B', '01C'];
 const KEYS = ['HEAVY', 'SOFT', 'MODERN'];
 
 /* 1) Estático: el tratamiento fijo se aplica también en variación. */
 ok(/const fixedTreatment = \(contactIdentity \|\| MOTOR_STATE\.workflowMode === 'explore' \|\| MOTOR_STATE\.workflowMode === 'variation'\) \? _CONTACT_TREATMENT_ORDER\[k\] : '';/.test(motor),
   'variación debe fijar el tratamiento A/B/C igual que CONTACTSHEET y exploración');
+ok(html.includes('Símbolo, color y textos solo se aplican al generar en modo «Variación desde imagen» con una imagen cargada'),
+  'la interfaz debe explicar cuándo se aplican los selectores de variación');
 
 /* 2) Estático: audiencia legible en ficha y en el árbitro. */
 ok(/function _audienceDisplay\(/.test(motor), 'debe existir el helper de audiencia legible');

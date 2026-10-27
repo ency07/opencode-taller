@@ -400,6 +400,42 @@ const promptPatVerso = formatPrompt(asResult(rPatVerso));
 ok(promptPatVerso.indexOf('AVISO OBJETO (conflicto)') === -1, 'patrón: el prompt sin AVISO OBJETO falso');
 ok(promptPatVerso.indexOf('símbolo derivado del mensaje') !== -1, 'patrón: el símbolo se deriva del mensaje');
 
+/* --- Red Team: coincidencia de motivos exacta y selector de objetos conectado --- */
+ok(_rankCompatibleMotifs(['mar en calma', 'amar con paciencia'], 'mar').indexOf('amar con paciencia') === -1,
+  'la coincidencia de motivos no debe aceptar subcadenas dentro de palabras distintas');
+ok(_rankCompatibleMotifs(['corazón restaurado', 'camino nuevo'], 'corazón renovado').indexOf('corazón restaurado') !== -1,
+  'una palabra distintiva exacta del concepto/mensaje sí puede proponer motivo de familia');
+const planApproved = _planExploreMotifs(['camino nuevo', 'corazón restaurado'], ['camino nuevo', 'corazón restaurado'], 'Él hace nuevas todas las cosas', 'Él hace nuevas todas las cosas', 'Corazón renovado', 'corazón restaurado');
+ok(planApproved.list.length === 1 && planApproved.list[0] === 'corazón restaurado' && planApproved.conflict === '',
+  'el motivo explícitamente autorizado debe prevalecer sobre las inferencias de familia');
+MOTOR_STATE.concept = 'Él hace nuevas todas las cosas';
+MOTOR_STATE.message = 'Corazón renovado';
+MOTOR_STATE.approvedMotifMaster = 'corazón restaurado';
+const identityApproved = _resolveContactIdentity([]);
+ok(identityApproved.ok && identityApproved.symbol === 'corazón restaurado' && identityApproved.identityMode === 'user-approved-motif',
+  'el selector de motivo autorizado debe fijar la identidad de contacto');
+ok(identityApproved.guiaSimbolo.includes('no lo reemplaces') && identityApproved.guiaSimbolo.includes('texto impreso'),
+  'el contrato del motivo autorizado debe bloquear sustituciones y copy accidental');
+MOTOR_STATE.objectMode = 'simple';
+const promptOneObject = formatPrompt(asResult(rVerso));
+ok(promptOneObject.includes('MODO DE OBJETOS: UNO POR DISEÑO'),
+  'el selector «Un objeto por diseño» debe llegar al prompt');
+MOTOR_STATE.objectMode = 'mixto';
+const promptMixedObjects = formatPrompt(asResult(rVerso));
+ok(promptMixedObjects.includes('MODO DE OBJETOS: COMBINACIÓN SELECTIVA'),
+  'el selector «A veces combinar dos» debe llegar al prompt');
+MOTOR_STATE.objectMode = 'forzar_combinacion';
+const promptForcedObjects = formatPrompt(asResult(rVerso));
+ok(promptForcedObjects.includes('MODO DE OBJETOS: COMBINAR DOS') && promptForcedObjects.includes('no inventes el segundo'),
+  'la combinación forzada debe exigir dos motivos justificados sin autorizar objetos inventados');
+const rMotifApproved = buildCandidate(resolveAudiences(), null);
+const promptMotifApproved = formatPrompt(asResult(rMotifApproved));
+ok(promptMotifApproved.includes('OBJETO/SÍMBOLO FIJADO POR EL USUARIO: «corazón restaurado»'),
+  'el motivo explícito se debe conservar en el prompt final');
+symbols(rMotifApproved).forEach(function (symbol) {
+  ok(symbol === 'corazón restaurado', 'todas las fichas que dibujan deben respetar el motivo autorizado: ' + symbol);
+});
+
 function finish() {
   const passed = failures.length === 0;
   console.log((passed ? 'PASS' : 'FAIL') + '  objetos-subnicho  (' + checks + ' aserciones, ' + failures.length + ' fallos)');

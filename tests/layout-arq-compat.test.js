@@ -121,6 +121,16 @@ ok(motorSrc.includes('function _promptSignature()'), 'B: existe la firma de la c
 ok(motorSrc.includes('window._PROMPT_SIG = _promptSignature()'), 'B: formatPrompt registra la firma al emitir');
 ok(motorSrc.includes('_promptSignature() !== window._PROMPT_SIG'), 'B: copiarPrompt detecta la desconexión interfaz ↔ prompt');
 ok(typeof _promptSignature === 'function', 'B: _promptSignature está cargada');
+MOTOR_STATE.objectMode = 'simple';
+const signatureSingleObject = _promptSignature();
+MOTOR_STATE.objectMode = 'mixto';
+ok(_promptSignature() !== signatureSingleObject,
+  'B: cambiar el selector de objetos debe invalidar la firma del prompt ya generado');
+MOTOR_STATE.objectMode = 'simple';
+const signatureNoApprovedMotif = _promptSignature();
+MOTOR_STATE.approvedMotifMaster = 'corazón renovado';
+ok(_promptSignature() !== signatureNoApprovedMotif,
+  'B: cambiar el motivo autorizado debe invalidar la firma del prompt ya generado');
 
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  layout-arq-compat  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
