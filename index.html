@@ -215,7 +215,20 @@
           <div class="field">
             <label for="approvedMotifMaster">Objeto o símbolo principal (opcional)</label>
             <input id="approvedMotifMaster" type="text" placeholder="Ej.: corazón renovado, una cruz vacía, manos trabajando madera" />
-            <div class="hint">Úsalo para concretar una idea abstracta. Este campo fija qué motivo dibujar; no se imprime como texto. Si queda vacío, el motor interpreta el concepto y puede proponer una lectura visual. En «Variación desde imagen», manda el selector de símbolo de esa sección.</div>
+            <div class="hint">Escribe un objeto para fijarlo en las tres propuestas. Si lo dejas vacío, el motor busca motivos relacionados con el significado del concepto. En «Variación desde imagen», manda el selector de símbolo de esa sección.</div>
+            <div class="field-row" id="motifExploreControls">
+              <div class="field">
+                <label for="motifVariationMode">Motivos en A/B/C</label>
+                <select id="motifVariationMode">
+                  <option value="distinct" selected>Variar el objeto con la misma idea</option>
+                  <option value="same">Mantener el mismo objeto</option>
+                </select>
+              </div>
+              <div class="field" style="align-self:end;">
+                <button id="btnChangeMotifs" type="button" class="ghost">Proponer otros objetos</button>
+              </div>
+            </div>
+            <div class="hint" id="motifExploreHelp">A/B/C pueden usar metáforas distintas para expresar la misma idea. El botón rota las propuestas del banco; el objeto escrito arriba prevalece.</div>
           </div>
 
           <div class="field">

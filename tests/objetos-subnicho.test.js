@@ -215,6 +215,7 @@ ok(_userNamedObject('nada que ver aquí', ['tabla rota']) === '',
 
 /* --- 8) El concepto del banco es el ANCLA de toda la series --- */
 baseState();
+MOTOR_STATE.motifVariationMode = 'same';
 MOTOR_STATE.market = 'colombia';
 MOTOR_STATE.region = 'todas';
 MOTOR_STATE.product = 'CAMISETA SOFT';

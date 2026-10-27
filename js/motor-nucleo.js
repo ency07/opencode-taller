@@ -109,6 +109,8 @@ let MOTOR_STATE = {
   explorationBrief: null,
   groupMode: 'distintos',
   objectMode: 'simple',
+  motifVariationMode: 'distinct',
+  motifRerollNonce: 0,
   designMode: 'contacto',
   repeatType: 'medio salto',
   fmtDense: true,
@@ -152,6 +154,7 @@ function readStateFromDOM() {
   MOTOR_STATE.serie = v('serie', '');
   MOTOR_STATE.concept = v('concept', '');
   MOTOR_STATE.approvedMotifMaster = v('approvedMotifMaster', '');
+  MOTOR_STATE.motifVariationMode = v('motifVariationMode', MOTOR_STATE.motifVariationMode || 'distinct');
   MOTOR_STATE.message = v('message', '');
   MOTOR_STATE.support = v('support', '');
   MOTOR_STATE.audienceSet = v('audienceSet', 'Auto');
@@ -1126,9 +1129,31 @@ function _userNamedObject(text, pools) {
   return best;
 }
 
-/* Motivos de familia compatibles con el concepto, ordenados por afinidad
-   (mismo criterio de puntuación que _chooseConceptCompatibleObject, pero
-   devuelve la lista completa para repartirla entre las fichas de la serie). */
+/* Ejes semánticos editoriales: conectan ideas abstractas con relaciones
+   visuales, aunque el concepto y el objeto no compartan las mismas palabras.
+   Mantener esta capa explícita y ampliable; no es comprensión lingüística libre. */
+const _CONCEPT_MOTIF_AXES = [
+  { axis: 'sostener_bajo_presion', concept: /\b(debil|debilidad|fragil|vulnerab|agriet|quebrad|roto|presion|carga|suficient|bast|fuerza|fuerte|resist|firme|soport)\w*\b/ },
+  { axis: 'provision_y_cuidado', concept: /\b(gracia|amor|cuidado|provision|prove|suficient|bast|acompan|presencia|ampar|sostien)\w*\b/ },
+  { axis: 'confianza_y_perseverancia', concept: /\b(fe|confianza|confiar|esperanza|persever|fiel|constante|resist)\w*\b/ },
+  { axis: 'restauracion', concept: /\b(restaur|repar|renov|reconstru|san|nuevo|nueva|redim)\w*\b/ },
+  { axis: 'crecimiento_en_adversidad', concept: /\b(crec|florec|fruto|semilla|brot|vida|debil|debilidad|prueba|adversidad)\w*\b/ },
+  { axis: 'luz_y_presencia', concept: /\b(presencia|acompan|luz|guia|esperanza|noche|oscuridad|tiniebla)\w*\b/ }
+];
+const _MOTIF_VISUAL_AXES = [
+  { axis: 'sostener_bajo_presion', motif: /\b(puente|raiz|cimiento|columna|roca|ancla|red|vasija|barro|olla|recipiente|muro|pilar|viga|nudo|cuerda|techo|puerta)\w*\b/ },
+  { axis: 'provision_y_cuidado', motif: /\b(vasija|aceite|pan|mesa|manto|manta|refugio|nido|copa|agua|fuente|casa|cuidado|abrigo|carga)\w*\b/ },
+  { axis: 'confianza_y_perseverancia', motif: /\b(ancla|red|puente|caminante|paso|huella|roca|brasa|luz|lampara|faro|semilla|raiz)\w*\b/ },
+  { axis: 'restauracion', motif: /\b(repar|remiend|injert|restaur|reconstru|puente|vasija|barro|costura|tejido|madero|lienzo|fragment)\w*\b/ },
+  { axis: 'crecimiento_en_adversidad', motif: /\b(semilla|brote|raiz|arbol|trigo|fruto|flor|planta|concreto|ruina|tierra|tormenta)\w*\b/ },
+  { axis: 'luz_y_presencia', motif: /\b(luz|lampara|vela|brasa|faro|amanecer|ventana|lucerna|estrella)\w*\b/ }
+];
+function _semanticAxesFor(text, rules, field) {
+  const source = (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(text || '')) : String(text || '').toLowerCase());
+  return rules.filter(function (rule) { return rule[field].test(source); }).map(function (rule) { return rule.axis; });
+}
+/* Motivos de familia compatibles con el concepto. Puntúa primero relaciones
+   semánticas editoriales y usa coincidencia literal como señal secundaria. */
 function _rankCompatibleMotifs(pools, concept) {
   const normalize = function (value) {
     return (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(value || '')) : String(value || '').toLowerCase())
@@ -1136,6 +1161,7 @@ function _rankCompatibleMotifs(pools, concept) {
   };
   const source = normalize(concept);
   if (!source) return [];
+  const conceptAxes = _semanticAxesFor(source, _CONCEPT_MOTIF_AXES, 'concept');
   const stop = new Set(['que','con','para','desde','hacia','sobre','entre','una','uno','unos','unas','los','las','el','la','de','del','en','por','como','sin','the','and','with','for','from','into','over','under','that','which','holding','sosteniendo','representa','lugares','turisticos','tourist','places','profundo','deep','my','a','an','of','to']);
   const tokens = [...new Set(source.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
   const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
@@ -1143,8 +1169,14 @@ function _rankCompatibleMotifs(pools, concept) {
     const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
     // Substring overlap is not evidence of semantic fit (e.g. "mar" in "amar").
     const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    if (!overlap.length) return null;
-    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
+    const motifAxes = _semanticAxesFor(label, _MOTIF_VISUAL_AXES, 'motif');
+    const semanticMatches = motifAxes.filter(function (axis) { return conceptAxes.indexOf(axis) !== -1; });
+    // Si el concepto tiene una lectura semántica registrada, una coincidencia
+    // literal aislada no basta para meter un objeto ajeno en la lista.
+    if (conceptAxes.length && !semanticMatches.length) return null;
+    if (!overlap.length && !semanticMatches.length) return null;
+    const lexicalScore = overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0);
+    return { label: label, score: semanticMatches.length * 100 + lexicalScore, matches: semanticMatches.length + overlap.length, semanticMatches: semanticMatches.length };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
   return ranked.map(function (r) { return r.label; });
 }
@@ -1171,28 +1203,41 @@ function _motifSceneFromMessage(concept, message) {
 }
 
 /* Plan de motivos de la SERIE (exploración). Se calcula UNA vez por set:
-   1. Si el concepto ya es un motivo del banco de la familia → ese es el ANCLA
-       semántica de TODA la serie: se dibuja ESE motivo en las fichas que
-       representan. La representación (tratamiento, composición, tipografía)
-       cambia por ficha; la escena no. Sin sustituciones por afinidad superficial:
-       «calor» no autoriza a dibujar fuego, brasas ni un sol.
-   2. Si no → los motivos de familia compatibles (afinidad de palabras), en orden.
-   3. Si el concepto es textual (versículo/cita) o el MENSAJE es afín a un motivo
+   1. Un motivo manual fija el objeto en A/B/C.
+   2. En automático, el selector puede mantener un objeto o repartir motivos
+      distintos que compartan ejes semánticos con el concepto.
+   3. La coincidencia de palabras es secundaria a las relaciones editoriales;
+      «calor» por sí solo no autoriza a dibujar fuego, brasas ni un sol.
+   4. Si el concepto es textual (versículo/cita) o el MENSAJE es afín a un motivo
        → el símbolo se deriva de esas palabras del usuario, sin conflicto.
-   4. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
+   5. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
        existe, UN conflicto para toda la serie con un motivo provisional.
    La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
 function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage, approvedMotifMaster) {
+  const variationMode = String(MOTOR_STATE.motifVariationMode || 'distinct');
+  const rotate = function (items) {
+    const list = (items || []).slice();
+    if (!list.length) return list;
+    const n = Math.abs(Number(MOTOR_STATE.motifRerollNonce) || 0) % list.length;
+    const rotated = list.slice(n).concat(list.slice(0, n));
+    return variationMode === 'same' ? [rotated[0]] : rotated;
+  };
   const master = String(approvedMotifMaster || '').trim();
   if (master) {
     return { list: [master], anchor: master, conflict: '' };
   }
   const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
   if (inBank) {
-    return { list: [anchor], anchor: anchor, conflict: '' };
+    const related = variationMode === 'same' ? [anchor] : _rankCompatibleMotifs(familyObjs, anchor);
+    const options = [anchor].concat(related.filter(function (motif) { return motif !== anchor; }));
+    const list = rotate(options);
+    return { list: list, anchor: list[0], conflict: '' };
   }
   const compatibles = _rankCompatibleMotifs(familyObjs, anchor || userConcept || '');
-  if (compatibles.length) return { list: compatibles, anchor: compatibles[0], conflict: '' };
+  if (compatibles.length) {
+    const list = rotate(compatibles);
+    return { list: list, anchor: list[0], conflict: '' };
+  }
   const userObj = (typeof _userNamedObject === 'function')
     ? _userNamedObject((userConcept || '') + ' ' + (userMessage || ''), objectPool)
     : '';
@@ -1200,7 +1245,10 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
   const messageMotifs = (userMessage || '').trim()
     ? _rankCompatibleMotifs(familyObjs, userMessage)
     : [];
-  if (messageMotifs.length) return { list: messageMotifs, anchor: messageMotifs[0], conflict: '' };
+  if (messageMotifs.length) {
+    const list = rotate(messageMotifs);
+    return { list: list, anchor: list[0], conflict: '' };
+  }
   const conceptText = String(anchor || userConcept || '').trim();
   if (typeof _isVerseReference === 'function' && _isVerseReference(conceptText)) {
     return {
@@ -2513,7 +2561,11 @@ function formatPrompt(result) {
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
     o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || sharedExploreCopy || 'propón copy breve') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
-    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
+    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. La relación semántica del objeto con el concepto debe ser explicable; no basta compartir palabras ni recurras a símbolos religiosos genéricos por defecto. ';
+    o += MOTOR_STATE.motifVariationMode === 'same'
+      ? 'OBJETO: conserva el mismo motivo visual en A/B/C; cambia la solución gráfica. '
+      : 'OBJETO: usa en A/B/C motivos concretos distintos pero semánticamente relacionados con la misma idea; cada motivo debe comunicar una faceta coherente, sin añadir objetos arbitrarios. ';
+    o += 'Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
   } else {
     o += '/CONTACTSHEET — 3 DIRECCIONES · MISMO CONCEPTO · NADA CLONADO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + ' | SERIE: ' + (MOTOR_STATE.serie || '—') + '\n';
@@ -3633,6 +3685,37 @@ window.readStateFromDOM = readStateFromDOM;
       subniche.addEventListener('change', refreshAudienceSelector);
       subniche.__podAudienceRefreshBound = true;
     }
+
+    const workflowMode = document.getElementById('workflowMode');
+    const motifControls = document.getElementById('motifExploreControls');
+    const motifInput = document.getElementById('approvedMotifMaster');
+    const motifButton = document.getElementById('btnChangeMotifs');
+    const refreshMotifControls = function () {
+      if (motifControls) motifControls.style.display = workflowMode && workflowMode.value === 'explore' ? '' : 'none';
+      if (motifButton) {
+        const fixed = !!(motifInput && motifInput.value.trim());
+        motifButton.disabled = fixed;
+        motifButton.title = fixed ? 'Borra el objeto escrito arriba para volver a proponer motivos automáticos.' : 'Rota los motivos compatibles con el concepto y vuelve a generar A/B/C.';
+      }
+    };
+    if (workflowMode && !workflowMode.__podMotifRefreshBound) {
+      workflowMode.addEventListener('change', refreshMotifControls);
+      workflowMode.__podMotifRefreshBound = true;
+    }
+    if (motifInput && !motifInput.__podMotifRefreshBound) {
+      motifInput.addEventListener('input', refreshMotifControls);
+      motifInput.__podMotifRefreshBound = true;
+    }
+    if (motifButton && !motifButton.__podMotifRerollBound) {
+      motifButton.addEventListener('click', function () {
+        readStateFromDOM();
+        if (MOTOR_STATE.approvedMotifMaster) return;
+        MOTOR_STATE.motifRerollNonce = (Number(MOTOR_STATE.motifRerollNonce) || 0) + 1;
+        crearLos3Disenos();
+      });
+      motifButton.__podMotifRerollBound = true;
+    }
+    refreshMotifControls();
 
     refreshContextSelectors(true);
   }
