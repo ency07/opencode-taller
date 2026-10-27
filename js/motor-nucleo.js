@@ -1928,7 +1928,7 @@ function _artDirectionCoherence(v) {
 }
 
 function scoreSet(set) {
-  // El objeto deja de ser eje de diversidad: el contactsheet debe conservarlo.
+  // La variedad de objetos se gobierna aparte del resto de ejes gráficos.
   const fields = ['estilo', 'layout', 'tipografia', 'formaSimbolo', 'tratamiento', 'integracionTexto', 'distribucionTexto', 'familiaColor'];
   const pairs = [[0, 1], [0, 2], [1, 2]];
   let diversity = 0;
@@ -1948,6 +1948,7 @@ function scoreSet(set) {
   const familias = [...new Set(K.map(function (k) { return set[k].familiaColor; }))];
   const symbols = K.map(function (k) { return String(set[k].objeto || '').trim(); });
   const symbolStable = symbols.length === 3 && !!symbols[0] && symbols.every(function (x) { return x === symbols[0]; });
+  const uniqueMotifCount = new Set(symbols.filter(Boolean)).size;
   const symbolRequired = _isSymbolConstancyRequired();
   const treatmentKeys = K.map(function (k) { return _treatmentKey(set[k].tratamiento); });
   const requiredTreatments = ['HEAVY', 'SOFT', 'MODERN'];
@@ -1967,6 +1968,7 @@ function scoreSet(set) {
     estilos: estilos,
     familias: familias,
     symbolStable: symbolStable,
+    uniqueMotifCount: uniqueMotifCount,
     treatmentsComplete: treatmentsComplete,
     artDirectionMin: artDirectionMin,
     artDirectionAvg: artDirectionAvg,
@@ -2052,8 +2054,10 @@ function evaluaSetOk(set) {
   const estilosOk = MOTOR_STATE.groupMode === 'mismo'
     ? m.estilos.length === 1
     : m.estilos.length === 3;
+  const motifVarietyRequired = MOTOR_STATE.workflowMode === 'explore' && MOTOR_STATE.motifVariationMode !== 'same';
+  const motifVarietyOk = !motifVarietyRequired || m.uniqueMotifCount === 3;
   const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
-  const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk && coherenciaArtisticaOk
+  const ok = m.diversity >= 55 && estilosOk && contactRulesOk && motifVarietyOk && ejesOk && pertinenciaOk && coherenciaArtisticaOk
     && _patternConflictsOf(set) === 0;
   const detalle = [];
   if (!(m.diversity >= 55)) detalle.push('diferencia ' + m.diversity + '/100 (mín 55)');
@@ -2065,6 +2069,7 @@ function evaluaSetOk(set) {
   if (!negAutoDistinta) detalle.push('espacio negativo repetido');
   if (!(set.A.familiaColor === '(paleta de la imagen)' || new Set(K.map(function (k) { return set[k].familiaColor; })).size === 3)) detalle.push('fondo repetido');
   if (MOTOR_STATE.groupMode === 'mismo' ? m.estilos.length !== 1 : m.estilos.length !== 3) detalle.push('estilos no cumplen el modo');
+  if (!motifVarietyOk) detalle.push('motivos relacionados repetidos: se requieren 3 objetos distintos o cambia a “Mantener el mismo objeto”');
   if (_isLockedContactSet() && !(m.symbolStable && m.treatmentsComplete)) detalle.push('identidad de contacto inestable');
   const umbralMsg = _mensajeUmbral(m);
   if (!coherenciaArtisticaOk) detalle.push('coherencia artística mín ' + m.artDirectionMin + '/100 (mín 65): ' + m.artDirection.map(function (x, i) { return x.issues.length ? K[i] + ': ' + x.issues.join(', ') : ''; }).filter(Boolean).join(' · '));
@@ -3157,7 +3162,10 @@ function renderGates(result) {
   if (_isSymbolConstancyRequired()) {
     html += '<span class="badge ' + (m.symbolStable ? 'good' : 'bad') + '" title="Comprueba que A/B/C conservan el mismo símbolo indicado en el prompt.">Símbolo constante</span>';
   } else {
-    html += '<span class="badge blue" title="En Exploración cada ficha lleva su propio símbolo derivado del concepto; el ADN que se conserva es el concepto y el mensaje.">Símbolos por ficha</span>';
+    const varied = MOTOR_STATE.motifVariationMode !== 'same';
+    const motifOk = varied ? m.uniqueMotifCount === 3 : m.symbolStable;
+    const motifLabel = varied ? 'Motivos distintos ' + m.uniqueMotifCount + '/3' : 'Mismo motivo';
+    html += '<span class="badge ' + (motifOk ? 'good' : 'bad') + '" title="' + (varied ? 'A/B/C deben usar objetos distintos relacionados con una misma idea.' : 'A/B/C comparten un objeto visual.') + '">' + motifLabel + '</span>';
   }
   html += '<span class="badge ' + (m.treatmentsComplete ? 'good' : 'bad') + '" title="Comprueba que el prompt asigna HEAVY, SOFT y MODERN una vez cada uno; no inspecciona la imagen generada.">HEAVY · SOFT · MODERN</span>';
   html += '<span class="badge ' + (m.familias.length >= 3 ? 'good' : 'warn') + '">Colores distintos</span>';
@@ -3368,7 +3376,9 @@ function crearLos3Disenos() {
 
     if (statusEl) {
       if (result.passed) {
-        statusEl.innerHTML = '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt</span>';
+        const motifStatus = MOTOR_STATE.workflowMode === 'explore' && MOTOR_STATE.motifVariationMode !== 'same'
+          ? 'tres motivos relacionados' : 'símbolo constante';
+        statusEl.innerHTML = '<span class="good">Listo: ' + motifStatus + ', tres tratamientos asignados y diferencias revisadas en el prompt</span>';
       } else {
         const umbralMsg = _mensajeUmbral(result.score);
         statusEl.innerHTML = '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>';

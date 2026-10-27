@@ -42,6 +42,21 @@ MOTOR_STATE.motifVariationMode = 'distinct';
 MOTOR_STATE.motifRerollNonce = 1;
 const rotated = _planExploreMotifs(candidates, candidates, concept, concept, '', '');
 if (rotated.list[0] === varied.list[0]) throw new Error('“Proponer otros objetos” debe rotar el orden de las propuestas semánticamente compatibles.');
+Object.assign(MOTOR_STATE, { market: 'gospel_es', region: 'universal', product: 'CAMISETA SOFT', subniche: 'gospel_es', workflowMode: 'explore', concept: concept, message: 'Su gracia es suficiente para mí', support: 'Cuando soy débil, entonces soy fuerte', audienceSet: 'Auto', audienceMulti: 'si', groupMode: 'distintos' });
+MOTOR_STATE.explorationBrief = _resolveExplorationBrief();
+const generatedSet = buildCandidate(resolveAudiences());
+if (new Set(['A', 'B', 'C'].map(function (k) { return generatedSet[k].objeto; })).size !== 3) throw new Error('La generación debe asignar tres motivos distintos del banco a la prueba real.');
+const generatedPrompt = formatPrompt({ set: generatedSet, score: scoreSet(generatedSet), passed: false, explorationBrief: MOTOR_STATE.explorationBrief, objectConflicts: [] });
+if (!generatedPrompt.includes('Su gracia es suficiente para mí') || !generatedPrompt.includes('Cuando soy débil, entonces soy fuerte')) {
+  throw new Error('El flujo de exploración debe preservar literalmente el mensaje y el apoyo de la prueba.');
+}
+if (!['A', 'B', 'C'].every(function (k) { return generatedPrompt.includes(generatedSet[k].objeto); })) throw new Error('El prompt final debe fijar el objeto seleccionado para cada ficha.');
+const repeatedSet = JSON.parse(JSON.stringify(generatedSet));
+repeatedSet.B.objeto = repeatedSet.A.objeto;
+repeatedSet.C.objeto = repeatedSet.A.objeto;
+if (!evaluaSetOk(repeatedSet).detalle.some(function (detail) { return detail.indexOf('motivos relacionados repetidos') !== -1; })) {
+  throw new Error('El control de calidad debe señalar si la variación seleccionada termina repitiendo el objeto.');
+}
 const source = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 if (!source.includes('id="motifVariationMode"') || !source.includes('id="btnChangeMotifs"')) throw new Error('La vista debe exponer los controles para variar y rotar el objeto.');
 console.log('PASS motif-semantic-variation (selección semántica, diversidad, fijación y rotación)');

@@ -101,8 +101,8 @@ ok(/function _isSymbolConstancyRequired\(\)\s*\{\s*return MOTOR_STATE\.workflowM
   'la constancia de símbolo NO debe exigirse en Exploración');
 ok(motorSource.includes("(symbolRequired ? (symbolStable ? 20 : -50) : 0)"),
   'la puntuación no debe penalizar símbolos distintos cuando no se exige constancia');
-ok(motorSource.includes('Símbolos por ficha'),
-  'en Exploración la matriz debe mostrar "Símbolos por ficha" en vez de un badge rojo');
+ok(motorSource.includes('Motivos distintos '),
+  'en Exploración con variación activa la matriz debe contar motivos distintos sin marcar la diferencia como fallo');
 
 /* --- 4) renderCards: contexto de serie + Dominio fuera de las fichas --- */
 ok(motorSource.includes("cx.className = 'cards-context'"),
