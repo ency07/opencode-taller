@@ -50,6 +50,9 @@
         jerarquia: String(f.jerarquiaVisual || ''),
         objeto: String(f.objeto || ''),
         audiencia: String(f.audiencia || ''),
+        audiencia_label: typeof _audienceDisplay === 'function' ? String(_audienceDisplay(f.audiencia) || '') : String(f.audiencia || ''),
+        concepto: String(MOTOR_STATE.concept || ''),
+        copy_literal: String(MOTOR_STATE.message || ''),
         tratamiento: String(f.tratamiento || ''),
         cara: f.cara ? String(f.cara) : '',
         peso: pesoExigido(f.jerarquiaVisual)
@@ -86,7 +89,10 @@
         jerarquia: r.jerarquia,
         objeto: r.objeto,
         audiencia: (m[3] || '').trim(),
-        tratamiento: '',
+        audiencia_label: (m[3] || '').trim(),
+        concepto: (txt.match(/CONCEPTO:\s*([^|\n]+)/i) || [])[1] || '',
+        copy_literal: (txt.match(/MENSAJE(?: EXACTO)?:\s*([^|\n]+)/i) || [])[1] || '',
+        tratamiento: ((secciones[id] || '').match(/PERFIL ESTRUCTURAL:\s*([^·\n]+)/i) || [])[1] || '',
         cara: !/CARA DEL ESTAMPADO:/.test(secciones[id] || '')
           ? ''
           : (/CARA DEL ESTAMPADO:\s*ESPALDA/.test(secciones[id] || '') ? 'espalda' : 'frente'),
@@ -105,9 +111,13 @@
     (contrato || []).forEach(function (f) {
       lineas.push(
         f.ficha + ': estilo «' + (f.estilo || 'sin declarar') + '» (inmutable)' +
+        '; audiencia «' + (f.audiencia_label || f.audiencia || 'sin declarar') + '»' +
+        '; motivo/objeto autorizado «' + (f.objeto || 'ninguno') + '»' +
+        (f.concepto ? '; concepto «' + f.concepto + '»' : '') +
+        (f.copy_literal ? '; copy literal exacto «' + f.copy_literal + '» (debe aparecer exactamente, sin traducción, sustitución ni palabras añadidas)' : '; no hay copy literal proporcionado: no inventes texto') +
         '; jerarquía ' + (f.jerarquia || '?') + ' (peso exigido ' + (f.peso || '?') + ')' +
         (f.objeto ? '; objeto autorizado «' + f.objeto + '»' : '; sin objeto autorizado') +
-        (f.tratamiento ? '; tratamiento ' + f.tratamiento : '') +
+        (f.tratamiento ? '; tratamiento estructural ' + f.tratamiento + ' (debe verse en composición, densidad, contraste y espacio negativo)' : '; tratamiento estructural sin declarar') +
         '; cara ' + (!f.cara
           ? 'sin declaración (producto sin caras: no exijas vistas traseras ni espaldas de persona)'
           : (f.cara === 'espalda' ? 'espalda (pide lifestyle de espaldas y recuadro de espalda en esta columna)' : 'frente (prohibida espalda de persona o prenda en esta columna)'))
@@ -117,6 +127,10 @@
     o += 'CONTRATO POR FICHA:\n' + lineas.join('\n') + '\n';
     if (estructuraHoja) o += 'ESTRUCTURA DE HOJA: ' + estructuraHoja + '\n';
     o += 'CRITERIOS (marca solo incumplimientos verificables a primera vista):\n';
+    o += '- audiencia_ok: false si la persona/grupo/edad/género/talla del mockup o el lenguaje visible del diseño contradice la audiencia exacta de la ficha; Familia exige grupo familiar multigeneracional, pareja dos personas, comunidad grupo diverso, infantil modelo infantil. No uses una persona genérica para representar un grupo.\n';
+    o += '- motivo_ok: false si falta, se sustituye o se contradice el motivo/objeto autorizado; detecta explícitamente el objeto visible.\n';
+    o += '- copy_literal_ok: false si el copy visible altera, traduce, omite o añade palabras al texto fijado; registra copy_detectado exactamente como aparece. Si no hay copy fijado, false ante texto inventado.\n';
+    o += '- tratamiento_ok: false si la estructura visual no evidencia el tratamiento asignado; el tratamiento no es un rótulo ni efecto decorativo.\n';
     o += '- estilo_ok: false si el lenguaje visual dibujado no es el asignado (sustitución, fusión de estilos o vocabulario de otro estilo). El estilo ejecuta su propia técnica de taller, pero no puede cambiar de estilo.\n';
     o += '- jerarquia_ok: false si el elemento que manda no ocupa su franja de peso; indica jerarquia_medida como "NN% texto / NN% símbolo".\n';
     o += '- objetos_inventados: objetos o adornos nuevos que no nombraron el contrato ni el copy, aunque sean habituales del estilo; NO marques ejecuciones propias del estilo asignado (su técnica de taller). Si el contrato define SOLO_TEXTO, cualquier objeto/decoración dibujada cuenta.\n';
@@ -124,7 +138,7 @@
     o += '- fondo_ok: false si hay cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas o escenas de fondo DENTRO del arte de cada diseño (en recuadros de ambiente de mockup, el ambiente es normal).\n';
     o += '- espalda_ok: false si una columna con cara frente muestra espalda de persona o prenda, o una columna con cara espalda carece de vista de espalda.\n';
     o += 'FORMATO EXACTO:\n';
-    o += '{"fichas":[{"ficha":"01A","estilo_asignado":"X","estilo_detectado":"X o descripcion breve","estilo_ok":true,"jerarquia_medida":"80% texto / 20% simbolo","jerarquia_ok":true,"objetos_inventados":[],"textos_inventados":[],"fondo_ok":true,"espalda_ok":true,"nota":"una frase"}],"estilos_correctos":3,"resumen":"frase corta","avisos_generales":[]}';
+    o += '{"fichas":[{"ficha":"01A","estilo_asignado":"X","estilo_detectado":"X o descripcion breve","estilo_ok":true,"audiencia_ok":true,"audiencia_detectada":"descripcion breve","motivo_ok":true,"motivo_detectado":"objeto visible","copy_literal_ok":true,"copy_detectado":"texto exacto visto","tratamiento_ok":true,"tratamiento_detectado":"evidencia visual breve","jerarquia_medida":"80% texto / 20% simbolo","jerarquia_ok":true,"objetos_inventados":[],"textos_inventados":[],"fondo_ok":true,"espalda_ok":true,"nota":"una frase"}],"estilos_correctos":3,"resumen":"frase corta","avisos_generales":[]}';
     return o;
     }
 
@@ -155,10 +169,14 @@
       resEl.innerHTML = '<span class="bad">La IA no devolvió un veredicto legible. Prueba de nuevo o cambia de proveedor en la barra IA.</span>';
       return;
     }
-    var html = '<div><b>AVISOS (no bloquean copiar ni regenerar):</b> ' + esc(v.resumen || '') + '</div>';
+    var html = '<div><b>REVISIÓN VISUAL (un criterio sin evidencia explícita se marca como fallo):</b> ' + esc(v.resumen || '') + '</div>';
     v.fichas.forEach(function (f) {
       var lineas = [];
-      lineas.push((f.estilo_ok ? good() : bad()) + ' estilo ' + esc(f.estilo_asignado || '?') + (f.estilo_ok ? '' : ' — detectado «' + esc(f.estilo_detectado || '?') + '»'));
+      lineas.push((f.estilo_ok === true ? good() : bad()) + ' estilo ' + esc(f.estilo_asignado || '?') + (f.estilo_ok === true ? '' : ' — detectado «' + esc(f.estilo_detectado || 'sin evidencia') + '»'));
+      lineas.push((f.audiencia_ok === true ? good() : bad()) + ' audiencia ' + (f.audiencia_ok === true ? 'coincide con el perfil de la ficha' : '— detectado «' + esc(f.audiencia_detectada || 'sin evidencia') + '»'));
+      lineas.push((f.motivo_ok === true ? good() : bad()) + ' motivo ' + (f.motivo_ok === true ? 'motivo autorizado presente' : '— detectado «' + esc(f.motivo_detectado || 'sin evidencia') + '»'));
+      lineas.push((f.copy_literal_ok === true ? good() : bad()) + ' copy literal ' + (f.copy_literal_ok === true ? 'coincide con el texto fijado' : '— detectado «' + esc(f.copy_detectado || 'sin evidencia') + '»'));
+      lineas.push((f.tratamiento_ok === true ? good() : bad()) + ' tratamiento ' + (f.tratamiento_ok === true ? 'se distingue en la estructura' : '— evidencia «' + esc(f.tratamiento_detectado || 'sin evidencia') + '»'));
       lineas.push((f.jerarquia_ok ? good() : bad()) + ' jerarquía ' + (f.jerarquia_medida ? esc(String(f.jerarquia_medida)) : 'sin medir'));
       if (f.objetos_inventados && f.objetos_inventados.length) lineas.push(warn() + ' objetos inventados: ' + f.objetos_inventados.map(esc).join(', '));
       if (f.textos_inventados && f.textos_inventados.length) lineas.push(warn() + ' textos inventados: ' + f.textos_inventados.map(esc).join(', '));

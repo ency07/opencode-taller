@@ -249,7 +249,9 @@ function getProductRule(product) {
 }
 
 function getMockupRule(product) {
-  return PRODUCT_MOCKUP_RULES[product] || PRODUCT_MOCKUP_RULES["CAMISETA SOFT"];
+  var rule = PRODUCT_MOCKUP_RULES[product] || PRODUCT_MOCKUP_RULES["CAMISETA SOFT"];
+  rule = rule.replace('de una persona acorde a la AUDIENCIA DE ESA COLUMNA', 'de la persona o grupo que corresponda a la AUDIENCIA DE ESA COLUMNA');
+  return rule + ' Regla de audiencia: familia exige grupo familiar visible multigeneracional (mínimo 3 personas); pareja exige dos personas; comunidad exige grupo diverso (mínimo 3); infancia exige modelo infantil. Nunca sustituyas una audiencia colectiva por un adulto genérico.';
 }
 
 function isWallArt(product) {

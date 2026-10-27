@@ -39,6 +39,8 @@ ok(/misma identidad semántica, soluciones distintas en composición, silueta, t
 ok(/no basta recolorear o cambiar textura/i.test(motor), 'el prompt debe rechazar diferencias limitadas a color o textura');
 ok(/conserva concepto, familia, función y mensaje/i.test(motor), 'la diversidad no debe romper el ADN conceptual');
 ok(/HEAVY\/SOFT\/MODERN modifican composición y jerarquía sin borrar ese estilo/i.test(motor), 'los tratamientos no deben sustituir el estilo artístico');
+ok(/COMBINACIÓN HAND-DRAWN \+ MODERN:[\s\S]{0,300}brochazos sueltos, arcos decorativos exteriores/.test(motor),
+  'Hand-Drawn + MODERN debe contener el trazo artesanal dentro de una arquitectura geométrica limpia');
 ok(/function formatPrompt\(result\)/.test(motor), 'debe existir el punto central que construye el prompt final');
 
 // El prompt debe limitar elementos inventados, exigir diversidad estructural y hacer visible la audiencia.

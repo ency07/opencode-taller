@@ -70,6 +70,9 @@ ok(contratoLR[0].estilo === 'Barroco Ornamental', 'estilo del lock debe fluir al
 ok(contratoLR.every(function (f) { return f.jerarquia && f.peso; }), 'jerarquía y peso presentes en todas las fichas');
 ok(contratoLR.every(function (f) { return f.cara === 'frente' || f.cara === 'espalda'; }), 'cara declarada');
 ok(contratoLR[0].objeto === (set.A.objeto || ''), 'objeto coincide con el set');
+ok(contratoLR.every(function (f) { return f.audiencia_label && f.concepto && f.copy_literal === MOTOR_STATE.message; }),
+  'el contrato visual incluye audiencia legible, concepto y copy literal exacto');
+ok(contratoLR.every(function (f) { return f.tratamiento; }), 'el contrato visual incluye tratamiento estructural por ficha');
 
 /* --- 3) prompt de validación --- */
 const vPrompt = PODValidador.construirPromptValidador(contratoLR, 'tres columnas');
@@ -77,9 +80,14 @@ ok(vPrompt.indexOf('SOLO un JSON válido') !== -1, 'exige JSON puro');
 ok(vPrompt.indexOf('CONTRATO POR FICHA') !== -1, 'declara el contrato');
 ok(vPrompt.indexOf('«Barroco Ornamental» (inmutable)') !== -1, 'estilos inmutables declarados');
 ok(vPrompt.split('\n01').length >= 4, 'una línea por ficha');
-ok(vPrompt.indexOf('objetos_inventados') !== -1 && vPrompt.indexOf('textos_inventados') !== -1 &&
+ok(vPrompt.indexOf('audiencia_ok') !== -1 && vPrompt.indexOf('motivo_ok') !== -1 &&
+   vPrompt.indexOf('copy_literal_ok') !== -1 && vPrompt.indexOf('tratamiento_ok') !== -1 &&
+   vPrompt.indexOf('objetos_inventados') !== -1 && vPrompt.indexOf('textos_inventados') !== -1 &&
    vPrompt.indexOf('jerarquia_medida') !== -1 && vPrompt.indexOf('fondo_ok') !== -1 &&
-   vPrompt.indexOf('espalda_ok') !== -1 && vPrompt.indexOf('estilo_ok') !== -1, 'los 6 criterios declarados');
+   vPrompt.indexOf('espalda_ok') !== -1 && vPrompt.indexOf('estilo_ok') !== -1, 'los criterios incluyen audiencia, motivo, copy literal, estilo y tratamiento');
+ok(vPrompt.indexOf('Familia exige grupo familiar multigeneracional') !== -1, 'el validador define evidencia visual para audiencia familiar');
+ok(vPrompt.indexOf('copy literal exacto') !== -1 && vPrompt.indexOf('sin traducción, sustitución ni palabras añadidas') !== -1,
+  'el validador exige copia textual exacta');
 ok(vPrompt.indexOf('NO marques ejecuciones propias del estilo asignado') !== -1, 'el validador respeta la técnica de taller del estilo');
 ok(vPrompt.indexOf('"fichas":[{"ficha":"01A"') !== -1, 'formato exacto con ejemplo 01A');
 

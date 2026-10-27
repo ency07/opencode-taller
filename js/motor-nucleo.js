@@ -865,6 +865,25 @@ function _audienceDisplay(id) {
   return id;
 }
 
+/* El mockup debe representar el tipo de audiencia, no solo una persona
+   compatible. Familias, parejas y comunidades requieren grupos visibles. */
+function _audienceMockupDirective(profile) {
+  const p = profile || {};
+  if (p.genero === 'familia' || p.edad === 'mixta') {
+    return 'grupo familiar reconocible de al menos 3 personas en dos o más generaciones (adultos y niño/niña), con diversidad natural de edades; la prenda debe leerse en el grupo y no reemplazarlo por un adulto solo';
+  }
+  if (p.genero === 'pareja') {
+    return 'pareja adulta de dos personas usando o mostrando el producto en conjunto; no una persona sola';
+  }
+  if (p.label && /comunidad|congregación|grupos/i.test(p.label + ' ' + (p.perfil || ''))) {
+    return 'grupo pequeño de al menos 3 personas de presentación diversa, sin imponer género, edad o rasgos no definidos por el perfil';
+  }
+  if (p.edad === 'infantil') return 'modelo infantil (niño o niña según el perfil) con la prenda en talla infantil';
+  if (p.genero === 'femenino') return 'modelo mujer' + (p.edad === 'joven' ? ' joven' : p.edad === 'adulto' ? ' adulta' : '') + ' con corte y talla femeninos';
+  if (p.genero === 'masculino') return 'modelo hombre' + (p.edad === 'joven' ? ' joven' : p.edad === 'adulto' ? ' adulto' : '') + ' con corte y talla masculinos';
+  return 'modelo o grupo acorde al perfil declarado, sin inventar edad ni género';
+}
+
 function _treatmentSpecComplete(value) {
   const key = _treatmentKey(value);
   const detail = String(value || '').toLowerCase();
@@ -966,6 +985,9 @@ function _styleTreatmentDirective(styleValue, profileKey) {
   }
   if (/kids|storybook|infantil|folk|hand-drawn|manuscrita|bordado|embroidery/.test(style)) {
     techniqueRules.push('Conserva el carácter expresivo o artesanal del estilo; el tratamiento cambia la arquitectura, no lo convierte en otro género visual.');
+  }
+  if (key === 'MODERN' && /hand-drawn|manuscrita|folk/.test(style)) {
+    techniqueRules.push('COMBINACIÓN HAND-DRAWN + MODERN: dibuja dentro de una silueta geométrica cerrada, con contorno limpio y bordes precisos; permite solo línea manual controlada dentro de esa forma. Prohibidos brochazos sueltos, arcos decorativos exteriores, salpicaduras y fondo gestual; lo artesanal es el trazo interno, nunca la arquitectura.');
   }
   return (profileRules[key] || 'Respeta el lenguaje artístico elegido y evita instrucciones visuales contradictorias.')
     + ' Estilo artístico activo: «' + _getStyleBase(styleValue) + '». ' + techniqueRules.join(' ')
@@ -2672,14 +2694,8 @@ function formatPrompt(result) {
     }[v.jerarquiaVisual] || '';
     o += 'PESO VISUAL EXIGIDO — ' + pesoExigido + '. Es una medición verificable a primera vista, no una sugerencia: si el elemento que manda no ocupa su franja, reescala el arte y entrega la versión corregida.\n';
     const audPerfil = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES[v.audiencia]) || {};
-    const perfilMockup = audPerfil.edad === 'infantil'
-      ? 'modelo infantil (niño o niña según el perfil) con la prenda en talla de niño'
-      : (audPerfil.genero === 'femenino'
-        ? 'modelo mujer' + (audPerfil.edad === 'joven' ? ' joven' : audPerfil.edad === 'adulto' ? ' adulta' : '') + ' con corte y talla femeninos'
-        : (audPerfil.genero === 'masculino'
-          ? 'modelo hombre' + (audPerfil.edad === 'joven' ? ' joven' : audPerfil.edad === 'adulto' ? ' adulto' : '') + ' con corte y talla masculinos'
-          : 'modelo acorde al perfil (edad y género del perfil) con el corte y la talla que le corresponden'));
-    o += 'AUDIENCIA DE LA FICHA: «' + (audPerfil.label || v.audiencia) + '» (' + (audPerfil.edad || 'edad del perfil') + ', ' + (audPerfil.genero || 'género del perfil') + '). Perfil: ' + (audPerfil.perfil || 'el declarado en el motor') + '. Contexto de uso: ' + (audPerfil.contexto || 'cotidiano') + '. Códigos que le hablan: ' + (audPerfil.codigos || 'los de la familia') + '. Evita: ' + (audPerfil.rechaza || 'lo ajeno al perfil') + '. Directiva: ' + (audPerfil.directiva || 'la del perfil') + '. OBLIGATORIO: el arte se siente hecho para esta persona y el mockup muestra ' + perfilMockup + '; un modelo adulto genérico invalida la ficha.\n';
+    const perfilMockup = _audienceMockupDirective(audPerfil);
+    o += 'AUDIENCIA DE LA FICHA: «' + (audPerfil.label || v.audiencia) + '» (' + (audPerfil.edad || 'edad del perfil') + ', ' + (audPerfil.genero || 'género del perfil') + '). Perfil: ' + (audPerfil.perfil || 'el declarado en el motor') + '. Contexto de uso: ' + (audPerfil.contexto || 'cotidiano') + '. Códigos que le hablan: ' + (audPerfil.codigos || 'los de la familia') + '. Evita: ' + (audPerfil.rechaza || 'lo ajeno al perfil') + '. Directiva: ' + (audPerfil.directiva || 'la del perfil') + '. MOCKUP OBLIGATORIO: ' + perfilMockup + '. La audiencia también debe cambiar al menos dos decisiones visibles del arte; un modelo adulto genérico no valida familia, pareja, comunidad ni audiencia infantil.\n';
     o += 'ID DE VALIDACIÓN DE AUDIENCIA: ' + v.audiencia + '\n';
     const cargaEdad = {
       adulto: 'adulto → sobrio y de peso: pocos elementos, aire, jerarquía clara; nada de adornos juveniles ni ruido de moda.',
