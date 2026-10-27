@@ -348,6 +348,68 @@
     return Array.from(new Set(out.filter(Boolean)));
   }
 
+  function getPersonalConcepts(market, subniche) {
+    const bank = loadPersonalBank(market);
+    const out = [];
+    const add = function (key) {
+      if (Array.isArray(bank[key])) out.push.apply(out, bank[key]);
+    };
+    if (subniche) add('__concept__' + subniche);
+    if (subniche !== COMMON_BANK_KEY) add('__concept__' + COMMON_BANK_KEY);
+    // Banco nombrado activo para este contexto (Fase 2).
+    try {
+      const active = getActivePersonalBank(market, subniche);
+      if (active && Array.isArray(active.concepts)) out.push.apply(out, active.concepts);
+    } catch (e) {}
+    return Array.from(new Set(out.filter(Boolean)));
+  }
+
+  function useBankConcept(market, subniche, conceptField) {
+    const bank = loadPersonalBank(market);
+    const key = '__concept__' + subniche;
+    const concepts = Array.isArray(bank[key]) ? bank[key] : [];
+    if (!concepts.length) {
+      tell('Aún no hay conceptos guardados en este subnicho. ¡Añádelos primero!', 'info');
+      return;
+    }
+    // Elegir un concepto aleatorio
+    const choice = concepts[Math.floor(Math.random() * concepts.length)];
+    const conceptFieldEl = conceptField || document.getElementById('concept');
+    if (!conceptFieldEl) {
+      tell('No se encontró el campo de concepto', 'bad');
+      return;
+    }
+    // Si el campo ya tiene texto, pedir confirmación
+    const current = conceptFieldEl.value.trim();
+    if (current && confirm('El campo de concepto ya tiene texto: "' + current + '".\n¿Deseas reemplazarlo con "' + choice + '"?')) {
+      conceptFieldEl.value = choice;
+    } else if (!current) {
+      conceptFieldEl.value = choice;
+    } else {
+      tell('Concepto no cambiado.', 'info');
+    }
+  }
+
+  function addPersonalConcept(market, subniche, concept) {
+    const bank = loadPersonalBank(market);
+    const key = subniche || COMMON_BANK_KEY;
+    const current = Array.isArray(bank[key]) ? bank[key] : [];
+
+    const norm = function (s) {
+      return String(s || '').toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
+    };
+
+    const sig = norm(concept);
+    if (!sig || current.some(function (c) { return norm(c) === sig; })) return { ok: false, error: 'Concepto duplicado' };
+
+    const newBank = Object.assign({}, bank);
+    current.push(concept);
+    newBank[key] = current;
+    savePersonalBank(market, newBank);
+    return { ok: true, added: 1 };
+  }
+
   function getPersonalObjects(market, subniche) {
     const bank = loadPersonalBank(market);
     const out = [];
