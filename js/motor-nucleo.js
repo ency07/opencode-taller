@@ -762,6 +762,8 @@ function getObjectPool() {
     && !pool.length;
   const personalObjs = _getPersonalObjects(MOTOR_STATE.market, sub || 'auto');
   pool = pool.concat(personalObjs);
+  // Los bancos Gospel pueden especializarse por dominio además del subnicho general.
+  if (dom && dom !== sub) pool = pool.concat(_getPersonalObjects(MOTOR_STATE.market, dom));
   // Banco común solo como complemento normal; nunca como fallback de una familia
   // manual que no dispone de banco compatible en el mercado activo.
   if (!gospel && !explicitExploreFamilyMissingBank) pool = pool.concat(_commonBankForMarket());
@@ -781,14 +783,15 @@ function _resolveExplorationBrief() {
     if (!id || typeof getBankForSubniche !== 'function') return [];
     try {
       const bank = getBankForSubniche(id, MOTOR_STATE.region, MOTOR_STATE.market);
-      return Array.isArray(bank) ? bank.filter(function (x) { return typeof x === 'string' && x.trim(); }) : [];
+      const personal = _getPersonalObjects(MOTOR_STATE.market, id);
+      return [...new Set((Array.isArray(bank) ? bank : []).concat(personal || []).filter(function (x) { return typeof x === 'string' && x.trim(); }))];
     } catch (e) { return []; }
   }
   if (domain && isGospelMarket() && typeof getDominiosGospel === 'function') {
     try {
       const domains = getDominiosGospel(MOTOR_STATE.market) || {};
       if (domains[domain] && Array.isArray(domains[domain].objetos)) {
-        candidates = domains[domain].objetos.filter(Boolean);
+        candidates = [...new Set(domains[domain].objetos.filter(Boolean).concat(_getPersonalObjects(MOTOR_STATE.market, domain) || []))];
         if (candidates.length) { familyId = domain; selectedFrom = 'domain-bank'; }
       }
     } catch (e) {}
@@ -1101,9 +1104,31 @@ function _userNamedObject(text, pools) {
   return best;
 }
 
-/* Motivos de familia compatibles con el concepto, ordenados por afinidad
-   (mismo criterio de puntuación que _chooseConceptCompatibleObject, pero
-   devuelve la lista completa para repartirla entre las fichas de la serie). */
+/* Ejes editoriales explícitos para relacionar conceptos abstractos y motivos.
+   Son reglas mantenibles, no comprensión semántica libre ni coincidencia de palabras. */
+const _CONCEPT_MOTIF_AXES = [
+  { axis: 'sostener_bajo_presion', concept: /\b(debil|debilidad|fragil|vulnerab|agriet|quebrad|roto|presion|carga|suficient|bast|fuerza|fuerte|resist|firme|soport)\w*\b/ },
+  { axis: 'provision_y_cuidado', concept: /\b(gracia|amor|cuidado|provision|prove|suficient|bast|acompan|presencia|ampar|sostien)\w*\b/ },
+  { axis: 'confianza_y_perseverancia', concept: /\b(fe|confianza|confiar|esperanza|persever|fiel|constante|resist)\w*\b/ },
+  { axis: 'restauracion', concept: /\b(restaur|repar|renov|reconstru|san|nuevo|nueva|redim)\w*\b/ },
+  { axis: 'crecimiento_en_adversidad', concept: /\b(crec|florec|fruto|semilla|brot|vida|debil|debilidad|prueba|adversidad)\w*\b/ },
+  { axis: 'luz_y_presencia', concept: /\b(presencia|acompan|luz|guia|esperanza|noche|oscuridad|tiniebla)\w*\b/ }
+];
+const _MOTIF_VISUAL_AXES = [
+  { axis: 'sostener_bajo_presion', motif: /\b(puente|raiz|cimiento|columna|roca|ancla|red|vasija|barro|olla|recipiente|muro|pilar|viga|nudo|cuerda|techo|puerta)\w*\b/ },
+  { axis: 'provision_y_cuidado', motif: /\b(vasija|aceite|pan|mesa|manto|manta|refugio|nido|copa|agua|fuente|casa|cuidado|abrigo|carga)\w*\b/ },
+  { axis: 'confianza_y_perseverancia', motif: /\b(ancla|red|puente|caminante|paso|huella|roca|brasa|luz|lampara|faro|semilla|raiz)\w*\b/ },
+  { axis: 'restauracion', motif: /\b(repar|remiend|injert|restaur|reconstru|puente|vasija|barro|costura|tejido|madero|lienzo|fragment)\w*\b/ },
+  { axis: 'crecimiento_en_adversidad', motif: /\b(semilla|brote|raiz|arbol|trigo|fruto|flor|planta|concreto|ruina|tierra|tormenta)\w*\b/ },
+  { axis: 'luz_y_presencia', motif: /\b(luz|lampara|vela|brasa|faro|amanecer|ventana|lucerna|estrella)\w*\b/ }
+];
+function _semanticAxesFor(text, rules, field) {
+  const source = (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(text || '')) : String(text || '').toLowerCase());
+  return rules.filter(function (rule) { return rule[field].test(source); }).map(function (rule) { return rule.axis; });
+}
+
+/* Los ejes semánticos pesan primero; las palabras exactas solo ayudan cuando
+   el concepto no tiene todavía una lectura editorial catalogada. */
 function _rankCompatibleMotifs(pools, concept) {
   const normalize = function (value) {
     return (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(value || '')) : String(value || '').toLowerCase())
@@ -1111,18 +1136,22 @@ function _rankCompatibleMotifs(pools, concept) {
   };
   const source = normalize(concept);
   if (!source) return [];
+  const conceptAxes = _semanticAxesFor(source, _CONCEPT_MOTIF_AXES, 'concept');
   const stop = new Set(['que','con','para','desde','hacia','sobre','entre','una','uno','unos','unas','los','las','el','la','de','del','en','por','como','sin','the','and','with','for','from','into','over','under','that','which','holding','sosteniendo','representa','lugares','turisticos','tourist','places','profundo','deep','my','a','an','of','to']);
   const tokens = [...new Set(source.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
   const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
     const label = String(item || '').trim();
     const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
     const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    if (!overlap.length) return null;
-    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
+    const motifAxes = _semanticAxesFor(label, _MOTIF_VISUAL_AXES, 'motif');
+    const semanticMatches = motifAxes.filter(function (axis) { return conceptAxes.indexOf(axis) !== -1; });
+    if (conceptAxes.length && !semanticMatches.length) return null;
+    if (!overlap.length && !semanticMatches.length) return null;
+    const lexicalScore = overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0);
+    return { label: label, score: semanticMatches.length * 100 + lexicalScore, matches: semanticMatches.length + overlap.length };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
   return ranked.map(function (r) { return r.label; });
 }
-
 /* Concepto textual: referencia de versículo o cita numerada («jeremias 3. 33»,
    «salmo 23», «1 corintios 13, 4»). Nunca coincide por palabras con los motivos
    de un banco y no debe declararse incompatible ni recibir un motivo al azar. */
@@ -1158,38 +1187,37 @@ function _motifSceneFromMessage(concept, message) {
    La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
 function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
   const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
-  if (inBank) {
-    return { list: [anchor], anchor: anchor, conflict: '' };
-  }
-  const compatibles = _rankCompatibleMotifs(familyObjs, anchor || userConcept || '');
-  if (compatibles.length) return { list: compatibles, anchor: compatibles[0], conflict: '' };
+  if (inBank) return { list: [anchor], anchor: anchor, conflict: '' };
+
+  const sourceConcept = String(anchor || userConcept || '').trim();
+  const compatible = _rankCompatibleMotifs(familyObjs, sourceConcept);
+  if (compatible.length) return { list: compatible, anchor: compatible[0], conflict: '' };
+
   const userObj = (typeof _userNamedObject === 'function')
     ? _userNamedObject((userConcept || '') + ' ' + (userMessage || ''), objectPool)
     : '';
   if (userObj) return { list: [userObj], anchor: userObj, conflict: '' };
-  const messageMotifs = (userMessage || '').trim()
+
+  const messageMotifs = String(userMessage || '').trim()
     ? _rankCompatibleMotifs(familyObjs, userMessage)
     : [];
   if (messageMotifs.length) return { list: messageMotifs, anchor: messageMotifs[0], conflict: '' };
-  const conceptText = String(anchor || userConcept || '').trim();
+
+  const conceptText = sourceConcept || String(userMessage || '').trim();
   if (typeof _isVerseReference === 'function' && _isVerseReference(conceptText)) {
-    return {
-      list: [(typeof _motifSceneFromMessage === 'function')
-        ? _motifSceneFromMessage(conceptText, userMessage)
-        : conceptText],
-      anchor: conceptText,
-      conflict: ''
-    };
+    return { list: [_motifSceneFromMessage(conceptText, userMessage)], anchor: conceptText, conflict: '' };
   }
-  const fallback = (typeof _pick === 'function') ? _pick(familyObjs) : '';
-  if (!fallback) return { list: [], anchor: anchor, conflict: '' };
+
+  // Sin relación defendible no se sortea un objeto del banco. Se entrega una
+  // instrucción de interpretación semántica y se deja constancia del límite.
+  const derived = conceptText ? _motifSceneFromMessage(conceptText, userMessage) : '';
+  if (!derived) return { list: [], anchor: '', conflict: 'Escribe un concepto o mensaje antes de elegir un motivo.' };
   return {
-    list: [fallback],
-    anchor: fallback,
-    conflict: 'el concepto «' + (anchor || userConcept || '') + '» no encaja con ningún motivo de la familia; se usó «' + fallback + '» como motivo provisional de la serie.'
+    list: [derived],
+    anchor: conceptText,
+    conflict: 'No hay un motivo del banco con relación semántica suficiente con «' + conceptText + '». Deriva una metáfora visual desde el concepto y el mensaje; no los ilustres palabra por palabra ni añadas objetos arbitrarios.'
   };
 }
-
 function _resolveContactIdentity(objectPool) {
   const concept = String(MOTOR_STATE.concept || '').trim();
   const message = String(MOTOR_STATE.message || '').trim();
@@ -2320,7 +2348,8 @@ function formatPrompt(result) {
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
     o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || sharedExploreCopy || 'propón copy breve') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
-    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
+    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. La relación del motivo con la idea debe poder explicarse; usa metáforas visuales, no una traducción palabra por palabra. Si el banco no ofrece un motivo compatible, deriva una propuesta desde concepto y mensaje y señala la incertidumbre. ';
+    o += 'Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
   } else {
     o += '/CONTACTSHEET — 3 DIRECCIONES · MISMO CONCEPTO · NADA CLONADO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + ' | SERIE: ' + (MOTOR_STATE.serie || '—') + '\n';

@@ -896,6 +896,136 @@
     return JSON.stringify(exportMemoryObject(), null, 2);
   }
 
+  // Export/import de bancos en un solo archivo portátil. Conserva las claves
+  // reales que ya entiende el motor (mercado -> subnicho -> arrays de strings)
+  // y también los bancos nombrados, sin copiar el resto de la memoria del taller.
+  function _isPersonalBankMemoryKey(key) {
+    return /^POD2\|personalBanks?\|[^|]+$/.test(String(key || ''));
+  }
+
+  function _validatePersonalBankMemoryValue(key, raw) {
+    let value;
+    try { value = typeof raw === 'string' ? JSON.parse(raw) : raw; }
+    catch (e) { throw new Error('JSON interno inválido en ' + key); }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Estructura de banco inválida en ' + key);
+    if (String(key).indexOf('|personalBanks|') !== -1) {
+      if (!value.banks || typeof value.banks !== 'object' || Array.isArray(value.banks)) throw new Error('Falta la colección de bancos nombrados en ' + key);
+      Object.keys(value.banks).forEach(function (id) {
+        const bank = value.banks[id];
+        if (!bank || typeof bank !== 'object' || Array.isArray(bank)) throw new Error('Banco nombrado inválido: ' + id);
+        ['objects', 'phrases'].forEach(function (field) {
+          if (bank[field] !== undefined && (!Array.isArray(bank[field]) || !bank[field].every(function (x) { return typeof x === 'string'; }))) {
+            throw new Error('Lista ' + field + ' inválida en ' + id);
+          }
+        });
+      });
+    } else {
+      Object.keys(value).forEach(function (subniche) {
+        if (!Array.isArray(value[subniche]) || !value[subniche].every(function (x) { return typeof x === 'string'; })) {
+          throw new Error('Lista de objetos/frases inválida para ' + subniche + ' en ' + key);
+        }
+      });
+    }
+    return value;
+  }
+
+  function normalizeGeneratedBankOutput(input) {
+    const parsed = typeof input === 'string' ? JSON.parse(input) : input;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('La salida del generador debe ser un objeto JSON.');
+    const market = String(parsed.mercado || parsed.market || '').trim();
+    const family = String(parsed.familia || parsed.family || '').trim();
+    if (!market || !family) return null;
+    const kind = String(parsed.tipo || parsed.type || 'ambos').toLowerCase();
+    if (!['ambos', 'both', 'objetos', 'objects', 'frases', 'phrases'].includes(kind)) throw new Error('Tipo de banco no reconocido: ' + kind);
+    let objects = parsed.objetos || parsed.objects || ((kind === 'objetos' || kind === 'objects') ? parsed.items : []);
+    let phrases = parsed.frases || parsed.phrases || ((kind === 'frases' || kind === 'phrases') ? parsed.items : []);
+    if (kind === 'objetos' || kind === 'objects') phrases = [];
+    if (kind === 'frases' || kind === 'phrases') objects = [];
+    if (!Array.isArray(objects) || !Array.isArray(phrases)
+      || !objects.every(function (x) { return typeof x === 'string'; })
+      || !phrases.every(function (x) { return typeof x === 'string'; })) {
+      throw new Error('Objetos y frases deben ser listas de textos.');
+    }
+    return { market: market, family: family, objects: objects, phrases: phrases };
+  }
+  function exportPersonalBanksObject() {
+    const data = {};
+    listMemoryKeys().filter(_isPersonalBankMemoryKey).forEach(function (key) {
+      const raw = POD_LS.getItem(key);
+      if (raw !== null && raw !== undefined) data[key] = raw;
+    });
+    return {
+      format: 'taller-pod-personal-banks',
+      schemaVersion: 1,
+      exportedAt: new Date().toISOString(),
+      data: data
+    };
+  }
+
+  function exportPersonalBanksJSON() {
+    return JSON.stringify(exportPersonalBanksObject(), null, 2);
+  }
+
+  function importPersonalBanksJSON(input) {
+    const parsed = typeof input === 'string' ? JSON.parse(input) : input;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('El archivo debe contener un objeto JSON.');
+    if (parsed.format && (parsed.format !== 'taller-pod-personal-banks' || parsed.schemaVersion !== 1)) {
+      throw new Error('Formato o versión de bancos no compatible.');
+    }
+    // También acepta la exportación antigua de memoria POD2, filtrando siempre
+    // para no importar historial, locks ni preferencias.
+    const source = parsed.data && typeof parsed.data === 'object' ? parsed.data : parsed;
+    const incoming = {};
+    Object.keys(source).forEach(function (key) {
+      if (!_isPersonalBankMemoryKey(key)) return;
+      _validatePersonalBankMemoryValue(key, source[key]);
+      incoming[key] = typeof source[key] === 'string' ? source[key] : JSON.stringify(source[key]);
+    });
+    const keys = Object.keys(incoming);
+    if (!keys.length) throw new Error('No encontré bancos personales en este archivo. Acepto exportaciones POD2 del taller.');
+
+    const current = {};
+    listMemoryKeys().filter(_isPersonalBankMemoryKey).forEach(function (key) { current[key] = POD_LS.getItem(key); });
+    const merged = mergeMemoryObjects(current, incoming);
+    const writeKeys = Object.keys(merged).filter(_isPersonalBankMemoryKey);
+    const previous = {};
+    writeKeys.forEach(function (key) { previous[key] = POD_LS.getItem(key); });
+    try {
+      writeKeys.forEach(function (key) {
+        _validatePersonalBankMemoryValue(key, merged[key]);
+        if (POD_LS.setItem(key, merged[key]) !== true) throw new Error('No se pudo guardar ' + key + '; revisa el espacio del navegador.');
+      });
+    } catch (e) {
+      // Si el almacenamiento se llena a mitad de una fusión, restaura el estado anterior.
+      writeKeys.forEach(function (key) {
+        if (previous[key] === null || previous[key] === undefined) POD_LS.removeItem(key);
+        else POD_LS.setItem(key, previous[key]);
+      });
+      throw e;
+    }
+
+    const summary = { markets: [], namedBanks: 0, objects: 0, phrases: 0 };
+    Object.keys(merged).filter(_isPersonalBankMemoryKey).forEach(function (key) {
+      const match = key.match(/^POD2\|personalBanks?\|([^|]+)$/);
+      if (match && summary.markets.indexOf(match[1]) === -1) summary.markets.push(match[1]);
+      const value = _validatePersonalBankMemoryValue(key, merged[key]);
+      if (key.indexOf('|personalBanks|') !== -1) {
+        Object.keys(value.banks || {}).forEach(function (id) {
+          summary.namedBanks++;
+          summary.objects += (value.banks[id].objects || []).length;
+          summary.phrases += (value.banks[id].phrases || []).length;
+        });
+      } else {
+        Object.keys(value).forEach(function (subniche) {
+          const isPhrase = subniche.indexOf('__phrase__') === 0;
+          summary[isPhrase ? 'phrases' : 'objects'] += value[subniche].length;
+        });
+      }
+    });
+    summary.markets.sort();
+    summary.keysMerged = keys.length;
+    return { ok: true, importedKeys: keys.length, summary: summary };
+  }
   function mergeMemoryObjects(local, remote) {
     local = local || {};
     remote = remote || {};
@@ -1121,7 +1251,10 @@
 
   window.mergeArraysUnique = mergeArraysUnique;
   window.exportMemoryObject = exportMemoryObject;
-  window.exportMemoryJSON = exportMemoryJSON;
+  window.exportMemoryJSON = exportMemoryJSON;  window.normalizeGeneratedBankOutput = normalizeGeneratedBankOutput;
+  window.exportPersonalBanksObject = exportPersonalBanksObject;
+  window.exportPersonalBanksJSON = exportPersonalBanksJSON;
+  window.importPersonalBanksJSON = importPersonalBanksJSON;
   window.mergeMemoryObjects = mergeMemoryObjects;
   window.importMemoryJSON = importMemoryJSON;
   window.downloadMemoryFile = downloadMemoryFile;

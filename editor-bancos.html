@@ -58,6 +58,22 @@
       margin-bottom: 16px;
     }
 
+    .fpanel {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 1000;
+      width: min(420px, calc(100vw - 32px));
+      max-height: min(70vh, 620px);
+      overflow: auto;
+      padding: 18px;
+      color: var(--text);
+      background: var(--panel);
+      border: 1px solid var(--line2);
+      border-radius: 10px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+    }
+
     label {
       display: block;
       font-size: 12px;
@@ -363,6 +379,24 @@
       </div>
     </div>
 
+    <div class="card" id="unifiedBanksCard">
+      <label>Un solo respaldo para todos tus bancos</label>
+      <div class="hint" style="margin:0 0 12px;">Incluye bancos generales y bancos con nombre de todos los mercados y subnichos. Importar fusiona y deduplica; no borra lo que ya tienes. También acepta el JSON de memoria POD2 exportado desde el Taller.</div>
+      <div class="actions" style="margin-top:0;">
+        <button id="btnExportAllBanks" class="primary">Descargar bancos unificados</button>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label for="unifiedBankFile">Importar respaldo y fusionar</label>
+        <input id="unifiedBankFile" type="file" accept="application/json,.json" />
+      </div>
+      <div id="unifiedBankSummary" class="hint" aria-live="polite">El respaldo conserva mercado, subnicho, objetos, frases y bancos activos.</div>
+      <div class="field" style="margin-top:12px;">
+        <label>Compartir entre el dominio de producción y el preview</label>
+        <div class="hint" style="margin:0 0 8px;">Inicia sesión y sincroniza en la nube desde ambos dominios. La copia se fusiona por cuenta y no modifica main ni archivos del repositorio.</div>
+        <button id="btnMemory" class="ghost" type="button">Abrir sincronización en nube</button>
+      </div>
+    </div>
+
     <div class="card">
       <label>Banco de templates — patrón repetido (solo mochila, bolso, funda)</label>
       <div class="hint" style="margin-top: 0; margin-bottom: 12px;">Sube la plantilla plana de cada producto para saber dónde cae el patrón. Una plantilla activa por producto; el motor la cita en el prompt.</div>
@@ -423,7 +457,11 @@ Estas acciones eliminan objetos y frases personales de LocalStorage. No afectan 
 
   <script src="js/data-mercados.js"></script>
   <script src="js/data-bancos.js"></script>
+  <script src="js/banco-gospel-es.js"></script>
+  <script src="js/banco-gospel-en.js"></script>
+  <script src="js/banco-global.js"></script>
   <script src="js/memoria-local.js"></script>
+  <script src="js/sync-supabase.js"></script>
   <script src="js/pod-nav.js"></script>
   <script>
     (function () {
@@ -500,6 +538,15 @@ Estas acciones eliminan objetos y frases personales de LocalStorage. No afectan 
             html += '<option value="' + escHtml(id) + '">' + escHtml(label) + '</option>';
           });
         }
+
+        // Gospel permite colecciones más precisas por dominio; se mantienen
+        // separadas de la familia general para que el motor no mezcle motivos.
+        var gospelDomains = marketId === 'gospel_en' ? window.GOSPEL_DOMINIOS_EN
+          : (marketId === 'gospel_es' ? window.GOSPEL_DOMINIOS_ES : null);
+        if (gospelDomains) Object.keys(gospelDomains).forEach(function (id) {
+          var label = gospelDomains[id] && gospelDomains[id].label || id;
+          html += '<option value="' + escHtml(id) + '">' + escHtml(label) + ' · Gospel</option>';
+        });
 
         sel.innerHTML = html;
       }
@@ -685,6 +732,43 @@ Estas acciones eliminan objetos y frases personales de LocalStorage. No afectan 
         }
       }
 
+      function exportAllBanks() {
+        try {
+          var json = exportPersonalBanksJSON();
+          var blob = new Blob([json], { type: 'application/json' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'taller-pod-bancos-unificados.json';
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 800);
+          var parsed = JSON.parse(json);
+          var markets = Object.keys(parsed.data || {}).map(function (key) { return key.split('|').pop(); });
+          var el = $('unifiedBankSummary');
+          if (el) el.textContent = 'Respaldo descargado. Mercados incluidos: ' + (markets.length ? Array.from(new Set(markets)).join(', ') : 'ninguno todavía') + '. El archivo contiene los bancos personales disponibles en este navegador.';
+          tell('Respaldo único de bancos descargado.', 'good');
+        } catch (e) { tell('No se pudo exportar: ' + (e.message || e), 'bad'); }
+      }
+
+      function importAllBanksFile(file) {
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var result = importPersonalBanksJSON(String(reader.result || ''));
+            var s = result.summary || {};
+            var message = 'Fusión completada: ' + (s.namedBanks || 0) + ' bancos con nombre, ' + (s.objects || 0) + ' objetos y ' + (s.phrases || 0) + ' frases en ' + (s.markets || []).length + ' mercados. No se reemplazaron los datos existentes.';
+            var el = $('unifiedBankSummary');
+            if (el) el.textContent = message;
+            displayBank();
+            renderNbanks();
+            tell(message, 'good');
+          } catch (e) { tell('No se importó el archivo: ' + (e.message || e), 'bad'); }
+          var input = $('unifiedBankFile');
+          if (input) input.value = '';
+        };
+        reader.onerror = function () { tell('No se pudo leer el archivo seleccionado.', 'bad'); };
+        reader.readAsText(file);
+      }
       /* --- Importar --- */
       function importBank() {
         var market = $('selMarket') ? $('selMarket').value : 'global_en';
@@ -695,7 +779,32 @@ Estas acciones eliminan objetos y frases personales de LocalStorage. No afectan 
         }
         try {
           var incoming = JSON.parse(textarea.value);
-          var bank = loadPersonalBank(market);
+          var generated = normalizeGeneratedBankOutput(incoming);
+          if (generated) {
+            var targetMarket = generated.market;
+            var family = generated.family;
+            if (typeof POD_MARKETS === 'undefined' || !POD_MARKETS[targetMarket]) throw new Error('Mercado desconocido en el JSON: ' + targetMarket);
+            var validFamilies = [];
+            if (typeof getSubnicheIdsForMarket === 'function') {
+              validFamilies = getSubnicheIdsForMarket(targetMarket, 'evergreen', 'todas').concat(getSubnicheIdsForMarket(targetMarket, 'temporada', 'todas'));
+            }
+            var gospelDomains = targetMarket === 'gospel_en' ? window.GOSPEL_DOMINIOS_EN
+              : (targetMarket === 'gospel_es' ? window.GOSPEL_DOMINIOS_ES : null);
+            if (gospelDomains) {
+              var domainKey = Object.keys(gospelDomains).filter(function (id) { return id.toLowerCase() === family.toLowerCase(); })[0];
+              if (domainKey) family = domainKey;
+            }
+            if (validFamilies.indexOf(family) === -1 && !(gospelDomains && gospelDomains[family])) {
+              throw new Error('La familia/subnicho «' + family + '» no pertenece al mercado «' + targetMarket + '». No se importó nada.');
+            }
+            market = targetMarket;
+            if ($('selMarket')) { $('selMarket').value = targetMarket; fillSubniches(); }
+            if ($('selSubniche')) $('selSubniche').value = family;
+            if ($('nbSubniche')) { $('nbSubniche').innerHTML = $('selSubniche').innerHTML; $('nbSubniche').value = family; }
+            incoming = {};
+            incoming[family] = generated.objects;
+            incoming['__phrase__' + family] = generated.phrases;
+          }          var bank = loadPersonalBank(market);
           var totalAdded = 0;
           var duplicates = 0;
 
@@ -1012,6 +1121,10 @@ Estas acciones eliminan objetos y frases personales de LocalStorage. No afectan 
         $('btnExport').addEventListener('click', exportBank);
         $('btnCopyJSON').addEventListener('click', copyBankJSON);
         $('btnImport').addEventListener('click', importBank);
+        if ($('btnExportAllBanks')) $('btnExportAllBanks').addEventListener('click', exportAllBanks);
+        if ($('unifiedBankFile')) $('unifiedBankFile').addEventListener('change', function () {
+          importAllBanksFile(this.files && this.files[0]);
+        });
 
         $('btnClearSubniche').addEventListener('click', clearSubnicheBank);
         $('btnClearAll').addEventListener('click', clearAllBank);
