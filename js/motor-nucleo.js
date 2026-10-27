@@ -127,6 +127,11 @@ let MOTOR_STATE = {
   imageAnalysis: null,
   approvedMotifMaster: ''
 };
+function _effectiveMotifVariationMode() {
+  return String(MOTOR_STATE.approvedMotifMaster || '').trim()
+    ? 'same'
+    : (String(MOTOR_STATE.motifVariationMode || 'distinct') === 'same' ? 'same' : 'distinct');
+}
 
 const K = ['A', 'B', 'C'];
 const N = ['01A', '01B', '01C'];
@@ -1214,7 +1219,7 @@ function _motifSceneFromMessage(concept, message) {
        existe, UN conflicto para toda la serie con un motivo provisional.
    La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
 function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage, approvedMotifMaster) {
-  const variationMode = String(MOTOR_STATE.motifVariationMode || 'distinct');
+  const variationMode = _effectiveMotifVariationMode();
   const rotate = function (items) {
     const list = (items || []).slice();
     if (!list.length) return list;
@@ -2054,7 +2059,7 @@ function evaluaSetOk(set) {
   const estilosOk = MOTOR_STATE.groupMode === 'mismo'
     ? m.estilos.length === 1
     : m.estilos.length === 3;
-  const motifVarietyRequired = MOTOR_STATE.workflowMode === 'explore' && MOTOR_STATE.motifVariationMode !== 'same';
+  const motifVarietyRequired = MOTOR_STATE.workflowMode === 'explore' && _effectiveMotifVariationMode() !== 'same';
   const motifVarietyOk = !motifVarietyRequired || m.uniqueMotifCount === 3;
   const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
   const ok = m.diversity >= 55 && estilosOk && contactRulesOk && motifVarietyOk && ejesOk && pertinenciaOk && coherenciaArtisticaOk
@@ -2567,7 +2572,7 @@ function formatPrompt(result) {
     o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || sharedExploreCopy || 'propón copy breve') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
     o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. La relación semántica del objeto con el concepto debe ser explicable; no basta compartir palabras ni recurras a símbolos religiosos genéricos por defecto. ';
-    o += MOTOR_STATE.motifVariationMode === 'same'
+    o += _effectiveMotifVariationMode() === 'same'
       ? 'OBJETO: conserva el mismo motivo visual en A/B/C; cambia la solución gráfica. '
       : 'OBJETO: usa en A/B/C motivos concretos distintos pero semánticamente relacionados con la misma idea; cada motivo debe comunicar una faceta coherente, sin añadir objetos arbitrarios. ';
     o += 'Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
@@ -3162,7 +3167,7 @@ function renderGates(result) {
   if (_isSymbolConstancyRequired()) {
     html += '<span class="badge ' + (m.symbolStable ? 'good' : 'bad') + '" title="Comprueba que A/B/C conservan el mismo símbolo indicado en el prompt.">Símbolo constante</span>';
   } else {
-    const varied = MOTOR_STATE.motifVariationMode !== 'same';
+    const varied = _effectiveMotifVariationMode() !== 'same';
     const motifOk = varied ? m.uniqueMotifCount === 3 : m.symbolStable;
     const motifLabel = varied ? 'Motivos distintos ' + m.uniqueMotifCount + '/3' : 'Mismo motivo';
     html += '<span class="badge ' + (motifOk ? 'good' : 'bad') + '" title="' + (varied ? 'A/B/C deben usar objetos distintos relacionados con una misma idea.' : 'A/B/C comparten un objeto visual.') + '">' + motifLabel + '</span>';
@@ -3376,7 +3381,7 @@ function crearLos3Disenos() {
 
     if (statusEl) {
       if (result.passed) {
-        const motifStatus = MOTOR_STATE.workflowMode === 'explore' && MOTOR_STATE.motifVariationMode !== 'same'
+        const motifStatus = MOTOR_STATE.workflowMode === 'explore' && _effectiveMotifVariationMode() !== 'same'
           ? 'tres motivos relacionados' : 'símbolo constante';
         statusEl.innerHTML = '<span class="good">Listo: ' + motifStatus + ', tres tratamientos asignados y diferencias revisadas en el prompt</span>';
       } else {
@@ -3699,9 +3704,18 @@ window.readStateFromDOM = readStateFromDOM;
     const workflowMode = document.getElementById('workflowMode');
     const motifControls = document.getElementById('motifExploreControls');
     const motifInput = document.getElementById('approvedMotifMaster');
+    const motifVariationSelect = document.getElementById('motifVariationMode');
     const motifButton = document.getElementById('btnChangeMotifs');
     const refreshMotifControls = function () {
       if (motifControls) motifControls.style.display = workflowMode && workflowMode.value === 'explore' ? '' : 'none';
+      if (motifVariationSelect) {
+        const fixed = !!(motifInput && motifInput.value.trim());
+        if (fixed && !motifVariationSelect.disabled) motifVariationSelect.dataset.previousMode = motifVariationSelect.value;
+        if (fixed) motifVariationSelect.value = 'same';
+        else if (motifVariationSelect.disabled && motifVariationSelect.dataset.previousMode) motifVariationSelect.value = motifVariationSelect.dataset.previousMode;
+        motifVariationSelect.disabled = fixed;
+        if (!fixed) delete motifVariationSelect.dataset.previousMode;
+      }
       if (motifButton) {
         const fixed = !!(motifInput && motifInput.value.trim());
         motifButton.disabled = fixed;

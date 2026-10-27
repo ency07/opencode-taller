@@ -42,6 +42,11 @@ MOTOR_STATE.motifVariationMode = 'distinct';
 MOTOR_STATE.motifRerollNonce = 1;
 const rotated = _planExploreMotifs(candidates, candidates, concept, concept, '', '');
 if (rotated.list[0] === varied.list[0]) throw new Error('“Proponer otros objetos” debe rotar el orden de las propuestas semánticamente compatibles.');
+MOTOR_STATE.approvedMotifMaster = 'vasija de barro seleccionada por la persona usuaria';
+if (_effectiveMotifVariationMode() !== 'same' || _planExploreMotifs(candidates, candidates, concept, concept, '', MOTOR_STATE.approvedMotifMaster).list.length !== 1) {
+  throw new Error('Un objeto escrito manualmente debe fijarse en A/B/C aunque el modo anterior fuera variar.');
+}
+MOTOR_STATE.approvedMotifMaster = '';
 Object.assign(MOTOR_STATE, { market: 'gospel_es', region: 'universal', product: 'CAMISETA SOFT', subniche: 'gospel_es', workflowMode: 'explore', concept: concept, message: 'Su gracia es suficiente para mí', support: 'Cuando soy débil, entonces soy fuerte', audienceSet: 'Auto', audienceMulti: 'si', groupMode: 'distintos' });
 MOTOR_STATE.explorationBrief = _resolveExplorationBrief();
 const generatedSet = buildCandidate(resolveAudiences());
