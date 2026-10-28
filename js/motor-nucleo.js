@@ -1129,6 +1129,16 @@ function _semanticAxesFor(text, rules, field) {
 
 /* Los ejes semánticos pesan primero; las palabras exactas solo ayudan cuando
    el concepto no tiene todavía una lectura editorial catalogada. */
+  function _motifView(item) {
+    if (item && typeof item === 'object') {
+      const motivo = String(item.motivo || '').trim();
+      const idea = String(item.idea_comunicada || item.idea || '').trim();
+      const texto = String(idea || motivo || '').trim();
+      return { label: motivo || texto, texto: texto, tensiones: Array.isArray(item.tensiones) ? item.tensiones : [], contextos: Array.isArray(item.contextos) ? item.contextos : [], riesgo: String(item.riesgo_cliche || '').trim(), enriquecido: true };
+    }
+    const label = String(item || '').trim();
+    return { label: label, texto: label, tensiones: [], contextos: [], riesgo: '', enriquecido: false };
+  }
 function _rankCompatibleMotifs(pools, concept) {
   const normalize = function (value) {
     return (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(value || '')) : String(value || '').toLowerCase())
@@ -1140,10 +1150,12 @@ function _rankCompatibleMotifs(pools, concept) {
   const stop = new Set(['que','con','para','desde','hacia','sobre','entre','una','uno','unos','unas','los','las','el','la','de','del','en','por','como','sin','the','and','with','for','from','into','over','under','that','which','holding','sosteniendo','representa','lugares','turisticos','tourist','places','profundo','deep','my','a','an','of','to']);
   const tokens = [...new Set(source.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
   const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
-    const label = String(item || '').trim();
-    const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+    const view = typeof _motifView === 'function' ? _motifView(item) : { label: String(item || '').trim(), texto: String(item || '').trim(), tensiones: [], contextos: [], riesgo: '', enriquecido: false };
+    const label = String(view.label || '').trim();
+    const semText = String(view.texto || view.label || '').trim();
+    const words = [...new Set(normalize(semText).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
     const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    const motifAxes = _semanticAxesFor(label, _MOTIF_VISUAL_AXES, 'motif');
+    const motifAxes = _semanticAxesFor(semText, _MOTIF_VISUAL_AXES, 'motif');
     const semanticMatches = motifAxes.filter(function (axis) { return conceptAxes.indexOf(axis) !== -1; });
     if (conceptAxes.length && !semanticMatches.length) return null;
     if (!overlap.length && !semanticMatches.length) return null;
@@ -1185,9 +1197,35 @@ function _motifSceneFromMessage(concept, message) {
    4. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
        existe, UN conflicto para toda la serie con un motivo provisional.
    La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
+  function _personalMotifCandidates(market, subniche) {
+    const out = [];
+    const sources = [];
+    try {
+      const concepts = (typeof getPersonalConcepts === 'function') ? getPersonalConcepts(market, subniche) : [];
+      (Array.isArray(concepts) ? concepts : []).forEach(function (c) { sources.push(c); });
+    } catch (e) { return out; }
+    sources.forEach(function (c) {
+      if (!c) return;
+      const obj = (typeof c === 'object') ? c : null;
+      const motivo = String((obj ? (obj.motivo || obj.idea_comunicada || obj.idea || obj.texto) : c) || '').trim();
+      if (!motivo) return;
+      out.push({
+        id: obj ? String(obj.id || '') : '',
+        motivo: motivo,
+        idea: String((obj ? (obj.idea_comunicada || obj.idea) : motivo) || motivo).trim(),
+        tensiones: (obj && Array.isArray(obj.tensiones)) ? obj.tensiones : [],
+        contextos: (obj && Array.isArray(obj.contextos)) ? obj.contextos : [],
+        riesgo: String((obj ? obj.riesgo_cliche : '') || '').trim(),
+        origen: 'banco-personal'
+      });
+    });
+    return out;
+  }
 function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
-  const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
-  if (inBank) return { list: [anchor], anchor: anchor, conflict: '' };
+  const views = (Array.isArray(familyObjs) ? familyObjs : []).map(function (item) { return (typeof _motifView === 'function') ? _motifView(item) : { label: String(item || '').trim(), texto: String(item || '').trim(), tensiones: [], contextos: [], riesgo: '', enriquecido: false }; });
+  const inBankHit = anchor ? views.filter(function (v) { return String(v.label || '') === String(anchor || ''); })[0] : null;
+  const inBank = !!inBankHit;
+  if (inBank) return { list: [inBankHit.label], anchor: inBankHit.label, conflict: '' };
 
   const sourceConcept = String(anchor || userConcept || '').trim();
   const compatible = _rankCompatibleMotifs(familyObjs, sourceConcept);
@@ -1469,7 +1507,9 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     const userConceptPlan = String(MOTOR_STATE.concept || '').trim();
     const anchorPlan = String(userConceptPlan || briefPlan.concept || '').trim();
     const commonBankPlan = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
-    const familyPlan = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBankPlan.indexOf(ob) === -1; });
+    const familyPlanRaw = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBankPlan.indexOf(ob) === -1; });
+    const personalMotivos = (typeof _personalMotifCandidates === 'function') ? _personalMotifCandidates(MOTOR_STATE.market, briefPlan.familyId || MOTOR_STATE.subniche || 'auto') : [];
+    const familyPlan = personalMotivos.length ? personalMotivos.concat(familyPlanRaw) : familyPlanRaw;
     if (familyPlan.length) {
       setMotifPlan = (typeof _planExploreMotifs === 'function')
         ? _planExploreMotifs(familyPlan, objectPool, anchorPlan, userConceptPlan, String(MOTOR_STATE.message || ''))
