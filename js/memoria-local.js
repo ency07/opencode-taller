@@ -1558,6 +1558,9 @@
 
   window.MEMORIA_LOCAL_VERSION = '1.0.0';
   window.ENRICHED_BANK_FORMAT_VERSION = ENRICHED_BANK_FORMAT_VERSION;
+  window.validateEnrichedBankFormat = validateEnrichedBankFormat;
+  window.validateMotifRegistro = validateMotifRegistro;
+  window.mergeEnrichedBankData = mergeEnrichedBankData;
   window.importarMotivosEnriquecidos = importarMotivosEnriquecidos;
   window.getPropuestasBanco = getPropuestasBanco;
   window.proponerEnBanco = proponerEnBanco;
