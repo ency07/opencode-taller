@@ -2133,7 +2133,15 @@ function generateSet() {
   let best = null, bestScore = null, bestTotal = -1e9;          // mejor de todos (fallback)
   let bestOk = null, bestOkScore = null, bestOkTotal = -1e9;    // mejor que pasa TODOS los controles
 
+  // El nonce estable hace determinista el pick de estilos: sin variarlo, cada
+  // pulsación de «Crear los 3 diseños» reproduciría la misma dirección de estilo
+  // y chocaría contra la memoria de patrones que grabó la generación anterior
+  // (gate imposible tras el primer set). Cada intento usa un nonce distinto; al
+  // terminar, el base avanza 1 como hace rerollSingle para que dos generaciones
+  // consecutivas no repitan tampoco los ejes deterministas (texto, tipografía).
+  const rerollNonceBase = Number(MOTOR_STATE._rerollNonce) || 0;
   for (let i = 0; i < 3000; i++) {
+    MOTOR_STATE._rerollNonce = rerollNonceBase + i;
     const cand = buildCandidate(audsPerKey, fixedIdentity);
     const ev = evaluaSetOk(cand);
     const m = ev.score;
@@ -2144,6 +2152,9 @@ function generateSet() {
     if (m.total > bestTotal) { bestTotal = m.total; best = cand; bestScore = m; }
     if (ok && m.total > bestOkTotal) { bestOkTotal = m.total; bestOk = cand; bestOkScore = m; }
   }
+  // El base avanza 1 tras la selección: la próxima generación empieza en un nonce
+  // nuevo y no repite la misma secuencia de direcciones.
+  MOTOR_STATE._rerollNonce = rerollNonceBase + 1;
 
   let passed = !!bestOk;
   if (bestOk) { best = bestOk; bestScore = bestOkScore; }

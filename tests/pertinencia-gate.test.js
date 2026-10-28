@@ -121,6 +121,58 @@ runs.forEach(function (r, idx) {
   ok(r.audMinBajo === 0, 'seed ' + (idx + 1) + ': ninguna serie debe bajar de audiencia mín ' + UMBRAL_AUDIENCIA_MIN + ' (' + r.audMinBajo + ' casos)');
 });
 
+/* Generaciones CONSECUTIVAS con memoria acumulada: el nonce por intento evita
+   que generateSet() reproduzca la misma dirección de estilo y choque contra la
+   memoria que grabó la generación anterior (regresión: tras el primer set el
+   gate devolvía passed=false en casi todas las pulsaciones siguientes). */
+(function () {
+  const prevDoc = global.document;
+  const DOM_VALUES = {
+    language: 'es', marketplace: 'generic', subniche: 'auto', serie: '',
+    concept: 'la gracia de Dios se recibe como don',
+    message: 'LA GRACIA DE DIOS SE RECIBE COMO DON',
+    support: '', audienceSet: 'Auto', audienceMulti: 'si', dominio: 'auto',
+    domImagen: 'Auto', workflowMode: 'explore', designMode: 'contacto',
+    groupMode: 'distintos', market: 'gospel_es', region: 'universal_es',
+    product: 'CAMISETA SOFT', repeatType: 'medio salto', simboloVar: 'sustituir',
+    textosVar: 'conservar_palabras', paletaVar: 'renovar', capApplication: 'auto',
+    stampSide: 'auto', printMethod: 'auto'
+  };
+  global.document = {
+    readyState: 'loading',
+    getElementById: function (id) {
+      if (id in DOM_VALUES) {
+        return { value: DOM_VALUES[id], files: null, dataset: {},
+          dispatchEvent: function () {}, addEventListener: function () {} };
+      }
+      return null;
+    },
+    querySelectorAll: function () { return []; },
+    addEventListener: function () {},
+    createElement: function () { return { className: '', innerHTML: '', appendChild: function () {}, addEventListener: function () {} }; }
+  };
+  try {
+    Math.random = mulberry32(11);
+    MOTOR_STATE._rerollNonce = 0;
+    const patKey = memKey(['patterns', 'gospel_es|universal_es|auto', 'CAMISETA SOFT']);
+    removeRaw(patKey);
+    const consecutivos = [];
+    const estilosPorSet = [];
+    for (let i = 0; i < 5; i++) {
+      const gen = generateSet();
+      consecutivos.push(!!(gen && gen.passed));
+      estilosPorSet.push(gen && gen.score && gen.score.estilos ? gen.score.estilos.join('|') : '');
+    }
+    const passedCount = consecutivos.filter(Boolean).length;
+    ok(passedCount >= 4, 'generaciones consecutivas: al menos 4/5 deben pasar el gate (pasan ' + passedCount + '/5)');
+    const repetidos = estilosPorSet.filter(function (s, i) { return estilosPorSet.indexOf(s) !== i; }).length;
+    ok(repetidos === 0, 'generaciones consecutivas: ninguna dirección de estilos debe repetirse entre sets');
+    removeRaw(patKey);
+  } finally {
+    global.document = prevDoc;
+  }
+})();
+
 /* La ficha HEAVY puntúa solo los ejes libres de producto (layout y jerarquía):
    tratamiento y densidad los fija el perfil, así que su fit no puede caer a
    25/75 (1 o 3 de 4) sino solo a 0/50/100 (0, 1 o 2 de 2). */
@@ -139,6 +191,10 @@ const motorSrc = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
 ok(/const tratFijo = K\.every/.test(motorSrc), 'la firma de patrón debe detectar el tratamiento fijo de la serie');
 ok(/tratamiento: tratFijo \? '' :/.test(motorSrc), 'la firma debe excluir el tratamiento cuando está fijo por contrato');
 ok(/SOLO puntúa ejes LIBRES|Solo puntúa ejes LIBRES/.test(motorSrc), 'el fit debe documentar que solo puntúa ejes libres');
+ok(/MOTOR_STATE\._rerollNonce = rerollNonceBase \+ i;/.test(motorSrc),
+  'generateSet debe variar el nonce por intento (evita repetir la misma dirección de estilo)');
+ok(/MOTOR_STATE\._rerollNonce = rerollNonceBase \+ 1;/.test(motorSrc),
+  'generateSet debe avanzar el nonce base tras seleccionar el set');
 
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  pertinencia-gate  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
