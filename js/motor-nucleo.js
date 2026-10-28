@@ -1465,6 +1465,9 @@ function _integracionCompatible(layout, integracion) {
 
 function buildCandidate(audsPerKey, fixedIdentity) {
   const estilos = resolveEstilos(audsPerKey);
+  // Pool de estilos realmente disponible para este contexto: con él se decide si
+  // la preferencia de estilo de una audiencia es alcanzable (fit) o imposible.
+  const _stylePoolFree = _styleCandidatesForContext();
   const objectPool = getObjectPool();
   const isVar = MOTOR_STATE.workflowMode === 'variation';
   const conservarSimb = isVar && !!MOTOR_STATE.imageReference && MOTOR_STATE.variationOptions.simbolo !== 'sustituir';
@@ -1765,22 +1768,42 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       v._esquema = bestEsq;
     }
 
-    // Pertinencia medida con preferencias declaradas de audiencia y producto.
+    /* Pertinencia medida con preferencias declaradas de audiencia y producto.
+       Solo puntúa ejes LIBRES: si ninguna opción admisible puede cumplir la
+       preferencia (intersección vacía entre el pool realmente disponible y la
+       preferencia) o el valor lo impone el contrato de la serie (tratamiento
+       fijo A/B/C, densidad única del perfil), el eje se omite en vez de sumar
+       un fallo inevitable: el umbral mide decisiones del motor, no condiciones
+       impuestas. Los ejes alcanzables siguen contando con todo su peso. */
+    const perfilKeyFree = String(v.perfilEstructural || '').toUpperCase();
+    const perfilFijo = !!(contactIdentity || MOTOR_STATE.workflowMode === 'explore' || MOTOR_STATE.workflowMode === 'variation');
+    const perfilSpec = _STRUCTURAL_PROFILES[perfilKeyFree] || {};
+    const layoutPoolFree = perfilFijo
+      ? (function () {
+          const allowed = allowedPool || (_LAYOUTS || []).slice();
+          const pool = allowed.filter(function (x) {
+            return (perfilSpec.layout || []).some(function (h) { return String(x).indexOf(h) === 0; });
+          });
+          return pool.length ? pool : allowed;
+        })()
+      : (allowedPool || (_LAYOUTS || []));
+    const tipoPoolFree = perfilFijo
+      ? (_TIPOS || []).filter(function (x) {
+          return (perfilSpec.type || []).some(function (h) { return String(x).indexOf(h) === 0; });
+        })
+      : (_TIPOS || []);
+    const formaPoolFree = perfilFijo ? _profileCandidates(_FORMAS, perfilSpec.form, _FORMAS) : (_FORMAS || []);
+    const densPoolFree = perfilFijo
+      ? (perfilSpec.density || []).filter(function (d) { return (_POOLS.densidad || []).indexOf(d) !== -1; })
+      : densityPool;
+    const jerPoolFree = perfilFijo
+      ? (PROFILE_VISUAL_MODES[perfilKeyFree] || [])
+      : ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
+
     const audStylePref = (typeof AUD_STYLE_PREF !== 'undefined' ? AUD_STYLE_PREF[v.audiencia] : []) || [];
     const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[v.audiencia] : []) || [];
     const audDensity = (typeof AUD_DENSITY_PREF !== 'undefined' ? AUD_DENSITY_PREF[v.audiencia] : []) || [];
     const audChecks = [];
-    // AUD_STYLE_PREF contiene etiquetas visibles (p. ej. "Y2K / Cyber"), mientras
-    // styleBase es una clave interna normalizada. Comparar ambos contra la etiqueta
-    // visible evita penalizar una dirección que sí pertenece al perfil.
-    if (audStylePref.length) {
-      const visibleStyle = String(v.estilo || '').trim().toLowerCase();
-      const normalizedStyle = String(styleBase || '').trim().toLowerCase();
-      audChecks.push(audStylePref.some(function (x) {
-        const pref = String(x || '').trim().toLowerCase();
-        return pref === visibleStyle || pref === normalizedStyle;
-      }));
-    }
     // Las fichas contienen descripciones extendidas; evaluar coincidencia textual
     // normalizada evita que una preferencia válida falle por incluir atributos extra.
     const matchesPreference = function (actual, preferences) {
@@ -1790,28 +1813,69 @@ function buildCandidate(audsPerKey, fixedIdentity) {
         return !!preferred && (value === preferred || value.indexOf(preferred) !== -1 || preferred.indexOf(value) !== -1);
       });
     };
-    if (audProfile.tipoPref.length) audChecks.push(matchesPreference(v.tipografia, audProfile.tipoPref));
-    if (audProfile.formaPref.length) audChecks.push(matchesPreference(v.formaSimbolo, audProfile.formaPref));
-    // En exploración, HEAVY/SOFT/MODERN son una restricción del producto creativo.
-    // No penalizar la audiencia por no preferir las tres direcciones obligatorias.
-    if (audProfile.tratPref.length && MOTOR_STATE.workflowMode !== 'explore') {
+    // AUD_STYLE_PREF contiene etiquetas visibles (p. ej. "Y2K / Cyber"), mientras
+    // styleBase es una clave interna normalizada. Comparar ambos contra la etiqueta
+    // visible evita penalizar una dirección que sí pertenece al perfil.
+    const estiloAlcanzable = audStylePref.some(function (x) {
+      const pref = String(x || '').trim().toLowerCase();
+      return _stylePoolFree.some(function (s) {
+        return pref === String(_getStyleBase(s)).trim().toLowerCase();
+      });
+    });
+    if (audStylePref.length && estiloAlcanzable) {
+      const visibleStyle = String(v.estilo || '').trim().toLowerCase();
+      const normalizedStyle = String(styleBase || '').trim().toLowerCase();
+      audChecks.push(audStylePref.some(function (x) {
+        const pref = String(x || '').trim().toLowerCase();
+        return pref === visibleStyle || pref === normalizedStyle;
+      }));
+    }
+    if (audProfile.tipoPref.length && tipoPoolFree.some(function (x) { return matchesPreference(x, audProfile.tipoPref); })) {
+      audChecks.push(matchesPreference(v.tipografia, audProfile.tipoPref));
+    }
+    if (audProfile.formaPref.length && formaPoolFree.some(function (x) { return matchesPreference(x, audProfile.formaPref); })) {
+      audChecks.push(matchesPreference(v.formaSimbolo, audProfile.formaPref));
+    }
+    // El tratamiento lo fija el contrato de la serie (01A HEAVY → 01B SOFT →
+    // 01C MODERN): no es una elección que la audiencia pueda o no preferir.
+    if (audProfile.tratPref.length && !perfilFijo) {
       audChecks.push(audProfile.tratPref.some(function (x) { return String(v.tratamiento).startsWith(x); }));
     }
-    if (audProfile.layoutPref.length) audChecks.push(audProfile.layoutPref.some(function (x) { return String(v.layout).startsWith(x); }));
-    if (audHierarchy.length) audChecks.push(audHierarchy.indexOf(v.jerarquiaVisual) !== -1);
-    if (audDensity.length) audChecks.push(audDensity.indexOf(v.densidad) !== -1);
+    if (audProfile.layoutPref.length && layoutPoolFree.some(function (x) {
+      return audProfile.layoutPref.some(function (h) { return String(x).indexOf(h) === 0; });
+    })) {
+      audChecks.push(audProfile.layoutPref.some(function (x) { return String(v.layout).startsWith(x); }));
+    }
+    if (audHierarchy.length && jerPoolFree.some(function (m) { return audHierarchy.indexOf(m) !== -1; })) {
+      audChecks.push(audHierarchy.indexOf(v.jerarquiaVisual) !== -1);
+    }
+    if (audDensity.length && densPoolFree.some(function (d) { return audDensity.indexOf(d) !== -1; })) {
+      audChecks.push(audDensity.indexOf(v.densidad) !== -1);
+    }
     const modeMatch = String(v.paleta).match(/\(modo:\s*([^)]+)\)/);
     const preferredModes = audProfile.modoCol || [];
-    if (preferredModes.length) audChecks.push(!!modeMatch && preferredModes.indexOf(modeMatch[1]) !== -1);
+    if (preferredModes.length && _COLOR_MODES.some(function (m) { return preferredModes.indexOf(m) !== -1; })) {
+      audChecks.push(!!modeMatch && preferredModes.indexOf(modeMatch[1]) !== -1);
+    }
     v.fitAudiencia = audChecks.length
       ? Math.round(100 * audChecks.filter(Boolean).length / audChecks.length)
       : 0;
 
     const productChecks = [];
-    if ((productBias.layout || []).length) productChecks.push(productBias.layout.some(function (x) { return String(v.layout).startsWith(x); }));
-    if ((productBias.trat || []).length) productChecks.push(productBias.trat.some(function (x) { return String(v.tratamiento).startsWith(x); }));
-    if ((productBias.density || []).length) productChecks.push(productBias.density.indexOf(v.densidad) !== -1);
-    if ((productBias.hierarchy || []).length) productChecks.push(productBias.hierarchy.indexOf(v.jerarquiaVisual) !== -1);
+    if ((productBias.layout || []).length && layoutPoolFree.some(function (x) {
+      return productBias.layout.some(function (h) { return String(x).indexOf(h) === 0; });
+    })) {
+      productChecks.push(productBias.layout.some(function (x) { return String(v.layout).startsWith(x); }));
+    }
+    if ((productBias.trat || []).length && !perfilFijo) {
+      productChecks.push(productBias.trat.some(function (x) { return String(v.tratamiento).startsWith(x); }));
+    }
+    if ((productBias.density || []).length && densPoolFree.some(function (d) { return productBias.density.indexOf(d) !== -1; })) {
+      productChecks.push(productBias.density.indexOf(v.densidad) !== -1);
+    }
+    if ((productBias.hierarchy || []).length && jerPoolFree.some(function (m) { return productBias.hierarchy.indexOf(m) !== -1; })) {
+      productChecks.push(productBias.hierarchy.indexOf(v.jerarquiaVisual) !== -1);
+    }
     v.fitProducto = productChecks.length
       ? Math.round(100 * productChecks.filter(Boolean).length / productChecks.length)
       : 0;
@@ -2030,12 +2094,20 @@ function memPatternMarket() {
    repetición no servía de nada). Ahora es condición de aceptación y solo se
    evalúa cuando el resto de controles ya pasó. */
 function _patternConflictsOf(cand) {
+  // El tratamiento es contrato fijo de la serie (01A HEAVY → 01B SOFT →
+  // 01C MODERN): se repite en todos los sets, no distingue una repetición real
+  // y agota la tolerancia del recuento. Solo entra a la firma cuando esta serie
+  // NO lo tiene fijo y por tanto el eje sí decide algo.
+  const fixedOrder = ['HEAVY', 'SOFT', 'MODERN'];
+  const tratFijo = K.every(function (k, i) {
+    return _treatmentKey(cand[k].tratamiento) === fixedOrder[i];
+  });
   let bad = 0;
   K.forEach(function (k) {
     const pattern = {
       estilo: _getStyleBase(cand[k].estilo),
       formaSimbolo: cand[k].formaSimbolo,
-      tratamiento: String(cand[k].tratamiento).split(':')[0].trim(),
+      tratamiento: tratFijo ? '' : String(cand[k].tratamiento).split(':')[0].trim(),
       layout: String(cand[k].layout).split(':')[0].trim(),
       familiaColor: cand[k].familiaColor
     };
