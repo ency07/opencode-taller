@@ -109,4 +109,19 @@ ok(importacionConInvalido.stats.rejected.length === 1, 'el importador no report�
 const conceptos = getPersonalConcepts('gospel_es', 'gospel_es');
 ok(conceptos.length === 1, 'el motivo válido no llegó al banco de conceptos del subnicho: ' + JSON.stringify(conceptos));
 
-console.log('PASS unified-banks (' + checks + ' aserciones: lote sintético de 14 registros/28 strings, mercados, actividad, fusión, validación, importador enriquecido)');
+// --- Banda de propuestas desde el banco (cola de revision) ---
+ok(typeof window.proponerEnBanco === 'function', 'no se expuso window.proponerEnBanco');
+ok(typeof window.proponerConceptoDesdeBanco === 'function', 'no se expuso window.proponerConceptoDesdeBanco');
+ok(typeof window.aceptarPropuestaBanco === 'function', 'no se expuso window.aceptarPropuestaBanco');
+ok(typeof window.descartarPropuestaBanco === 'function', 'no se expuso window.descartarPropuestaBanco');
+const propuesta = proponerEnBanco('concepto', 'sendero escondido detrás del cerro', { mercado: 'gospel_es', subniche: 'gospel_es', motivo: 'sendero', idea: 'rutas no vistas', tensiones: ['aventura'], contextos: ['selva'], riesgo_cliche: 'bajo' });
+ok(propuesta && propuesta.estado === 'pendiente', 'la propuesta no nació en estado pendiente');
+ok(Array.isArray(getPropuestasBanco()) && getPropuestasBanco().length === 1, 'la propuesta no quedó en la bandeja');
+const aceptada = aceptarPropuestaBanco(propuesta.id);
+ok(aceptada.ok, 'no se pudo aceptar la propuesta: ' + JSON.stringify(aceptada));
+ok(Array.isArray(getPropuestasBanco()) && getPropuestasBanco().length === 0, 'la propuesta no se descartó al aceptarse');
+const propuesta2 = proponerEnBanco('frase', 'a pesar de todo hay caminos', { mercado: 'gospel_es', subniche: 'gospel_es' });
+const descartada = descartarPropuestaBanco(propuesta2.id);
+ok(descartada.ok && descartada.restantes === 0, 'no se pudo descartar la propuesta');
+
+console.log('PASS unified-banks (' + checks + ' aserciones: lote sintético de 14 registros/28 strings, mercados, actividad, fusión, validación, importador enriquecido, propuestas)');

@@ -1371,6 +1371,94 @@
   }
 
   /* ============================================================
+     BANDEJA DE PROPUESTAS DE BANCO (cola de revision)
+     Propuestas de concepto / frase / objeto para revision.
+     Nunca se guarda sin accion explicita del usuario.
+     ============================================================ */
+
+  const PROPOSED_BANK_KEY = "__propuestas_banco_global__";
+
+  function getPropuestasBanco() {
+    const bank = loadPersonalBank("global");
+    const list = Array.isArray(bank[PROPOSED_BANK_KEY]) ? bank[PROPOSED_BANK_KEY] : [];
+    return list;
+  }
+
+  function guardarPropuestasBanco(list) {
+    const bank = loadPersonalBank("global");
+    bank[PROPOSED_BANK_KEY] = (list || []).slice();
+    return savePersonalBank("global", bank);
+  }
+
+  function proponerEnBanco(tipo, texto, metadatos) {
+    const item = {
+      id: "prop_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8),
+      tipo: tipo,
+      texto: String(texto || "").trim(),
+      origen: "banco",
+      mercado: (metadatos && metadatos.mercado) || "global",
+      subniche: (metadatos && metadatos.subniche) || "comun",
+      motivo: (metadatos && metadatos.motivo) || "",
+      idea: (metadatos && metadatos.idea) || "",
+      tensiones: (metadatos && metadatos.tensiones) || [],
+      contextos: (metadatos && metadatos.contextos) || [],
+      riesgo_cliche: (metadatos && metadatos.riesgo_cliche) || "bajo",
+      estado: "pendiente",
+      creadaEn: new Date().toISOString()
+    };
+    const list = getPropuestasBanco();
+    list.push(item);
+    guardarPropuestasBanco(list);
+    return item;
+  }
+
+  function descartarPropuestaBanco(id) {
+    const list = getPropuestasBanco().filter(function (p) { return p.id !== id; });
+    guardarPropuestasBanco(list);
+    return { ok: true, restantes: list.length };
+  }
+
+  function aceptarPropuestaBanco(id) {
+    const list = getPropuestasBanco();
+    const item = list.filter(function (p) { return p.id === id; })[0];
+    if (!item) return { ok: false, error: "propuesta-no-encontrada" };
+    let res = { ok: false, error: "tipo-no-soportado" };
+    if (item.tipo === "concepto") {
+      res = addPersonalConcept(item.mercado, item.subniche, item.texto);
+    } else if (item.tipo === "frase" || item.tipo === "objeto") {
+      res = addPersonalObjects(item.mercado, item.subniche, [item.texto]);
+    }
+    const restantes = list.filter(function (p) { return p.id !== id; });
+    guardarPropuestasBanco(restantes);
+    return { ok: true, aceptada: true, res: res, restantes: restantes.length };
+  }
+
+  function proponerConceptoDesdeBanco(market, subniche) {
+    const conceptos = getPersonalConcepts(market, subniche).filter(Boolean);
+    if (!conceptos.length) return { ok: false, error: "sin-conceptos" };
+    const c = conceptos[Math.floor(Math.random() * conceptos.length)];
+    const texto = (c && typeof c === "object") ? String(c.motivo || c.idea_comunicada || c.idea || "") : String(c || "");
+    const metas = { mercado: market, subniche: subniche || "comun", motivo: texto, idea: (c && typeof c === "object") ? String(c.idea_comunicada || "") : "", tensiones: (c && typeof c === "object") ? (c.tensiones || []) : [], contextos: (c && typeof c === "object") ? (c.contextos || []) : [], riesgo_cliche: (c && typeof c === "object") ? (c.riesgo_cliche || "bajo") : "bajo" };
+    return proponerEnBanco("concepto", texto, metas);
+  }
+
+  function proponerObjetoDesdeBanco(market, subniche) {
+    const objs = getPersonalObjects(market, subniche).filter(Boolean);
+    if (!objs.length) return { ok: false, error: "sin-objetos" };
+    const o = objs[Math.floor(Math.random() * objs.length)];
+    const texto = String((o && typeof o === "object") ? (o.motivo || o.idea || o.texto || "") : o || "");
+    return proponerEnBanco("objeto", texto, { mercado: market, subniche: subniche || "comun", motivo: texto, idea: texto, riesgo_cliche: "bajo" });
+  }
+
+  function proponerFraseDesdeBanco(market, subniche) {
+    const frases = getPersonalPhrases(market, subniche).filter(Boolean);
+    if (!frases.length) return { ok: false, error: "sin-frases" };
+    const f = frases[Math.floor(Math.random() * frases.length)];
+    const texto = String((f && typeof f === "object") ? (f.motivo || f.idea || f.texto || f) : f || "");
+    return proponerEnBanco("frase", texto, { mercado: market, subniche: subniche || "comun", motivo: texto, idea: texto, riesgo_cliche: "bajo" });
+  }
+
+  /* ============================================================
      EXPOSICIÓN GLOBAL
      ============================================================ */
 
@@ -1471,4 +1559,11 @@
   window.MEMORIA_LOCAL_VERSION = '1.0.0';
   window.ENRICHED_BANK_FORMAT_VERSION = ENRICHED_BANK_FORMAT_VERSION;
   window.importarMotivosEnriquecidos = importarMotivosEnriquecidos;
+  window.getPropuestasBanco = getPropuestasBanco;
+  window.proponerEnBanco = proponerEnBanco;
+  window.descartarPropuestaBanco = descartarPropuestaBanco;
+  window.aceptarPropuestaBanco = aceptarPropuestaBanco;
+  window.proponerConceptoDesdeBanco = proponerConceptoDesdeBanco;
+  window.proponerObjetoDesdeBanco = proponerObjetoDesdeBanco;
+  window.proponerFraseDesdeBanco = proponerFraseDesdeBanco;
 })();
