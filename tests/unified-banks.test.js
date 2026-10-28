@@ -53,4 +53,60 @@ const editor = fs.readFileSync(path.join(ROOT, 'editor-bancos.html'), 'utf8');
 ok(editor.includes('taller-pod-bancos-unificados.json'), 'el editor no exporta un archivo único de bancos');
 ok(editor.includes('normalizeGeneratedBankOutput(incoming)'), 'el importador no enruta la salida del generador por mercado/subnicho');
 ok(editor.includes('id="btnMemory"') && editor.includes('js/sync-supabase.js'), 'el editor no ofrece sincronización compartida para el preview');
-console.log('PASS unified-banks (' + checks + ' aserciones: lote sintético de 14 registros/28 strings, mercados, actividad, fusión, validación)');
+
+// --- Importador de bancos de motivos enriquecidos (validación con datos sintéticos) ---
+ok(window.ENRICHED_BANK_FORMAT_VERSION === 1, 'la versión del formato enriquecido no es 1');
+ok(typeof window.importarMotivosEnriquecidos === 'function', 'no se expuso window.importarMotivosEnriquecidos');
+
+const loteValido = JSON.stringify({
+  format: 'taller-pod-motif-candidates',
+  schemaVersion: 1,
+  mercado: 'gospel_es',
+  familia: 'gospel',
+  idioma: 'es',
+  registros: [
+    {
+      id: 'sendero-secretos',
+      motivo: 'sendero escondido detrás del cerro',
+      idea_comunicada: 'a pesar de todo hay caminos',
+      tensiones: ['aventura', 'miedo'],
+      contextos: ['selva', 'ciudad'],
+      justificacion: 'el sendero simboliza rutas no vistas',
+      riesgo_cliche: 'bajo'
+    }
+  ]
+});
+const importacion = importarMotivosEnriquecidos(loteValido, 'gospel_es', 'gospel_es', false);
+ok(importacion.ok, 'el importador rechazó un lote enriquecido válido: ' + (importacion.error || ''));
+ok(importacion.stats.added.length === 1, 'el lote válido no registró el motivo como añadido');
+ok(importacion.stats.rejected.length === 0, 'el lote válido no reportó rechazos');
+
+const importacionRepeat = importarMotivosEnriquecidos(loteValido, 'gospel_es', 'gospel_es', false);
+ok(importacionRepeat.ok, 'la reimportación del mismo lote falló');
+ok(importacionRepeat.stats.added.length === 0, 'la reimportación no fue idempotente (volvió a añadir)');
+ok(importacionRepeat.stats.duplicates.length === 1, 'la reimportación no reportó el duplicado');
+
+const importacionJsonInvalido = importarMotivosEnriquecidos('{ no es json', 'gospel_es', 'gospel_es', false);
+ok(importacionJsonInvalido.ok === false, 'el importador aceptó JSON inválido');
+const importacionFormatoInvalido = importarMotivosEnriquecidos(JSON.stringify({ format: 'otro-formato', schemaVersion: 1, mercado: 'gospel_es', registros: [] }), 'gospel_es', 'gospel_es', false);
+ok(importacionFormatoInvalido.ok === false, 'el importador aceptó un formato desconocido');
+const importacionMercadoDistinto = importarMotivosEnriquecidos(JSON.stringify({ format: 'taller-pod-motif-candidates', schemaVersion: 1, mercado: 'colombia', registros: [] }), 'gospel_es', 'gospel_es', false);
+ok(importacionMercadoDistinto.ok === false, 'el importador aceptó un mercado distinto al solicitado');
+
+const loteConInvalido = JSON.stringify({
+  format: 'taller-pod-motif-candidates',
+  schemaVersion: 1,
+  mercado: 'gospel_es',
+  registros: [
+    { id: 'valido-1', motivo: 'vasija', idea_comunicada: 'resiliencia', tensiones: ['fuerza'], contextos: ['hogar'], justificacion: 'vasija', riesgo_cliche: 'bajo' },
+    { id: '', motivo: '', idea_comunicada: '', tensiones: [], contextos: [], justificacion: '', riesgo_cliche: 'x' }
+  ]
+});
+const importacionConInvalido = importarMotivosEnriquecidos(loteConInvalido, 'gospel_es', 'gospel_es', false);
+ok(importacionConInvalido.ok === false, 'el importador aceptó un lote con registros inválidos');
+ok(importacionConInvalido.stats.rejected.length === 1, 'el importador no reportó el registro inválido');
+
+const conceptos = getPersonalConcepts('gospel_es', 'gospel_es');
+ok(conceptos.length === 1, 'el motivo válido no llegó al banco de conceptos del subnicho: ' + JSON.stringify(conceptos));
+
+console.log('PASS unified-banks (' + checks + ' aserciones: lote sintético de 14 registros/28 strings, mercados, actividad, fusión, validación, importador enriquecido)');

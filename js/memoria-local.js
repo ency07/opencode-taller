@@ -348,7 +348,23 @@
     return Array.from(new Set(out.filter(Boolean)));
   }
 
-function useBankConcept(market, subniche, conceptField) {
+  function getPersonalConcepts(market, subniche) {
+    const bank = loadPersonalBank(market);
+    const out = [];
+    const add = function (key) {
+      if (Array.isArray(bank[key])) out.push.apply(out, bank[key]);
+    };
+    if (subniche) add('__concept__' + subniche);
+    if (subniche !== COMMON_BANK_KEY) add('__concept__' + COMMON_BANK_KEY);
+    // Banco nombrado activo para este contexto (Fase 2).
+    try {
+      const active = getActivePersonalBank(market, subniche);
+      if (active && Array.isArray(active.concepts)) out.push.apply(out, active.concepts);
+    } catch (e) {}
+    return Array.from(new Set(out.filter(Boolean)));
+  }
+
+  function useBankConcept(market, subniche, conceptField) {
     const bank = loadPersonalBank(market);
     const key = '__concept__' + subniche;
     const concepts = Array.isArray(bank[key]) ? bank[key] : [];
@@ -393,331 +409,6 @@ function useBankConcept(market, subniche, conceptField) {
     savePersonalBank(market, newBank);
     return { ok: true, added: 1 };
   }
-
-  function validateEnrichedBankFormat(texto) {
-    try {
-      const parsed = JSON.parse(texto);
-      if (!parsed || typeof parsed !== 'object') {
-        return { ok: false, error: 'JSON inválido' };
-      }
-      if (parsed.format !== 'taller-pod-motif-candidates') {
-        return { ok: false, error: 'Formato JSON no reconocido' };
-      }
-      if (typeof parsed.schemaVersion !== 'number' || parsed.schemaVersion < 1) {
-        return { ok: false, error: 'Versión de esquema no compatible' };
-      }
-      if (typeof parsed.mercado !== 'string' || !parsed.mercado) {
-        return { ok: false, error: 'ID de mercado requerido' };
-      }
-      if (typeof parsed.registros !== 'object' || !Array.isArray(parsed.registros)) {
-        return { ok: false, error: 'registros debe ser un array' };
-      }
-      return { ok: true, data: parsed };
-    } catch (e) {
-      return { ok: false, error: 'JSON inválido: ' + e.message };
-    }
-  }
-
-  function validateMotifRegistro(registro, fila) {
-    if (!registro || typeof registro !== 'object') {
-      return { ok: false, error: 'Registro inválido: debe ser un objeto' };
-    }
-    const errores = [];
-    if (typeof registro.id !== 'string' || !registro.id.trim()) {
-      errores.push('id requerido y no vacío');
-    }
-    if (typeof registro.motivo !== 'string' || !registro.motivo.trim()) {
-      errores.push('motivo requerido y no vacío');
-    }
-    if (typeof registro.idea_comunicada !== 'string' || !registro.idea_comunicada.trim()) {
-      errores.push('idea_comunicada requerido y no vacío');
-    }
-    if (!Array.isArray(registro.tensiones) || !registro.tensiones.length) {
-      errores.push('tensiones debe ser un array no vacío');
-    }
-    if (!Array.isArray(registro.contextos) || !registro.contextos.length) {
-      errores.push('contextos debe ser un array no vacío');
-    }
-    if (typeof registro.justificacion !== 'string' || !registro.justificacion.trim()) {
-      errores.push('justificacion requerido y no vacío');
-    }
-    if (!['bajo', 'medio', 'alto'].includes(registro.riesgo_cliche)) {
-      errores.push('riesgo_cliche debe ser uno de: bajo, medio, alto');
-    }
-    if (errores.length) {
-      return { ok: false, error: 'Registro ' + (fila + 1) + ' (' + registro.id + '): ' + errores.join(', ') };
-    }
-    return { ok: true };
-  }
-
-  function mergeEnrichedBankData(existingBank, nuevosRegistros) {
-    const merged = Object.assign({}, existingBank);
-    const added = [];
-    const updated = [];
-    const duplicates = [];
-    const rejected = [];
-
-    const existingMap = {};
-    if (merged.__concept__) {
-      merged.__concept__.forEach(function (item) {
-        const key = typeof item === 'object' ? item.id : item;
-        if (key) existingMap[key] = item;
-      });
-    }
-
-    for (let i = 0; i < nuevosRegistros.length; i++) {
-      const reg = nuevosRegistros[i];
-      const key = reg.id;
-      const validation = validateMotifRegistro(reg, i);
-      if (!validation.ok) {
-        rejected.push({ fila: i + 1, id: reg.id, error: validation.error });
-        continue;
-      }
-      const existing = existingMap[key];
-      if (existing) {
-        duplicates.push({ id: reg.id, accion: 'existente' });
-        existing.motivo = reg.motivo;
-        existing.idea_comunicada = reg.idea_comicada;
-        existing.tensiones = reg.tensiones;
-        existing.contextos = reg.contextos;
-        existing.justificacion = reg.justificacion;
-        existing.riesgo_cliche = reg.riesgo_cliche;
-        updated.push(key);
-        continue;
-      }
-      added.push(key);
-      if (!merged.__concept__) merged.__concept__ = [];
-      merged.__concept__.push(reg);
-      existingMap[key] = reg;
-    }
-
-    return {
-      ok: true,
-      bank: merged,
-      stats: {
-        added: added,
-        updated: updated,
-        duplicates: duplicates,
-        rejected: rejected
-      }
-    };
-  }
-
-  function importarMotivosEnriquecidos(texto, mercado, subniche, marcarActivos) {
-    const validacion = validateEnrichedBankFormat(texto);
-    if (!validacion.ok) {
-      return { ok: false, error: validacion.error };
-    }
-    const datos = validacion.data;
-    if (datos.mercado !== mercado) {
-      return { ok: false, error: 'mercado del JSON no coincide con el mercado especificado' };
-    }
-    const existingBank = loadPersonalBank(mercado);
-    const fusion = mergeEnrichedBankData(existingBank, datos.registros);
-    if (!fusion.ok) {
-      return fusion;
-    }
-    const saved = savePersonalBank(mercado, fusion.bank);
-    if (!saved) {
-      return { ok: false, error: 'No se pudo guardar el banco de datos enriquecido' };
-    }
-    let activos = [];
-    if (marcarActivos) {
-      activos = fusion.stats.added.concat(fusion.stats.updated);
-      const key = subniche || COMMON_BANK_KEY;
-      if (Array.isArray(fusion.bank[key])) {
-        fusion.bank[key].forEach(function (item) {
-          if (typeof item === 'object') {
-            activos.push(item.id);
-          } else {
-            activos.push(item);
-          }
-        });
-        savePersonalBank(mercado, fusion.bank);
-      }
-    }
-    return {
-      ok: true,
-      stats: fusion.stats,
-      activos: activos
-    };
-  }
-    const bank = loadPersonalBank(market);
-    const key = subniche || COMMON_BANK_KEY;
-    const current = Array.isArray(bank[key]) ? bank[key] : [];
-
-    const norm = function (s) {
-      return String(s || '').toLowerCase().normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
-    };
-
-    const sig = norm(concept);
-    if (!sig || current.some(function (c) { return norm(c) === sig; })) return { ok: false, error: 'Concepto duplicado' };
-
-    const newBank = Object.assign({}, bank);
-    current.push(concept);
-    newBank[key] = current;
-    savePersonalBank(market, newBank);
-    return { ok: true, added: 1 };
-  }
-
-  /* ============================================================
-     IMPORTE / EXPORTACIÓN DE BANCOS DE MOTIVOS ENRIQUECIDOS
-     ============================================================ */
-
-  // Esquema del formato importado por lotes de bank enriquecido
-  const ENRICHED_BANK_FORMAT_VERSION = 1;
-
-  function validateEnrichedBankFormat(texto) {
-    try {
-      const parsed = JSON.parse(texto);
-      if (!parsed || typeof parsed !== 'object') {
-        return { ok: false, error: 'JSON inválido' };
-      }
-      if (parsed.format !== 'taller-pod-motif-candidates') {
-        return { ok: false, error: 'Formato JSON no reconocido' };
-      }
-      if (typeof parsed.schemaVersion !== 'number' || parsed.schemaVersion < 1) {
-        return { ok: false, error: 'Versión de esquema no compatible' };
-      }
-      if (typeof parsed.mercado !== 'string' || !parsed.mercado) {
-        return { ok: false, error: 'ID de mercado requerido' };
-      }
-      if (typeof parsed.registros !== 'object' || !Array.isArray(parsed.registros)) {
-        return { ok: false, error: 'registros debe ser un array' };
-      }
-      return { ok: true, data: parsed };
-    } catch (e) {
-      return { ok: false, error: 'JSON inválido: ' + e.message };
-    }
-  }
-
-  function validateMotifRegistro(registro, fila) {
-    if (!registro || typeof registro !== 'object') {
-      return { ok: false, error: 'Registro inválido: debe ser un objeto' };
-    }
-    const errores = [];
-    if (typeof registro.id !== 'string' || !registro.id.trim()) {
-      errores.push('id requerido y no vacío');
-    }
-    if (typeof registro.motivo !== 'string' || !registro.motivo.trim()) {
-      errores.push('motivo requerido y no vacío');
-    }
-    if (typeof registro.idea_comunicada !== 'string' || !registro.idea_comunicada.trim()) {
-      errores.push('idea_comunicada requerido y no vacío');
-    }
-    if (!Array.isArray(registro.tensiones) || !registro.tensiones.length) {
-      errores.push('tensiones debe ser un array no vacío');
-    }
-    if (!Array.isArray(registro.contextos) || !registro.contextos.length) {
-      errores.push('contextos debe ser un array no vacío');
-    }
-    if (typeof registro.justificacion !== 'string' || !registro.justificacion.trim()) {
-      errores.push('justificacion requerido y no vacío');
-    }
-    if (!['bajo', 'medio', 'alto'].includes(registro.riesgo_cliche)) {
-      errores.push('riesgo_cliche debe ser uno de: bajo, medio, alto');
-    }
-    if (errores.length) {
-      return { ok: false, error: 'Registro ' + (fila + 1) + ' (' + registro.id + '): ' + errores.join(', ') };
-    }
-    return { ok: true };
-  }
-
-  function mergeEnrichedBankData(existingBank, nuevosRegistros) {
-    const merged = Object.assign({}, existingBank);
-    const added = [];
-    const updated = [];
-    const duplicates = [];
-    const rejected = [];
-
-    const existingMap = {};
-    if (merged.__concept__) {
-      merged.__concept__.forEach(function (item) {
-        const key = typeof item === 'object' ? item.id : item;
-        if (key) existingMap[key] = item;
-      });
-    }
-
-    for (let i = 0; i < nuevosRegistros.length; i++) {
-      const reg = nuevosRegistros[i];
-      const key = reg.id;
-      const validation = validateMotifRegistro(reg, i);
-      if (!validation.ok) {
-        rejected.push({ fila: i + 1, id: reg.id, error: validation.error });
-        continue;
-      }
-      const existing = existingMap[key];
-      if (existing) {
-        duplicates.push({ id: reg.id, accion: 'existente' });
-        existing.motivo = reg.motivo;
-        existing.idea_comunicada = reg.idea_comunicada;
-        existing.tensiones = reg.tensiones;
-        existing.contextos = reg.contextos;
-        existing.justificacion = reg.justificacion;
-        existing.riesgo_cliche = reg.riesgo_cliche;
-        updated.push(key);
-        continue;
-      }
-      added.push(key);
-      if (!merged.__concept__) merged.__concept__ = [];
-      merged.__concept__.push(reg);
-      existingMap[key] = reg;
-    }
-
-    return {
-      ok: true,
-      bank: merged,
-      stats: {
-        added: added,
-        updated: updated,
-        duplicates: duplicates,
-        rejected: rejected
-      }
-    };
-  }
-
-  function importarMotivosEnriquecidos(texto, mercado, subniche, marcarActivos) {
-    const validacion = validateEnrichedBankFormat(texto);
-    if (!validacion.ok) {
-      return { ok: false, error: validacion.error };
-    }
-    const datos = validacion.data;
-    if (datos.mercado !== mercado) {
-      return { ok: false, error: 'mercado del JSON no coincide con el mercado especificado' };
-    }
-    const existingBank = loadPersonalBank(mercado);
-    const fusion = mergeEnrichedBankData(existingBank, datos.registros);
-    if (!fusion.ok) {
-      return fusion;
-    }
-    const saved = savePersonalBank(mercado, fusion.bank);
-    if (!saved) {
-      return { ok: false, error: 'No se pudo guardar el banco de datos enriquecido' };
-    }
-    let activos = [];
-    if (marcarActivos) {
-      activos = fusion.stats.added.concat(fusion.stats.updated);
-      const key = subniche || COMMON_BANK_KEY;
-      if (Array.isArray(fusion.bank[key])) {
-        fusion.bank[key].forEach(function (item) {
-          if (typeof item === 'object') {
-            activos.push(item.id);
-          } else {
-            activos.push(item);
-          }
-        });
-        savePersonalBank(mercado, fusion.bank);
-      }
-    }
-    return {
-      ok: true,
-      stats: fusion.stats,
-      activos: activos
-    };
-  }
-
-  window.importarMotivosEnriquecidos = importarMotivosEnriquecidos;
 
   function getPersonalObjects(market, subniche) {
     const bank = loadPersonalBank(market);
@@ -1537,6 +1228,149 @@ function useBankConcept(market, subniche, conceptField) {
   }
 
   /* ============================================================
+     IMPORTANCIA / EXPORTACION DE BANCOS DE MOTIVOS ENRIQUECIDOS
+     Formato: taller-pod-motif-candidates (schemaVersion 1).
+     El motor consume arrays de strings; los registros enriquecidos
+     conservan motivo, idea_comunicada, tensiones, contextos,
+     justificacion y riesgo_cliche hasta el punto de seleccion.
+     ============================================================ */
+
+  const ENRICHED_BANK_FORMAT_VERSION = 1;
+
+  function validateEnrichedBankFormat(texto) {
+    try {
+      const parsed = JSON.parse(texto);
+      if (!parsed || typeof parsed !== "object") {
+        return { ok: false, error: "JSON invalido" };
+      }
+      if (parsed.format !== "taller-pod-motif-candidates") {
+        return { ok: false, error: "Formato JSON no reconocido" };
+      }
+      if (typeof parsed.schemaVersion !== "number" || parsed.schemaVersion < 1) {
+        return { ok: false, error: "Version de esquema no compatible" };
+      }
+      if (typeof parsed.mercado !== "string" || !parsed.mercado) {
+        return { ok: false, error: "ID de mercado requerido" };
+      }
+      if (typeof parsed.registros !== "object" || !Array.isArray(parsed.registros)) {
+        return { ok: false, error: "registros debe ser un array" };
+      }
+      return { ok: true, data: parsed };
+    } catch (e) {
+      return { ok: false, error: "JSON invalido: " + e.message };
+    }
+  }
+
+  function validateMotifRegistro(registro, fila) {
+    if (!registro || typeof registro !== "object") {
+      return { ok: false, error: "Registro invalido: debe ser un objeto" };
+    }
+    const errores = [];
+    if (typeof registro.id !== "string" || !registro.id.trim()) {
+      errores.push("id requerido y no vacio");
+    }
+    if (typeof registro.motivo !== "string" || !registro.motivo.trim()) {
+      errores.push("motivo requerido y no vacio");
+    }
+    if (typeof registro.idea_comunicada !== "string" || !registro.idea_comunicada.trim()) {
+      errores.push("idea_comunicada requerido y no vacio");
+    }
+    if (!Array.isArray(registro.tensiones) || !registro.tensiones.length) {
+      errores.push("tensiones debe ser un array no vacio");
+    }
+    if (!Array.isArray(registro.contextos) || !registro.contextos.length) {
+      errores.push("contextos debe ser un array no vacio");
+    }
+    if (typeof registro.justificacion !== "string" || !registro.justificacion.trim()) {
+      errores.push("justificacion requerido y no vacio");
+    }
+    if (!["bajo", "medio", "alto"].includes(registro.riesgo_cliche)) {
+      errores.push("riesgo_cliche debe ser uno de: bajo, medio, alto");
+    }
+    if (errores.length) {
+      return { ok: false, error: "Registro " + (fila + 1) + " (" + registro.id + "): " + errores.join(", ") };
+    }
+    return { ok: true };
+  }
+
+  function mergeEnrichedBankData(existingBank, subniche, nuevosRegistros) {
+    const targetKey = "__concept__" + (subniche || "comun");
+    const bank = existingBank || {};
+    const current = Array.isArray(bank[targetKey]) ? bank[targetKey] : [];
+    const byId = {};
+    current.forEach(function (item) {
+      const id = (item && typeof item === "object") ? item.id : item;
+      if (id) byId[id] = item;
+    });
+    const added = [];
+    const updated = [];
+    const duplicates = [];
+    const rejected = [];
+    for (let i = 0; i < nuevosRegistros.length; i++) {
+      const reg = nuevosRegistros[i];
+      const validation = validateMotifRegistro(reg, i);
+      if (!validation.ok) {
+        rejected.push({ fila: i + 1, id: reg.id, error: validation.error });
+        continue;
+      }
+      const existing = byId[reg.id];
+      if (existing) {
+        duplicates.push({ id: reg.id, accion: "existente" });
+        existing.motivo = reg.motivo;
+        existing.idea_comunicada = reg.idea_comunicada;
+        existing.tensiones = reg.tensiones;
+        existing.contextos = reg.contextos;
+        existing.justificacion = reg.justificacion;
+        existing.riesgo_cliche = reg.riesgo_cliche;
+        updated.push(reg.id);
+        continue;
+      }
+      added.push(reg.id);
+      current.push(reg);
+      byId[reg.id] = reg;
+    }
+    const merged = Object.assign({}, bank);
+    merged[targetKey] = current;
+    return {
+      ok: true,
+      bank: merged,
+      stats: { added: added, updated: updated, duplicates: duplicates, rejected: rejected }
+    };
+  }
+
+  function importarMotivosEnriquecidos(texto, mercado, subniche, marcarActivos) {
+    const validacion = validateEnrichedBankFormat(texto);
+    if (!validacion.ok) {
+      return { ok: false, error: validacion.error, stats: { added: [], updated: [], duplicates: [], rejected: [{ fila: 0, id: "", error: validacion.error }] } };
+    }
+    const datos = validacion.data;
+    if (datos.mercado !== mercado) {
+      return { ok: false, error: "mercado del JSON no coincide con el mercado especificado", stats: { added: [], updated: [], duplicates: [], rejected: [] } };
+    }
+    const existingBank = loadPersonalBank(mercado);
+    const contexto = subniche || "comun";
+    const fusion = mergeEnrichedBankData(existingBank, contexto, datos.registros);
+    if (fusion.stats.rejected.length > 0) {
+      return { ok: false, error: "El lote contiene registros invalidos; no se modifico ningun dato", stats: fusion.stats };
+    }
+    const saved = savePersonalBank(mercado, fusion.bank);
+    if (!saved) {
+      return { ok: false, error: "No se pudo guardar el banco de datos enriquecido", stats: fusion.stats };
+    }
+    const stats = fusion.stats;
+    const nuevosActivos = stats.added.concat(stats.updated);
+    if (marcarActivos) {
+      const key = "__concept__" + contexto;
+      if (Array.isArray(fusion.bank[key])) {
+        fusion.bank[key].forEach(function (item) {
+          if (typeof item === "object") nuevosActivos.push(item.id);
+        });
+      }
+    }
+    return { ok: true, stats: stats, activos: nuevosActivos };
+  }
+
+  /* ============================================================
      EXPOSICIÓN GLOBAL
      ============================================================ */
 
@@ -1576,12 +1410,12 @@ function useBankConcept(market, subniche, conceptField) {
   window.loadPersonalBank = loadPersonalBank;
   window.savePersonalBank = savePersonalBank;
   window.getPersonalObjects = getPersonalObjects;
+  window.getPersonalPhrases = getPersonalPhrases;
+  window.addPersonalObjects = addPersonalObjects;
+  window.removePersonalBank = removePersonalBank;
   window.getPersonalConcepts = getPersonalConcepts;
   window.useBankConcept = useBankConcept;
   window.addPersonalConcept = addPersonalConcept;
-  window.importarMotivosEnriquecidos = importarMotivosEnriquecidos;
-  window.addPersonalObjects = addPersonalObjects;
-  window.removePersonalBank = removePersonalBank;
 
   window.createPersonalBank = createPersonalBank;
   window.listPersonalBanks = listPersonalBanks;
@@ -1634,5 +1468,7 @@ function useBankConcept(market, subniche, conceptField) {
   window.downloadMemoryFile = downloadMemoryFile;
   window.clearAllMemory = clearAllMemory;
 
+  window.MEMORIA_LOCAL_VERSION = '1.0.0';
   window.ENRICHED_BANK_FORMAT_VERSION = ENRICHED_BANK_FORMAT_VERSION;
+  window.importarMotivosEnriquecidos = importarMotivosEnriquecidos;
 })();
