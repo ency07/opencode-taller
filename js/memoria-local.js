@@ -369,14 +369,14 @@
     const key = '__concept__' + subniche;
     const concepts = Array.isArray(bank[key]) ? bank[key] : [];
     if (!concepts.length) {
-      tell('Aún no hay conceptos guardados en este subnicho. ¡Añádelos primero!', 'info');
+      safeTell('Aún no hay conceptos guardados en este subnicho. ¡Añádelos primero!');
       return;
     }
     // Elegir un concepto aleatorio
     const choice = concepts[Math.floor(Math.random() * concepts.length)];
     const conceptFieldEl = conceptField || document.getElementById('concept');
     if (!conceptFieldEl) {
-      tell('No se encontró el campo de concepto', 'bad');
+      safeTell('No se encontró el campo de concepto');
       return;
     }
     // Si el campo ya tiene texto, pedir confirmación
@@ -386,7 +386,7 @@
     } else if (!current) {
       conceptFieldEl.value = choice;
     } else {
-      tell('Concepto no cambiado.', 'info');
+      safeTell('Concepto no cambiado.');
     }
   }
 
