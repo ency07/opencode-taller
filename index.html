@@ -257,9 +257,40 @@
           </div>
         </section>
 
+        <section class="panel">
+          <div class="panel-title">
+            <span class="step-num">3</span>
+            <span>Banco de motivos — candidatos enriquecidos</span>
+          </div>
+
+          <div class="field">
+            <label for="bankJsonInput">Banco de motivos — JSON (formato taller-pod-motif-candidates)</label>
+            <textarea id="bankJsonInput" rows="10" placeholder='{"format":"taller-pod-motif-candidates","schemaVersion":1,"mercado":"gospel_es","familia":"gospel","idioma":"es","registros":[{"id":"sendero-secretos","motivo":"sendero","idea_comunicada":"rutas","tensiones":["aventura"],"contextos":["selva"],"justificacion":"envío","riesgo_cliche":"bajo"}]}'></textarea>
+            <div class="hint">Pega el lote del banco enriquecido o elige un archivo JSON. Validar revisa formato, tipos, campos obligatorios y duplicados sin modificar datos.</div>
+          </div>
+
+          <div class="field">
+            <label for="bankFileInput">O cargar archivo JSON</label>
+            <input id="bankFileInput" type="file" accept="application/json,.json" />
+          </div>
+
+          <div class="actions" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+            <button id="btnBankValidate" class="ghost" type="button">Validar y revisar</button>
+            <button id="btnBankProposeConcept" class="ghost" type="button">Proponer concepto</button>
+            <button id="btnBankProposePhrase" class="ghost" type="button">Proponer frase</button>
+            <button id="btnBankProposeObject" class="ghost" type="button">Proponer objeto</button>
+            <button id="btnBankImportSelected" class="primary" type="button">Importar seleccionados</button>
+          </div>
+
+          <div class="field" style="margin-top: 12px;">
+            <label for="bankPreview">Previsualización del banco enriquecido</label>
+            <div id="bankPreview" class="hint">Pega un lote y pulsa "Validar y revisar" para previsualizar registros válidos.</div>
+          </div>
+        </section>
+
         <details class="panel" id="varPanel">
           <summary class="panel-title">
-            <span class="step-num">3</span>
+            <span class="step-num">4</span>
             <span>Variación desde imagen</span>
             <span class="panel-summary-note">Opcional</span>
           </summary>
@@ -324,7 +355,7 @@
 
         <details class="panel" id="mixPanel">
           <summary class="panel-title">
-            <span class="step-num">4</span>
+            <span class="step-num">5</span>
             <span>Mezclas y banco</span>
             <span class="panel-summary-note">Opcional</span>
           </summary>

@@ -124,4 +124,15 @@ const propuesta2 = proponerEnBanco('frase', 'a pesar de todo hay caminos', { mer
 const descartada = descartarPropuestaBanco(propuesta2.id);
 ok(descartada.ok && descartada.restantes === 0, 'no se pudo descartar la propuesta');
 
-console.log('PASS unified-banks (' + checks + ' aserciones: lote sintético de 14 registros/28 strings, mercados, actividad, fusión, validación, importador enriquecido, propuestas)');
+// --- UI del flujo maestro banco de motivos (index.html + ia-analisis.js) ---
+const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+ok(html.includes('id="bankJsonInput"'), 'index.html no ofrece el textarea del banco enriquecido');
+ok(html.includes('id="bankFileInput"'), 'index.html no ofrece el selector de archivo del banco');
+ok(html.includes('id="btnBankValidate"') && html.includes('id="btnBankProposeConcept"') && html.includes('id="btnBankProposePhrase"') && html.includes('id="btnBankProposeObject"') && html.includes('id="btnBankImportSelected"'), 'index.html no ofrece los controles del flujo banco');
+ok(html.includes('taller-pod-motif-candidates'), 'index.html no documenta el formato del banco enriquecido');
+const analisisSrc = fs.readFileSync(path.join(ROOT, 'js', 'ia-analisis.js'), 'utf8');
+ok(analisisSrc.includes('btnBankValidate'), 'ia-analisis.js no cablea el validador del banco');
+ok(analisisSrc.includes('proponerBanco'), 'ia-analisis.js no cablea las propuestas desde banco');
+ok(analisisSrc.includes('importarSeleccionadosUI'), 'ia-analisis.js no cablea la importacion seleccionada');
+
+console.log('PASS unified-banks (' + checks + ' aserciones: lote sintético de 14 registros/28 strings, mercados, actividad, fusión, validación, importador enriquecido, propuestas, UI flujo banco)');
