@@ -13,7 +13,7 @@ const path = require('path');
 const vm = require('vm');
 
 const ROOT = path.join(__dirname, '..');
-const PAGES = ['index.html', 'editor-bancos.html', 'motor-lenguajes-visuales.html', 'sistema_matriz.html', 'constructor-prompt.html'];
+const PAGES = ['index.html', 'editor-bancos.html', 'motor-lenguajes-visuales.html', 'sistema_matriz.html', 'constructor-prompt.html', 'constructor-prompt-ia.html'];
 
 let checks = 0;
 const failures = [];
@@ -64,6 +64,8 @@ ok(html['motor-lenguajes-visuales.html'].indexOf('js/pod-nav.js') !== -1, 'motor
   ok(c.indexOf('<input type="text" id="tema"') === -1, 'constructor conserva #tema antiguo (rompe el mapeo PODNav concept/concepto)');
 })();
 ok(fs.existsSync(path.join(ROOT, 'js', 'pod-nav.js')), 'falta js/pod-nav.js');
+ok(html['constructor-prompt-ia.html'].indexOf('js/pod-nav.js') !== -1, 'constructor-ia no carga js/pod-nav.js');
+ok(html['constructor-prompt-ia.html'].indexOf('id="market"') !== -1, 'constructor-ia debe sincronizar mercado via PODNav');
 
 /* 5) funcional: round-trip save/load + prefill solo-vacíos + capture */
 (function () {
