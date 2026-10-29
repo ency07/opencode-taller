@@ -2609,7 +2609,7 @@ function formatPrompt(result) {
     if (isPatron && tplActive.imagen) o += 'REFERENCIA DE PLANTILLA: el archivo guardado en el editor no esta incluido en este texto. Adjuntalo manualmente al chat de la IA de imagen para que pueda usarlo.\n';
   }
   if (MOTOR_STATE.market === 'gospel_es' || MOTOR_STATE.market === 'gospel_en') {
-    o += 'DOCTRINA: Trinitario (Padre, Hijo, Espiritu Santo) y cristocentrico. Cruz y resurreccion al centro. PROHIBIDO prosperidad magica, decretos, angeles como centro, santos mediadores, esoterismo, horoscopo, energia. Sin region: universal.\n';
+    o += 'DOCTRINA: Trinitario (Padre, Hijo, Espiritu Santo) y cristocentrico. Cruz y resurreccion al centro. PROHIBIDO prosperidad magica, decretos, angeles como centro, santos mediadores, esoterismo, horoscopo, energia. Sin region: universal. OBLIGATORIA (Regla de los 3 segundos / Identidad Cristiana Inmediata): cada diseno debe ser reconocible como cristiano en 3 segundos o menos, sin usar cliches literales; usar obligatoriamente una de las tres vias: 1) Lexico teorico pesado (Gracia, Redencion, Shalom, Trono, Rescate), 2) Subversion de tropos seculares (frases tipicas del streetwear con verdad biblica), o 3) Anclaje visual sutil pero intencional (Alfa/Omega en tipografia, corona de espinas geometrica). Esta identidad aplica a los mercados gospel_es y gospel_en.\n';
   }
   if (MOTOR_STATE.market === 'colombia') {
     o += 'SANDBOX: solo bancos Colombia de la region ' + MOTOR_STATE.region + '. Prohibidos objetos, simbolos y frases gospel o globales en ingles. Cocina regional separada.\n';
