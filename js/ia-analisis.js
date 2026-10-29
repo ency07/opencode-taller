@@ -1165,7 +1165,7 @@
     });
 
     on('btnBuild', 'click', function () {
-      // Validar y generar: con diseños en pantalla valida sin regenerar;
+      // Validar set actual: con diseños en pantalla valida sin regenerar;
       // vacío genera los 3 por primera vez (comportamiento anterior).
       const hasSet = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.set)
         || (typeof window !== 'undefined' && window.LAST_RESULT && window.LAST_RESULT.set);

@@ -967,6 +967,12 @@ function _styleTreatmentDirective(styleValue, profileKey) {
   if (/kids|storybook|infantil|folk|hand-drawn|manuscrita|bordado|embroidery/.test(style)) {
     techniqueRules.push('Conserva el carácter expresivo o artesanal del estilo; el tratamiento cambia la arquitectura, no lo convierte en otro género visual.');
   }
+  if (key === 'SOFT' && /grunge|cross.?hatch|tattoo|distress|noise|rough|ink heavy|heavy ink/i.test(style)) {
+    techniqueRules.push('Prohibido: trama cruzada densa (crosshatch) o textura gruesa que tape el espacio negativo; el tratamiento SOFT exige formas abiertas, aire y contraste suficiente para leer símbolo y texto al imprimir.');
+  }
+  if (key === 'MODERN' && /floral|decor|ornament|noise|asimet|asymmetry/i.test(style)) {
+    techniqueRules.push('Prohibido: ornamento decorativo (p. ej. floral), ruido de fondo o asimetría decorativa; el tratamiento MODERN exige geometría limpia, bordes nítidos y síntesis controlada.');
+  }
   return (profileRules[key] || 'Respeta el lenguaje artístico elegido y evita instrucciones visuales contradictorias.')
     + ' Estilo artístico activo: «' + _getStyleBase(styleValue) + '». ' + techniqueRules.join(' ')
     + ' Si el estilo exige un recurso prohibido, redúcelo a acento controlado; no cambie el esqueleto.';
@@ -1074,13 +1080,23 @@ function _chooseConceptCompatibleObject(objectPool, concept) {
   if (!source) return '';
   const stop = new Set(['que','con','para','desde','hacia','sobre','entre','una','uno','unos','unas','los','las','el','la','de','del','en','por','como','sin','the','and','with','for','from','into','over','under','that','which','holding','sosteniendo','representa','lugares','turisticos','tourist','places','profundo','deep','my','a','an','of','to']);
   const tokens = [...new Set(source.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+  const conceptAxes = _semanticAxesFor(source, _CONCEPT_MOTIF_AXES, 'concept');
   const ranked = (Array.isArray(objectPool) ? objectPool : []).map(function (item) {
     const label = String(item || '').trim();
-    const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+    const view = (typeof _motifView === 'function') ? _motifView(item) : { label: label, texto: label, tensiones: [], contextos: [], riesgo: '', enriquecido: false };
+    const semText = String(view.texto || view.label || '').trim();
+    const words = [...new Set(normalize(semText).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
     const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
-  }).filter(function (x) { return x.score > 0; }).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
-  if (ranked.length && (!ranked[1] || ranked[0].score > ranked[1].score)) return ranked[0].label;
+    const motifAxes = _semanticAxesFor(semText, _MOTIF_VISUAL_AXES, 'motif');
+    const semanticMatches = motifAxes.filter(function (axis) { return conceptAxes.indexOf(axis) !== -1; });
+    /* Relación defendida: eje semántico compartido entre concepto y motivo, o
+       coincidencia sustancial (no una palabra aislada) del usuario con el objeto.
+       Nunca se elige un motivo por afinidad superficial de tokens sueltos. */
+    const defended = semanticMatches.length > 0 || overlap.length >= 2 || (overlap.length > 0 && tokens.length <= 2);
+    const score = semanticMatches.length * 100 + overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0);
+    return { label: label, score: score, matches: semanticMatches.length + overlap.length, defended: defended };
+  }).filter(function (x) { return x.defended; }).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
+  if (ranked.length) return ranked[0].label;
   return String(concept).trim();
 }
 
@@ -1157,8 +1173,13 @@ function _rankCompatibleMotifs(pools, concept) {
     const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
     const motifAxes = _semanticAxesFor(semText, _MOTIF_VISUAL_AXES, 'motif');
     const semanticMatches = motifAxes.filter(function (axis) { return conceptAxes.indexOf(axis) !== -1; });
+    /* Relación defendida: eje semántico compartido entre concepto y motivo, o
+       coincidencia sustancial del vocabulario (nunca una palabra aislada). En
+       conceptos compuestos (escenas o relaciones) se admite solapamiento con la
+       idea que el motivo representa, sin sustituir la escena por una anécdota. */
     if (conceptAxes.length && !semanticMatches.length) return null;
     if (!overlap.length && !semanticMatches.length) return null;
+    if (!semanticMatches.length && overlap.length < 2 && tokens.length < 3) return null;
     const lexicalScore = overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0);
     return { label: label, score: semanticMatches.length * 100 + lexicalScore, matches: semanticMatches.length + overlap.length };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
@@ -3259,7 +3280,9 @@ function crearLos3Disenos() {
 
     if (statusEl) {
       if (result.passed) {
-        statusEl.innerHTML = '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt</span>';
+        const effAud = (result.score && typeof result.score.fitAudienciaMin === 'number') ? result.score.fitAudienciaMin : 0;
+        const effProd = (result.score && typeof result.score.fitProductoMin === 'number') ? result.score.fitProductoMin : 0;
+        statusEl.innerHTML = '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt · pertinencia efectiva audiencia ' + effAud + '/100 · producto ' + effProd + '/100</span>';
       } else {
         const umbralMsg = _mensajeUmbral(result.score);
         statusEl.innerHTML = '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>';
@@ -3271,7 +3294,7 @@ function crearLos3Disenos() {
   }
 }
 
-/* --- Validar set actual sin regenerar: lo que hace 'Validar y generar'. */
+/* --- Validar set actual sin regenerar: lo que hace 'Validar set actual'. */
 function validarSetActual() {
   const statusEl = document.getElementById('status');
   if (!LAST_RESULT || !LAST_RESULT.set) {
@@ -3287,7 +3310,7 @@ function validarSetActual() {
   renderArbitro(LAST_RESULT);
   if (statusEl) {
     statusEl.innerHTML = ev.passed
-      ? '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla.</span>'
+      ? '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla · audiencia efectiva ' + (ev.score.fitAudienciaMin || 0) + '/100 · producto ' + (ev.score.fitProductoMin || 0) + '/100</span>'
       : '<span class="warn">Validación con fallos: ' + ev.detalle.join(' · ') + '</span>';
   }
   return { ok: ev.passed, detalle: ev.detalle };
