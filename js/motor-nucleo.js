@@ -2138,6 +2138,70 @@ function _patternConflictsOf(cand) {
   return bad;
 }
 
+/* --- Auditoría de cambios de color (rastro IA) ---
+   Tras un análisis con visión, la asignación de paleta/familia de color que
+   realiza el motor al generar (o el reroll de una ficha) ES un cambio hecho por
+   la IA. Se registra comparando el color anterior con el nuevo y se expone en
+   la interfaz: QUÉ cambió (eje + valores) y EN DÓNDE (ficha). */
+var colorAuditLog = [];
+function getColorAudit() { return colorAuditLog.slice(); }
+function clearColorAudit() { colorAuditLog = []; renderColorAudit(); }
+function snapshotColorSetForAudit(set) {
+  const out = { fichas: {} };
+  if (!set) return out;
+  K.forEach(function (k, i) {
+    const f = set[k];
+    if (!f) return;
+    out.fichas[N[i]] = { familiaColor: String(f.familiaColor || ''), paleta: String(f.paleta || '') };
+  });
+  return out;
+}
+function auditFichaColors(beforeFicha, afterFicha, ficha) {
+  const out = [];
+  if (!beforeFicha || !afterFicha) return out;
+  const antesFam = String(beforeFicha.familiaColor || '');
+  const despuesFam = String(afterFicha.familiaColor || '');
+  if (despuesFam !== antesFam) {
+    out.push({ ficha: ficha, eje: 'familiaColor', antes: antesFam || '(sin asignar)', despues: despuesFam || '(sin asignar)' });
+  }
+  const antesPal = String(beforeFicha.paleta || '');
+  const despuesPal = String(afterFicha.paleta || '');
+  if (despuesPal !== antesPal) {
+    out.push({ ficha: ficha, eje: 'paleta', antes: antesPal || '(sin asignar)', despues: despuesPal || '(sin asignar)' });
+  }
+  return out;
+}
+function auditSetColors(beforeSet, afterSet) {
+  var out = [];
+  if (!beforeSet || !afterSet) return out;
+  K.forEach(function (k, i) { out = out.concat(auditFichaColors(beforeSet[k], afterSet[k], N[i])); });
+  return out;
+}
+function recordColorAudit(changes) {
+  if (!Array.isArray(changes) || !changes.length) return;
+  colorAuditLog = colorAuditLog.concat(changes).slice(-8);
+  renderColorAudit();
+}
+function formatColorAuditEntry(e) {
+  if (!e) return '';
+  const eje = (e.eje === 'familiaColor') ? 'familia de color' : 'paleta';
+  const short = function (v) { const s = String(v || ''); return s.length > 64 ? s.slice(0, 64) + '...' : s; };
+  const antes = short(e.antes);
+  const despues = short(e.despues);
+  return e.ficha + ' · ' + eje + ': ' + (e.antes || '—') + ' → ' + (e.despues || '—');
+}
+function renderColorAudit() {
+  const el = (typeof document !== 'undefined') ? document.getElementById('colorAudit') : null;
+  if (!el) return;
+  const entries = colorAuditLog.slice(-5);
+  if (!entries.length) {
+    try { el.style.display = 'none'; } catch (e2) { /* sin estilo */ }
+    return;
+  }
+  try { el.style.display = 'block'; } catch (e2) { /* sin estilo */ }
+  el.textContent = 'Cambio de color (IA): ' + entries.map(function (e) { return formatColorAuditEntry(e); }).join(' · ');
+}
+
 function generateSet() {
   readStateFromDOM();
   MOTOR_STATE.explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? _resolveExplorationBrief() : null;
@@ -2217,9 +2281,14 @@ function generateSet() {
   const usedObjs = K.filter(function (k) { return best[k].jerarquiaVisual !== 'SOLO_TEXTO'; }).map(function (k) { return best[k].objeto; });
   _addUsedObjects(historyKey, usedObjs);
 
+  const prevColorAuditSet = (LAST_RESULT && LAST_RESULT.set) ? LAST_RESULT.set : null;
   LAST_RESULT = { set: best, score: bestScore, passed: passed, explorationBrief: MOTOR_STATE.explorationBrief, objectConflicts: (best && best.objectConflicts) || [] };
   try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
   try { window.V = best; } catch (e) {} // Puente para el revisor IA (ia-revisor.js lee window.V con fichas A/B/C).
+  try {
+    const colorChanges = auditSetColors(snapshotColorSetForAudit(prevColorAuditSet), snapshotColorSetForAudit(best));
+    if (colorChanges.length) recordColorAudit(colorChanges);
+  } catch (e) { /* auditoría no bloquea la generación */ }
   return LAST_RESULT;
 }
 
@@ -3042,6 +3111,10 @@ function rerollSingle(keyLetter) {
 
     // Sustituir únicamente la tarjeta elegida; A/B permanecen intactas al tirar C, etc.
     LAST_RESULT.set[keyLetter] = best;
+    try {
+      const rerollColorChanges = auditFichaColors(current, best, N[K.indexOf(keyLetter)]);
+      if (rerollColorChanges.length) recordColorAudit(rerollColorChanges);
+    } catch (e) { /* auditoría no bloquea el reroll */ }
     try { if (typeof _recordLayoutSet === 'function') _recordLayoutSet(LAST_RESULT.set); } catch (e) {}
     try { if (typeof _recordArchitectureSet === 'function') _recordArchitectureSet(LAST_RESULT.set); } catch (e) {}
     if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
@@ -3447,6 +3520,9 @@ window.memPatternMarket = memPatternMarket;
 window.memLocksMarket = memLocksMarket;
 window.MOTOR_STATE = MOTOR_STATE;
 window.readStateFromDOM = readStateFromDOM;
+window.getColorAudit = getColorAudit;
+window.clearColorAudit = clearColorAudit;
+window.renderColorAudit = renderColorAudit;
 
 /* --- Enlace explícito de controles de la vista Taller --- */
 (function bindTallerControls() {

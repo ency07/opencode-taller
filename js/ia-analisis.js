@@ -469,12 +469,12 @@
     }
   }
 
-  /* ===== VISIÓN multi-proveedor (verificado 8-oct-2026) =====
-     - Gemini directo: tier free vigente; serie 2.5 en retirada (solo usuarios
-       previos) → default nuevo gemini-3.5-flash-lite. Defaults de slots intactos.
-     - OpenRouter :free: 50 req/día (1000 con $10 crédito), 20 RPM, interfaz
-       OpenAI-compatible. Modelos visión verificados oct-2026.
-     - Groq: SIN visión free (modelos retirados 2025-04) → no se usa aquí. */
+  /* ===== VISIÓN multi-proveedor (verificado oct-2026) =====
+     - OpenRouter :free con visión: NANO-OMNI free (30B multimodal, 50 req/día,
+       sin consumir créditos del usuario) → default del proveedor de visión.
+     - Gemini directo: serie 3.x para proyectos nuevos (gemini-3.5-flash-lite).
+     - Groq: SIN visión free (modelos retirados 2025-04) → no se usa aquí.
+     Prioridad por defecto: OpenRouter :free (cero créditos) → Gemini (serie 3.x). */
   var VISION_KEY = 'pod2_vision_cfg';
   /* Mapa de modelos muertos ÚNICO en js/ia-client.js (IAClient.DEAD_MODELS);
      aquí queda solo el alias para no romper lecturas existentes. */
@@ -482,10 +482,10 @@
   var VISION_DEFAULTS = {
     provider: 'auto',
     geminiModel: 'gemini-3.5-flash-lite',
-    openrouterModel: 'google/gemma-4-31b-it:free',
+    openrouterModel: 'nvidia/nemotron-3-nano-omni-30b:free',
     timeoutMs: 20000
   };
-  var VISION_FALLBACK_OR = ['google/gemma-4-31b-it:free', 'nvidia/nemotron-3-nano-omni-30b:free'];
+  var VISION_FALLBACK_OR = ['nvidia/nemotron-3-nano-omni-30b:free', 'google/gemini-2.5-flash'];
 
   function getVisionConfig() {
     try {
@@ -552,7 +552,10 @@
     }
     if (c.provider === 'gemini') return gem() || oro();
     if (c.provider === 'openrouter') return oro() || gem();
-    if (r.google !== false && gem()) return gem();
+    // Default 'auto': OpenRouter :free con visión primero (cero créditos de
+    // usuario; 50 req/día free) → Gemini serie 3.x → último recurso OpenRouter.
+    if (oro() && r.openrouter !== false) return oro();
+    if (gem() && r.google !== false) return gem();
     if (oro()) return oro();
     return gem();
   }
@@ -785,7 +788,7 @@
     }
     const targetLabel = target.kind === 'openrouter' ? 'OpenRouter' : 'Gemini';
 
-    if (statusEl) statusEl.textContent = 'Analizando imagen con ' + targetLabel + ' Vision (' + target.model + ')...';
+    if (statusEl) statusEl.textContent = 'Analizando imagen con ' + targetLabel + ' Vision (' + target.model + ')' + (target.kind === 'openrouter' ? ' · modelo :free (sin consumir créditos)' : '') + '...';
 
     const file = fileInput.files[0];
     if (!file.type || !/^image\/(png|jpeg|webp|gif)$/i.test(file.type)) {
