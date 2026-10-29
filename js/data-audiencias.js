@@ -860,7 +860,9 @@ const AUD_STYLE_PREF = {
     "Anime / Manga",
     "Paste-up Wheatpaste",
     "Puff Print / 3D Ink",
-    "Glow Zone / Zona fosforescente"],
+    "Glow Zone / Zona fosforescente",
+    "Deportiva / Sports"
+  ],
   coste_joven_f: [
     "Folk Popular",
     "Hand-Drawn",
