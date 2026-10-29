@@ -2146,16 +2146,6 @@ function _patternConflictsOf(cand) {
 var colorAuditLog = [];
 function getColorAudit() { return colorAuditLog.slice(); }
 function clearColorAudit() { colorAuditLog = []; renderColorAudit(); }
-function snapshotColorSetForAudit(set) {
-  const out = { fichas: {} };
-  if (!set) return out;
-  K.forEach(function (k, i) {
-    const f = set[k];
-    if (!f) return;
-    out.fichas[N[i]] = { familiaColor: String(f.familiaColor || ''), paleta: String(f.paleta || '') };
-  });
-  return out;
-}
 function auditFichaColors(beforeFicha, afterFicha, ficha) {
   const out = [];
   if (!beforeFicha || !afterFicha) return out;
@@ -2195,7 +2185,7 @@ function renderColorAudit() {
   if (!el) return;
   const entries = colorAuditLog.slice(-5);
   if (!entries.length) {
-    try { el.style.display = 'none'; } catch (e2) { /* sin estilo */ }
+    try { el.style.display = 'none'; el.textContent = ''; } catch (e2) { /* sin estilo */ }
     return;
   }
   try { el.style.display = 'block'; } catch (e2) { /* sin estilo */ }
@@ -2286,7 +2276,7 @@ function generateSet() {
   try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
   try { window.V = best; } catch (e) {} // Puente para el revisor IA (ia-revisor.js lee window.V con fichas A/B/C).
   try {
-    const colorChanges = auditSetColors(snapshotColorSetForAudit(prevColorAuditSet), snapshotColorSetForAudit(best));
+    const colorChanges = auditSetColors(prevColorAuditSet, best);
     if (colorChanges.length) recordColorAudit(colorChanges);
   } catch (e) { /* auditoría no bloquea la generación */ }
   return LAST_RESULT;

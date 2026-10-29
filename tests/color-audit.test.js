@@ -48,6 +48,7 @@ ok(motorSrc.indexOf('function auditFichaColors') !== -1, 'motor-nucleo.js sin au
 ok(motorSrc.indexOf('function renderColorAudit') !== -1, 'motor-nucleo.js sin renderColorAudit');
 ok(motorSrc.indexOf("getElementById('colorAudit')") !== -1, 'auditoría debe escribir en #colorAudit');
 ok(motorSrc.indexOf('recordColorAudit(colorChanges)') !== -1, 'generateSet no registra el cambio de color auditado');
+ok(motorSrc.indexOf('auditSetColors(prevColorAuditSet, best)') !== -1, 'generateSet debe auditar contra el set previo con la forma correcta de set');
 ok(motorSrc.indexOf('auditFichaColors(current, best') !== -1, 'rerollSingle no audita el cambio de color de la ficha');
 ok(indexSrc.indexOf('id="colorAudit"') !== -1, 'index.html no tiene el elemento #colorAudit');
 
