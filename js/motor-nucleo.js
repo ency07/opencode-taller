@@ -3358,14 +3358,14 @@ function crearLos3Disenos() {
     const result = generateSet();
     if (!result) return;
 
+    const prompt = formatPrompt(result);
+    if (outEl) outEl.value = prompt;
+    if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
+
     renderCards(result);
     renderGates(result);
     renderMatrix(result);
     renderArbitro(result);
-
-    const prompt = formatPrompt(result);
-    if (outEl) outEl.value = prompt;
-    if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
 
     // Estado unificado: score + Árbitro. Verde solo si AMBOS pasan.
     const verdict = _estadoUnificado(result);
