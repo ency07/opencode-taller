@@ -2189,7 +2189,18 @@ function renderColorAudit() {
     return;
   }
   try { el.style.display = 'block'; } catch (e2) { /* sin estilo */ }
-  el.textContent = 'Cambio de color (IA): ' + entries.map(function (e) { return formatColorAuditEntry(e); }).join(' · ');
+  // Lista por ficha (regla UX POD): cada cambio en su propio ítem legible,
+  // no un párrafo corrido concatenado.
+  let html = '<div class="ca-list">';
+  entries.forEach(function (e) {
+    html += '<div class="ca-item">';
+    html += '<span class="ca-ficha">' + escHtml(e.ficha) + '</span>';
+    html += '<span class="ca-eje">' + ((e.eje === 'familiaColor') ? 'familia de color' : 'paleta') + ':</span> ';
+    html += escHtml(e.antes || '—') + ' → ' + escHtml(e.despues || '—');
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
 }
 
 function generateSet() {
