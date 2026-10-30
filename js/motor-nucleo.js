@@ -3339,7 +3339,13 @@ function limpiarArbitro() {
   if (estadoEl) estadoEl.innerHTML = '<span class="badge">Árbitro: sin diseños</span>';
 }
 function verificarArbitro() {
-  return renderArbitro(LAST_RESULT);
+  const info = renderArbitro(LAST_RESULT);
+  const statusEl = document.getElementById('status');
+  if (info) {
+    const v = _estadoUnificado(LAST_RESULT);
+    if (statusEl) statusEl.innerHTML = v.html;
+  }
+  return info;
 }
 
 /* --- Estado unificado del set: score de calidad + Árbitro de selectores ---
