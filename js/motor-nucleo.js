@@ -3141,6 +3141,12 @@ function rerollSingle(keyLetter) {
 }
 
 /* --- Renderizado de gates --- */
+function _qaBadgeHtml(st) {
+  const titulo = 'Estos indicadores validan fichas y prompt; no inspeccionan el archivo de imagen generado.';
+  if (!st || !st.total || !st.marcados) return '<span class="badge warn" title="' + titulo + '">QA visual pendiente</span>';
+  if (st.marcados === st.total) return '<span class="badge good" title="' + titulo + '">QA visual verificada (manual): ' + st.marcados + '/' + st.total + ' · ' + new Date().toLocaleString() + '</span>';
+  return '<span class="badge warn">QA visual: ' + st.marcados + '/' + st.total + '</span>';
+}
 function renderGates(result) {
   const gateEl = document.getElementById('gate');
   if (!gateEl || !result || !result.score) return;
@@ -3158,7 +3164,7 @@ function renderGates(result) {
   }
   html += '<span class="badge ' + (m.treatmentsComplete ? 'good' : 'bad') + '" title="Comprueba que el prompt asigna HEAVY, SOFT y MODERN una vez cada uno; no inspecciona la imagen generada.">HEAVY · SOFT · MODERN</span>';
   html += '<span class="badge ' + (m.familias.length >= 3 ? 'good' : 'warn') + '">Colores distintos</span>';
-  html += '<span class="badge warn" title="Estos indicadores validan fichas y prompt; no inspeccionan el archivo de imagen generado.">QA visual pendiente</span>';
+  html += _qaBadgeHtml(null);
 
   gateEl.innerHTML = html;
 }
@@ -3175,15 +3181,19 @@ function qaChecklistEstado() {
 }
 function actualizarQAVisual() {
   const estadoEl = document.getElementById('qaEstado');
+  const gateEl = document.getElementById('gate');
   const st = qaChecklistEstado();
-  if (!estadoEl) return st;
+  const badge = _qaBadgeHtml(st);
+  if (!estadoEl) { if (gateEl) gateEl.innerHTML = badge; return st; }
   if (!st.total || !st.marcados) {
     estadoEl.innerHTML = '<span class="badge">Revisión visual: pendiente</span>';
+    if (gateEl) gateEl.innerHTML = badge;
     return st;
   }
   estadoEl.innerHTML = st.marcados === st.total
     ? '<span class="badge good">Revisión visual verificada (manual): ' + st.marcados + '/' + st.total + ' · ' + new Date().toLocaleString() + '</span>'
     : '<span class="badge warn">Revisión visual: ' + st.marcados + '/' + st.total + '</span>';
+  if (gateEl) gateEl.innerHTML = badge;
   return st;
 }
 function limpiarQAVisual() {

@@ -104,6 +104,7 @@ global.arbitroSelectores = realArb;
 const motorSrcForCheck = fs.readFileSync(path.join(ROOT, 'js', 'motor-nucleo.js'), 'utf8');
 ok(/function _estadoUnificado\(/.test(motorSrcForCheck), 'motor expone estado unificado del set (score + arbitro)');
 ok(/statusEl\.innerHTML = verdict\.html/.test(motorSrcForCheck), 'crearLos3Disenos aplica el veredicto unificado al status');
+ok(/function _qaBadgeHtml\(/.test(motorSrcForCheck), 'motor expone badge unificado de QA visual');
 
 const setMalo = buenSet();
 setMalo.C.tipografia = setMalo.A.tipografia;
@@ -118,27 +119,32 @@ ok(r.ok === false && els.status.innerHTML.indexOf('tipografía repetida') !== -1
 function stubQA(marcados) {
   const boxes = marcados.map(function (c) { return { checked: !!c }; });
   const estado = { innerHTML: '' };
+  const gate = { innerHTML: '' };
   global.document = {
     getElementById: function (id) {
       if (id === 'qaVisual') return { querySelectorAll: function () { return boxes; } };
       if (id === 'qaEstado') return estado;
+      if (id === 'gate') return gate;
       return null;
     },
     querySelectorAll: function () { return []; }
   };
-  return { boxes: boxes, estado: estado };
+  return { boxes: boxes, estado: estado, gate: gate };
 }
 let qa = stubQA([true, true, false]);
 let st = actualizarQAVisual();
 ok(st.marcados === 2 && st.total === 3, 'conteo 2/3');
 ok(qa.estado.innerHTML.indexOf('2/3') !== -1 && qa.estado.innerHTML.indexOf('verificada') === -1, 'parcial sin sello');
+ok(qa.gate.innerHTML.indexOf('2/3') !== -1, 'el badge del gate debe reflejar el mismo estado de QA (fuente unica)');
 qa = stubQA([true, true, true]);
 st = actualizarQAVisual();
 ok(st.marcados === 3 && qa.estado.innerHTML.indexOf('verificada') !== -1, 'completo sella con fecha');
+ok(qa.gate.innerHTML.indexOf('verificada') !== -1, 'el badge del gate debe reflejar el mismo estado de QA (fuente unica)');
 qa = stubQA([true, false, true]);
 limpiarQAVisual();
 ok(qa.boxes.every(function (b) { return !b.checked; }), 'limpiar desmarca todo');
 ok(qa.estado.innerHTML.indexOf('pendiente') !== -1, 'limpiar vuelve a pendiente');
+ok(qa.gate.innerHTML.indexOf('pendiente') !== -1, 'limpiar vuelve el badge del gate a pendiente (fuente unica)');
 
 /* Cableado: botón valida, panel QA con una sola casilla */
 const analisisSrc = fs.readFileSync(path.join(ROOT, 'js', 'ia-analisis.js'), 'utf8');
