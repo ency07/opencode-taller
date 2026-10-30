@@ -66,6 +66,7 @@ ok(/no añadir mensajes secundarios, citas, versículos, datos ni afirmaciones n
 ok(fs.readFileSync(path.join(root, 'js/data-productos.js'), 'utf8').includes('FICHA SERIE (CAMISETA SOFT)'), 'CAMISETA SOFT: ficha serie con colores sugeridos y paleta general');
 
 ok(/QA visual pendiente/.test(motor) && /no inspeccionan el archivo de imagen generado/.test(motor), 'la interfaz no debe presentar el score del prompt como aprobación visual');
+ok(/Paletas distintas/.test(motor) && !/Colores distintos/.test(motor), 'el badge de calidad debe decir Paletas distintas (mide familias, no colores sueltos)');
 
 // Los selectores muestran el bloqueo guardado, no confunden la ficha generada
 // con una elección manual que luego impediría volver a Auto.

@@ -3163,7 +3163,7 @@ function renderGates(result) {
     html += '<span class="badge blue" title="En Exploración cada ficha lleva su propio símbolo derivado del concepto; el ADN que se conserva es el concepto y el mensaje.">Símbolos por ficha</span>';
   }
   html += '<span class="badge ' + (m.treatmentsComplete ? 'good' : 'bad') + '" title="Comprueba que el prompt asigna HEAVY, SOFT y MODERN una vez cada uno; no inspecciona la imagen generada.">HEAVY · SOFT · MODERN</span>';
-  html += '<span class="badge ' + (m.familias.length >= 3 ? 'good' : 'warn') + '">Colores distintos</span>';
+  html += '<span class="badge ' + (m.familias.length >= 3 ? 'good' : 'warn') + '">Paletas distintas</span>';
   html += _qaBadgeHtml(null);
 
   gateEl.innerHTML = html;
