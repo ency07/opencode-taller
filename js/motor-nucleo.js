@@ -3321,6 +3321,32 @@ function verificarArbitro() {
   return renderArbitro(LAST_RESULT);
 }
 
+/* --- Estado unificado del set: score de calidad + Árbitro de selectores ---
+   Punto crítico de la auditoría: el #status ya NO puede estar en verde ('Listo')
+   mientras el Árbitro de selectores reporta fallos, ni en verde por score cuando
+   el Árbitro detectó incoherencias. Antes el status salía del score aislado y el
+   Árbitro se evaluaba aparte → 'Listo' verde con 2 fichas en rojo en el mismo
+   viewport. Fuente única de verdad: el veredicto unificado. */
+function _estadoUnificado(result) {
+  const ev = (result && result.score) ? result.score : null;
+  const info = (typeof arbitroSelectores === 'function') ? arbitroSelectores(null, result) : null;
+  const okArb = !info ? true : !!info.ok;
+  const totalArb = info ? (info.total || 0) : 0;
+  const fallosArb = info ? (info.fallos || 0) : 0;
+  const okScore = !!(result && result.passed);
+  const effAud = (ev && typeof ev.fitAudienciaMin === 'number') ? ev.fitAudienciaMin : 0;
+  const effProd = (ev && typeof ev.fitProductoMin === 'number') ? ev.fitProductoMin : 0;
+  if (!okScore) {
+    const umbralMsg = (typeof _mensajeUmbral === 'function') ? _mensajeUmbral(ev) : '';
+    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>' };
+  }
+  if (!okArb) {
+    const checksOkArb = totalArb - fallosArb;
+    return { ok: false, okScore: true, okArb: false, checks: info, fallos: fallosArb, html: '<span class="bad">Árbitro: ' + checksOkArb + '/' + totalArb + ' selectores verificados en el prompt · ' + fallosArb + ' punto(s) a revisar</span>' };
+  }
+  return { ok: true, okScore: true, okArb: true, checks: info, fallos: 0, html: '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt · pertinencia efectiva audiencia ' + effAud + '/100 · producto ' + effProd + '/100</span>' };
+}
+
 /* --- Función principal: Crear los 3 diseños --- */
 function crearLos3Disenos() {
   const statusEl = document.getElementById('status');
@@ -3341,16 +3367,9 @@ function crearLos3Disenos() {
     if (outEl) outEl.value = prompt;
     if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
 
-    if (statusEl) {
-      if (result.passed) {
-        const effAud = (result.score && typeof result.score.fitAudienciaMin === 'number') ? result.score.fitAudienciaMin : 0;
-        const effProd = (result.score && typeof result.score.fitProductoMin === 'number') ? result.score.fitProductoMin : 0;
-        statusEl.innerHTML = '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt · pertinencia efectiva audiencia ' + effAud + '/100 · producto ' + effProd + '/100</span>';
-      } else {
-        const umbralMsg = _mensajeUmbral(result.score);
-        statusEl.innerHTML = '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>';
-      }
-    }
+    // Estado unificado: score + Árbitro. Verde solo si AMBOS pasan.
+    const verdict = _estadoUnificado(result);
+    if (statusEl) statusEl.innerHTML = verdict.html;
   } catch (e) {
     console.error('[Motor] Error:', e);
     if (statusEl) statusEl.textContent = 'Error al generar: ' + String(e && e.message ? e.message : 'error inesperado');
@@ -3372,9 +3391,19 @@ function validarSetActual() {
   renderMatrix(LAST_RESULT);
   renderArbitro(LAST_RESULT);
   if (statusEl) {
-    statusEl.innerHTML = ev.passed
-      ? '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla · audiencia efectiva ' + (ev.score.fitAudienciaMin || 0) + '/100 · producto ' + (ev.score.fitProductoMin || 0) + '/100</span>'
-      : '<span class="warn">Validación con fallos: ' + ev.detalle.join(' · ') + '</span>';
+    if (ev.passed) {
+      // Verde por score exige verde por Árbitro: si el árbitro detectó fallos,
+      // el estado visible no puede decir 'Validación OK'.
+      const verdict = _estadoUnificado(LAST_RESULT);
+      if (!verdict.ok) {
+        statusEl.innerHTML = verdict.html;
+        return { ok: false, detalle: ['árbitro de selectores con fallos: ' + (verdict.fallos || 0)] };
+      }
+      statusEl.innerHTML = '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla · audiencia efectiva ' + (ev.score.fitAudienciaMin || 0) + '/100 · producto ' + (ev.score.fitProductoMin || 0) + '/100</span>';
+    } else {
+      statusEl.innerHTML = '<span class="warn">Validación con fallos: ' + ev.detalle.join(' · ') + '</span>';
+      return { ok: false, detalle: ev.detalle };
+    }
   }
   return { ok: ev.passed, detalle: ev.detalle };
 }
