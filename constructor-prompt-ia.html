@@ -508,12 +508,17 @@ function fillFamilias() {
   if (!familiaEl.value) familiaEl.value = list[0] || '';
 }
 
-function fillSubniches() {
+function fillSubniches(market) {
   const datalist = document.getElementById('subnicheList');
   const chipsWrap = document.getElementById('subnicheChips');
+  const mkt = market || (marketEl ? marketEl.value : 'global_es');
+  let subs = [];
+  if (typeof window.getSubnicheIdsForMarket === 'function') {
+    subs = window.getSubnicheIdsForMarket(mkt, 'evergreen', 'global').concat(window.getSubnicheIdsForMarket(mkt, 'temporada', 'global'));
+  }
+  if ((!subs || !subs.length) && window.POD_SUBNICHES) subs = Object.keys(window.POD_SUBNICHES);
   if (datalist) {
     datalist.innerHTML = '';
-    const subs = Object.keys(window.POD_SUBNICHES || {});
     subs.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s;
@@ -548,10 +553,16 @@ function fillProductos() {
   if (!productoEl.value) productoEl.value = 'CAMISETA SOFT';
 }
 
-function fillAudiencias() {
+function fillAudiencias(market) {
   if (!audienciaEl) return;
-  const profiles = window.AUD_PROFILES || {};
-  const keys = Object.keys(profiles);
+  const mkt = market || (marketEl ? marketEl.value : 'global_es');
+  let keys = [];
+  if (typeof window.getAudiencesForMarketRegion === 'function') {
+    const region = (mkt === 'colombia') ? 'todas' : 'global';
+    const list = window.getAudiencesForMarketRegion(mkt, region);
+    keys = (list || []).filter(k => window.AUD_PROFILES && window.AUD_PROFILES[k]).map(k => k);
+  }
+  if ((!keys || !keys.length) && window.AUD_PROFILES) keys = Object.keys(window.AUD_PROFILES);
   audienciaEl.innerHTML = '';
   keys.forEach(k => {
     const opt = document.createElement('option');
@@ -559,15 +570,34 @@ function fillAudiencias() {
     opt.textContent = k;
     audienciaEl.appendChild(opt);
   });
-  if (!audienciaEl.value) audienciaEl.value = keys[0] || '';
+  const stillValid = Array.prototype.some.call(audienciaEl.options || [], function (o) { return o && o.value === audienciaEl.value; });
+  if (!audienciaEl.value || !stillValid) audienciaEl.value = keys[0] || '';
+}
+
+function fillIdioma(market) {
+  const mkt = market || (marketEl ? marketEl.value : 'global_es');
+  let lang = 'es';
+  if (window.POD_MARKETS && window.POD_MARKETS[mkt]) lang = window.POD_MARKETS[mkt].language || 'es';
+  const map = { es: 'es', en: 'en', pt: 'pt' };
+  if (idiomaEl) idiomaEl.value = map[lang] || 'es';
 }
 
 function init() {
+  const initMarket = marketEl ? marketEl.value : 'global_es';
   fillMarkets();
   fillFamilias();
-  fillSubniches();
+  fillSubniches(initMarket);
   fillProductos();
-  fillAudiencias();
+  fillAudiencias(initMarket);
+  fillIdioma(initMarket);
+  if (marketEl) {
+    marketEl.addEventListener('change', function () {
+      fillSubniches(this.value);
+      fillAudiencias(this.value);
+      fillIdioma(this.value);
+      renderPrompt();
+    });
+  }
   // tipo default: concepto
   const checked = document.querySelector('input[name="tipo"]:checked');
   if (checked) checked.checked = true;
