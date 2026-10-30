@@ -3299,7 +3299,7 @@ function renderArbitro(result) {
       '<span class="mk">' + (c.ok ? '✓' : '✗') + '</span>' +
       '<span class="grp">' + escHtml(c.grupo) + '</span>' +
       '<span class="et">' + escHtml(c.etiqueta) + '</span>' +
-      (c.ok || !c.detalle ? '' : '<span class="dt">' + escHtml(c.detalle) + '</span>') +
+      (c.ok || !c.detalle ? '' : '<span class="dt">✗ Falta: ' + escHtml(c.detalle) + '</span>') +
       '</li>';
   });
   html += '</ul>';
