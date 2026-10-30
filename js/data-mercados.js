@@ -186,11 +186,11 @@ const POD_MARKET_REGIONS = {
   ],
 
   gospel_es: [
-    { id: "universal_es", label: "Universal ES — no aplica región" }
+    { id: "universal_es", label: "Universal ES — sin región" }
   ],
 
   gospel_en: [
-    { id: "universal_en", label: "Universal EN — no region" }
+    { id: "universal_en", label: "Universal EN — sin región" }
   ]
 };
 
