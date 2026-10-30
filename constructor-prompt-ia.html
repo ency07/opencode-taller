@@ -356,7 +356,8 @@ function getValues() {
 }
 function getMissing() {
   const v = getValues();
-  return REQUIRED_FIELDS.filter(id => !v[id]);
+  const KEY_MAP = { market: 'mercado', familia: 'familia', subnicho: 'subnicho', producto: 'producto', audiencia: 'audiencia', tipo: 'tipo', idioma: 'idioma', tono: 'tono' };
+  return REQUIRED_FIELDS.filter(id => !v[KEY_MAP[id]]);
 }
 function markMissing(missing) {
   REQUIRED_FIELDS.forEach(id => {
