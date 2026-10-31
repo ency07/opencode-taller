@@ -348,6 +348,68 @@
     return Array.from(new Set(out.filter(Boolean)));
   }
 
+  function getPersonalConcepts(market, subniche) {
+    const bank = loadPersonalBank(market);
+    const out = [];
+    const add = function (key) {
+      if (Array.isArray(bank[key])) out.push.apply(out, bank[key]);
+    };
+    if (subniche) add('__concept__' + subniche);
+    if (subniche !== COMMON_BANK_KEY) add('__concept__' + COMMON_BANK_KEY);
+    // Banco nombrado activo para este contexto (Fase 2).
+    try {
+      const active = getActivePersonalBank(market, subniche);
+      if (active && Array.isArray(active.concepts)) out.push.apply(out, active.concepts);
+    } catch (e) {}
+    return Array.from(new Set(out.filter(Boolean)));
+  }
+
+  function useBankConcept(market, subniche, conceptField) {
+    const bank = loadPersonalBank(market);
+    const key = '__concept__' + subniche;
+    const concepts = Array.isArray(bank[key]) ? bank[key] : [];
+    if (!concepts.length) {
+      safeTell('Aún no hay conceptos guardados en este subnicho. ¡Añádelos primero!');
+      return;
+    }
+    // Elegir un concepto aleatorio
+    const choice = concepts[Math.floor(Math.random() * concepts.length)];
+    const conceptFieldEl = conceptField || document.getElementById('concept');
+    if (!conceptFieldEl) {
+      safeTell('No se encontró el campo de concepto');
+      return;
+    }
+    // Si el campo ya tiene texto, pedir confirmación
+    const current = conceptFieldEl.value.trim();
+    if (current && confirm('El campo de concepto ya tiene texto: "' + current + '".\n¿Deseas reemplazarlo con "' + choice + '"?')) {
+      conceptFieldEl.value = choice;
+    } else if (!current) {
+      conceptFieldEl.value = choice;
+    } else {
+      safeTell('Concepto no cambiado.');
+    }
+  }
+
+  function addPersonalConcept(market, subniche, concept) {
+    const bank = loadPersonalBank(market);
+    const key = subniche || COMMON_BANK_KEY;
+    const current = Array.isArray(bank[key]) ? bank[key] : [];
+
+    const norm = function (s) {
+      return String(s || '').toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
+    };
+
+    const sig = norm(concept);
+    if (!sig || current.some(function (c) { return norm(c) === sig; })) return { ok: false, error: 'Concepto duplicado' };
+
+    const newBank = Object.assign({}, bank);
+    current.push(concept);
+    newBank[key] = current;
+    savePersonalBank(market, newBank);
+    return { ok: true, added: 1 };
+  }
+
   function getPersonalObjects(market, subniche) {
     const bank = loadPersonalBank(market);
     const out = [];
@@ -896,6 +958,136 @@
     return JSON.stringify(exportMemoryObject(), null, 2);
   }
 
+  // Export/import de bancos en un solo archivo portátil. Conserva las claves
+  // reales que ya entiende el motor (mercado -> subnicho -> arrays de strings)
+  // y también los bancos nombrados, sin copiar el resto de la memoria del taller.
+  function _isPersonalBankMemoryKey(key) {
+    return /^POD2\|personalBanks?\|[^|]+$/.test(String(key || ''));
+  }
+
+  function _validatePersonalBankMemoryValue(key, raw) {
+    let value;
+    try { value = typeof raw === 'string' ? JSON.parse(raw) : raw; }
+    catch (e) { throw new Error('JSON interno inválido en ' + key); }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Estructura de banco inválida en ' + key);
+    if (String(key).indexOf('|personalBanks|') !== -1) {
+      if (!value.banks || typeof value.banks !== 'object' || Array.isArray(value.banks)) throw new Error('Falta la colección de bancos nombrados en ' + key);
+      Object.keys(value.banks).forEach(function (id) {
+        const bank = value.banks[id];
+        if (!bank || typeof bank !== 'object' || Array.isArray(bank)) throw new Error('Banco nombrado inválido: ' + id);
+        ['objects', 'phrases'].forEach(function (field) {
+          if (bank[field] !== undefined && (!Array.isArray(bank[field]) || !bank[field].every(function (x) { return typeof x === 'string'; }))) {
+            throw new Error('Lista ' + field + ' inválida en ' + id);
+          }
+        });
+      });
+    } else {
+      Object.keys(value).forEach(function (subniche) {
+        if (!Array.isArray(value[subniche]) || !value[subniche].every(function (x) { return typeof x === 'string'; })) {
+          throw new Error('Lista de objetos/frases inválida para ' + subniche + ' en ' + key);
+        }
+      });
+    }
+    return value;
+  }
+
+  function normalizeGeneratedBankOutput(input) {
+    const parsed = typeof input === 'string' ? JSON.parse(input) : input;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('La salida del generador debe ser un objeto JSON.');
+    const market = String(parsed.mercado || parsed.market || '').trim();
+    const family = String(parsed.familia || parsed.family || '').trim();
+    if (!market || !family) return null;
+    const kind = String(parsed.tipo || parsed.type || 'ambos').toLowerCase();
+    if (!['ambos', 'both', 'objetos', 'objects', 'frases', 'phrases'].includes(kind)) throw new Error('Tipo de banco no reconocido: ' + kind);
+    let objects = parsed.objetos || parsed.objects || ((kind === 'objetos' || kind === 'objects') ? parsed.items : []);
+    let phrases = parsed.frases || parsed.phrases || ((kind === 'frases' || kind === 'phrases') ? parsed.items : []);
+    if (kind === 'objetos' || kind === 'objects') phrases = [];
+    if (kind === 'frases' || kind === 'phrases') objects = [];
+    if (!Array.isArray(objects) || !Array.isArray(phrases)
+      || !objects.every(function (x) { return typeof x === 'string'; })
+      || !phrases.every(function (x) { return typeof x === 'string'; })) {
+      throw new Error('Objetos y frases deben ser listas de textos.');
+    }
+    return { market: market, family: family, objects: objects, phrases: phrases };
+  }
+  function exportPersonalBanksObject() {
+    const data = {};
+    listMemoryKeys().filter(_isPersonalBankMemoryKey).forEach(function (key) {
+      const raw = POD_LS.getItem(key);
+      if (raw !== null && raw !== undefined) data[key] = raw;
+    });
+    return {
+      format: 'taller-pod-personal-banks',
+      schemaVersion: 1,
+      exportedAt: new Date().toISOString(),
+      data: data
+    };
+  }
+
+  function exportPersonalBanksJSON() {
+    return JSON.stringify(exportPersonalBanksObject(), null, 2);
+  }
+
+  function importPersonalBanksJSON(input) {
+    const parsed = typeof input === 'string' ? JSON.parse(input) : input;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('El archivo debe contener un objeto JSON.');
+    if (parsed.format && (parsed.format !== 'taller-pod-personal-banks' || parsed.schemaVersion !== 1)) {
+      throw new Error('Formato o versión de bancos no compatible.');
+    }
+    // También acepta la exportación antigua de memoria POD2, filtrando siempre
+    // para no importar historial, locks ni preferencias.
+    const source = parsed.data && typeof parsed.data === 'object' ? parsed.data : parsed;
+    const incoming = {};
+    Object.keys(source).forEach(function (key) {
+      if (!_isPersonalBankMemoryKey(key)) return;
+      _validatePersonalBankMemoryValue(key, source[key]);
+      incoming[key] = typeof source[key] === 'string' ? source[key] : JSON.stringify(source[key]);
+    });
+    const keys = Object.keys(incoming);
+    if (!keys.length) throw new Error('No encontré bancos personales en este archivo. Acepto exportaciones POD2 del taller.');
+
+    const current = {};
+    listMemoryKeys().filter(_isPersonalBankMemoryKey).forEach(function (key) { current[key] = POD_LS.getItem(key); });
+    const merged = mergeMemoryObjects(current, incoming);
+    const writeKeys = Object.keys(merged).filter(_isPersonalBankMemoryKey);
+    const previous = {};
+    writeKeys.forEach(function (key) { previous[key] = POD_LS.getItem(key); });
+    try {
+      writeKeys.forEach(function (key) {
+        _validatePersonalBankMemoryValue(key, merged[key]);
+        if (POD_LS.setItem(key, merged[key]) !== true) throw new Error('No se pudo guardar ' + key + '; revisa el espacio del navegador.');
+      });
+    } catch (e) {
+      // Si el almacenamiento se llena a mitad de una fusión, restaura el estado anterior.
+      writeKeys.forEach(function (key) {
+        if (previous[key] === null || previous[key] === undefined) POD_LS.removeItem(key);
+        else POD_LS.setItem(key, previous[key]);
+      });
+      throw e;
+    }
+
+    const summary = { markets: [], namedBanks: 0, objects: 0, phrases: 0 };
+    Object.keys(merged).filter(_isPersonalBankMemoryKey).forEach(function (key) {
+      const match = key.match(/^POD2\|personalBanks?\|([^|]+)$/);
+      if (match && summary.markets.indexOf(match[1]) === -1) summary.markets.push(match[1]);
+      const value = _validatePersonalBankMemoryValue(key, merged[key]);
+      if (key.indexOf('|personalBanks|') !== -1) {
+        Object.keys(value.banks || {}).forEach(function (id) {
+          summary.namedBanks++;
+          summary.objects += (value.banks[id].objects || []).length;
+          summary.phrases += (value.banks[id].phrases || []).length;
+        });
+      } else {
+        Object.keys(value).forEach(function (subniche) {
+          const isPhrase = subniche.indexOf('__phrase__') === 0;
+          summary[isPhrase ? 'phrases' : 'objects'] += value[subniche].length;
+        });
+      }
+    });
+    summary.markets.sort();
+    summary.keysMerged = keys.length;
+    return { ok: true, importedKeys: keys.length, summary: summary };
+  }
   function mergeMemoryObjects(local, remote) {
     local = local || {};
     remote = remote || {};
@@ -1036,6 +1228,237 @@
   }
 
   /* ============================================================
+     IMPORTANCIA / EXPORTACION DE BANCOS DE MOTIVOS ENRIQUECIDOS
+     Formato: taller-pod-motif-candidates (schemaVersion 1).
+     El motor consume arrays de strings; los registros enriquecidos
+     conservan motivo, idea_comunicada, tensiones, contextos,
+     justificacion y riesgo_cliche hasta el punto de seleccion.
+     ============================================================ */
+
+  const ENRICHED_BANK_FORMAT_VERSION = 1;
+
+  function validateEnrichedBankFormat(texto) {
+    try {
+      const parsed = JSON.parse(texto);
+      if (!parsed || typeof parsed !== "object") {
+        return { ok: false, error: "JSON invalido" };
+      }
+      if (parsed.format !== "taller-pod-motif-candidates") {
+        return { ok: false, error: "Formato JSON no reconocido" };
+      }
+      if (typeof parsed.schemaVersion !== "number" || parsed.schemaVersion < 1) {
+        return { ok: false, error: "Version de esquema no compatible" };
+      }
+      if (typeof parsed.mercado !== "string" || !parsed.mercado) {
+        return { ok: false, error: "ID de mercado requerido" };
+      }
+      if (typeof parsed.registros !== "object" || !Array.isArray(parsed.registros)) {
+        return { ok: false, error: "registros debe ser un array" };
+      }
+      return { ok: true, data: parsed };
+    } catch (e) {
+      return { ok: false, error: "JSON invalido: " + e.message };
+    }
+  }
+
+  function validateMotifRegistro(registro, fila) {
+    if (!registro || typeof registro !== "object") {
+      return { ok: false, error: "Registro invalido: debe ser un objeto" };
+    }
+    const errores = [];
+    if (typeof registro.id !== "string" || !registro.id.trim()) {
+      errores.push("id requerido y no vacio");
+    }
+    if (typeof registro.motivo !== "string" || !registro.motivo.trim()) {
+      errores.push("motivo requerido y no vacio");
+    }
+    if (typeof registro.idea_comunicada !== "string" || !registro.idea_comunicada.trim()) {
+      errores.push("idea_comunicada requerido y no vacio");
+    }
+    if (!Array.isArray(registro.tensiones) || !registro.tensiones.length) {
+      errores.push("tensiones debe ser un array no vacio");
+    }
+    if (!Array.isArray(registro.contextos) || !registro.contextos.length) {
+      errores.push("contextos debe ser un array no vacio");
+    }
+    if (typeof registro.justificacion !== "string" || !registro.justificacion.trim()) {
+      errores.push("justificacion requerido y no vacio");
+    }
+    if (!["bajo", "medio", "alto"].includes(registro.riesgo_cliche)) {
+      errores.push("riesgo_cliche debe ser uno de: bajo, medio, alto");
+    }
+    if (errores.length) {
+      return { ok: false, error: "Registro " + (fila + 1) + " (" + registro.id + "): " + errores.join(", ") };
+    }
+    return { ok: true };
+  }
+
+  function mergeEnrichedBankData(existingBank, subniche, nuevosRegistros) {
+    const targetKey = "__concept__" + (subniche || "comun");
+    const bank = existingBank || {};
+    const current = Array.isArray(bank[targetKey]) ? bank[targetKey] : [];
+    const byId = {};
+    current.forEach(function (item) {
+      const id = (item && typeof item === "object") ? item.id : item;
+      if (id) byId[id] = item;
+    });
+    const added = [];
+    const updated = [];
+    const duplicates = [];
+    const rejected = [];
+    for (let i = 0; i < nuevosRegistros.length; i++) {
+      const reg = nuevosRegistros[i];
+      const validation = validateMotifRegistro(reg, i);
+      if (!validation.ok) {
+        rejected.push({ fila: i + 1, id: reg.id, error: validation.error });
+        continue;
+      }
+      const existing = byId[reg.id];
+      if (existing) {
+        duplicates.push({ id: reg.id, accion: "existente" });
+        existing.motivo = reg.motivo;
+        existing.idea_comunicada = reg.idea_comunicada;
+        existing.tensiones = reg.tensiones;
+        existing.contextos = reg.contextos;
+        existing.justificacion = reg.justificacion;
+        existing.riesgo_cliche = reg.riesgo_cliche;
+        updated.push(reg.id);
+        continue;
+      }
+      added.push(reg.id);
+      current.push(reg);
+      byId[reg.id] = reg;
+    }
+    const merged = Object.assign({}, bank);
+    merged[targetKey] = current;
+    return {
+      ok: true,
+      bank: merged,
+      stats: { added: added, updated: updated, duplicates: duplicates, rejected: rejected }
+    };
+  }
+
+  function importarMotivosEnriquecidos(texto, mercado, subniche, marcarActivos) {
+    const validacion = validateEnrichedBankFormat(texto);
+    if (!validacion.ok) {
+      return { ok: false, error: validacion.error, stats: { added: [], updated: [], duplicates: [], rejected: [{ fila: 0, id: "", error: validacion.error }] } };
+    }
+    const datos = validacion.data;
+    if (datos.mercado !== mercado) {
+      return { ok: false, error: "mercado del JSON no coincide con el mercado especificado", stats: { added: [], updated: [], duplicates: [], rejected: [] } };
+    }
+    const existingBank = loadPersonalBank(mercado);
+    const contexto = subniche || "comun";
+    const fusion = mergeEnrichedBankData(existingBank, contexto, datos.registros);
+    if (fusion.stats.rejected.length > 0) {
+      return { ok: false, error: "El lote contiene registros invalidos; no se modifico ningun dato", stats: fusion.stats };
+    }
+    const saved = savePersonalBank(mercado, fusion.bank);
+    if (!saved) {
+      return { ok: false, error: "No se pudo guardar el banco de datos enriquecido", stats: fusion.stats };
+    }
+    const stats = fusion.stats;
+    const nuevosActivos = stats.added.concat(stats.updated);
+    if (marcarActivos) {
+      const key = "__concept__" + contexto;
+      if (Array.isArray(fusion.bank[key])) {
+        fusion.bank[key].forEach(function (item) {
+          if (typeof item === "object") nuevosActivos.push(item.id);
+        });
+      }
+    }
+    return { ok: true, stats: stats, activos: nuevosActivos };
+  }
+
+  /* ============================================================
+     BANDEJA DE PROPUESTAS DE BANCO (cola de revision)
+     Propuestas de concepto / frase / objeto para revision.
+     Nunca se guarda sin accion explicita del usuario.
+     ============================================================ */
+
+  const PROPOSED_BANK_KEY = "__propuestas_banco_global__";
+
+  function getPropuestasBanco() {
+    const bank = loadPersonalBank("global");
+    const list = Array.isArray(bank[PROPOSED_BANK_KEY]) ? bank[PROPOSED_BANK_KEY] : [];
+    return list;
+  }
+
+  function guardarPropuestasBanco(list) {
+    const bank = loadPersonalBank("global");
+    bank[PROPOSED_BANK_KEY] = (list || []).slice();
+    return savePersonalBank("global", bank);
+  }
+
+  function proponerEnBanco(tipo, texto, metadatos) {
+    const item = {
+      id: "prop_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8),
+      tipo: tipo,
+      texto: String(texto || "").trim(),
+      origen: "banco",
+      mercado: (metadatos && metadatos.mercado) || "global",
+      subniche: (metadatos && metadatos.subniche) || "comun",
+      motivo: (metadatos && metadatos.motivo) || "",
+      idea: (metadatos && metadatos.idea) || "",
+      tensiones: (metadatos && metadatos.tensiones) || [],
+      contextos: (metadatos && metadatos.contextos) || [],
+      riesgo_cliche: (metadatos && metadatos.riesgo_cliche) || "bajo",
+      estado: "pendiente",
+      creadaEn: new Date().toISOString()
+    };
+    const list = getPropuestasBanco();
+    list.push(item);
+    guardarPropuestasBanco(list);
+    return item;
+  }
+
+  function descartarPropuestaBanco(id) {
+    const list = getPropuestasBanco().filter(function (p) { return p.id !== id; });
+    guardarPropuestasBanco(list);
+    return { ok: true, restantes: list.length };
+  }
+
+  function aceptarPropuestaBanco(id) {
+    const list = getPropuestasBanco();
+    const item = list.filter(function (p) { return p.id === id; })[0];
+    if (!item) return { ok: false, error: "propuesta-no-encontrada" };
+    let res = { ok: false, error: "tipo-no-soportado" };
+    if (item.tipo === "concepto") {
+      res = addPersonalConcept(item.mercado, item.subniche, item.texto);
+    } else if (item.tipo === "frase" || item.tipo === "objeto") {
+      res = addPersonalObjects(item.mercado, item.subniche, [item.texto]);
+    }
+    const restantes = list.filter(function (p) { return p.id !== id; });
+    guardarPropuestasBanco(restantes);
+    return { ok: true, aceptada: true, res: res, restantes: restantes.length };
+  }
+
+  function proponerConceptoDesdeBanco(market, subniche) {
+    const conceptos = getPersonalConcepts(market, subniche).filter(Boolean);
+    if (!conceptos.length) return { ok: false, error: "sin-conceptos" };
+    const c = conceptos[Math.floor(Math.random() * conceptos.length)];
+    const texto = (c && typeof c === "object") ? String(c.motivo || c.idea_comunicada || c.idea || "") : String(c || "");
+    const metas = { mercado: market, subniche: subniche || "comun", motivo: texto, idea: (c && typeof c === "object") ? String(c.idea_comunicada || "") : "", tensiones: (c && typeof c === "object") ? (c.tensiones || []) : [], contextos: (c && typeof c === "object") ? (c.contextos || []) : [], riesgo_cliche: (c && typeof c === "object") ? (c.riesgo_cliche || "bajo") : "bajo" };
+    return proponerEnBanco("concepto", texto, metas);
+  }
+
+  function proponerObjetoDesdeBanco(market, subniche) {
+    const objs = getPersonalObjects(market, subniche).filter(Boolean);
+    if (!objs.length) return { ok: false, error: "sin-objetos" };
+    const o = objs[Math.floor(Math.random() * objs.length)];
+    const texto = String((o && typeof o === "object") ? (o.motivo || o.idea || o.texto || "") : o || "");
+    return proponerEnBanco("objeto", texto, { mercado: market, subniche: subniche || "comun", motivo: texto, idea: texto, riesgo_cliche: "bajo" });
+  }
+
+  function proponerFraseDesdeBanco(market, subniche) {
+    const frases = getPersonalPhrases(market, subniche).filter(Boolean);
+    if (!frases.length) return { ok: false, error: "sin-frases" };
+    const f = frases[Math.floor(Math.random() * frases.length)];
+    const texto = String((f && typeof f === "object") ? (f.motivo || f.idea || f.texto || f) : f || "");
+    return proponerEnBanco("frase", texto, { mercado: market, subniche: subniche || "comun", motivo: texto, idea: texto, riesgo_cliche: "bajo" });
+  }
+
+  /* ============================================================
      EXPOSICIÓN GLOBAL
      ============================================================ */
 
@@ -1078,6 +1501,9 @@
   window.getPersonalPhrases = getPersonalPhrases;
   window.addPersonalObjects = addPersonalObjects;
   window.removePersonalBank = removePersonalBank;
+  window.getPersonalConcepts = getPersonalConcepts;
+  window.useBankConcept = useBankConcept;
+  window.addPersonalConcept = addPersonalConcept;
 
   window.createPersonalBank = createPersonalBank;
   window.listPersonalBanks = listPersonalBanks;
@@ -1121,11 +1547,26 @@
 
   window.mergeArraysUnique = mergeArraysUnique;
   window.exportMemoryObject = exportMemoryObject;
-  window.exportMemoryJSON = exportMemoryJSON;
+  window.exportMemoryJSON = exportMemoryJSON;  window.normalizeGeneratedBankOutput = normalizeGeneratedBankOutput;
+  window.exportPersonalBanksObject = exportPersonalBanksObject;
+  window.exportPersonalBanksJSON = exportPersonalBanksJSON;
+  window.importPersonalBanksJSON = importPersonalBanksJSON;
   window.mergeMemoryObjects = mergeMemoryObjects;
   window.importMemoryJSON = importMemoryJSON;
   window.downloadMemoryFile = downloadMemoryFile;
   window.clearAllMemory = clearAllMemory;
 
   window.MEMORIA_LOCAL_VERSION = '1.0.0';
+  window.ENRICHED_BANK_FORMAT_VERSION = ENRICHED_BANK_FORMAT_VERSION;
+  window.validateEnrichedBankFormat = validateEnrichedBankFormat;
+  window.validateMotifRegistro = validateMotifRegistro;
+  window.mergeEnrichedBankData = mergeEnrichedBankData;
+  window.importarMotivosEnriquecidos = importarMotivosEnriquecidos;
+  window.getPropuestasBanco = getPropuestasBanco;
+  window.proponerEnBanco = proponerEnBanco;
+  window.descartarPropuestaBanco = descartarPropuestaBanco;
+  window.aceptarPropuestaBanco = aceptarPropuestaBanco;
+  window.proponerConceptoDesdeBanco = proponerConceptoDesdeBanco;
+  window.proponerObjetoDesdeBanco = proponerObjetoDesdeBanco;
+  window.proponerFraseDesdeBanco = proponerFraseDesdeBanco;
 })();

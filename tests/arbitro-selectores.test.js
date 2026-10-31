@@ -133,6 +133,9 @@ const motorSrc = fs.readFileSync(path.join(ROOT, 'js', 'motor-nucleo.js'), 'utf8
 ok(/function arbitroSelectores\(/.test(motorSrc), 'motor define arbitroSelectores');
 ok(/window\.arbitroSelectores = arbitroSelectores;/.test(motorSrc), 'motor expone arbitroSelectores');
 ok(motorSrc.indexOf('renderArbitro(result);') !== -1, 'crearLos3Disenos renderiza el árbitro');
+ok(/function verificarArbitro\(\) \{[\s\S]*?renderArbitro\(LAST_RESULT\);[\s\S]*?_estadoUnificado\(LAST_RESULT\)/.test(motorSrc), 'verificar de nuevo debe sincronizar el status con el veredicto unificado');
+ok(/const info = renderArbitro\(LAST_RESULT\);[\s\S]*?const v = _estadoUnificado\(LAST_RESULT\);/.test(motorSrc), 'verificar de nuevo debe leer el veredicto unificado despues del render');
+ok(/Falta: /.test(motorSrc), 'el arbitro debe mostrar el motivo del fallo con separador legible (Falta: <detalle>)');
 
 const analisisSrc = fs.readFileSync(path.join(ROOT, 'js', 'ia-analisis.js'), 'utf8');
 ok(/on\('btnArbitro', 'click'/.test(analisisSrc), 'ia-analisis cablea el botón del árbitro');

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constructor de Prompt IA — Bancos de Motivos — Taller POD</title>
+<link rel="icon" href="data:," />
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-2: #171a21;
+    --bg-3: #1f232c;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --text-dim: #9aa3b2;
+    --accent: #6ee7b7;
+    --accent-2: #60a5fa;
+    --danger: #f87171;
+    --warning: #fbbf24;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 0;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  h1 { margin: 0 0 6px; font-size: 1.6rem; }
+  h2 { margin: 0 0 12px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  h3 { margin: 0 0 8px; font-size: 0.95rem; color: var(--text-dim); }
+  .subtitle { color: var(--text-dim); margin: 0 0 24px; font-size: 0.9rem; }
+  .mode-indicator {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .mode-bancos { background: var(--accent-2); color: #0f1115; }
+  .panel {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  textarea { min-height: 90px; }
+  .field { margin-bottom: 14px; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  label .req { color: var(--danger); margin-left: 3px; }
+  label .opt { color: var(--text-dim); font-weight: 400; font-size: 0.78rem; margin-left: 6px; }
+  .hint { color: var(--text-dim); font-size: 0.8rem; margin-top: 6px; line-height: 1.45; }
+  .radio-group, .check-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-item, .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+  .radio-item:hover, .check-item:hover { border-color: var(--accent); }
+  .radio-item input, .check-item input { margin-top: 3px; accent-color: var(--accent); }
+  .radio-item .label-text, .check-item .label-text { flex: 1; }
+  .radio-item .label-text strong, .check-item .label-text strong { display: block; color: var(--text); }
+  .radio-item .label-text small, .check-item .label-text small { color: var(--text-dim); font-size: 0.82rem; }
+  .radio-item.selected { border-color: var(--accent); background: rgba(110, 231, 183, 0.05); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .chip {
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); color: #fff; }
+  button {
+    background: var(--accent);
+    color: #0f1115;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: transform 0.1s, opacity 0.15s;
+  }
+  button:hover { opacity: 0.9; }
+  button:active { transform: scale(0.98); }
+  button.secondary { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); }
+  button.danger { background: var(--danger); color: #fff; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .output-box {
+    background: #0a0c10;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 460px;
+    overflow-y: auto;
+    color: #d1d5db;
+  }
+  textarea.code { min-height: 340px; }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--accent);
+    color: #0f1115;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  @media (max-width: 600px) {
+    .container { padding: 12px; }
+    h1 { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<style>
+  .pod-nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:#0E1016;border-bottom:1px solid #2A2E38;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px}
+  .pod-nav .pod-nav-title{color:#8A90A0;margin-right:4px}
+  .pod-nav a{color:#B9C0CF;text-decoration:none;padding:6px 12px;border:1px solid #2A2E38;border-radius:6px;background:#161920}
+  .pod-nav a:hover{color:#fff;border-color:#5B8DEF}
+  .pod-nav a[aria-current="page"]{color:#fff;background:rgba(91,141,239,.16);border-color:#5B8DEF}
+</style>
+<nav class="pod-nav" aria-label="Herramientas POD">
+  <span class="pod-nav-title">Taller POD ·</span>
+  <a href="index.html">Taller</a>
+  <a href="editor-bancos.html">Editor de bancos</a>
+  <a href="motor-lenguajes-visuales.html">Motor de lenguajes</a>
+  <a href="sistema_matriz.html">Sistema matriz</a>
+  <a href="constructor-prompt.html">Constructor de Prompt</a>
+  <a href="constructor-prompt-ia.html" aria-current="page">Constructor de Prompt IA</a>
+</nav>
+
+<div class="container">
+
+  <h1>🧠 Constructor de Prompt IA <span id="modeBadge" class="mode-indicator mode-bancos">MODO BANCOS</span></h1>
+  <p class="subtitle">Completa el contexto del lote y el constructor arma el prompt limpio para tu IA. Formato de salida: <code>taller-pod-motif-candidates</code> (schemaVersion 1). Aquí no se gasta token: solo se arma texto.</p>
+
+  <!-- PANEL 1: CONTEXTO DEL LOTE -->
+  <div class="panel">
+    <h2>1. Contexto del lote de candidatos</h2>
+
+    <div class="grid">
+
+      <div class="field">
+        <label for="market">Mercado objetivo <span class="req">*</span></label>
+        <select id="market" data-req="1"></select>
+        <div class="hint">Mercado al que pertenecen los candidatos. Evita mezclar mercados en un mismo lote.</div>
+      </div>
+
+      <div class="field">
+        <label for="familia">Familia / estilo <span class="req">*</span></label>
+        <select id="familia" data-req="1"></select>
+        <div class="hint">Lenguaje visual del candidato. Ej: "Deportiva / Sports", "Minimal Modern", "Y2K / Cyber". Para estilos de producción (DTF/sublimación) usar el Motor de lenguajes.</div>
+      </div>
+
+      <div class="field">
+        <label for="subnicho">Subnicho / banco <span class="req">*</span></label>
+        <input type="text" id="subnicho" list="subnicheList" data-req="1" placeholder="Ej: deportiva_sports, humor_costeno, gospel_comun" />
+        <datalist id="subnicheList"></datalist>
+        <div class="hint">Cualquier subnicho es válido; si la familia ya es una familia con banco propio, usa su id (ej: deportiva_sports).</div>
+        <div class="chip-row" id="subnicheChips"></div>
+      </div>
+
+      <div class="field">
+        <label for="producto">Producto <span class="req">*</span></label>
+        <select id="producto" data-req="1"></select>
+        <div class="hint">Producto físico que se imprimirá. Define la zona de aplicación del candidato.</div>
+      </div>
+
+      <div class="field">
+        <label for="audiencia">Audiencia <span class="req">*</span></label>
+        <select id="audiencia" data-req="1"></select>
+        <div class="hint">Audiencia a la que va dirigido el candidato. Si se mezcla, el prompt debe separar audiencias.</div>
+      </div>
+
+      <div class="field">
+        <label>Tipo de propuesta <span class="req">*</span></label>
+        <div class="radio-group" id="tipoGroup">
+          <label class="radio-item selected" data-tipo="concepto">
+            <input type="radio" name="tipo" value="concepto" checked>
+            <div class="label-text"><strong>Concepto</strong><small>Idea central del diseño (1-2 líneas).</small></div>
+          </label>
+          <label class="radio-item" data-tipo="frase">
+            <input type="radio" name="tipo" value="frase">
+            <div class="label-text"><strong>Frase</strong><small>Eslogan / mensaje visible en la pieza.</small></div>
+          </label>
+          <label class="radio-item" data-tipo="objeto">
+            <input type="radio" name="tipo" value="objeto">
+            <div class="label-text"><strong>Objeto sugerido</strong><small>Metáfora visual: qué se dibuja y por qué no es literal.</small></div>
+          </label>
+          <label class="radio-item" data-tipo="copy">
+            <input type="radio" name="tipo" value="copy">
+            <div class="label-text"><strong>Copy completo</strong><small>Concepto + frase principal + apoyo + tono.</small></div>
+          </label>
+          <label class="radio-item" data-tipo="serie">
+            <input type="radio" name="tipo" value="serie">
+            <div class="label-text"><strong>Mini-serie</strong><small>Lote de candidatos para explorar la familia en varias direcciones.</small></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="idioma">Idioma del texto <span class="req">*</span></label>
+        <select id="idioma" data-req="1">
+          <option value="es" selected>Español</option>
+          <option value="en">English</option>
+          <option value="pt">Portugués</option>
+        </select>
+        <div class="hint">El JSON de salida incluye "idioma". El texto visible de las frases va en este idioma.</div>
+      </div>
+
+      <div class="field">
+        <label for="tono">Tono <span class="req">*</span></label>
+        <input type="text" id="tono" list="tonoList" data-req="1" placeholder="Ej: directo, cálido, atrevido, emocional" />
+        <datalist id="tonoList">
+          <option value="directo"></option>
+          <option value="cálido"></option>
+          <option value="atrevido"></option>
+          <option value="emocional"></option>
+          <option value="festivo"></option>
+          <option value="serio"></option>
+          <option value="motivacional"></option>
+          <option value="divertido"></option>
+        </datalist>
+        <div class="hint">Tono de la propuesta. Si el mercado lo pide, se combina con la audiencia.</div>
+      </div>
+
+    </div>
+
+    <div class="field" style="margin-top: 6px;">
+      <label for="contexto">Contexto / restricciones <span class="opt">(opcional)</span></label>
+      <textarea id="contexto" placeholder="Ej: producto para entrenamiento de crossfit; evitar clichés de "running"; foco en fuerza y resistencia."></textarea>
+    </div>
+  </div>
+
+  <!-- PANEL 2: PROMPT GENERADO -->
+  <div class="panel">
+    <h2>2. Prompt generado</h2>
+    <div class="actions">
+      <button id="btnCrear" type="button">⚡ Crear prompt</button>
+      <button id="btnCopiar" type="button" class="secondary">📋 Copiar</button>
+      <button id="btnLimpiar" type="button" class="danger">🗑️ Limpiar</button>
+    </div>
+    <textarea id="promptOut" class="output-box code" readonly placeholder="El prompt generado aparecerá aquí..."></textarea>
+    <div id="completitud" class="hint">Completo: 0/8 campos obligatorios.</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Listo</div>
+
+<script src="js/data-mercados.js"></script>
+<script src="js/data-audiencias.js"></script>
+<script src="js/data-bancos.js"></script>
+<script src="js/data-estilos.js"></script>
+<script>
+// ===== ESTADO Y CONSTANTES =====
+const REQUIRED_FIELDS = ['market', 'familia', 'subnicho', 'producto', 'audiencia', 'tipo', 'idioma', 'tono'];
+const FIELD_LABELS = {
+  market: 'Mercado objetivo',
+  familia: 'Familia / estilo',
+  subnicho: 'Subnicho / banco',
+  producto: 'Producto',
+  audiencia: 'Audiencia',
+  tipo: 'Tipo de propuesta',
+  idioma: 'Idioma',
+  tono: 'Tono'
+};
+const TAREAS = {
+  concepto: 'Proponer el/los concepto(s) central(es) del diseño con semántica coherente a la familia.',
+  frase: 'Proponer frases (eslogans, frases de identidad, mensajes) en el idioma indicado, con semántica coherente a la familia.',
+  objeto: 'Proponer objetos metafóricos visuales (qué elemento se dibuja y POR QUÉ no es literal) coherentes con la familia.',
+  copy: 'Proponer el copy completo de la pieza: concepto, frase principal, frase de apoyo y tono.',
+  serie: 'Proponer una mini-serie (lote) de candidatos para la familia, variando símbolo, composición, paleta y tono.'
+};
+
+const $ = id => document.getElementById(id);
+const marketEl = $('market');
+const familiaEl = $('familia');
+const subnichoEl = $('subnicho');
+const productoEl = $('producto');
+const audienciaEl = $('audiencia');
+const idiomaEl = $('idioma');
+const tonoEl = $('tono');
+const contextoEl = $('contexto');
+const promptOut = $('promptOut');
+const completitudEl = $('completitud');
+const toastEl = $('toast');
+
+// ===== TOAST =====
+function showToast(msg, isWarn) {
+  toastEl.textContent = msg;
+  toastEl.style.background = isWarn ? 'var(--warning)' : 'var(--accent)';
+  toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+
+// ===== OBTENER VALORES =====
+function val(el) { return (el && el.value ? String(el.value).trim() : ''); }
+function getValues() {
+  const tipoEl = document.querySelector('input[name="tipo"]:checked');
+  return {
+    mercado: val(marketEl),
+    familia: val(familiaEl),
+    subnicho: val(subnichoEl),
+    producto: val(productoEl),
+    audiencia: val(audienciaEl),
+    tipo: tipoEl ? tipoEl.value : '',
+    idioma: val(idiomaEl),
+    tono: val(tonoEl),
+    contexto: val(contextoEl)
+  };
+}
+function getMissing() {
+  const v = getValues();
+  const KEY_MAP = { market: 'mercado', familia: 'familia', subnicho: 'subnicho', producto: 'producto', audiencia: 'audiencia', tipo: 'tipo', idioma: 'idioma', tono: 'tono' };
+  return REQUIRED_FIELDS.filter(id => !v[KEY_MAP[id]]);
+}
+function markMissing(missing) {
+  REQUIRED_FIELDS.forEach(id => {
+    const el = { market: marketEl, familia: familiaEl, subnicho: subnichoEl, producto: productoEl, audiencia: audienciaEl, tipo: document.querySelector('input[name="tipo"]:checked'), idioma: idiomaEl, tono: tonoEl }[id];
+    if (!el) return;
+    if (missing.indexOf(id) !== -1) el.classList.add('invalid'); else el.classList.remove('invalid');
+  });
+}
+
+// ===== ARMAR PROMPT =====
+function buildPrompt(v) {
+  const familiaInfo = (window.ESTILO_INFO && window.ESTILO_INFO[v.familia]) ? window.ESTILO_INFO[v.familia] : 'estilo propio de la familia';
+  const idiomaLabel = v.idioma === 'en' ? 'Inglés' : (v.idioma === 'pt' ? 'Portugués' : 'Español');
+  const prompt = `================================================================
+PROMPT — CONSTRUCTOR IA · BANCOS DE MOTIVOS · SUBCONICO: ${v.subnicho || '[SUBNICHO]'}
+================================================================
+
+Contexto: Taller POD — Dirección de Arte Comercial. Acabo de crear la nueva
+familia de estilo "${v.familia}" (${familiaInfo}).
+
+Necesito: un lote de candidatos enriquecidos para esa familia en formato
+"taller-pod-motif-candidates" (schemaVersion 1).
+
+Tarea:
+1. ${TAREAS[v.tipo] || TAREAS.concepto}
+2. Por cada registro dar: id, motivo, idea_comunicada, tensiones[], contextos[],
+   justificacion, riesgo_clique/bajo.
+3. Respetar: sin fuga cross-market/nicho/domain; solo motivos activados; semántica
+   coherente; anti-repetición; coherencia con el estilo "${v.familia}".
+
+Formato de salida:
+{
+  "format": "taller-pod-motif-candidates",
+  "schemaVersion": 1,
+  "mercado": "${v.mercado}",
+  "familia": "${v.familia}",
+  "idioma": "${v.idioma}",
+  "registros": [ ... ]
+}
+
+INSTRUCCIONES FINALES:
+- Responde ÚNICAMENTE con el JSON válido del formato anterior. Sin texto antes ni después del JSON.
+- Si necesitas entregar varios lotes, entrega cada respuesta como un bloque JSON válido
+  separado por el delimitador exacto: ===LOTE===
+- Cada registro: id único en snake_case; motivo (palabra clave corta); idea_comunicada;
+  tensiones (array); contextos (array); justificacion; riesgo_clique (bajo|medio|alto).
+- El texto visible de las frases va en el idioma indicado: ${v.idioma} (${idiomaLabel}).
+- Tono de la propuesta: ${v.tono}.
+- Producto: ${v.producto || '[PRODUCTO]'}. Subnicho: ${v.subnicho || '[SUBNICHO]'}. Audiencia: ${v.audiencia || '[AUDIENCIA]'}.
+
+INSTRUCCIONES PARA INTEGRAR EN EL BANCOS:
+- Cuando la IA responda con varios lotes (varios bloques JSON separados por ===LOTE===),
+  cada bloque se valida e importa por separado en el Editor de Bancos
+  (formato taller-pod-motif-candidates: objetos con motivo/idea/tensiones/contextos/justificacion,
+  frases bajo "__phrase__<subnicho>").
+- Tras importar, los motivos quedan disponibles para generar sets con familia "${v.familia}".
+- El motor solo activa motivos aprobados; la validación local no consume tokens.
+
+${v.contexto ? `CONTEXTo DEL USUARIO / RESTRICCIONES:\n${v.contexto}\n` : 'CONTEXTO DEL USUARIO / RESTRICCIONES:\nNinguno indicado.\n'}
+================================================================
+PROMPT LISTO PARA COPIAR — BANCOS DE MOTIVOS
+================================================================
+`;
+  return prompt;
+}
+
+function renderPrompt() {
+  const v = getValues();
+  const missing = getMissing();
+  markMissing(missing);
+  const total = REQUIRED_FIELDS.length;
+  const missingCount = missing.length;
+  completitudEl.textContent = 'Completo: ' + (total - missingCount) + '/' + total + ' campos obligatorios.' + (missingCount ? ' Faltan: ' + missing.map(id => FIELD_LABELS[id]).join(', ') + '.' : '.');
+  completitudEl.className = 'hint' + (missingCount ? ' invalid-text' : '');
+  if (missingCount) {
+    promptOut.value = '';
+    return;
+  }
+  promptOut.value = buildPrompt(v);
+  return prompt;
+}
+
+// ===== ACCIONES =====
+$('btnCrear').addEventListener('click', () => {
+  const missing = getMissing();
+  if (missing.length) {
+    markMissing(missing);
+    showToast('Faltan campos obligatorios: ' + missing.map(id => FIELD_LABELS[id]).join(', '), true);
+    return;
+  }
+  const p = renderPrompt();
+  showToast('Prompt creado ✓');
+});
+
+$('btnCopiar').addEventListener('click', () => {
+  const text = promptOut.value;
+  if (!text) { showToast('Primero crea el prompt', true); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('Copiado ✓'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copiado ✓');
+  }
+});
+
+$('btnLimpiar').addEventListener('click', () => {
+  if (!confirm('¿Limpiar el constructor? Se borran los campos y el prompt generado.')) return;
+  ['market', 'familia', 'subnicho', 'producto', 'audiencia', 'idioma', 'tono'].forEach(id => {
+    const el = { market: marketEl, familia: familiaEl, subnicho: subnichoEl, producto: productoEl, audiencia: audienciaEl, idioma: idiomaEl, tono: tonoEl }[id];
+    if (el) el.value = '';
+  });
+  const tipoChecked = document.querySelector('input[name="tipo"]:checked');
+  if (tipoChecked) tipoChecked.checked = true;
+  if (contextoEl) contextoEl.value = '';
+  renderPrompt();
+  showToast('Constructor limpiado');
+});
+
+// ===== INICIALIZACIÓN DE SELECTS / RENDER =====
+function fillMarkets() {
+  if (!marketEl) return;
+  const markets = window.POD_MARKETS || {};
+  const order = window.POD_MARKET_ORDER || Object.keys(markets);
+  const keys = order.filter(k => markets[k]);
+  keys.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = markets[k].label || k;
+    marketEl.appendChild(opt);
+  });
+  if (!marketEl.value) marketEl.value = keys[0] || '';
+}
+
+function fillFamilias() {
+  if (!familiaEl) return;
+  const list = (window.ESTILOS_LIST || []).filter(s => (window.TRATAMIENTOS || []).indexOf(s) === -1);
+  familiaEl.innerHTML = '';
+  list.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    familiaEl.appendChild(opt);
+  });
+  if (!familiaEl.value) familiaEl.value = list[0] || '';
+}
+
+function fillSubniches(market) {
+  const datalist = document.getElementById('subnicheList');
+  const chipsWrap = document.getElementById('subnicheChips');
+  const mkt = market || (marketEl ? marketEl.value : 'global_es');
+  let subs = [];
+  if (typeof window.getSubnicheIdsForMarket === 'function') {
+    subs = window.getSubnicheIdsForMarket(mkt, 'evergreen', 'global').concat(window.getSubnicheIdsForMarket(mkt, 'temporada', 'global'));
+  }
+  if ((!subs || !subs.length) && window.POD_SUBNICHES) subs = Object.keys(window.POD_SUBNICHES);
+  if (datalist) {
+    datalist.innerHTML = '';
+    subs.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      datalist.appendChild(opt);
+    });
+  }
+  if (chipsWrap) {
+    chipsWrap.innerHTML = '';
+    const quick = ['deportiva_sports', 'humor_costeno', 'gospel_comun', 'fitness_crossfit', 'streetwear_urbano'];
+    quick.forEach(q => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.textContent = q;
+      b.addEventListener('click', () => { if (subnichoEl) subnichoEl.value = q; renderPrompt(); });
+      chipsWrap.appendChild(b);
+    });
+  }
+}
+
+function fillProductos() {
+  if (!productoEl) return;
+  const list = ['CAMISETA SOFT', 'CAMISETA APPAREL', 'HOODIE', 'GORRA', 'MUG', 'MOCHILA', 'TOTE BAG', 'FUNDA MÓVIL', 'ILUSTRACION PREMIUM APPAREL', 'DISPLATE'];
+  productoEl.innerHTML = '';
+  list.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    productoEl.appendChild(opt);
+  });
+  if (!productoEl.value) productoEl.value = 'CAMISETA SOFT';
+}
+
+function fillAudiencias(market) {
+  if (!audienciaEl) return;
+  const mkt = market || (marketEl ? marketEl.value : 'global_es');
+  let keys = [];
+  if (typeof window.getAudiencesForMarketRegion === 'function') {
+    const region = (mkt === 'colombia') ? 'todas' : 'global';
+    const list = window.getAudiencesForMarketRegion(mkt, region);
+    keys = (list || []).filter(k => window.AUD_PROFILES && window.AUD_PROFILES[k]).map(k => k);
+  }
+  if ((!keys || !keys.length) && window.AUD_PROFILES) keys = Object.keys(window.AUD_PROFILES);
+  audienciaEl.innerHTML = '';
+  keys.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = k;
+    audienciaEl.appendChild(opt);
+  });
+  const stillValid = Array.prototype.some.call(audienciaEl.options || [], function (o) { return o && o.value === audienciaEl.value; });
+  if (!audienciaEl.value || !stillValid) audienciaEl.value = keys[0] || '';
+}
+
+function fillIdioma(market) {
+  const mkt = market || (marketEl ? marketEl.value : 'global_es');
+  let lang = 'es';
+  if (window.POD_MARKETS && window.POD_MARKETS[mkt]) lang = window.POD_MARKETS[mkt].language || 'es';
+  const map = { es: 'es', en: 'en', pt: 'pt' };
+  if (idiomaEl) idiomaEl.value = map[lang] || 'es';
+}
+
+function init() {
+  const initMarket = marketEl ? marketEl.value : 'global_es';
+  fillMarkets();
+  fillFamilias();
+  fillSubniches(initMarket);
+  fillProductos();
+  fillAudiencias(initMarket);
+  fillIdioma(initMarket);
+  if (marketEl) {
+    marketEl.addEventListener('change', function () {
+      fillSubniches(this.value);
+      fillAudiencias(this.value);
+      fillIdioma(this.value);
+      renderPrompt();
+    });
+  }
+  // tipo default: concepto
+  const checked = document.querySelector('input[name="tipo"]:checked');
+  if (checked) checked.checked = true;
+  renderPrompt();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+<script src="js/pod-nav.js"></script>
+<script>try{if(window.PODNav){window.PODNav.prefill();}}catch(e){}</script>
+</body>
+</html>

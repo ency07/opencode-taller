@@ -762,6 +762,8 @@ function getObjectPool() {
     && !pool.length;
   const personalObjs = _getPersonalObjects(MOTOR_STATE.market, sub || 'auto');
   pool = pool.concat(personalObjs);
+  // Los bancos Gospel pueden especializarse por dominio además del subnicho general.
+  if (dom && dom !== sub) pool = pool.concat(_getPersonalObjects(MOTOR_STATE.market, dom));
   // Banco común solo como complemento normal; nunca como fallback de una familia
   // manual que no dispone de banco compatible en el mercado activo.
   if (!gospel && !explicitExploreFamilyMissingBank) pool = pool.concat(_commonBankForMarket());
@@ -781,14 +783,15 @@ function _resolveExplorationBrief() {
     if (!id || typeof getBankForSubniche !== 'function') return [];
     try {
       const bank = getBankForSubniche(id, MOTOR_STATE.region, MOTOR_STATE.market);
-      return Array.isArray(bank) ? bank.filter(function (x) { return typeof x === 'string' && x.trim(); }) : [];
+      const personal = _getPersonalObjects(MOTOR_STATE.market, id);
+      return [...new Set((Array.isArray(bank) ? bank : []).concat(personal || []).filter(function (x) { return typeof x === 'string' && x.trim(); }))];
     } catch (e) { return []; }
   }
   if (domain && isGospelMarket() && typeof getDominiosGospel === 'function') {
     try {
       const domains = getDominiosGospel(MOTOR_STATE.market) || {};
       if (domains[domain] && Array.isArray(domains[domain].objetos)) {
-        candidates = domains[domain].objetos.filter(Boolean);
+        candidates = [...new Set(domains[domain].objetos.filter(Boolean).concat(_getPersonalObjects(MOTOR_STATE.market, domain) || []))];
         if (candidates.length) { familyId = domain; selectedFrom = 'domain-bank'; }
       }
     } catch (e) {}
@@ -964,6 +967,12 @@ function _styleTreatmentDirective(styleValue, profileKey) {
   if (/kids|storybook|infantil|folk|hand-drawn|manuscrita|bordado|embroidery/.test(style)) {
     techniqueRules.push('Conserva el carácter expresivo o artesanal del estilo; el tratamiento cambia la arquitectura, no lo convierte en otro género visual.');
   }
+  if (key === 'SOFT' && /grunge|cross.?hatch|tattoo|distress|noise|rough|ink heavy|heavy ink/i.test(style)) {
+    techniqueRules.push('Prohibido: trama cruzada densa (crosshatch) o textura gruesa que tape el espacio negativo; el tratamiento SOFT exige formas abiertas, aire y contraste suficiente para leer símbolo y texto al imprimir.');
+  }
+  if (key === 'MODERN' && /floral|decor|ornament|noise|asimet|asymmetry/i.test(style)) {
+    techniqueRules.push('Prohibido: ornamento decorativo (p. ej. floral), ruido de fondo o asimetría decorativa; el tratamiento MODERN exige geometría limpia, bordes nítidos y síntesis controlada.');
+  }
   return (profileRules[key] || 'Respeta el lenguaje artístico elegido y evita instrucciones visuales contradictorias.')
     + ' Estilo artístico activo: «' + _getStyleBase(styleValue) + '». ' + techniqueRules.join(' ')
     + ' Si el estilo exige un recurso prohibido, redúcelo a acento controlado; no cambie el esqueleto.';
@@ -1071,13 +1080,23 @@ function _chooseConceptCompatibleObject(objectPool, concept) {
   if (!source) return '';
   const stop = new Set(['que','con','para','desde','hacia','sobre','entre','una','uno','unos','unas','los','las','el','la','de','del','en','por','como','sin','the','and','with','for','from','into','over','under','that','which','holding','sosteniendo','representa','lugares','turisticos','tourist','places','profundo','deep','my','a','an','of','to']);
   const tokens = [...new Set(source.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+  const conceptAxes = _semanticAxesFor(source, _CONCEPT_MOTIF_AXES, 'concept');
   const ranked = (Array.isArray(objectPool) ? objectPool : []).map(function (item) {
     const label = String(item || '').trim();
-    const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+    const view = (typeof _motifView === 'function') ? _motifView(item) : { label: label, texto: label, tensiones: [], contextos: [], riesgo: '', enriquecido: false };
+    const semText = String(view.texto || view.label || '').trim();
+    const words = [...new Set(normalize(semText).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
     const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
-  }).filter(function (x) { return x.score > 0; }).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
-  if (ranked.length && (!ranked[1] || ranked[0].score > ranked[1].score)) return ranked[0].label;
+    const motifAxes = _semanticAxesFor(semText, _MOTIF_VISUAL_AXES, 'motif');
+    const semanticMatches = motifAxes.filter(function (axis) { return conceptAxes.indexOf(axis) !== -1; });
+    /* Relación defendida: eje semántico compartido entre concepto y motivo, o
+       coincidencia sustancial (no una palabra aislada) del usuario con el objeto.
+       Nunca se elige un motivo por afinidad superficial de tokens sueltos. */
+    const defended = semanticMatches.length > 0 || overlap.length >= 2 || (overlap.length > 0 && tokens.length <= 2);
+    const score = semanticMatches.length * 100 + overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0);
+    return { label: label, score: score, matches: semanticMatches.length + overlap.length, defended: defended };
+  }).filter(function (x) { return x.defended; }).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
+  if (ranked.length) return ranked[0].label;
   return String(concept).trim();
 }
 
@@ -1101,9 +1120,41 @@ function _userNamedObject(text, pools) {
   return best;
 }
 
-/* Motivos de familia compatibles con el concepto, ordenados por afinidad
-   (mismo criterio de puntuación que _chooseConceptCompatibleObject, pero
-   devuelve la lista completa para repartirla entre las fichas de la serie). */
+/* Ejes editoriales explícitos para relacionar conceptos abstractos y motivos.
+   Son reglas mantenibles, no comprensión semántica libre ni coincidencia de palabras. */
+const _CONCEPT_MOTIF_AXES = [
+  { axis: 'sostener_bajo_presion', concept: /\b(debil|debilidad|fragil|vulnerab|agriet|quebrad|roto|presion|carga|suficient|bast|fuerza|fuerte|resist|firme|soport)\w*\b/ },
+  { axis: 'provision_y_cuidado', concept: /\b(gracia|amor|cuidado|provision|prove|suficient|bast|acompan|presencia|ampar|sostien)\w*\b/ },
+  { axis: 'confianza_y_perseverancia', concept: /\b(fe|confianza|confiar|esperanza|persever|fiel|constante|resist)\w*\b/ },
+  { axis: 'restauracion', concept: /\b(restaur|repar|renov|reconstru|san|nuevo|nueva|redim)\w*\b/ },
+  { axis: 'crecimiento_en_adversidad', concept: /\b(crec|florec|fruto|semilla|brot|vida|debil|debilidad|prueba|adversidad)\w*\b/ },
+  { axis: 'luz_y_presencia', concept: /\b(presencia|acompan|luz|guia|esperanza|noche|oscuridad|tiniebla)\w*\b/ }
+];
+const _MOTIF_VISUAL_AXES = [
+  { axis: 'sostener_bajo_presion', motif: /\b(puente|raiz|cimiento|columna|roca|ancla|red|vasija|barro|olla|recipiente|muro|pilar|viga|nudo|cuerda|techo|puerta)\w*\b/ },
+  { axis: 'provision_y_cuidado', motif: /\b(vasija|aceite|pan|mesa|manto|manta|refugio|nido|copa|agua|fuente|casa|cuidado|abrigo|carga)\w*\b/ },
+  { axis: 'confianza_y_perseverancia', motif: /\b(ancla|red|puente|caminante|paso|huella|roca|brasa|luz|lampara|faro|semilla|raiz)\w*\b/ },
+  { axis: 'restauracion', motif: /\b(repar|remiend|injert|restaur|reconstru|puente|vasija|barro|costura|tejido|madero|lienzo|fragment)\w*\b/ },
+  { axis: 'crecimiento_en_adversidad', motif: /\b(semilla|brote|raiz|arbol|trigo|fruto|flor|planta|concreto|ruina|tierra|tormenta)\w*\b/ },
+  { axis: 'luz_y_presencia', motif: /\b(luz|lampara|vela|brasa|faro|amanecer|ventana|lucerna|estrella)\w*\b/ }
+];
+function _semanticAxesFor(text, rules, field) {
+  const source = (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(text || '')) : String(text || '').toLowerCase());
+  return rules.filter(function (rule) { return rule[field].test(source); }).map(function (rule) { return rule.axis; });
+}
+
+/* Los ejes semánticos pesan primero; las palabras exactas solo ayudan cuando
+   el concepto no tiene todavía una lectura editorial catalogada. */
+  function _motifView(item) {
+    if (item && typeof item === 'object') {
+      const motivo = String(item.motivo || '').trim();
+      const idea = String(item.idea_comunicada || item.idea || '').trim();
+      const texto = String(idea || motivo || '').trim();
+      return { label: motivo || texto, texto: texto, tensiones: Array.isArray(item.tensiones) ? item.tensiones : [], contextos: Array.isArray(item.contextos) ? item.contextos : [], riesgo: String(item.riesgo_cliche || '').trim(), enriquecido: true };
+    }
+    const label = String(item || '').trim();
+    return { label: label, texto: label, tensiones: [], contextos: [], riesgo: '', enriquecido: false };
+  }
 function _rankCompatibleMotifs(pools, concept) {
   const normalize = function (value) {
     return (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(value || '')) : String(value || '').toLowerCase())
@@ -1111,18 +1162,29 @@ function _rankCompatibleMotifs(pools, concept) {
   };
   const source = normalize(concept);
   if (!source) return [];
+  const conceptAxes = _semanticAxesFor(source, _CONCEPT_MOTIF_AXES, 'concept');
   const stop = new Set(['que','con','para','desde','hacia','sobre','entre','una','uno','unos','unas','los','las','el','la','de','del','en','por','como','sin','the','and','with','for','from','into','over','under','that','which','holding','sosteniendo','representa','lugares','turisticos','tourist','places','profundo','deep','my','a','an','of','to']);
   const tokens = [...new Set(source.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
   const ranked = (Array.isArray(pools) ? pools : []).map(function (item) {
-    const label = String(item || '').trim();
-    const words = [...new Set(normalize(label).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+    const view = typeof _motifView === 'function' ? _motifView(item) : { label: String(item || '').trim(), texto: String(item || '').trim(), tensiones: [], contextos: [], riesgo: '', enriquecido: false };
+    const label = String(view.label || '').trim();
+    const semText = String(view.texto || view.label || '').trim();
+    const words = [...new Set(normalize(semText).split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
     const overlap = words.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    if (!overlap.length) return null;
-    return { label: label, score: overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0), matches: overlap.length };
+    const motifAxes = _semanticAxesFor(semText, _MOTIF_VISUAL_AXES, 'motif');
+    const semanticMatches = motifAxes.filter(function (axis) { return conceptAxes.indexOf(axis) !== -1; });
+    /* Relación defendida: eje semántico compartido entre concepto y motivo, o
+       coincidencia sustancial del vocabulario (nunca una palabra aislada). En
+       conceptos compuestos (escenas o relaciones) se admite solapamiento con la
+       idea que el motivo representa, sin sustituir la escena por una anécdota. */
+    if (conceptAxes.length && !semanticMatches.length) return null;
+    if (!overlap.length && !semanticMatches.length) return null;
+    if (!semanticMatches.length && overlap.length < 2 && tokens.length < 3) return null;
+    const lexicalScore = overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0);
+    return { label: label, score: semanticMatches.length * 100 + lexicalScore, matches: semanticMatches.length + overlap.length };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
   return ranked.map(function (r) { return r.label; });
 }
-
 /* Concepto textual: referencia de versículo o cita numerada («jeremias 3. 33»,
    «salmo 23», «1 corintios 13, 4»). Nunca coincide por palabras con los motivos
    de un banco y no debe declararse incompatible ni recibir un motivo al azar. */
@@ -1156,40 +1218,65 @@ function _motifSceneFromMessage(concept, message) {
    4. Sin compatible → preservar el objeto que el usuario nombró; y solo si no
        existe, UN conflicto para toda la serie con un motivo provisional.
    La ficha SOLO_TEXTO no dibuja el ancla, pero la conserva como identidad. */
-function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
-  const inBank = anchor && Array.isArray(familyObjs) && familyObjs.indexOf(anchor) !== -1;
-  if (inBank) {
-    return { list: [anchor], anchor: anchor, conflict: '' };
+  function _personalMotifCandidates(market, subniche) {
+    const out = [];
+    const sources = [];
+    try {
+      const concepts = (typeof getPersonalConcepts === 'function') ? getPersonalConcepts(market, subniche) : [];
+      (Array.isArray(concepts) ? concepts : []).forEach(function (c) { sources.push(c); });
+    } catch (e) { return out; }
+    sources.forEach(function (c) {
+      if (!c) return;
+      const obj = (typeof c === 'object') ? c : null;
+      const motivo = String((obj ? (obj.motivo || obj.idea_comunicada || obj.idea || obj.texto) : c) || '').trim();
+      if (!motivo) return;
+      out.push({
+        id: obj ? String(obj.id || '') : '',
+        motivo: motivo,
+        idea: String((obj ? (obj.idea_comunicada || obj.idea) : motivo) || motivo).trim(),
+        tensiones: (obj && Array.isArray(obj.tensiones)) ? obj.tensiones : [],
+        contextos: (obj && Array.isArray(obj.contextos)) ? obj.contextos : [],
+        riesgo: String((obj ? obj.riesgo_cliche : '') || '').trim(),
+        origen: 'banco-personal'
+      });
+    });
+    return out;
   }
-  const compatibles = _rankCompatibleMotifs(familyObjs, anchor || userConcept || '');
-  if (compatibles.length) return { list: compatibles, anchor: compatibles[0], conflict: '' };
+function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
+  const views = (Array.isArray(familyObjs) ? familyObjs : []).map(function (item) { return (typeof _motifView === 'function') ? _motifView(item) : { label: String(item || '').trim(), texto: String(item || '').trim(), tensiones: [], contextos: [], riesgo: '', enriquecido: false }; });
+  const inBankHit = anchor ? views.filter(function (v) { return String(v.label || '') === String(anchor || ''); })[0] : null;
+  const inBank = !!inBankHit;
+  if (inBank) return { list: [inBankHit.label], anchor: inBankHit.label, conflict: '' };
+
+  const sourceConcept = String(anchor || userConcept || '').trim();
+  const compatible = _rankCompatibleMotifs(familyObjs, sourceConcept);
+  if (compatible.length) return { list: compatible, anchor: compatible[0], conflict: '' };
+
   const userObj = (typeof _userNamedObject === 'function')
     ? _userNamedObject((userConcept || '') + ' ' + (userMessage || ''), objectPool)
     : '';
   if (userObj) return { list: [userObj], anchor: userObj, conflict: '' };
-  const messageMotifs = (userMessage || '').trim()
+
+  const messageMotifs = String(userMessage || '').trim()
     ? _rankCompatibleMotifs(familyObjs, userMessage)
     : [];
   if (messageMotifs.length) return { list: messageMotifs, anchor: messageMotifs[0], conflict: '' };
-  const conceptText = String(anchor || userConcept || '').trim();
+
+  const conceptText = sourceConcept || String(userMessage || '').trim();
   if (typeof _isVerseReference === 'function' && _isVerseReference(conceptText)) {
-    return {
-      list: [(typeof _motifSceneFromMessage === 'function')
-        ? _motifSceneFromMessage(conceptText, userMessage)
-        : conceptText],
-      anchor: conceptText,
-      conflict: ''
-    };
+    return { list: [_motifSceneFromMessage(conceptText, userMessage)], anchor: conceptText, conflict: '' };
   }
-  const fallback = (typeof _pick === 'function') ? _pick(familyObjs) : '';
-  if (!fallback) return { list: [], anchor: anchor, conflict: '' };
+
+  // Sin relación defendible no se sortea un objeto del banco. Se entrega una
+  // instrucción de interpretación semántica y se deja constancia del límite.
+  const derived = conceptText ? _motifSceneFromMessage(conceptText, userMessage) : '';
+  if (!derived) return { list: [], anchor: '', conflict: 'Escribe un concepto o mensaje antes de elegir un motivo.' };
   return {
-    list: [fallback],
-    anchor: fallback,
-    conflict: 'el concepto «' + (anchor || userConcept || '') + '» no encaja con ningún motivo de la familia; se usó «' + fallback + '» como motivo provisional de la serie.'
+    list: [derived],
+    anchor: conceptText,
+    conflict: 'No hay un motivo del banco con relación semántica suficiente con «' + conceptText + '». Deriva una metáfora visual desde el concepto y el mensaje; no los ilustres palabra por palabra ni añadas objetos arbitrarios.'
   };
 }
-
 function _resolveContactIdentity(objectPool) {
   const concept = String(MOTOR_STATE.concept || '').trim();
   const message = String(MOTOR_STATE.message || '').trim();
@@ -1399,6 +1486,9 @@ function _integracionCompatible(layout, integracion) {
 
 function buildCandidate(audsPerKey, fixedIdentity) {
   const estilos = resolveEstilos(audsPerKey);
+  // Pool de estilos realmente disponible para este contexto: con él se decide si
+  // la preferencia de estilo de una audiencia es alcanzable (fit) o imposible.
+  const _stylePoolFree = _styleCandidatesForContext();
   const objectPool = getObjectPool();
   const isVar = MOTOR_STATE.workflowMode === 'variation';
   const conservarSimb = isVar && !!MOTOR_STATE.imageReference && MOTOR_STATE.variationOptions.simbolo !== 'sustituir';
@@ -1441,7 +1531,9 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     const userConceptPlan = String(MOTOR_STATE.concept || '').trim();
     const anchorPlan = String(userConceptPlan || briefPlan.concept || '').trim();
     const commonBankPlan = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
-    const familyPlan = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBankPlan.indexOf(ob) === -1; });
+    const familyPlanRaw = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return commonBankPlan.indexOf(ob) === -1; });
+    const personalMotivos = (typeof _personalMotifCandidates === 'function') ? _personalMotifCandidates(MOTOR_STATE.market, briefPlan.familyId || MOTOR_STATE.subniche || 'auto') : [];
+    const familyPlan = personalMotivos.length ? personalMotivos.concat(familyPlanRaw) : familyPlanRaw;
     if (familyPlan.length) {
       setMotifPlan = (typeof _planExploreMotifs === 'function')
         ? _planExploreMotifs(familyPlan, objectPool, anchorPlan, userConceptPlan, String(MOTOR_STATE.message || ''))
@@ -1697,22 +1789,42 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       v._esquema = bestEsq;
     }
 
-    // Pertinencia medida con preferencias declaradas de audiencia y producto.
+    /* Pertinencia medida con preferencias declaradas de audiencia y producto.
+       Solo puntúa ejes LIBRES: si ninguna opción admisible puede cumplir la
+       preferencia (intersección vacía entre el pool realmente disponible y la
+       preferencia) o el valor lo impone el contrato de la serie (tratamiento
+       fijo A/B/C, densidad única del perfil), el eje se omite en vez de sumar
+       un fallo inevitable: el umbral mide decisiones del motor, no condiciones
+       impuestas. Los ejes alcanzables siguen contando con todo su peso. */
+    const perfilKeyFree = String(v.perfilEstructural || '').toUpperCase();
+    const perfilFijo = !!(contactIdentity || MOTOR_STATE.workflowMode === 'explore' || MOTOR_STATE.workflowMode === 'variation');
+    const perfilSpec = _STRUCTURAL_PROFILES[perfilKeyFree] || {};
+    const layoutPoolFree = perfilFijo
+      ? (function () {
+          const allowed = allowedPool || (_LAYOUTS || []).slice();
+          const pool = allowed.filter(function (x) {
+            return (perfilSpec.layout || []).some(function (h) { return String(x).indexOf(h) === 0; });
+          });
+          return pool.length ? pool : allowed;
+        })()
+      : (allowedPool || (_LAYOUTS || []));
+    const tipoPoolFree = perfilFijo
+      ? (_TIPOS || []).filter(function (x) {
+          return (perfilSpec.type || []).some(function (h) { return String(x).indexOf(h) === 0; });
+        })
+      : (_TIPOS || []);
+    const formaPoolFree = perfilFijo ? _profileCandidates(_FORMAS, perfilSpec.form, _FORMAS) : (_FORMAS || []);
+    const densPoolFree = perfilFijo
+      ? (perfilSpec.density || []).filter(function (d) { return (_POOLS.densidad || []).indexOf(d) !== -1; })
+      : densityPool;
+    const jerPoolFree = perfilFijo
+      ? (PROFILE_VISUAL_MODES[perfilKeyFree] || [])
+      : ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
+
     const audStylePref = (typeof AUD_STYLE_PREF !== 'undefined' ? AUD_STYLE_PREF[v.audiencia] : []) || [];
     const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[v.audiencia] : []) || [];
     const audDensity = (typeof AUD_DENSITY_PREF !== 'undefined' ? AUD_DENSITY_PREF[v.audiencia] : []) || [];
     const audChecks = [];
-    // AUD_STYLE_PREF contiene etiquetas visibles (p. ej. "Y2K / Cyber"), mientras
-    // styleBase es una clave interna normalizada. Comparar ambos contra la etiqueta
-    // visible evita penalizar una dirección que sí pertenece al perfil.
-    if (audStylePref.length) {
-      const visibleStyle = String(v.estilo || '').trim().toLowerCase();
-      const normalizedStyle = String(styleBase || '').trim().toLowerCase();
-      audChecks.push(audStylePref.some(function (x) {
-        const pref = String(x || '').trim().toLowerCase();
-        return pref === visibleStyle || pref === normalizedStyle;
-      }));
-    }
     // Las fichas contienen descripciones extendidas; evaluar coincidencia textual
     // normalizada evita que una preferencia válida falle por incluir atributos extra.
     const matchesPreference = function (actual, preferences) {
@@ -1722,28 +1834,69 @@ function buildCandidate(audsPerKey, fixedIdentity) {
         return !!preferred && (value === preferred || value.indexOf(preferred) !== -1 || preferred.indexOf(value) !== -1);
       });
     };
-    if (audProfile.tipoPref.length) audChecks.push(matchesPreference(v.tipografia, audProfile.tipoPref));
-    if (audProfile.formaPref.length) audChecks.push(matchesPreference(v.formaSimbolo, audProfile.formaPref));
-    // En exploración, HEAVY/SOFT/MODERN son una restricción del producto creativo.
-    // No penalizar la audiencia por no preferir las tres direcciones obligatorias.
-    if (audProfile.tratPref.length && MOTOR_STATE.workflowMode !== 'explore') {
+    // AUD_STYLE_PREF contiene etiquetas visibles (p. ej. "Y2K / Cyber"), mientras
+    // styleBase es una clave interna normalizada. Comparar ambos contra la etiqueta
+    // visible evita penalizar una dirección que sí pertenece al perfil.
+    const estiloAlcanzable = audStylePref.some(function (x) {
+      const pref = String(x || '').trim().toLowerCase();
+      return _stylePoolFree.some(function (s) {
+        return pref === String(_getStyleBase(s)).trim().toLowerCase();
+      });
+    });
+    if (audStylePref.length && estiloAlcanzable) {
+      const visibleStyle = String(v.estilo || '').trim().toLowerCase();
+      const normalizedStyle = String(styleBase || '').trim().toLowerCase();
+      audChecks.push(audStylePref.some(function (x) {
+        const pref = String(x || '').trim().toLowerCase();
+        return pref === visibleStyle || pref === normalizedStyle;
+      }));
+    }
+    if (audProfile.tipoPref.length && tipoPoolFree.some(function (x) { return matchesPreference(x, audProfile.tipoPref); })) {
+      audChecks.push(matchesPreference(v.tipografia, audProfile.tipoPref));
+    }
+    if (audProfile.formaPref.length && formaPoolFree.some(function (x) { return matchesPreference(x, audProfile.formaPref); })) {
+      audChecks.push(matchesPreference(v.formaSimbolo, audProfile.formaPref));
+    }
+    // El tratamiento lo fija el contrato de la serie (01A HEAVY → 01B SOFT →
+    // 01C MODERN): no es una elección que la audiencia pueda o no preferir.
+    if (audProfile.tratPref.length && !perfilFijo) {
       audChecks.push(audProfile.tratPref.some(function (x) { return String(v.tratamiento).startsWith(x); }));
     }
-    if (audProfile.layoutPref.length) audChecks.push(audProfile.layoutPref.some(function (x) { return String(v.layout).startsWith(x); }));
-    if (audHierarchy.length) audChecks.push(audHierarchy.indexOf(v.jerarquiaVisual) !== -1);
-    if (audDensity.length) audChecks.push(audDensity.indexOf(v.densidad) !== -1);
+    if (audProfile.layoutPref.length && layoutPoolFree.some(function (x) {
+      return audProfile.layoutPref.some(function (h) { return String(x).indexOf(h) === 0; });
+    })) {
+      audChecks.push(audProfile.layoutPref.some(function (x) { return String(v.layout).startsWith(x); }));
+    }
+    if (audHierarchy.length && jerPoolFree.some(function (m) { return audHierarchy.indexOf(m) !== -1; })) {
+      audChecks.push(audHierarchy.indexOf(v.jerarquiaVisual) !== -1);
+    }
+    if (audDensity.length && densPoolFree.some(function (d) { return audDensity.indexOf(d) !== -1; })) {
+      audChecks.push(audDensity.indexOf(v.densidad) !== -1);
+    }
     const modeMatch = String(v.paleta).match(/\(modo:\s*([^)]+)\)/);
     const preferredModes = audProfile.modoCol || [];
-    if (preferredModes.length) audChecks.push(!!modeMatch && preferredModes.indexOf(modeMatch[1]) !== -1);
+    if (preferredModes.length && _COLOR_MODES.some(function (m) { return preferredModes.indexOf(m) !== -1; })) {
+      audChecks.push(!!modeMatch && preferredModes.indexOf(modeMatch[1]) !== -1);
+    }
     v.fitAudiencia = audChecks.length
       ? Math.round(100 * audChecks.filter(Boolean).length / audChecks.length)
       : 0;
 
     const productChecks = [];
-    if ((productBias.layout || []).length) productChecks.push(productBias.layout.some(function (x) { return String(v.layout).startsWith(x); }));
-    if ((productBias.trat || []).length) productChecks.push(productBias.trat.some(function (x) { return String(v.tratamiento).startsWith(x); }));
-    if ((productBias.density || []).length) productChecks.push(productBias.density.indexOf(v.densidad) !== -1);
-    if ((productBias.hierarchy || []).length) productChecks.push(productBias.hierarchy.indexOf(v.jerarquiaVisual) !== -1);
+    if ((productBias.layout || []).length && layoutPoolFree.some(function (x) {
+      return productBias.layout.some(function (h) { return String(x).indexOf(h) === 0; });
+    })) {
+      productChecks.push(productBias.layout.some(function (x) { return String(v.layout).startsWith(x); }));
+    }
+    if ((productBias.trat || []).length && !perfilFijo) {
+      productChecks.push(productBias.trat.some(function (x) { return String(v.tratamiento).startsWith(x); }));
+    }
+    if ((productBias.density || []).length && densPoolFree.some(function (d) { return productBias.density.indexOf(d) !== -1; })) {
+      productChecks.push(productBias.density.indexOf(v.densidad) !== -1);
+    }
+    if ((productBias.hierarchy || []).length && jerPoolFree.some(function (m) { return productBias.hierarchy.indexOf(m) !== -1; })) {
+      productChecks.push(productBias.hierarchy.indexOf(v.jerarquiaVisual) !== -1);
+    }
     v.fitProducto = productChecks.length
       ? Math.round(100 * productChecks.filter(Boolean).length / productChecks.length)
       : 0;
@@ -1962,12 +2115,20 @@ function memPatternMarket() {
    repetición no servía de nada). Ahora es condición de aceptación y solo se
    evalúa cuando el resto de controles ya pasó. */
 function _patternConflictsOf(cand) {
+  // El tratamiento es contrato fijo de la serie (01A HEAVY → 01B SOFT →
+  // 01C MODERN): se repite en todos los sets, no distingue una repetición real
+  // y agota la tolerancia del recuento. Solo entra a la firma cuando esta serie
+  // NO lo tiene fijo y por tanto el eje sí decide algo.
+  const fixedOrder = ['HEAVY', 'SOFT', 'MODERN'];
+  const tratFijo = K.every(function (k, i) {
+    return _treatmentKey(cand[k].tratamiento) === fixedOrder[i];
+  });
   let bad = 0;
   K.forEach(function (k) {
     const pattern = {
       estilo: _getStyleBase(cand[k].estilo),
       formaSimbolo: cand[k].formaSimbolo,
-      tratamiento: String(cand[k].tratamiento).split(':')[0].trim(),
+      tratamiento: tratFijo ? '' : String(cand[k].tratamiento).split(':')[0].trim(),
       layout: String(cand[k].layout).split(':')[0].trim(),
       familiaColor: cand[k].familiaColor
     };
@@ -1975,6 +2136,71 @@ function _patternConflictsOf(cand) {
     if (!c || !c.ok) bad++;
   });
   return bad;
+}
+
+/* --- Auditoría de cambios de color (rastro IA) ---
+   Tras un análisis con visión, la asignación de paleta/familia de color que
+   realiza el motor al generar (o el reroll de una ficha) ES un cambio hecho por
+   la IA. Se registra comparando el color anterior con el nuevo y se expone en
+   la interfaz: QUÉ cambió (eje + valores) y EN DÓNDE (ficha). */
+var colorAuditLog = [];
+function getColorAudit() { return colorAuditLog.slice(); }
+function clearColorAudit() { colorAuditLog = []; renderColorAudit(); }
+function auditFichaColors(beforeFicha, afterFicha, ficha) {
+  const out = [];
+  if (!beforeFicha || !afterFicha) return out;
+  const antesFam = String(beforeFicha.familiaColor || '');
+  const despuesFam = String(afterFicha.familiaColor || '');
+  if (despuesFam !== antesFam) {
+    out.push({ ficha: ficha, eje: 'familiaColor', antes: antesFam || '(sin asignar)', despues: despuesFam || '(sin asignar)' });
+  }
+  const antesPal = String(beforeFicha.paleta || '');
+  const despuesPal = String(afterFicha.paleta || '');
+  if (despuesPal !== antesPal) {
+    out.push({ ficha: ficha, eje: 'paleta', antes: antesPal || '(sin asignar)', despues: despuesPal || '(sin asignar)' });
+  }
+  return out;
+}
+function auditSetColors(beforeSet, afterSet) {
+  var out = [];
+  if (!beforeSet || !afterSet) return out;
+  K.forEach(function (k, i) { out = out.concat(auditFichaColors(beforeSet[k], afterSet[k], N[i])); });
+  return out;
+}
+function recordColorAudit(changes) {
+  if (!Array.isArray(changes) || !changes.length) return;
+  colorAuditLog = colorAuditLog.concat(changes).slice(-8);
+  renderColorAudit();
+}
+function formatColorAuditEntry(e) {
+  if (!e) return '';
+  const eje = (e.eje === 'familiaColor') ? 'familia de color' : 'paleta';
+  const short = function (v) { const s = String(v || ''); return s.length > 64 ? s.slice(0, 64) + '...' : s; };
+  const antes = short(e.antes);
+  const despues = short(e.despues);
+  return e.ficha + ' · ' + eje + ': ' + (e.antes || '—') + ' → ' + (e.despues || '—');
+}
+function renderColorAudit() {
+  const el = (typeof document !== 'undefined') ? document.getElementById('colorAudit') : null;
+  if (!el) return;
+  const entries = colorAuditLog.slice(-5);
+  if (!entries.length) {
+    try { el.style.display = 'none'; el.textContent = ''; } catch (e2) { /* sin estilo */ }
+    return;
+  }
+  try { el.style.display = 'block'; } catch (e2) { /* sin estilo */ }
+  // Lista por ficha (regla UX POD): cada cambio en su propio ítem legible,
+  // no un párrafo corrido concatenado.
+  let html = '<div class="ca-list">';
+  entries.forEach(function (e) {
+    html += '<div class="ca-item">';
+    html += '<span class="ca-ficha">' + escHtml(e.ficha) + '</span>';
+    html += '<span class="ca-eje">' + ((e.eje === 'familiaColor') ? 'familia de color' : 'paleta') + ':</span> ';
+    html += escHtml(e.antes || '—') + ' → ' + escHtml(e.despues || '—');
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
 }
 
 function generateSet() {
@@ -1993,7 +2219,15 @@ function generateSet() {
   let best = null, bestScore = null, bestTotal = -1e9;          // mejor de todos (fallback)
   let bestOk = null, bestOkScore = null, bestOkTotal = -1e9;    // mejor que pasa TODOS los controles
 
+  // El nonce estable hace determinista el pick de estilos: sin variarlo, cada
+  // pulsación de «Crear los 3 diseños» reproduciría la misma dirección de estilo
+  // y chocaría contra la memoria de patrones que grabó la generación anterior
+  // (gate imposible tras el primer set). Cada intento usa un nonce distinto; al
+  // terminar, el base avanza 1 como hace rerollSingle para que dos generaciones
+  // consecutivas no repitan tampoco los ejes deterministas (texto, tipografía).
+  const rerollNonceBase = Number(MOTOR_STATE._rerollNonce) || 0;
   for (let i = 0; i < 3000; i++) {
+    MOTOR_STATE._rerollNonce = rerollNonceBase + i;
     const cand = buildCandidate(audsPerKey, fixedIdentity);
     const ev = evaluaSetOk(cand);
     const m = ev.score;
@@ -2004,6 +2238,9 @@ function generateSet() {
     if (m.total > bestTotal) { bestTotal = m.total; best = cand; bestScore = m; }
     if (ok && m.total > bestOkTotal) { bestOkTotal = m.total; bestOk = cand; bestOkScore = m; }
   }
+  // El base avanza 1 tras la selección: la próxima generación empieza en un nonce
+  // nuevo y no repite la misma secuencia de direcciones.
+  MOTOR_STATE._rerollNonce = rerollNonceBase + 1;
 
   let passed = !!bestOk;
   if (bestOk) { best = bestOk; bestScore = bestOkScore; }
@@ -2045,9 +2282,14 @@ function generateSet() {
   const usedObjs = K.filter(function (k) { return best[k].jerarquiaVisual !== 'SOLO_TEXTO'; }).map(function (k) { return best[k].objeto; });
   _addUsedObjects(historyKey, usedObjs);
 
+  const prevColorAuditSet = (LAST_RESULT && LAST_RESULT.set) ? LAST_RESULT.set : null;
   LAST_RESULT = { set: best, score: bestScore, passed: passed, explorationBrief: MOTOR_STATE.explorationBrief, objectConflicts: (best && best.objectConflicts) || [] };
   try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
   try { window.V = best; } catch (e) {} // Puente para el revisor IA (ia-revisor.js lee window.V con fichas A/B/C).
+  try {
+    const colorChanges = auditSetColors(prevColorAuditSet, best);
+    if (colorChanges.length) recordColorAudit(colorChanges);
+  } catch (e) { /* auditoría no bloquea la generación */ }
   return LAST_RESULT;
 }
 
@@ -2320,7 +2562,8 @@ function formatPrompt(result) {
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
     o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || sharedExploreCopy || 'propón copy breve') + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
-    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
+    o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. La relación del motivo con la idea debe poder explicarse; usa metáforas visuales, no una traducción palabra por palabra. Si el banco no ofrece un motivo compatible, deriva una propuesta desde concepto y mensaje y señala la incertidumbre. ';
+    o += 'Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
   } else {
     o += '/CONTACTSHEET — 3 DIRECCIONES · MISMO CONCEPTO · NADA CLONADO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + ' | SERIE: ' + (MOTOR_STATE.serie || '—') + '\n';
@@ -2436,7 +2679,7 @@ function formatPrompt(result) {
     if (isPatron && tplActive.imagen) o += 'REFERENCIA DE PLANTILLA: el archivo guardado en el editor no esta incluido en este texto. Adjuntalo manualmente al chat de la IA de imagen para que pueda usarlo.\n';
   }
   if (MOTOR_STATE.market === 'gospel_es' || MOTOR_STATE.market === 'gospel_en') {
-    o += 'DOCTRINA: Trinitario (Padre, Hijo, Espiritu Santo) y cristocentrico. Cruz y resurreccion al centro. PROHIBIDO prosperidad magica, decretos, angeles como centro, santos mediadores, esoterismo, horoscopo, energia. Sin region: universal.\n';
+    o += 'DOCTRINA: Trinitario (Padre, Hijo, Espiritu Santo) y cristocentrico. Cruz y resurreccion al centro. PROHIBIDO prosperidad magica, decretos, angeles como centro, santos mediadores, esoterismo, horoscopo, energia. Sin region: universal. OBLIGATORIA (Regla de los 3 segundos / Identidad Cristiana Inmediata): cada diseno debe ser reconocible como cristiano en 3 segundos o menos, sin usar cliches literales; usar obligatoriamente una de las tres vias: 1) Lexico teorico pesado (Gracia, Redencion, Shalom, Trono, Rescate), 2) Subversion de tropos seculares (frases tipicas del streetwear con verdad biblica), o 3) Anclaje visual sutil pero intencional (Alfa/Omega en tipografia, corona de espinas geometrica). Esta identidad aplica a los mercados gospel_es y gospel_en.\n';
   }
   if (MOTOR_STATE.market === 'colombia') {
     o += 'SANDBOX: solo bancos Colombia de la region ' + MOTOR_STATE.region + '. Prohibidos objetos, simbolos y frases gospel o globales en ingles. Cocina regional separada.\n';
@@ -2869,6 +3112,10 @@ function rerollSingle(keyLetter) {
 
     // Sustituir únicamente la tarjeta elegida; A/B permanecen intactas al tirar C, etc.
     LAST_RESULT.set[keyLetter] = best;
+    try {
+      const rerollColorChanges = auditFichaColors(current, best, N[K.indexOf(keyLetter)]);
+      if (rerollColorChanges.length) recordColorAudit(rerollColorChanges);
+    } catch (e) { /* auditoría no bloquea el reroll */ }
     try { if (typeof _recordLayoutSet === 'function') _recordLayoutSet(LAST_RESULT.set); } catch (e) {}
     try { if (typeof _recordArchitectureSet === 'function') _recordArchitectureSet(LAST_RESULT.set); } catch (e) {}
     if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
@@ -2894,6 +3141,12 @@ function rerollSingle(keyLetter) {
 }
 
 /* --- Renderizado de gates --- */
+function _qaBadgeHtml(st) {
+  const titulo = 'Estos indicadores validan fichas y prompt; no inspeccionan el archivo de imagen generado.';
+  if (!st || !st.total || !st.marcados) return '<span class="badge warn" title="' + titulo + '">QA visual pendiente</span>';
+  if (st.marcados === st.total) return '<span class="badge good" title="' + titulo + '">QA visual verificada (manual): ' + st.marcados + '/' + st.total + ' · ' + new Date().toLocaleString() + '</span>';
+  return '<span class="badge warn">QA visual: ' + st.marcados + '/' + st.total + '</span>';
+}
 function renderGates(result) {
   const gateEl = document.getElementById('gate');
   if (!gateEl || !result || !result.score) return;
@@ -2910,8 +3163,8 @@ function renderGates(result) {
     html += '<span class="badge blue" title="En Exploración cada ficha lleva su propio símbolo derivado del concepto; el ADN que se conserva es el concepto y el mensaje.">Símbolos por ficha</span>';
   }
   html += '<span class="badge ' + (m.treatmentsComplete ? 'good' : 'bad') + '" title="Comprueba que el prompt asigna HEAVY, SOFT y MODERN una vez cada uno; no inspecciona la imagen generada.">HEAVY · SOFT · MODERN</span>';
-  html += '<span class="badge ' + (m.familias.length >= 3 ? 'good' : 'warn') + '">Colores distintos</span>';
-  html += '<span class="badge warn" title="Estos indicadores validan fichas y prompt; no inspeccionan el archivo de imagen generado.">QA visual pendiente</span>';
+  html += '<span class="badge ' + (m.familias.length >= 3 ? 'good' : 'warn') + '">Paletas distintas</span>';
+  html += _qaBadgeHtml(null);
 
   gateEl.innerHTML = html;
 }
@@ -2928,15 +3181,19 @@ function qaChecklistEstado() {
 }
 function actualizarQAVisual() {
   const estadoEl = document.getElementById('qaEstado');
+  const gateEl = document.getElementById('gate');
   const st = qaChecklistEstado();
-  if (!estadoEl) return st;
+  const badge = _qaBadgeHtml(st);
+  if (!estadoEl) { if (gateEl) gateEl.innerHTML = badge; return st; }
   if (!st.total || !st.marcados) {
     estadoEl.innerHTML = '<span class="badge">Revisión visual: pendiente</span>';
+    if (gateEl) gateEl.innerHTML = badge;
     return st;
   }
   estadoEl.innerHTML = st.marcados === st.total
     ? '<span class="badge good">Revisión visual verificada (manual): ' + st.marcados + '/' + st.total + ' · ' + new Date().toLocaleString() + '</span>'
     : '<span class="badge warn">Revisión visual: ' + st.marcados + '/' + st.total + '</span>';
+  if (gateEl) gateEl.innerHTML = badge;
   return st;
 }
 function limpiarQAVisual() {
@@ -3063,7 +3320,7 @@ function renderArbitro(result) {
       '<span class="mk">' + (c.ok ? '✓' : '✗') + '</span>' +
       '<span class="grp">' + escHtml(c.grupo) + '</span>' +
       '<span class="et">' + escHtml(c.etiqueta) + '</span>' +
-      (c.ok || !c.detalle ? '' : '<span class="dt">' + escHtml(c.detalle) + '</span>') +
+      (c.ok || !c.detalle ? '' : '<span class="dt">✗ Falta: ' + escHtml(c.detalle) + '</span>') +
       '</li>';
   });
   html += '</ul>';
@@ -3082,7 +3339,39 @@ function limpiarArbitro() {
   if (estadoEl) estadoEl.innerHTML = '<span class="badge">Árbitro: sin diseños</span>';
 }
 function verificarArbitro() {
-  return renderArbitro(LAST_RESULT);
+  const info = renderArbitro(LAST_RESULT);
+  const statusEl = document.getElementById('status');
+  if (info) {
+    const v = _estadoUnificado(LAST_RESULT);
+    if (statusEl) statusEl.innerHTML = v.html;
+  }
+  return info;
+}
+
+/* --- Estado unificado del set: score de calidad + Árbitro de selectores ---
+   Punto crítico de la auditoría: el #status ya NO puede estar en verde ('Listo')
+   mientras el Árbitro de selectores reporta fallos, ni en verde por score cuando
+   el Árbitro detectó incoherencias. Antes el status salía del score aislado y el
+   Árbitro se evaluaba aparte → 'Listo' verde con 2 fichas en rojo en el mismo
+   viewport. Fuente única de verdad: el veredicto unificado. */
+function _estadoUnificado(result) {
+  const ev = (result && result.score) ? result.score : null;
+  const info = (typeof arbitroSelectores === 'function') ? arbitroSelectores(null, result) : null;
+  const okArb = !info ? true : !!info.ok;
+  const totalArb = info ? (info.total || 0) : 0;
+  const fallosArb = info ? (info.fallos || 0) : 0;
+  const okScore = !!(result && result.passed);
+  const effAud = (ev && typeof ev.fitAudienciaMin === 'number') ? ev.fitAudienciaMin : 0;
+  const effProd = (ev && typeof ev.fitProductoMin === 'number') ? ev.fitProductoMin : 0;
+  if (!okScore) {
+    const umbralMsg = (typeof _mensajeUmbral === 'function') ? _mensajeUmbral(ev) : '';
+    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>' };
+  }
+  if (!okArb) {
+    const checksOkArb = totalArb - fallosArb;
+    return { ok: false, okScore: true, okArb: false, checks: info, fallos: fallosArb, html: '<span class="bad">Árbitro: ' + checksOkArb + '/' + totalArb + ' selectores verificados en el prompt · ' + fallosArb + ' punto(s) a revisar</span>' };
+  }
+  return { ok: true, okScore: true, okArb: true, checks: info, fallos: 0, html: '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt · pertinencia efectiva audiencia ' + effAud + '/100 · producto ' + effProd + '/100</span>' };
 }
 
 /* --- Función principal: Crear los 3 diseños --- */
@@ -3096,30 +3385,25 @@ function crearLos3Disenos() {
     const result = generateSet();
     if (!result) return;
 
+    const prompt = formatPrompt(result);
+    if (outEl) outEl.value = prompt;
+    if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
+
     renderCards(result);
     renderGates(result);
     renderMatrix(result);
     renderArbitro(result);
 
-    const prompt = formatPrompt(result);
-    if (outEl) outEl.value = prompt;
-    if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
-
-    if (statusEl) {
-      if (result.passed) {
-        statusEl.innerHTML = '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt</span>';
-      } else {
-        const umbralMsg = _mensajeUmbral(result.score);
-        statusEl.innerHTML = '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>';
-      }
-    }
+    // Estado unificado: score + Árbitro. Verde solo si AMBOS pasan.
+    const verdict = _estadoUnificado(result);
+    if (statusEl) statusEl.innerHTML = verdict.html;
   } catch (e) {
     console.error('[Motor] Error:', e);
     if (statusEl) statusEl.textContent = 'Error al generar: ' + String(e && e.message ? e.message : 'error inesperado');
   }
 }
 
-/* --- Validar set actual sin regenerar: lo que hace 'Validar y generar'. */
+/* --- Validar set actual sin regenerar: lo que hace 'Validar set actual'. */
 function validarSetActual() {
   const statusEl = document.getElementById('status');
   if (!LAST_RESULT || !LAST_RESULT.set) {
@@ -3134,9 +3418,19 @@ function validarSetActual() {
   renderMatrix(LAST_RESULT);
   renderArbitro(LAST_RESULT);
   if (statusEl) {
-    statusEl.innerHTML = ev.passed
-      ? '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla.</span>'
-      : '<span class="warn">Validación con fallos: ' + ev.detalle.join(' · ') + '</span>';
+    if (ev.passed) {
+      // Verde por score exige verde por Árbitro: si el árbitro detectó fallos,
+      // el estado visible no puede decir 'Validación OK'.
+      const verdict = _estadoUnificado(LAST_RESULT);
+      if (!verdict.ok) {
+        statusEl.innerHTML = verdict.html;
+        return { ok: false, detalle: ['árbitro de selectores con fallos: ' + (verdict.fallos || 0)] };
+      }
+      statusEl.innerHTML = '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla · audiencia efectiva ' + (ev.score.fitAudienciaMin || 0) + '/100 · producto ' + (ev.score.fitProductoMin || 0) + '/100</span>';
+    } else {
+      statusEl.innerHTML = '<span class="warn">Validación con fallos: ' + ev.detalle.join(' · ') + '</span>';
+      return { ok: false, detalle: ev.detalle };
+    }
   }
   return { ok: ev.passed, detalle: ev.detalle };
 }
@@ -3272,6 +3566,9 @@ window.memPatternMarket = memPatternMarket;
 window.memLocksMarket = memLocksMarket;
 window.MOTOR_STATE = MOTOR_STATE;
 window.readStateFromDOM = readStateFromDOM;
+window.getColorAudit = getColorAudit;
+window.clearColorAudit = clearColorAudit;
+window.renderColorAudit = renderColorAudit;
 
 /* --- Enlace explícito de controles de la vista Taller --- */
 (function bindTallerControls() {

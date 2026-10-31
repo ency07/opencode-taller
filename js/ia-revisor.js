@@ -363,7 +363,7 @@
     var sl = getSlots();
 
     // Config de visión (la lee/escribe ia-analisis.js; defaults si no cargó).
-    var vcfg = { provider: 'auto', geminiModel: 'gemini-3.5-flash-lite', openrouterModel: 'google/gemma-4-31b-it:free', timeoutMs: 20000 };
+    var vcfg = { provider: 'auto', geminiModel: 'gemini-3.5-flash-lite', openrouterModel: 'nvidia/nemotron-3-nano-omni-30b:free', timeoutMs: 20000 };
     try {
       if (typeof window.PODVision !== 'undefined' && window.PODVision.getVisionConfig) {
         vcfg = window.PODVision.getVisionConfig();
@@ -380,7 +380,7 @@
       '<div class="hint" style="margin:0 0 6px">La IA revisa la ficha escrita antes de generar; no ve ni califica la imagen final. Prioridad 1 es el modelo principal; los demás son respaldo si el proveedor falla.</div>' +
       '<div id="aiSlots">' + sl.map(slotHTML).join('') + '</div>' +
       '<div style="font-weight:700;margin:10px 0 4px">Visión — analizar imagen</div>' +
-      '<div class="hint" style="margin:0 0 6px">OpenRouter :free verificado oct-2026 (50/día). Gemini directo: serie 3.x para proyectos nuevos. Groq no tiene visión free.</div>' +
+      '<div class="hint" style="margin:0 0 6px">OpenRouter :free con visión (NANO-OMNI free, 50 req/día, sin consumir créditos). Gemini directo: serie 3.x para proyectos nuevos. Groq no tiene visión free.</div>' +
       '<div class="frow"><div><label>Proveedor visión</label><select id="ai-vprov">' +
       ['auto', 'openrouter', 'gemini'].map(function (p) {
         return '<option value="' + p + '"' + (vprov === p ? ' selected' : '') + '>' +
@@ -414,7 +414,7 @@
       LS.setItem('pod2_vision_cfg', JSON.stringify({
         provider: panel.querySelector('#ai-vprov').value,
         geminiModel: panel.querySelector('#ai-vgmodel').value.trim() || 'gemini-3.5-flash-lite',
-        openrouterModel: panel.querySelector('#ai-vomodel').value.trim() || 'google/gemma-4-31b-it:free',
+        openrouterModel: panel.querySelector('#ai-vomodel').value.trim() || 'nvidia/nemotron-3-nano-omni-30b:free',
         timeoutMs: parseInt(panel.querySelector('#ai-vtimeout').value, 10) || 20000
       }));
 

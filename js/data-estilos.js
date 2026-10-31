@@ -57,7 +57,8 @@ const ESTILO_INFO = {
   "CMYK Safe Gamut / Gamut CMYK seguro": "colores dentro de gamut imprimible, sin sorpresas en salida",
   "Metallic Foil Ready / Listo para foil": "áreas planas = adhesivo + foil en post-proceso (DTF)",
   "Glitter Zone / Zona glitter": "zona plana = base + glitter, sin detalle fino",
-  "Glow Zone / Zona fosforescente": "capa plana fosforescente sobre blanco"
+  "Glow Zone / Zona fosforescente": "capa plana fosforescente sobre blanco",
+  "Deportiva / Sports": "deporte, atletismo, movimiento, contraste de intensidad, energía"
 };
 
 const ESTILOS_LIST = Object.keys(ESTILO_INFO);
@@ -113,7 +114,8 @@ const SATURACION = {
   "CMYK Safe Gamut / Gamut CMYK seguro": ["colores RGB que no imprimen", "negros ricos que manchan"],
   "Metallic Foil Ready / Listo para foil": ["áreas complejas que no registran foil", "adhesivo que sangra en detalles finos"],
   "Glitter Zone / Zona glitter": ["glitter en zonas con detalle", "base que no sostiene la partícula"],
-  "Glow Zone / Zona fosforescente": ["fosforescencia en áreas finas", "capa base blanca insuficiente"]
+  "Glow Zone / Zona fosforescente": ["fosforescencia en áreas finas", "capa base blanca insuficiente"],
+  "Deportiva / Sports": ["ilustración decorativa sin deporte", "paleta genérica sin energía"]
 };
 
 const LAYOUTS = [
@@ -1021,6 +1023,15 @@ const STYLE_POOLS = {
     tecnica: ["Capa fosforescente", "Base blanca", "Doble lectura", "Carga de luz", "Brillo nocturno", "Zona delimitada"],
     textoApoyo: ["frase clave en tinta sólida: el glow está en el símbolo, la lectura en el apoyo", "texto de apoyo con peso: contraste garantizado de día", "segundo nivel en banda sólida: cuerpo completo", "fundamento en tinta plana: cada palabra legible", "línea de verdad en sólido: se lee con luz y sin ella", "frase destacada en panel liso: palabra por palabra", "segundo texto en tinta oscura: clara", "frase de cierre en tinta sólida: presencia plena"],
     relacion: ["la luz propia guía en la oscuridad", "el glow es señal, la tinta es mensaje", "símbolo que alumbra, texto que orienta", "doble lectura: de día informa, de noche brilla"]
+  },
+  "Deportiva / Sports": {
+    arquitectura: ["plano de competencia con marco de cancha o pista", "diseño de acción deportiva con zona de movimiento", "diseño de equipo con campo y silueta de jugador", "diseño de carrera con línea de meta y fondo", "circular de competición con atleta en acción", "diseño de entrenamiento con intensidad"],
+    composicion: ["central con dinamismo de movimiento", "peso en la acción, vacío en el resto", "simetría de competencia frontal", "diagonal de carrera hacia la meta", "circular de competición con centro activo", "contraste de intensidad entre atleta y fondo"],
+    textoPrincipal: ["título con tipografía deportiva moderna", "lettering de jersey", "texto con contraste equipo/cancha", "palabra de movimiento", "título de competencia", "lettering de estadística deportiva"],
+    textoApoyo: ["frase clave en tinta sobre fondo de campo claro: legibilidad y energía", "texto de apoyo en banda de competencia: cuerpo completo", "segundo nivel en tipografía de marcador: legible", "fundamento en silueta de atleta: contraste alto", "línea de verdad en marco de competencia", "frase destacada en panel de estadística: palabra por palabra", "segundo texto en etiqueta de jugador: clara y con cuerpo", "frase de cierre en tinta sólida: presencia de energía"],
+    textoTerciario: ["tercer nivel: dato de serie en cinta deportiva", "sello de serie como pulsera", "tríptico de identidad en tres atletas rotulados", "fecha de edición en cronómetro", "dominio en marco de competición"],
+    tecnica: ["Silueta de movimiento", "Contraste de intensidad", "Deporte con fondo claro", "Jersey textil", "Cronómetro", "Línea de meta"],
+    relacion: ["la energía del movimiento es la metáfora: la palabra es el sprint", "el texto se lee sobre el campo: acción y mensaje", "símbolo y texto comparten la intensidad del deporte", "todo es movimiento, nada es estático"]
   }
 };
 
@@ -1075,7 +1086,8 @@ const STYLE_COLOR_PREF = {
   "CMYK Safe Gamut / Gamut CMYK seguro": ["retro vibrante", "noche / contraste", "mínimo frío"],
   "Metallic Foil Ready / Listo para foil": ["dorado / premium", "noche / contraste", "mínimo frío"],
   "Glitter Zone / Zona glitter": ["neón / cyber", "retro vibrante", "dorado / premium"],
-  "Glow Zone / Zona fosforescente": ["noche / contraste", "neón / cyber", "mínimo frío"]
+  "Glow Zone / Zona fosforescente": ["noche / contraste", "neón / cyber", "mínimo frío"],
+  "Deportiva / Sports": ["noche / contraste", "neón / cyber", "tierra cálida"]
 };
 
 const STYLE_TIPO_PREF = {
@@ -1129,7 +1141,8 @@ const STYLE_TIPO_PREF = {
   "CMYK Safe Gamut / Gamut CMYK seguro": ["Sans humanista limpia", "Serif moderna alto contraste", "Grotesca black condensada", "Mono técnica"],
   "Metallic Foil Ready / Listo para foil": ["Serif clásica titulada", "Serif moderna alto contraste", "Display caligráfica expresiva", "Itálica solemne"],
   "Glitter Zone / Zona glitter": ["Rounded amable", "Display caligráfica expresiva", "Script de pluma", "Grotesca black condensada"],
-  "Glow Zone / Zona fosforescente": ["Grotesca black condensada", "Mono técnica", "Sans humanista limpia", "Rounded amable"]
+  "Glow Zone / Zona fosforescente": ["Grotesca black condensada", "Mono técnica", "Sans humanista limpia", "Rounded amable"],
+  "Deportiva / Sports": ["Rounded amable", "Custom modular geométrica", "Script de pluma", "Grotesca black condensada"]
 };
 
 /* Compatibilidad global */

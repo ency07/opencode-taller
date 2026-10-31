@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constructor de Prompt — Series de Arte Gospel</title>
+<link rel="icon" href="data:," />
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-2: #171a21;
+    --bg-3: #1f232c;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --text-dim: #9aa3b2;
+    --accent: #6ee7b7;
+    --accent-2: #60a5fa;
+    --danger: #f87171;
+    --warning: #fbbf24;
+    --gospel: #a78bfa;
+    --secular: #fb923c;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 0;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  h1 { margin: 0 0 6px; font-size: 1.6rem; }
+  h2 { margin: 0 0 12px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  h3 { margin: 0 0 8px; font-size: 0.95rem; color: var(--text-dim); }
+  .subtitle { color: var(--text-dim); margin: 0 0 24px; font-size: 0.9rem; }
+  .mode-indicator {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .mode-gospel { background: var(--gospel); color: #0f1115; }
+  .mode-secular { background: var(--secular); color: #0f1115; }
+  .panel {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .panel.gospel-mode { border-color: rgba(167, 139, 250, 0.3); }
+  .panel.secular-mode { border-color: rgba(251, 146, 60, 0.3); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  textarea { min-height: 90px; }
+  .radio-group, .check-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-item, .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+  .radio-item:hover, .check-item:hover { border-color: var(--accent); }
+  .radio-item input, .check-item input { margin-top: 3px; accent-color: var(--accent); }
+  .radio-item .label-text, .check-item .label-text { flex: 1; }
+  .radio-item .label-text strong, .check-item .label-text strong { display: block; color: var(--text); }
+  .radio-item .label-text small, .check-item .label-text small { color: var(--text-dim); font-size: 0.82rem; }
+  .radio-item.selected { border-color: var(--accent); background: rgba(110, 231, 183, 0.05); }
+  button {
+    background: var(--accent);
+    color: #0f1115;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: transform 0.1s, opacity 0.15s;
+  }
+  button:hover { opacity: 0.9; }
+  button:active { transform: scale(0.98); }
+  button.secondary { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); }
+  button.danger { background: var(--danger); color: #fff; }
+  button.small { padding: 6px 12px; font-size: 0.85rem; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .toggle-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--bg-3);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 2px solid var(--gospel);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .toggle-bar.secular { border-color: var(--secular); background: rgba(251, 146, 60, 0.05); }
+  .toggle-bar .label-text strong { color: var(--gospel); transition: color 0.2s; }
+  .toggle-bar.secular .label-text strong { color: var(--secular); }
+  .switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--border); border-radius: 26px; transition: 0.2s;
+  }
+  .slider:before {
+    content: ""; position: absolute; height: 20px; width: 20px;
+    left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s;
+  }
+  input:checked + .slider { background: var(--secular); }
+  input:checked + .slider:before { transform: translateX(22px); }
+  .output-box {
+    background: #0a0c10;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    color: #d1d5db;
+  }
+  .history-item {
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .history-item .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .history-item .preview {
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 0.8rem;
+    background: #0a0c10;
+    padding: 8px;
+    border-radius: 6px;
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #9aa3b2;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--accent);
+    color: #0f1115;
+  }
+  .badge.gospel { background: var(--gospel); }
+  .badge.secular { background: var(--secular); }
+  .hidden { display: none !important; }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--accent);
+    color: #0f1115;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  @media (max-width: 600px) {
+    .container { padding: 12px; }
+    h1 { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<style>
+  .pod-nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:#0E1016;border-bottom:1px solid #2A2E38;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px}
+  .pod-nav .pod-nav-title{color:#8A90A0;margin-right:4px}
+  .pod-nav a{color:#B9C0CF;text-decoration:none;padding:6px 12px;border:1px solid #2A2E38;border-radius:6px;background:#161920}
+  .pod-nav a:hover{color:#fff;border-color:#5B8DEF}
+  .pod-nav a[aria-current="page"]{color:#fff;background:rgba(91,141,239,.16);border-color:#5B8DEF}
+</style>
+<nav class="pod-nav" aria-label="Herramientas POD">
+  <span class="pod-nav-title">Taller POD ·</span>
+  <a href="index.html">Taller</a>
+  <a href="editor-bancos.html">Editor de bancos</a>
+  <a href="motor-lenguajes-visuales.html">Motor de lenguajes</a>
+  <a href="sistema_matriz.html">Sistema matriz</a>
+  <a href="constructor-prompt.html" aria-current="page">Constructor de Prompt</a>
+  <a href="constructor-prompt-ia.html">Constructor de Prompt IA</a>
+</nav>
+
+<div class="container">
+
+  <h1>🎨 Constructor de Prompt <span id="modeBadge" class="mode-indicator mode-gospel">MODO GOSPEL</span></h1>
+  <p class="subtitle">Configura mercado, reglas y genera el prompt. El modo cambia TODO: mercados, rol, formato de salida.</p>
+
+  <!-- TOGGLE MODO -->
+  <div class="toggle-bar" id="toggleBar">
+    <div class="label-text">
+      <strong id="toggleTitle">✝️ Modo Gospel (mercado cristiano)</strong>
+      <small id="toggleDesc" style="display:block; color: var(--text-dim); margin-top: 4px;">
+        Activo: reglas teológicas, hermenéuticas y mercados cristianos.
+      </small>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="toggleNoGospel">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="grid">
+
+    <!-- MERCADO -->
+    <div class="panel" id="marketPanel">
+      <h2 id="marketTitle">1. Mercado Objetivo</h2>
+      <div class="radio-group" id="marketGroup">
+        <!-- Se rellena dinámicamente según el modo -->
+      </div>
+      <div id="otroFields" class="hidden" style="margin-top: 12px;">
+        <label style="font-size: 0.85rem; color: var(--text-dim);">Idioma:</label>
+        <input type="text" id="otroIdioma" placeholder="Ej: FR, DE, JA...">
+        <label style="font-size: 0.85rem; color: var(--text-dim); margin-top: 8px; display:block;">Contexto cultural:</label>
+        <input type="text" id="otroContexto" placeholder="Ej: Streetwear urbano parisino, joven">
+      </div>
+    </div>
+
+    <!-- REGLAS GOSPEL (solo en modo gospel) -->
+    <div class="panel" id="gospelPanel">
+      <h2 style="color: var(--gospel);">2. Reglas Gospel / Teológicas</h2>
+      <h3>Obligatorias por defecto en mercados cristianos</h3>
+      <div class="check-group">
+        <label class="check-item">
+          <input type="checkbox" class="gospel-rule" data-rule="coherencia" checked>
+          <div class="label-text">
+            <strong>Coherencia teológica</strong>
+            <small>Doctrina sólida, sin sincretismo ni herejías.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="gospel-rule" data-rule="hermeneutica" checked>
+          <div class="label-text">
+            <strong>Solidez hermenéutica</strong>
+            <small>Exégesis correcta, no proof-texting.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="gospel-rule" data-rule="fidelidad" checked>
+          <div class="label-text">
+            <strong>Fidelidad bíblica</strong>
+            <small>Versículo ancla obligatorio en cada serie.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="gospel-rule" data-rule="cristocentrismo" checked>
+          <div class="label-text">
+            <strong>Cristocentrismo</strong>
+            <small>Cristo como centro, no autoayuda ni moralismo.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="gospel-rule" data-rule="tension" checked>
+          <div class="label-text">
+            <strong>Tensión teológica real</strong>
+            <small>Paradojas bíblicas (justicia/misericordia, ley/gracia).</small>
+          </div>
+        </label>
+        <label class="check-item" style="border-color: var(--gospel); background: rgba(167, 139, 250, 0.05);">
+          <input type="checkbox" class="gospel-rule" data-rule="identidad" checked>
+          <div class="label-text">
+            <strong>🚨 Identidad Cristiana Inmediata (Regla de los 3 seg)</strong>
+            <small>Cada diseño debe ser reconocible como cristiano en 3 segundos sin usar clichés literales (cruces gigantes, palomas). Usar: 1) Léxico teológico pesado, 2) Subversión de tropos seculares, o 3) Anclaje visual sutil (ej. Alfa/Omega en tipografía).</small>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- REGLAS SECULARES (solo en modo secular) -->
+    <div class="panel hidden" id="secularPanel">
+      <h2 style="color: var(--secular);">2. Reglas de Contenido Secular</h2>
+      <h3>Aplicables cuando el mercado no es cristiano</h3>
+      <div class="check-group">
+        <label class="check-item">
+          <input type="checkbox" class="secular-rule" data-rule="coherencia-cultural" checked>
+          <div class="label-text">
+            <strong>Coherencia cultural</strong>
+            <small>Respeto al contexto del mercado, sin apropiación indebida.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="secular-rule" data-rule="autenticidad" checked>
+          <div class="label-text">
+            <strong>Autenticidad de marca</strong>
+            <small>El mensaje debe ser genuino, no cliché motivacional vacío.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="secular-rule" data-rule="relevancia" checked>
+          <div class="label-text">
+            <strong>Relevancia cultural</strong>
+            <small>Conectar con tendencias, movimientos o valores del mercado objetivo.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="secular-rule" data-rule="no-ofensivo" checked>
+          <div class="label-text">
+            <strong>Sensibilidad cultural</strong>
+            <small>Evitar ofensas gratuitas, estereotipos dañinos o apropiación.</small>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- REGLAS DE DISEÑO (siempre activas) -->
+    <div class="panel">
+      <h2>3. Reglas de Diseño</h2>
+      <h3>Siempre activas, aplican a cualquier mercado</h3>
+      <div class="check-group">
+        <label class="check-item">
+          <input type="checkbox" class="design-rule" data-rule="antiliteral" checked>
+          <div class="label-text">
+            <strong>Anti-literalidad</strong>
+            <small>Prohibido traducir palabras a objetos. Usar metáforas visuales.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="design-rule" data-rule="coherencia-serie" checked>
+          <div class="label-text">
+            <strong>Coherencia de serie</strong>
+            <small>Los 5 artes deben tener hilo conductor conceptual y visual.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="design-rule" data-rule="antirepeticion" checked>
+          <div class="label-text">
+            <strong>Anti-repetición</strong>
+            <small>Revisar REGISTRO DE MEMORIA antes de generar.</small>
+          </div>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="design-rule" data-rule="validacion" checked>
+          <div class="label-text">
+            <strong>Validación semántica</strong>
+            <small>Justificar cada motivo: qué idea comunica y qué tensión representa.</small>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- ENTRADA -->
+    <div class="panel">
+      <h2>4. Datos de la Serie</h2>
+      <label style="font-size: 0.85rem; color: var(--text-dim);" id="temaLabel">Tema / concepto teológico o central:</label>
+      <input type="text" id="concept" placeholder="Ej: La gracia escandalosa, la paz en el caos...">
+
+      <label style="font-size: 0.85rem; color: var(--text-dim); margin-top: 10px; display:block;">Estilo visual preferido:</label>
+      <select id="estilo">
+        <option value="Minimalista">Minimalista</option>
+        <option value="Bold / Tipográfico">Bold / Tipográfico</option>
+        <option value="Vintage / Retro">Vintage / Retro</option>
+        <option value="Abstracto">Abstracto</option>
+        <option value="Distressed / Urbano">Distressed / Urbano</option>
+        <option value="Artístico / Ilustrativo">Artístico / Ilustrativo</option>
+      </select>
+
+      <label style="font-size: 0.85rem; color: var(--text-dim); margin-top: 10px; display:block;">Restricciones (opcional):</label>
+      <input type="text" id="restricciones" placeholder="Ej: No usar cruces, palomas, colores neón...">
+
+      <label style="font-size: 0.85rem; color: var(--text-dim); margin-top: 10px; display:block;">Número de serie actual:</label>
+      <input type="number" id="numSerie" value="1" min="1">
+    </div>
+
+  </div>
+
+  <!-- MEMORIA -->
+  <div class="panel">
+    <h2>5. Memoria / Registro Anterior</h2>
+    <h3>Pega aquí el REGISTRO DE MEMORIA de series anteriores para evitar repetición</h3>
+    <textarea id="memoria" placeholder="Pega aquí el bloque 'REGISTRO DE MEMORIA' de series previas..."></textarea>
+  </div>
+
+  <!-- ACCIONES -->
+  <div class="panel">
+    <div class="actions">
+      <button id="btnGenerar">⚡ Generar Prompt</button>
+      <button id="btnCopiar" class="secondary">📋 Copiar al portapapeles</button>
+      <button id="btnLimpiar" class="secondary">🗑️ Limpiar formulario</button>
+      <button id="btnLimpiarHistorial" class="danger small">Borrar historial</button>
+    </div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="panel">
+    <h2>6. Prompt Generado</h2>
+    <div class="output-box" id="output">El prompt generado aparecerá aquí...</div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="panel">
+    <h2>7. Historial de Prompts Generados</h2>
+    <div id="historial"><p style="color: var(--text-dim); font-size: 0.9rem;">Aún no has generado ningún prompt.</p></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Copiado ✓</div>
+
+<script>
+// ===== ESTADO =====
+const state = {
+  noGospel: false,
+  historial: JSON.parse(localStorage.getItem('promptHistorial') || '[]')
+};
+
+// ===== CONFIGURACIONES DE MERCADO =====
+const MARKETS = {
+  gospel: {
+    ES: {
+      label: '🇪🇸 ES — Gospel Latino/Spain',
+      desc: 'Cálido, comunitario, resiliente. Tipografías con peso, colores tierra o vibrantes.',
+      config: `Idioma: Español
+Tono: Cálido, comunitario, resiliente
+Referencias culturales: Resiliencia, fe en medio de la lucha, comunidad, esperanza bíblica
+Estética: Tipografías con peso, colores vibrantes o tierra, texturas orgánicas
+Frases: Directas pero poéticas, con ritmo narrativo y anclaje bíblico`
+    },
+    EN: {
+      label: '🇺🇸 EN — Christian Streetwear USA/UK',
+      desc: 'Directo, bold, radical. Minimalista o distressed, alto contraste.',
+      config: `Idioma: Inglés
+Tono: Directo, bold, radical
+Referencias culturales: Gracia escandalosa, identidad contracultural, autenticidad en Cristo
+Estética: Minimalista o distressed, tipografías bold, paletas monocromáticas o de alto contraste
+Frases: Cortas, impactantes, estilo manifiesto con verdad bíblica`
+    },
+    PT: {
+      label: '🇧🇷 PT — Brasil Gospel',
+      desc: 'Apasionado, dinámico, celebrativo. Colores vibrantes, ritmo musical.',
+      config: `Idioma: Portugués
+Tono: Apasionado, dinámico, celebrativo
+Referencias culturales: Adoración, identidad en Cristo, comunidad vibrante, avivamento
+Estética: Colores vibrantes, movimiento, tipografías fluidas
+Frases: Con ritmo musical, emocionales, ancladas en la Palabra`
+    }
+  },
+  secular: {
+    ES: {
+      label: '🇪🇸 ES — Español (Latinoamérica/España)',
+      desc: 'Streetwear, lifestyle, cultura urbana o artística hispana.',
+      config: `Idioma: Español
+Tono: Según el concepto (urbano, artístico, motivacional, cultural, deportivo, etc.)
+Referencias culturales: Cultura urbana hispana, arte, música, deporte, movimientos sociales, identidad
+Estética: Adaptable al concepto — streetwear, artístico, tipográfico, minimalista
+Frases: Con ritmo, identidad cultural, conexión emocional o conceptual`
+    },
+    EN: {
+      label: '🇺🇸 EN — English (USA/UK Streetwear & Lifestyle)',
+      desc: 'Streetwear, lifestyle, cultura urbana anglosajona.',
+      config: `Idioma: Inglés
+Tono: Según el concepto (urbano, artístico, motivacional, cultural, deportivo, etc.)
+Referencias culturales: Streetwear culture, hip-hop, skate, arte urbano, deporte, identidad, movimientos culturales
+Estética: Adaptable al concepto — bold, distressed, minimalista, tipográfico
+Frases: Cortas, con punch, culturalmente relevantes, con identidad`
+    },
+    PT: {
+      label: '🇧🇷 PT — Português (Brasil Streetwear & Cultura)',
+      desc: 'Streetwear, cultura urbana brasileña, lifestyle.',
+      config: `Idioma: Portugués (Brasil)
+Tono: Según el concepto (urbano, artístico, motivacional, cultural, deportivo, etc.)
+Referencias culturales: Cultura urbana brasileña, samba, favela aesthetic, futebol, arte callejero, movimento
+Estética: Adaptable al concepto — vibrante, dinámico, tipográfica, artística
+Frases: Con ritmo, identidad brasileña, conexión emocional o cultural`
+    }
+  }
+};
+
+// ===== ELEMENTOS =====
+const $ = id => document.getElementById(id);
+const toggleNoGospel = $('toggleNoGospel');
+const toggleBar = $('toggleBar');
+const toggleTitle = $('toggleTitle');
+const toggleDesc = $('toggleDesc');
+const modeBadge = $('modeBadge');
+const marketPanel = $('marketPanel');
+const marketTitle = $('marketTitle');
+const marketGroup = $('marketGroup');
+const gospelPanel = $('gospelPanel');
+const secularPanel = $('secularPanel');
+const temaLabel = $('temaLabel');
+const otroFields = $('otroFields');
+const output = $('output');
+const historialEl = $('historial');
+const toast = $('toast');
+
+// ===== RENDER MERCADOS =====
+function renderMarkets() {
+  const set = state.noGospel ? MARKETS.secular : MARKETS.gospel;
+  marketGroup.innerHTML = Object.entries(set).map(([key, m], i) => `
+    <label class="radio-item ${i === 0 ? 'selected' : ''}">
+      <input type="radio" name="market" value="${key}" ${i === 0 ? 'checked' : ''}>
+      <div class="label-text">
+        <strong>${m.label}</strong>
+        <small>${m.desc}</small>
+      </div>
+    </label>
+  `).join('') + `
+    <label class="radio-item">
+      <input type="radio" name="market" value="OTRO">
+      <div class="label-text">
+        <strong>🌍 Otro mercado</strong>
+        <small>Especifica idioma y contexto abajo.</small>
+      </div>
+    </label>
+  `;
+
+  document.querySelectorAll('input[name="market"]').forEach(radio => {
+    radio.addEventListener('change', e => {
+      document.querySelectorAll('.radio-item').forEach(i => i.classList.remove('selected'));
+      e.target.closest('.radio-item').classList.add('selected');
+      otroFields.classList.toggle('hidden', e.target.value !== 'OTRO');
+    });
+  });
+}
+
+// ===== TOGGLE MODO =====
+toggleNoGospel.addEventListener('change', e => {
+  state.noGospel = e.target.checked;
+
+  if (state.noGospel) {
+    toggleBar.classList.add('secular');
+    toggleTitle.textContent = '🌍 Modo Secular (mercado no cristiano)';
+    toggleDesc.textContent = 'Activo: reglas culturales, de marca y sensibilidad. Sin contenido teológico.';
+    modeBadge.textContent = 'MODO SECULAR';
+    modeBadge.className = 'mode-indicator mode-secular';
+    gospelPanel.classList.add('hidden');
+    secularPanel.classList.remove('hidden');
+    marketPanel.classList.add('secular-mode');
+    marketPanel.classList.remove('gospel-mode');
+    marketTitle.textContent = '1. Mercado Objetivo (Secular)';
+    temaLabel.textContent = 'Tema / concepto central:';
+    $('concept').placeholder = 'Ej: Michael Jordan, resiliencia urbana, arte callejero, identidad...';
+  } else {
+    toggleBar.classList.remove('secular');
+    toggleTitle.textContent = '✝️ Modo Gospel (mercado cristiano)';
+    toggleDesc.textContent = 'Activo: reglas teológicas, hermenéuticas y mercados cristianos.';
+    modeBadge.textContent = 'MODO GOSPEL';
+    modeBadge.className = 'mode-indicator mode-gospel';
+    gospelPanel.classList.remove('hidden');
+    secularPanel.classList.add('hidden');
+    marketPanel.classList.remove('secular-mode');
+    marketPanel.classList.add('gospel-mode');
+    marketTitle.textContent = '1. Mercado Objetivo (Gospel)';
+    temaLabel.textContent = 'Tema / concepto teológico o central:';
+    $('concept').placeholder = 'Ej: La gracia escandalosa, la paz en el caos, la identidad en Cristo...';
+  }
+
+  renderMarkets();
+});
+
+// ===== CONSTRUIR PROMPT =====
+function construirPrompt(d) {
+  const set = d.noGospel ? MARKETS.secular : MARKETS.gospel;
+  const marketKey = d.market === 'OTRO' ? 'OTRO' : d.market;
+  const marketData = set[marketKey];
+
+  let marketLabel, marketConfig;
+  if (marketKey === 'OTRO') {
+    marketLabel = `OTRO — ${$('otroIdioma').value || 'no especificado'}`;
+    marketConfig = `Idioma: ${$('otroIdioma').value || '[ESPECIFICAR]'}
+Contexto cultural: ${$('otroContexto').value || '[ESPECIFICAR]'}
+Adapta tono, estética y referencias culturales a ese mercado.`;
+  } else {
+    marketLabel = marketData.label;
+    marketConfig = marketData.config;
+  }
+
+  const rol = d.noGospel
+    ? 'Actúa como Director Creativo, Cultural Strategist y Especialista en Merchandise.'
+    : 'Actúa como Director Creativo, Teólogo Visual y Especialista en Merchandise.';
+
+  let reglasEspecificas = '';
+  if (d.noGospel) {
+    const ruleTexts = {
+      'coherencia-cultural': 'Coherencia cultural: respeto al contexto del mercado, sin apropiación indebida.',
+      'autenticidad': 'Autenticidad de marca: el mensaje debe ser genuino, no cliché motivacional vacío.',
+      'relevancia': 'Relevancia cultural: conectar con tendencias, movimientos o valores del mercado objetivo.',
+      'no-ofensivo': 'Sensibilidad cultural: evitar ofensas gratuitas, estereotipos dañinos o apropiación.'
+    };
+    reglasEspecificas = '\nREGLAS DE CONTENIDO SECULAR (activas):\n' +
+      d.secularRules.map(r => '- ' + ruleTexts[r]).join('\n');
+  } else {
+    const ruleTexts = {
+      coherencia: 'Coherencia teológica: doctrina sólida, sin sincretismo ni herejías.',
+      hermeneutica: 'Solidez hermenéutica: exégesis correcta, no proof-texting, versículos en su contexto.',
+      fidelidad: 'Fidelidad bíblica: versículo ancla obligatorio en cada serie.',
+      cristocentrismo: 'Cristocentrismo: Cristo como centro, no autoayuda ni moralismo.',
+      tension: 'Tensión teológica real: paradojas bíblicas (justicia/misericordia, ley/gracia, muerte/vida).',
+      identidad: '🚨 IDENTIDAD CRISTIANA INMEDIATA (Regla de los 3 segundos): Cada diseño debe ser reconocible como cristiano en 3 segundos SIN usar clichés literales (cruces gigantes, palomas). Debes usar obligatoriamente una de estas 3 vías en cada arte: 1) Léxico teológico pesado (ej: Gracia, Redención, Shalom, Trono), 2) Subversión de tropos seculares (ej: invertir frases típicas del streetwear con verdad bíblica), o 3) Anclaje visual sutil pero intencional (ej: Alfa/Omega integrado en la tipografía, corona de espinas geométrica).'
+    };
+    reglasEspecificas = '\nREGLAS GOSPEL (activas):\n' +
+      d.gospelRules.map(r => '- ' + ruleTexts[r]).join('\n');
+  }
+
+  const ruleTextsDesign = {
+    antiliteral: 'Anti-literalidad: prohibido traducir palabras a objetos literales. Usar metáforas visuales.',
+    'coherencia-serie': 'Coherencia de serie: los 5 artes deben tener hilo conductor conceptual y visual.',
+    antirepeticion: 'Anti-repetición: revisar REGISTRO DE MEMORIA antes de generar. No repetir conceptos previos.',
+    validacion: 'Validación semántica: justificar cada motivo visual (qué idea comunica y qué tensión representa).'
+  };
+  const reglasDiseno = '\nREGLAS DE DISEÑO (activas):\n' +
+    d.designRules.map(r => '- ' + ruleTextsDesign[r]).join('\n');
+
+  const memoriaBlock = d.memoria ? `\n--- REGISTRO DE MEMORIA PREVIO ---\n${d.memoria}\n----------------------------------\n` : '';
+
+  // FORMATO DE SALIDA con el nuevo campo de identidad
+  const formatoSalida = d.noGospel ? `--- SERIE #${d.numSerie} ---
+
+NOMBRE DE LA SERIE: [nombre corto y memorable]
+MERCADO: [${d.market}]
+CONCEPTO CENTRAL: [1-2 líneas]
+TENSIÓN / CONFLICTO CENTRAL: [qué paradoja, emoción o idea mueve la serie]
+AUDIENCIA: [demografía específica]
+ESTILO VISUAL GENERAL: [${d.estilo}]
+
+--- ARTE 1 de 5 ---
+Título: [nombre interno]
+Frase principal: [texto en camiseta — EN EL IDIOMA DEL MERCADO]
+Frase de apoyo: [subtexto opcional]
+Concepto abstracto: [qué idea representa]
+Metáfora visual: [qué se dibuja y POR QUÉ no es literal]
+Tensión que comunica: [qué paradoja, emoción o conflicto]
+Contextos de uso: [dónde sirve]
+Audiencia específica: [a quién le habla]
+Producto: [Camiseta + variantes]
+
+[REPETIR PARA ARTE 2, 3, 4, 5]
+
+--- COHERENCIA DE SERIE ---
+[2-3 párrafos explicando el hilo conductor]
+
+--- REGISTRO DE MEMORIA (COPIAR Y GUARDAR) ---
+Mercado: [${d.market}]
+Modo: SECULAR
+Series completadas:
+1. [Nombre] - [Concepto] - [Frases clave]
+Temas YA USADOS: [lista]
+Próximo paso sugerido: [sugerencia]` : `--- SERIE #${d.numSerie} ---
+
+NOMBRE DE LA SERIE: [nombre corto y memorable]
+MERCADO: [${d.market}]
+CONCEPTO CENTRAL: [1-2 líneas]
+TENSIÓN TEOLÓGICA: [paradoja o verdad profunda]
+VERSO ANCLA: [referencia bíblica]
+AUDIENCIA: [demografía específica]
+ESTILO VISUAL GENERAL: [${d.estilo}]
+
+--- ARTE 1 de 5 ---
+Título: [nombre interno]
+Frase principal: [texto en camiseta — EN EL IDIOMA DEL MERCADO]
+Frase de apoyo: [subtexto opcional]
+Concepto abstracto: [qué idea representa]
+Metáfora visual: [qué se dibuja y POR QUÉ no es literal]
+🚨 Señal de Identidad Cristiana (3 seg): [Explicar cuál de las 3 vías se usó: Léxico pesado, Subversión de tropo, o Anclaje visual sutil. Probar que NO es un cliché literal].
+Tensión que comunica: [paradoja o verdad]
+Contextos de uso: [dónde sirve]
+Audiencia específica: [a quién le habla]
+Producto: [Camiseta + variantes]
+
+[REPETIR PARA ARTE 2, 3, 4, 5]
+
+--- COHERENCIA DE SERIE ---
+[2-3 párrafos explicando el hilo conductor]
+
+--- REGISTRO DE MEMORIA (COPIAR Y GUARDAR) ---
+Mercado: [${d.market}]
+Modo: GOSPEL
+Series completadas:
+1. [Nombre] - [Concepto] - [Frases clave]
+Temas YA USADOS: [lista]
+Próximo paso sugerido: [sugerencia]`;
+
+  return `================================================================
+PROMPT — SERIE #${d.numSerie} · ${d.noGospel ? 'MODO SECULAR' : 'MODO GOSPEL'}
+================================================================
+
+ROL:
+${rol}
+Genera una serie de 5 artes para camisetas (y productos derivados).
+
+================================================================
+MERCADO OBJETIVO: ${marketLabel}
+================================================================
+
+CONFIGURACIÓN DEL MERCADO:
+${marketConfig}
+
+IMPORTANTE: Todo el output (conceptos, frases, giros idiomáticos, referencias culturales) debe adaptarse ESTRICTAMENTE al mercado indicado. Si es inglés, piensa en inglés. Si es español, piensa en español. No traduzcas literalmente.
+${reglasEspecificas}${reglasDiseno}
+================================================================
+DATOS DE LA SERIE
+================================================================
+
+Tema / concepto central: ${d.tema}
+Estilo visual preferido: ${d.estilo}
+Restricciones: ${d.restricciones || 'Ninguna'}
+Número de serie: #${d.numSerie}
+${memoriaBlock}
+================================================================
+FORMATO DE SALIDA OBLIGATORIO
+================================================================
+
+${formatoSalida}
+
+================================================================
+INSTRUCCIONES FINALES
+================================================================
+
+1. Antes de generar, confirma que entiendes el concepto/tema.
+2. NUNCA repitas conceptos del REGISTRO DE MEMORIA.
+3. Al final, pregunta: "¿Quieres otra serie? ¿Mismo concepto con variación o concepto diferente?"
+4. Si pido variación de un arte, mantén concepto pero cambia estilo/paleta/audiencia.
+5. Todo el texto del output debe estar en el idioma del mercado objetivo.
+6. ${d.noGospel ? 'NO incluyas contenido teológico, bíblico ni religioso a menos que el concepto lo exija explícitamente.' : 'Mantén la solidez teológica y hermenéutica en todo el output. CUMPLE ESTRICTAMENTE LA REGLA DE IDENTIDAD CRISTIANA DE 3 SEGUNDOS.'}`;
+}
+
+// ===== GENERAR =====
+$('btnGenerar').addEventListener('click', () => {
+  const market = document.querySelector('input[name="market"]:checked').value;
+  const tema = $('concept').value.trim() || '[TEMA NO ESPECIFICADO]';
+  const estilo = $('estilo').value;
+  const restricciones = $('restricciones').value.trim();
+  const numSerie = $('numSerie').value || '1';
+  const memoria = $('memoria').value.trim();
+
+  const gospelRules = Array.from(document.querySelectorAll('.gospel-rule:checked')).map(cb => cb.dataset.rule);
+  const secularRules = Array.from(document.querySelectorAll('.secular-rule:checked')).map(cb => cb.dataset.rule);
+  const designRules = Array.from(document.querySelectorAll('.design-rule:checked')).map(cb => cb.dataset.rule);
+
+  const prompt = construirPrompt({
+    market, tema, estilo, restricciones, numSerie, memoria,
+    noGospel: state.noGospel, gospelRules, secularRules, designRules
+  });
+
+  output.textContent = prompt;
+
+  const entry = {
+    id: Date.now(),
+    fecha: new Date().toLocaleString('es-ES'),
+    mercado: market,
+    tema: tema,
+    noGospel: state.noGospel,
+    prompt: prompt
+  };
+  state.historial.unshift(entry);
+  if (state.historial.length > 20) state.historial.pop();
+  localStorage.setItem('promptHistorial', JSON.stringify(state.historial));
+  renderHistorial();
+  showToast('Prompt generado y guardado ✓');
+});
+
+// ===== COPIAR =====
+$('btnCopiar').addEventListener('click', () => {
+  const text = output.textContent;
+  if (!text || text === 'El prompt generado aparecerá aquí...') {
+    showToast('Primero genera un prompt', true);
+    return;
+  }
+  navigator.clipboard.writeText(text).then(() => showToast('Copiado ✓'));
+});
+
+// ===== LIMPIAR =====
+$('btnLimpiar').addEventListener('click', () => {
+  if (!confirm('¿Limpiar el formulario? (el historial se mantiene)')) return;
+  $('concept').value = '';
+  $('restricciones').value = '';
+  $('memoria').value = '';
+  $('numSerie').value = '1';
+  output.textContent = 'El prompt generado aparecerá aquí...';
+  showToast('Formulario limpiado');
+});
+
+// ===== LIMPIAR HISTORIAL =====
+$('btnLimpiarHistorial').addEventListener('click', () => {
+  if (!confirm('¿Borrar TODO el historial de prompts?')) return;
+  state.historial = [];
+  localStorage.removeItem('promptHistorial');
+  renderHistorial();
+  showToast('Historial borrado');
+});
+
+// ===== RENDER HISTORIAL =====
+function renderHistorial() {
+  if (state.historial.length === 0) {
+    historialEl.innerHTML = '<p style="color: var(--text-dim); font-size: 0.9rem;">Aún no has generado ningún prompt.</p>';
+    return;
+  }
+  historialEl.innerHTML = state.historial.map(h => `
+    <div class="history-item">
+      <div class="meta">
+        <div>
+          <span class="badge ${h.noGospel ? 'secular' : 'gospel'}">${h.mercado}${h.noGospel ? ' · SECULAR' : ' · GOSPEL'}</span>
+          <strong style="margin-left: 8px;">${escapeHtml(h.tema)}</strong>
+        </div>
+        <div>${h.fecha}</div>
+      </div>
+      <div class="preview">${escapeHtml(h.prompt.substring(0, 400))}...</div>
+      <div class="actions" style="margin-top: 8px;">
+        <button class="small secondary" onclick="cargarHistorial(${h.id})">📂 Cargar</button>
+        <button class="small secondary" onclick="copiarHistorial(${h.id})">📋 Copiar</button>
+        <button class="small danger" onclick="borrarHistorial(${h.id})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+window.cargarHistorial = id => {
+  const h = state.historial.find(x => x.id === id);
+  if (!h) return;
+  output.textContent = h.prompt;
+  showToast('Prompt cargado desde historial');
+};
+
+window.copiarHistorial = id => {
+  const h = state.historial.find(x => x.id === id);
+  if (!h) return;
+  navigator.clipboard.writeText(h.prompt).then(() => showToast('Copiado ✓'));
+};
+
+window.borrarHistorial = id => {
+  state.historial = state.historial.filter(x => x.id !== id);
+  localStorage.setItem('promptHistorial', JSON.stringify(state.historial));
+  renderHistorial();
+  showToast('Entrada borrada');
+};
+
+// ===== TOAST =====
+function showToast(msg, isWarn = false) {
+  toast.textContent = msg;
+  toast.style.background = isWarn ? 'var(--warning)' : 'var(--accent)';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ===== INIT =====
+renderMarkets();
+renderHistorial();
+marketPanel.classList.add('gospel-mode');
+</script>
+<script src="js/pod-nav.js"></script>
+<script>try{if(window.PODNav){window.PODNav.prefill();}}catch(e){}</script>
+</body>
+</html>

@@ -469,12 +469,12 @@
     }
   }
 
-  /* ===== VISIÓN multi-proveedor (verificado 8-oct-2026) =====
-     - Gemini directo: tier free vigente; serie 2.5 en retirada (solo usuarios
-       previos) → default nuevo gemini-3.5-flash-lite. Defaults de slots intactos.
-     - OpenRouter :free: 50 req/día (1000 con $10 crédito), 20 RPM, interfaz
-       OpenAI-compatible. Modelos visión verificados oct-2026.
-     - Groq: SIN visión free (modelos retirados 2025-04) → no se usa aquí. */
+  /* ===== VISIÓN multi-proveedor (verificado oct-2026) =====
+     - OpenRouter :free con visión: NANO-OMNI free (30B multimodal, 50 req/día,
+       sin consumir créditos del usuario) → default del proveedor de visión.
+     - Gemini directo: serie 3.x para proyectos nuevos (gemini-3.5-flash-lite).
+     - Groq: SIN visión free (modelos retirados 2025-04) → no se usa aquí.
+     Prioridad por defecto: OpenRouter :free (cero créditos) → Gemini (serie 3.x). */
   var VISION_KEY = 'pod2_vision_cfg';
   /* Mapa de modelos muertos ÚNICO en js/ia-client.js (IAClient.DEAD_MODELS);
      aquí queda solo el alias para no romper lecturas existentes. */
@@ -482,10 +482,10 @@
   var VISION_DEFAULTS = {
     provider: 'auto',
     geminiModel: 'gemini-3.5-flash-lite',
-    openrouterModel: 'google/gemma-4-31b-it:free',
+    openrouterModel: 'nvidia/nemotron-3-nano-omni-30b:free',
     timeoutMs: 20000
   };
-  var VISION_FALLBACK_OR = ['google/gemma-4-31b-it:free', 'nvidia/nemotron-3-nano-omni-30b:free'];
+  var VISION_FALLBACK_OR = ['nvidia/nemotron-3-nano-omni-30b:free', 'google/gemini-2.5-flash'];
 
   function getVisionConfig() {
     try {
@@ -552,7 +552,10 @@
     }
     if (c.provider === 'gemini') return gem() || oro();
     if (c.provider === 'openrouter') return oro() || gem();
-    if (r.google !== false && gem()) return gem();
+    // Default 'auto': OpenRouter :free con visión primero (cero créditos de
+    // usuario; 50 req/día free) → Gemini serie 3.x → último recurso OpenRouter.
+    if (oro() && r.openrouter !== false) return oro();
+    if (gem() && r.google !== false) return gem();
     if (oro()) return oro();
     return gem();
   }
@@ -785,7 +788,7 @@
     }
     const targetLabel = target.kind === 'openrouter' ? 'OpenRouter' : 'Gemini';
 
-    if (statusEl) statusEl.textContent = 'Analizando imagen con ' + targetLabel + ' Vision (' + target.model + ')...';
+    if (statusEl) statusEl.textContent = 'Analizando imagen con ' + targetLabel + ' Vision (' + target.model + ')' + (target.kind === 'openrouter' ? ' · modelo :free (sin consumir créditos)' : '') + '...';
 
     const file = fileInput.files[0];
     if (!file.type || !/^image\/(png|jpeg|webp|gif)$/i.test(file.type)) {
@@ -1017,6 +1020,92 @@
     tell('<span class="good">Frase cargada en Mensaje visible. Revísala antes de generar.</span>');
   }
 
+  /* ============================================================
+     BANCO DE MOTIVOS — FLUJO MAESTRO (validar / proponer / importar)
+     El lote enriquecido se valida sin mutar datos; las propuestas
+     nacen de la cola de revision y nunca se guardan sin acción explícita.
+     ============================================================ */
+
+  var lastBankJsonText = '';
+
+  function renderBankPreview(payload) {
+    var el = $('bankPreview');
+    if (!el) return;
+    if (!payload || !payload.ok) {
+      el.innerHTML = '<span class="badge">' + ((payload && payload.error) || 'Sin datos para previsualizar. Pega un lote JSON valido.') + '</span>';
+      return;
+    }
+    var validos = payload.validos || [];
+    var rechazados = payload.rechazados || [];
+    var html = '<div style="margin-bottom:8px;"><span class="badge">' + validos.length + ' registros validos</span> <span class="badge">' + rechazados.length + ' rechazados</span></div>';
+    if (!validos.length) { html += '<div class="hint">Ningun registro del lote completo paso la validacion.</div>'; el.innerHTML = html; return; }
+    html += '<div style="display:flex; flex-direction: column; gap: 6px; max-height: 220px; overflow: auto;">';
+    validos.forEach(function (r, i) {
+      html += '<label style="display:flex; gap:8px; align-items: baseline;">';
+      html += '<input type="checkbox" data-fila="' + i + '" value="' + (r.id || '') + '" />';
+      html += '<span><strong>' + (r.id || '') + '</strong> — ' + (r.motivo || '') + ' | ' + (r.idea_comunicada || '') + ' | tensiones: ' + (r.tensiones || []).join(', ') + ' | contextos: ' + (r.contextos || []).join(', ') + ' | riesgo: ' + (r.riesgo_cliche || '') + '</span>';
+      html += '</label>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  function validarTextoBanco(text) {
+    if (typeof window.validateEnrichedBankFormat !== 'function') { renderBankPreview({ ok: false, error: 'Validador no disponible.' }); return; }
+    var validacion = window.validateEnrichedBankFormat(text);
+    if (!validacion.ok) { renderBankPreview({ ok: false, error: validacion.error }); return; }
+    var datos = validacion.data || {};
+    var validos = [];
+    var rechazos = [];
+    (datos.registros || []).forEach(function (r, i) {
+      var v = typeof window.validateMotifRegistro === 'function' ? window.validateMotifRegistro(r, i) : { ok: true };
+      if (v.ok) validos.push(r); else rechazos.push(v.error);
+    });
+    renderBankPreview({ ok: true, validos: validos, rechazos: rechazos });
+  }
+
+  function validarBancoDesdeUI() {
+    var text = $('bankJsonInput') ? ($('bankJsonInput').value || '').trim() : '';
+    var fileInput = $('bankFileInput');
+    if (fileInput && fileInput.files && fileInput.files.length) {
+      var file = fileInput.files[0];
+      var reader = new FileReader();
+      reader.onload = function () { lastBankJsonText = String(reader.result || ''); validarTextoBanco(lastBankJsonText); };
+      reader.readAsText(file);
+      return;
+    }
+    if (!text) { renderBankPreview({ ok: false, error: 'Pega un lote JSON o elige un archivo primero.' }); return; }
+    lastBankJsonText = text;
+    validarTextoBanco(text);
+  }
+
+  function importarSeleccionadosUI() {
+    if (!lastBankJsonText) { tell('<span class="bad">Valida el lote antes de importar seleccionados.</span>'); return; }
+    var parsed;
+    try { parsed = JSON.parse(lastBankJsonText); } catch (e) { tell('<span class="bad">JSON invalido.</span>'); return; }
+    var checks = Array.from(document.querySelectorAll('#bankPreview input[type=checkbox][data-fila]'));
+    var elegidos = [];
+    checks.forEach(function (cb) { if (cb.checked) { var idx = Number(cb.getAttribute('data-fila')); var r = (parsed.registros || [])[idx]; if (r) elegidos.push(r); } });
+    if (!elegidos.length) { tell('<span class="info">No hay registros seleccionados.</span>'); return; }
+    var loteElegido = JSON.stringify(Object.assign({}, parsed, { registros: elegidos }));
+    var res = typeof window.importarMotivosEnriquecidos === 'function' ? window.importarMotivosEnriquecidos(loteElegido, $('market').value, (typeof effectiveSubniche === 'function' ? effectiveSubniche() : ($('subniche') ? $('subniche').value : 'comun')), false) : { ok: false, error: 'Importador no disponible.' };
+    if (res && res.ok) { tell('<span class="good">Importacion completada: ' + (res.stats && res.stats.added ? res.stats.added.length : 0) + ' añadidos, ' + (res.stats && res.stats.duplicates ? res.stats.duplicates.length : 0) + ' duplicados.</span>'); }
+    else { tell('<span class="bad">' + ((res && res.error) || 'No se pudo importar') + '</span>'); }
+    validarBancoDesdeUI();
+  }
+
+  function proponerBanco(tipo) {
+    var market = $('market') ? $('market').value : 'gospel_es';
+    var subniche = typeof effectiveSubniche === 'function' ? effectiveSubniche() : ($('subniche') ? $('subniche').value : 'auto');
+    if (!subniche || subniche === 'auto') { tell('<span class="bad">Elige un subnicho o escribe un concepto que permita detectarlo.</span>'); return; }
+    var fn = tipo === 'concepto' ? 'proponerConceptoDesdeBanco' : (tipo === 'frase' ? 'proponerFraseDesdeBanco' : 'proponerObjetoDesdeBanco');
+    var res = window[fn];
+    if (typeof res !== 'function') { tell('<span class="bad">Propuesta no disponible.</span>'); return; }
+    var out = res(market, subniche);
+    if ($('bankPreview')) $('bankPreview').innerHTML = '<span class="badge">Propuesta: ' + ((out && out.ok === false) ? (out.error || 'sin datos disponibles') : 'lista para revision') + '</span>';
+    if (out && out.ok) { tell('<span class="good">Propuesta generada desde el banco personal. Revisa antes de aceptarla.</span>'); }
+  }
+
   function wireButtons() {
     // Cascada de selectores
     on('market', 'change', onMarketChange);
@@ -1049,6 +1138,14 @@
     // Banco personal
     on('btnSavePB', 'click', savePersonalBankFromUI);
 
+    // Banco de motivos — flujo maestro
+    on('btnBankValidate', 'click', validarBancoDesdeUI);
+    on('btnBankProposeConcept', 'click', function () { proponerBanco('concepto'); });
+    on('btnBankProposePhrase', 'click', function () { proponerBanco('frase'); });
+    on('btnBankProposeObject', 'click', function () { proponerBanco('objeto'); });
+    on('btnBankImportSelected', 'click', importarSeleccionadosUI);
+    on('bankFileInput', 'change', function () { validarBancoDesdeUI(); });
+
     // Botones del motor
     on('btnDirector', 'click', function () {
       if (typeof crearLos3Disenos === 'function') {
@@ -1071,7 +1168,7 @@
     });
 
     on('btnBuild', 'click', function () {
-      // Validar y generar: con diseños en pantalla valida sin regenerar;
+      // Validar set actual: con diseños en pantalla valida sin regenerar;
       // vacío genera los 3 por primera vez (comportamiento anterior).
       const hasSet = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.set)
         || (typeof window !== 'undefined' && window.LAST_RESULT && window.LAST_RESULT.set);
