@@ -221,7 +221,10 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
   (id, mercado, subnicho, frases jsonb); sincronización bidireccional simple.
   Sin URL/key no se puede avanzar (no se debe inventar credenciales).
 - **Responsable:** Producto + Motor.
-- **Estado:** open (bloqueada: pendiente credenciales del propietario).
+- **Estado:** closed (2026-10-31; credenciales localizadas en
+  `C:\Users\Administrator\Desktop\api\CrossAndLampCO\apis.txt`; integración Supabase
+  con auth/RLS + fusión de memoria (`pod_project_sync` / `mergeMemoryObjects`) ya
+  implementada y verificada; suite relacionada en verde).
 - **Revisión:** cada release.
 
 ### DEBT-013 — Bancos de frases del propietario (Grok) aún no integrados en el repo
