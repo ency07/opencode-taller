@@ -372,21 +372,31 @@ function buildPrompt(v) {
   const familiaInfo = (window.ESTILO_INFO && window.ESTILO_INFO[v.familia]) ? window.ESTILO_INFO[v.familia] : 'estilo propio de la familia';
   const idiomaLabel = v.idioma === 'en' ? 'Inglés' : (v.idioma === 'pt' ? 'Portugués' : 'Español');
   const prompt = `================================================================
-PROMPT — CONSTRUCTOR IA · BANCOS DE MOTIVOS · SUBCONICO: ${v.subnicho || '[SUBNICHO]'}
+PROMPT — CONSTRUCTOR IA · BANCOS DE MOTIVOS · SUBNICHO: ${v.subnicho || '[SUBNICHO]'}
 ================================================================
 
-Contexto: Taller POD — Dirección de Arte Comercial. Acabo de crear la nueva
-familia de estilo "${v.familia}" (${familiaInfo}).
+Contexto: Taller POD — Dirección de Arte Comercial. Acabé de crear la familia
+de estilo "${v.familia}" (${familiaInfo}).
 
 Necesito: un lote de candidatos enriquecidos para esa familia en formato
 "taller-pod-motif-candidates" (schemaVersion 1).
 
 Tarea:
-1. ${TAREAS[v.tipo] || TAREAS.concepto}
-2. Por cada registro dar: id, motivo, idea_comunicada, tensiones[], contextos[],
-   justificacion, riesgo_clique/bajo.
-3. Respetar: sin fuga cross-market/nicho/domain; solo motivos activados; semántica
-   coherente; anti-repetición; coherencia con el estilo "${v.familia}".
+1. Generar un lote de candidatos para la familia "${v.familia}" en mercado "${v.mercado}", para el producto ${v.producto || '[PRODUCTO]'}, subnicho ${v.subnicho || '[SUBNICHO]'}, audiencia ${v.audiencia || '[AUDIENCIA]'}.
+2. Por cada registro entregar:
+   - id: string snake_case único
+   - motivo: string (palabra clave corta)
+   - idea_comunicada: string
+   - tensiones: string[]
+   - contextos: string[]
+   - justificacion: string
+   - riesgo_clice: "bajo" | "medio" | "alto"
+   - frase: { concepto, frase_principal, frase_apoyo, tono }
+   - La frase va bajo la clave "__phrase__${v.subnicho || '[SUBNICHO]}'.". 
+3. Restricciones: sin cross-market/nicho/domain; solo motivos activados; semántica
+   coherente; anti-repetición contra el banco existente; coherencia con el estilo
+   "${v.familia}"; tono: ${v.tono}; sin marcas, personajes, citas ni propiedad
+   intelectual protegida.
 
 Formato de salida:
 {
@@ -398,11 +408,11 @@ Formato de salida:
   "registros": [ ... ]
 }
 
-INSTRUCCIONES FINALES:
-- Responde ÚNICAMENTE con el JSON válido del formato anterior. Sin texto antes ni después del JSON.
-- Si necesitas entregar varios lotes, entrega cada respuesta como un bloque JSON válido
-  separado por el delimitador exacto: ===LOTE===
-- Cada registro: id único en snake_case; motivo (palabra clave corta); idea_comunicada;
+INSTRUCCIONES:
+- Responde ÚNICAMENTE con el JSON válido de arriba. Sin texto antes ni después.
+- Un lote = un único JSON válido. Si generas varios lotes: cada lote es un JSON
+  válido, y entre lotes se usa el delimitador exacto ===LOTE===, con este orden:
+- Cada registro: id único en snake_case; motivo (palabra corta); idea_comunicada;
   tensiones (array); contextos (array); justificacion; riesgo_clique (bajo|medio|alto).
 - El texto visible de las frases va en el idioma indicado: ${v.idioma} (${idiomaLabel}).
 - Tono de la propuesta: ${v.tono}.
