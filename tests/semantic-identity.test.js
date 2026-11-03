@@ -228,6 +228,20 @@ const indexSrc = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 ok(indexSrc.includes('placeholder="Vacío: el motor propone ideas"') && indexSrc.includes('title="Déjalo vacío para descubrir ideas; o escribe una idea concreta"'), 'concepto sin placeholder truncado y con ayuda completa');
 ok(/\.vk\s*\{[^}]*flex:\s*0 0 34%/.test(cssSource) && /\.vrow \.vv select\s*\{[^}]*max-width:\s*100%/.test(cssSource), 'las fichas deben dar espacio a los selects (etiqueta 34% + valor flexible)');
 
+// --- Fase 3: banco enriquecido -> motor (adaptador semántico de motivos) ---
+ok(typeof _personalMotifCandidates === 'function', 'el motor no expone el adaptador de motivos enriquecidos (_personalMotifCandidates)');
+ok(typeof _motifView === 'function', 'el motor no expone la vista semántica de motivos (_motifView)');
+ok(typeof _rankCompatibleMotifs === 'function', 'el motor no expone el ranking semántico de motivos (_rankCompatibleMotifs)');
+const enrichedPool = _personalMotifCandidates('gospel_es', 'gospel_es');
+ok(Array.isArray(enrichedPool), 'el adaptador de motivos enriquecidos debe devolver un array');
+const enrichedRank = _rankCompatibleMotifs([{ id: 'sendero-secretos', motivo: 'sendero', idea_comunicada: 'a pesar de todo hay caminos', tensiones: ['aventura', 'miedo'], contextos: ['selva'], riesgo_cliche: 'bajo' }], 'a pesar de todo hay caminos');
+ok(Array.isArray(enrichedRank) && enrichedRank.length > 0 && enrichedRank[0] === 'sendero', 'el ranking semántico debe aceptar un motivo enriquecido y usar su idea_comunicada: ' + JSON.stringify(enrichedRank));
+const inBankPlan = _planExploreMotifs([{ id: 'sendero-secretos', motivo: 'sendero', idea_comunicada: 'a pesar de todo hay caminos', tensiones: ['aventura'], contextos: ['selva'], riesgo_cliche: 'bajo' }], [], 'sendero', 'sendero', '');
+ok(inBankPlan.anchor === 'sendero', 'el plan de motivos debe reconocer un banco enriquecido como ancla de la serie');
+const derivedPlan = _planExploreMotifs(['vasija'], [], 'camión de bomberos vintage', 'camión de bomberos vintage', '');
+ok(!!derivedPlan.conflict, 'sin relación semántica el motor debe derivar metáfora y declarar conflicto, no sortear un motivo al azar');
+ok(/Deriva una metáfora visual/.test(derivedPlan.conflict || ''), 'la derivación debe quedar como metáfora del concepto, no como motivo validado del banco');
+
 console.log((failures.length ? 'FAIL' : 'PASS') + ' semantic-identity (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.forEach(function (msg) { console.error(' - ' + msg); });
 process.exit(failures.length ? 1 : 0);

@@ -22,6 +22,8 @@
     <a href="editor-bancos.html">Editor de bancos</a>
     <a href="motor-lenguajes-visuales.html">Motor de lenguajes</a>
     <a href="sistema_matriz.html">Sistema matriz</a>
+    <a href="constructor-prompt.html">Constructor de Prompt</a>
+    <a href="constructor-prompt-ia.html">Constructor de Prompt IA</a>
   </nav>
 
   <div class="shell">
@@ -69,133 +71,150 @@
             <span>Mercado y Producto</span>
           </div>
 
-          <div class="field-row">
-            <div class="field">
-              <label for="market">1. Dónde se vende — Mercado</label>
-              <select id="market">
-                <optgroup label="Prioritarios">
-                  <option value="colombia" selected>Colombia — español regional</option>
-                  <option value="global_en">Global English — USA/EU</option>
-                  <option value="global_es">Global Español — neutro</option>
-                  <option value="gospel_es">Gospel ES — universal</option>
-                  <option value="gospel_en">Gospel EN — universal</option>
-                </optgroup>
-                <optgroup label="Otros (legacy)">
-                  <option value="anglo">Anglo US/UK/CA/AU</option>
-                  <option value="latam">LATAM Español</option>
-                  <option value="spain">España</option>
-                  <option value="diaspora_col">Diáspora Colombia</option>
-                  <option value="custom">Personalizado</option>
-                </optgroup>
-              </select>
-            </div>
+          <div class="field-group">
+            <span class="field-group-title">Mercado e idioma</span>
+            <div class="field-row">
+              <div class="field">
+                <label for="market">1. Dónde se vende — Mercado</label>
+                <select id="market">
+                  <optgroup label="Prioritarios">
+                    <option value="colombia" selected>Colombia — español regional</option>
+                    <option value="global_en">Global English — USA/EU</option>
+                    <option value="global_es">Global Español — neutro</option>
+                    <option value="gospel_es">Gospel ES — universal</option>
+                    <option value="gospel_en">Gospel EN — universal</option>
+                  </optgroup>
+                  <optgroup label="Otros (legacy)">
+                    <option value="anglo">Anglo US/UK/CA/AU</option>
+                    <option value="latam">LATAM Español</option>
+                    <option value="spain">España</option>
+                    <option value="diaspora_col">Diáspora Colombia</option>
+                    <option value="custom">Personalizado</option>
+                  </optgroup>
+                </select>
+              </div>
 
-            <div class="field">
-              <label for="language">Idioma del diseño</label>
-              <select id="language">
-                <option value="auto" selected>Auto — según mercado</option>
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="spanglish">Spanglish</option>
-              </select>
+              <div class="field">
+                <label for="language">Idioma del diseño</label>
+                <select id="language">
+                  <option value="auto" selected>Auto — según mercado</option>
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="spanglish">Spanglish</option>
+                </select>
+              </div>
             </div>
           </div>
           <div class="hint" id="marketHelp">
             Colombia = humor e identidad por región. Global EN/ES = neutro sin región. Gospel = universal, sin región, trinitario y cristocéntrico.
           </div>
 
-          <div class="field-row">
-            <div class="field">
-              <label for="product">Producto</label>
-              <select id="product">
-                <option selected>CAMISETA SOFT</option>
-                <option>CAMISETA APPAREL</option>
-                <option>HOODIE</option>
-                <option>GORRA</option>
-                <option>MUG</option>
-                <option>MOCHILA</option>
-                <option>TOTE BAG</option>
-                <option>FUNDA MÓVIL</option>
-                <option>ILUSTRACION PREMIUM APPAREL</option>
-                <option>DISPLATE</option>
-              </select>
-              <div class="hint" id="tplActiveHint" style="margin-top:6px;"></div>
-              <div class="field" id="printMethodField" style="margin-top: 10px;">
-                <label for="printMethod">Preparacion de impresion</label>
-                <select id="printMethod"></select>
-                <div class="hint">Se agrega al prompt como guia tecnica; no cambia el estilo visual ni sustituye los ajustes del proveedor.</div>
-              </div>
-              <div class="field" id="stampSideField" style="margin-top: 10px;">
-                <label for="stampSide">Cara del estampado</label>
-                <select id="stampSide">
-                  <option value="auto" selected>Auto — frente (solo espalda si el diseño lo pide)</option>
-                  <option value="frente">Frente</option>
-                  <option value="espalda">Espalda</option>
+          <div class="field-group">
+            <span class="field-group-title">Producto y preparación</span>
+            <div class="field-row">
+              <div class="field">
+                <label for="product">Producto</label>
+                <select id="product">
+                  <option selected>CAMISETA SOFT</option>
+                  <option>CAMISETA APPAREL</option>
+                  <option>HOODIE</option>
+                  <option>GORRA</option>
+                  <option>MUG</option>
+                  <option>MOCHILA</option>
+                  <option>TOTE BAG</option>
+                  <option>FUNDA MÓVIL</option>
+                  <option>ILUSTRACION PREMIUM APPAREL</option>
+                  <option>DISPLATE</option>
                 </select>
-                <div class="hint">Define en qué cara va el arte y qué vistas muestra la hoja de presentación. La espalda se dibuja solo cuando se pide.</div>
+                <div class="hint" id="tplActiveHint" style="margin-top:6px;"></div>
+                <div class="field" id="printMethodField" style="margin-top: 10px;">
+                  <label for="printMethod">Preparacion de impresion</label>
+                  <select id="printMethod"></select>
+                  <div class="hint">Se agrega al prompt como guia tecnica; no cambia el estilo visual ni sustituye los ajustes del proveedor.</div>
+                </div>
+                <div class="field" id="stampSideField" style="margin-top: 10px;">
+                  <label for="stampSide">Cara del estampado</label>
+                  <select id="stampSide">
+                    <option value="auto" selected>Auto — frente (solo espalda si el diseño lo pide)</option>
+                    <option value="frente">Frente</option>
+                    <option value="espalda">Espalda</option>
+                  </select>
+                  <div class="hint">Define en qué cara va el arte y qué vistas muestra la hoja de presentación. La espalda se dibuja solo cuando se pide.</div>
+                </div>
+                <div class="field" id="capApplicationField" style="margin-top: 10px;">
+                  <label for="capApplication">Acabado de gorra (solo se usa al elegir GORRA)</label>
+                  <select id="capApplication">
+                    <option value="auto" selected>Auto — elegir técnica según cada dirección</option>
+                    <option value="bordado">Bordado</option>
+                    <option value="parche">Parche bordado o tejido</option>
+                    <option value="impresion">Impresión</option>
+                  </select>
+                </div>
               </div>
-              <div class="field" id="capApplicationField" style="margin-top: 10px;">
-                <label for="capApplication">Acabado de gorra (solo se usa al elegir GORRA)</label>
-                <select id="capApplication">
-                  <option value="auto" selected>Auto — elegir técnica según cada dirección</option>
-                  <option value="bordado">Bordado</option>
-                  <option value="parche">Parche bordado o tejido</option>
-                  <option value="impresion">Impresión</option>
+
+              <div class="field">
+                <label for="marketplace">Marketplace / Uso</label>
+                <select id="marketplace">
+                  <option value="generic" selected>Generic</option>
+                  <option value="etsy">Etsy</option>
+                  <option value="amazon">Amazon Merch</option>
+                  <option value="redbubble">Redbubble</option>
+                  <option value="teepublic">TeePublic</option>
+                  <option value="displate">Displate</option>
                 </select>
               </div>
             </div>
+          </div>
 
+          <div class="field-group">
+            <span class="field-group-title">Modo de trabajo</span>
             <div class="field">
-              <label for="marketplace">Marketplace / Uso</label>
-              <select id="marketplace">
-                <option value="generic" selected>Generic</option>
-                <option value="etsy">Etsy</option>
-                <option value="amazon">Amazon Merch</option>
-                <option value="redbubble">Redbubble</option>
-                <option value="teepublic">TeePublic</option>
-                <option value="displate">Displate</option>
+              <label for="workflowMode">Modo</label>
+              <select id="workflowMode">
+                <option value="explore" selected>Explorar ideas — no tengo concepto</option>
+                <option value="new">Desarrollar un concepto</option>
+                <option value="variation">Variación desde imagen</option>
               </select>
             </div>
           </div>
 
-          <div class="field">
-            <label for="workflowMode">Modo</label>
-            <select id="workflowMode">
-              <option value="explore" selected>Explorar ideas — no tengo concepto</option>
-              <option value="new">Desarrollar un concepto</option>
-              <option value="variation">Variación desde imagen</option>
-            </select>
-          </div>
+          <div class="field-group">
+            <span class="field-group-title">Región y subnicho</span>
+            <div class="field-row">
+              <div class="field">
+                <label for="region" title="Región de destino del diseño. Siempre visible, nunca se oculta.">
+                  2. A quién le habla — Región
+                </label>
+                <select id="region">
+                  <option value="global" selected>Global</option>
+                </select>
+              </div>
 
-          <div class="field-row">
-            <div class="field">
-              <label for="region">2. A quién le habla — Región (siempre visible, nunca se oculta)</label>
-              <select id="region">
-                <option value="global" selected>Global</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label for="subniche">3. De qué habla — Subnicho / Banco</label>
-              <select id="subniche">
-                <option value="auto" selected>Auto</option>
-              </select>
+              <div class="field">
+                <label for="subniche">3. De qué habla — Subnicho / Banco</label>
+                <select id="subniche">
+                  <option value="auto" selected>Auto</option>
+                </select>
+              </div>
             </div>
           </div>
-          
+
           <div class="hint">
             Colombia: Barranquilla propia, Paisa, Rolo, Nacional. Gospel: Universal sin región. Global: sin región. El subnicho no desaparece, solo se filtra.
           </div>
 
-          <div class="field-row" style="margin-top: 12px;">
-            <div class="field">
-              <label for="serie">Serie</label>
-              <input id="serie" type="text" placeholder="Ej: CART-001" />
-            </div>
+          <div class="field-group">
+            <span class="field-group-title">Serie y set</span>
+            <div class="field-row" style="margin-top: 12px;">
+              <div class="field">
+                <label for="serie">Serie</label>
+                <input id="serie" type="text" placeholder="Ej: CART-001" />
+              </div>
 
-            <div class="field">
-              <label for="set">Nombre del set</label>
-              <input id="set" type="text" placeholder="Opcional" />
+              <div class="field">
+                <label for="set">Nombre del set</label>
+                <input id="set" type="text" placeholder="Opcional" />
+              </div>
             </div>
           </div>
         </section>
@@ -217,6 +236,7 @@
             <input id="message" type="text" placeholder="Texto que aparece en el diseño" />
             <div class="actions" style="margin-top: 6px;">
               <button id="btnUseBankPhrase" type="button" class="ghost">Cargar una frase guardada para este subnicho</button>
+              <button id="btnUseBankConcept" type="button" class="ghost" onclick="useBankConcept()">Cargar un concepto guardado para este subnicho</button>
               <button id="btnSugerirCopy" type="button" class="ghost">Proponer copy con IA</button>
             </div>
             <div class="hint" id="copyIAStatus"></div>
@@ -256,9 +276,40 @@
           </div>
         </section>
 
+        <section class="panel">
+          <div class="panel-title">
+            <span class="step-num">3</span>
+            <span>Banco de motivos — candidatos enriquecidos</span>
+          </div>
+
+          <div class="field">
+            <label for="bankJsonInput">Banco de motivos — JSON (formato taller-pod-motif-candidates)</label>
+            <textarea id="bankJsonInput" rows="10" placeholder='{"format":"taller-pod-motif-candidates","schemaVersion":1,"mercado":"gospel_es","familia":"gospel","idioma":"es","registros":[{"id":"sendero-secretos","motivo":"sendero","idea_comunicada":"rutas","tensiones":["aventura"],"contextos":["selva"],"justificacion":"envío","riesgo_cliche":"bajo"}]}'></textarea>
+            <div class="hint">Pega el lote del banco enriquecido o elige un archivo JSON. Validar revisa formato, tipos, campos obligatorios y duplicados sin modificar datos.</div>
+          </div>
+
+          <div class="field">
+            <label for="bankFileInput">O cargar archivo JSON</label>
+            <input id="bankFileInput" type="file" accept="application/json,.json" />
+          </div>
+
+          <div class="actions" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+            <button id="btnBankValidate" class="ghost" type="button">Validar y revisar</button>
+            <button id="btnBankProposeConcept" class="ghost" type="button">Proponer concepto</button>
+            <button id="btnBankProposePhrase" class="ghost" type="button">Proponer frase</button>
+            <button id="btnBankProposeObject" class="ghost" type="button">Proponer objeto</button>
+            <button id="btnBankImportSelected" class="primary" type="button">Importar seleccionados</button>
+          </div>
+
+          <div class="field" style="margin-top: 12px;">
+            <label for="bankPreview">Previsualización del banco enriquecido</label>
+            <div id="bankPreview" class="hint">Pega un lote y pulsa "Validar y revisar" para previsualizar registros válidos.</div>
+          </div>
+        </section>
+
         <details class="panel" id="varPanel">
           <summary class="panel-title">
-            <span class="step-num">3</span>
+            <span class="step-num">4</span>
             <span>Variación desde imagen</span>
             <span class="panel-summary-note">Opcional</span>
           </summary>
@@ -323,7 +374,7 @@
 
         <details class="panel" id="mixPanel">
           <summary class="panel-title">
-            <span class="step-num">4</span>
+            <span class="step-num">5</span>
             <span>Mezclas y banco</span>
             <span class="panel-summary-note">Opcional</span>
           </summary>
@@ -404,9 +455,9 @@
         </div>
 
         <div class="actions">
-          <button id="btnBuild" class="ghost" type="button">Validar y generar</button>
-          <button id="btnNewSet" class="ghost" type="button">Limpiar fichas</button>
-          <button id="btnReset" class="ghost" type="button">Borrar memoria</button>
+          <button id="btnBuild" class="ghost secondary" type="button">Validar set actual</button>
+          <button id="btnNewSet" class="ghost secondary" type="button">Limpiar fichas</button>
+          <button id="btnReset" class="ghost destructive" type="button">Borrar memoria</button>
         </div>
 
       </div>
@@ -416,6 +467,8 @@
         <div id="status" class="status info">
           Listo. Elige Explorar ideas para descubrir conceptos, o Desarrollar un concepto si ya tienes una idea.
         </div>
+
+        <div id="colorAudit" class="status info" style="display:none;"></div>
 
         <section class="panel">
           <div class="panel-title">

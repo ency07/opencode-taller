@@ -1048,6 +1048,125 @@ details.panel .panel-title {
   margin-bottom: 4px;
 }
 
+/* --- Botones: jerarquía primaria / secundaria / terciaria / destructiva --- */
+button.secondary,
+.btn.secondary {
+  background: transparent;
+  border: 1px solid var(--acc);
+  color: var(--acc);
+  font-weight: 600;
+}
+button.secondary:hover,
+.btn.secondary:hover {
+  background: var(--acc-dim);
+  border-color: var(--acc);
+  color: #ffffff;
+}
+
+button.destructive,
+.btn.destructive {
+  background: transparent;
+  border: 1px solid var(--bad);
+  color: var(--bad);
+  font-weight: 600;
+}
+button.destructive:hover,
+.btn.destructive:hover {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: var(--bad);
+  color: #ffb4b4;
+}
+
+/* --- Agrupamiento de campos relacionados (principio de proximidad) --- */
+.field-group {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel-alt);
+}
+.field-group + .field-group {
+  margin-top: 0;
+}
+.field-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mut2);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line2);
+  display: block;
+}
+
+/* --- Barra de estado global destacada (encabezado de revisión) --- */
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.status-banner .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mut2);
+  flex: 0 0 auto;
+}
+.status-banner .dot.ok {
+  background: var(--good);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+}
+.status-banner .dot.bad {
+  background: var(--bad);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.18);
+}
+.status-banner .dot.warn {
+  background: var(--warn);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18);
+}
+
+/* --- Consistencia de radio en todos los contenedores --- */
+.panel,
+details.panel > summary,
+.fpanel,
+.aiSlot {
+  border-radius: var(--r) !important;
+}
+
+/* --- Más aire entre paneles y secciones --- */
+.left-col,
+.right-col {
+  gap: 20px;
+}
+
+/* --- Tipografía de títulos de panel (jerarquía visual) --- */
+.panel-title {
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+}
+
+/* --- Hints con más respiración y legibilidad --- */
+.hint {
+  margin-top: 8px;
+  line-height: 1.55;
+}
+
+/* --- Tooltip nativo en selects/inputs con título largo --- */
+select[title],
+input[title],
+textarea[title] {
+  cursor: help;
+}
+
 /* Responsive */
 
 @media (max-width: 1100px) {

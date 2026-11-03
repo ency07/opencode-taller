@@ -88,6 +88,23 @@ r = validarSetActual();
 ok(r.ok === true, 'set sano debe validar OK');
 ok(els.status.innerHTML.indexOf('Validación OK') !== -1, 'status debe confirmar validación');
 ok(vm.runInThisContext('LAST_RESULT.passed === true && !!LAST_RESULT.score;'), 'debe recalcular score/passed');
+/* Contradicción del audit resuelta: si el score pasa pero el Árbitro falla,
+   el status NO puede quedar en verde ('Validación OK'). Regresión del punto crítico. */
+vm.runInThisContext('LAST_RESULT = null;');
+els = stubBase();
+global.__SETBUENO__ = buenSet();
+vm.runInThisContext('LAST_RESULT = { set: global.__SETBUENO__, score: null, passed: true };');
+const realArb = arbitroSelectores;
+global.arbitroSelectores = function () { return { ok: false, fallos: 2, total: 12, checks: [], detalle: 'estilo' }; };
+r = validarSetActual();
+ok(r.ok === false, 'verde en score + árbitro rojo => la validacion no queda en verde');
+ok(els.status.innerHTML.indexOf('Árbitro') !== -1, 'status debe reportar el fallo del arbitro, no callarse en verde');
+ok(els.status.innerHTML.indexOf('Validación OK') === -1, 'status NO debe decir Validación OK cuando el arbitro falla');
+global.arbitroSelectores = realArb;
+const motorSrcForCheck = fs.readFileSync(path.join(ROOT, 'js', 'motor-nucleo.js'), 'utf8');
+ok(/function _estadoUnificado\(/.test(motorSrcForCheck), 'motor expone estado unificado del set (score + arbitro)');
+ok(/statusEl\.innerHTML = verdict\.html/.test(motorSrcForCheck), 'crearLos3Disenos aplica el veredicto unificado al status');
+ok(/function _qaBadgeHtml\(/.test(motorSrcForCheck), 'motor expone badge unificado de QA visual');
 
 const setMalo = buenSet();
 setMalo.C.tipografia = setMalo.A.tipografia;
@@ -102,32 +119,36 @@ ok(r.ok === false && els.status.innerHTML.indexOf('tipografía repetida') !== -1
 function stubQA(marcados) {
   const boxes = marcados.map(function (c) { return { checked: !!c }; });
   const estado = { innerHTML: '' };
+  const gate = { innerHTML: '' };
   global.document = {
     getElementById: function (id) {
       if (id === 'qaVisual') return { querySelectorAll: function () { return boxes; } };
       if (id === 'qaEstado') return estado;
+      if (id === 'gate') return gate;
       return null;
     },
     querySelectorAll: function () { return []; }
   };
-  return { boxes: boxes, estado: estado };
+  return { boxes: boxes, estado: estado, gate: gate };
 }
 let qa = stubQA([true, true, false]);
 let st = actualizarQAVisual();
 ok(st.marcados === 2 && st.total === 3, 'conteo 2/3');
 ok(qa.estado.innerHTML.indexOf('2/3') !== -1 && qa.estado.innerHTML.indexOf('verificada') === -1, 'parcial sin sello');
+ok(qa.gate.innerHTML.indexOf('2/3') !== -1, 'el badge del gate debe reflejar el mismo estado de QA (fuente unica)');
 qa = stubQA([true, true, true]);
 st = actualizarQAVisual();
 ok(st.marcados === 3 && qa.estado.innerHTML.indexOf('verificada') !== -1, 'completo sella con fecha');
+ok(qa.gate.innerHTML.indexOf('verificada') !== -1, 'el badge del gate debe reflejar el mismo estado de QA (fuente unica)');
 qa = stubQA([true, false, true]);
 limpiarQAVisual();
 ok(qa.boxes.every(function (b) { return !b.checked; }), 'limpiar desmarca todo');
 ok(qa.estado.innerHTML.indexOf('pendiente') !== -1, 'limpiar vuelve a pendiente');
+ok(qa.gate.innerHTML.indexOf('pendiente') !== -1, 'limpiar vuelve el badge del gate a pendiente (fuente unica)');
 
 /* Cableado: botón valida, panel QA con una sola casilla */
 const analisisSrc = fs.readFileSync(path.join(ROOT, 'js', 'ia-analisis.js'), 'utf8');
-ok(/hasSet && typeof validarSetActual === 'function'/.test(analisisSrc), 'btnBuild debe validar si hay diseños');
-ok(/typeof crearLos3Disenos === 'function'/.test(analisisSrc), 'btnBuild debe generar si está vacío');
+ok(/hasSet && typeof validarSetActual === 'function'/.test(analisisSrc), 'btnBuild debe validar si hay diseños');ok(/typeof crearLos3Disenos === 'function'/.test(analisisSrc), 'btnBuild debe generar si está vacío');
 const indexHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 ok(indexHtml.indexOf('id="qaVisual"') !== -1, 'index debe traer panel qaVisual');
 ok(indexHtml.indexOf('id="qaEstado"') !== -1, 'index debe traer estado qaEstado');

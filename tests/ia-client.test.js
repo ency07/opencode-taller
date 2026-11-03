@@ -109,10 +109,10 @@ ok(IC.migrateModel('Gemini', 'gemini-1.5-pro') === 'gemini-3.5-flash-lite',
   'serie 1.5 -> vivo');
 ok(IC.migrateModel('Groq', 'llama-3.3-70b-versatile') === 'openai/gpt-oss-20b',
   'modelo Groq muerto -> vivo');
-ok(IC.migrateModel('OpenRouter', 'google/gemini-2.0-flash-exp') === 'google/gemini-2.5-flash',
-  'modelo OpenRouter muerto -> vivo');
-ok(IC.migrateModel('OpenRouter', 'google/gemini-2.5-flash') === 'google/gemini-2.5-flash',
-  'modelos vivos no se tocan');
+ok(IC.migrateModel('OpenRouter', 'google/gemini-2.0-flash-exp') === 'nvidia/nemotron-3-nano-omni-30b:free',
+  'OpenRouter: modelo muerto/no free -> default :free');
+ok(IC.migrateModel('OpenRouter', 'google/gemini-2.5-flash') === 'nvidia/nemotron-3-nano-omni-30b:free',
+  'OpenRouter: modelo sin etiqueta free -> default :free');
 ok(IC.migrateModel('Gemini', 'gemini-3.5-flash-lite') === 'gemini-3.5-flash-lite',
   'default vivo intacto');
 ok(IC.migrateModel('Groq', 'openai/gpt-oss-20b') === 'openai/gpt-oss-20b',

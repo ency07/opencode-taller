@@ -259,7 +259,7 @@
 
       '<div id="authBox">' +
       '<label style="margin-top:8px;">Correo</label>' +
-      '<input id="authEmail" type="email" placeholder="tu correo">' +
+      '<input id="authEmail" type="email" placeholder="tu correo" value="crosslamp.shop@gmail.com">' +
       '<label style="margin-top:6px;">Contraseña</label>' +
       '<input id="authPass" type="password" placeholder="mínimo 8 caracteres">' +
       '<div style="display:flex;gap:6px;margin:8px 0;">' +

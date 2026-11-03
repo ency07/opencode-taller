@@ -136,6 +136,16 @@
     return 'gemini-3.5-flash-lite';
   }
 
+  /* OpenRouter: solo modelos con etiqueta :free (costo cero; el usuario tiene
+     presupuesto limitado en el plan gratuito). Cualquier otro modelo se fuerza
+     al default verificado. */
+  var OPENROUTER_DEFAULT_FREE = 'nvidia/nemotron-3-nano-omni-30b:free';
+  function esOpenRouterFree(m) {
+    var s = String(m || '');
+    var i = s.lastIndexOf(':');
+    return i !== -1 && /^free$/i.test(s.slice(i));
+  }
+
   /* Migración de modelo guardado -> modelo vivo. Regla Gemini (serie 2.5/2.0/1.x
      fuera de alcance para claves nuevas) + mapa de muertos para el resto. */
   function migrateModel(provider, model) {
@@ -143,6 +153,10 @@
     if (provider === 'Gemini') {
       if (m === 'gemini-2.5-flash' || /^gemini-(1\.|2\.0)/i.test(m)) return modeloGeminiVivo();
       return DEAD_MODELS[m] || m;
+    }
+    if (provider === 'OpenRouter') {
+      if (DEAD_MODELS[m]) m = DEAD_MODELS[m];
+      if (!esOpenRouterFree(m)) m = OPENROUTER_DEFAULT_FREE;
     }
     return DEAD_MODELS[m] || m;
   }

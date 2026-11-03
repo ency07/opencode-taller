@@ -172,20 +172,20 @@ MOTOR_STATE.concept = 'zzz qqq vvv uuu';
 MOTOR_STATE.message = '';
 const skateBankES = getBankForSubniche('skate_culture', 'global', 'global_es');
 let foundConflict = false;
-let conflictoFueraDeFamilia = false;
+let conflictoSinDerivacion = false;
 let conflictoSinAviso = false;
 for (let i = 0; i < 20 && !foundConflict; i++) {
   const r = buildCandidate(resolveAudiences(), null);
   if (r.objectConflicts && r.objectConflicts.length) {
     foundConflict = true;
     symbols(r).forEach(function (s) {
-      if (skateBankES.indexOf(s) === -1) conflictoFueraDeFamilia = true;
+      if (s.indexOf('símbolo derivado del mensaje') === -1) conflictoSinDerivacion = true;
     });
     if (formatPrompt(asResult(r)).indexOf('AVISO OBJETO (conflicto)') === -1) conflictoSinAviso = true;
   }
 }
 ok(foundConflict, 'debe declarar conflicto cuando ningún motivo de la familia encaja con el concepto');
-ok(!conflictoFueraDeFamilia, 'en conflicto sin objeto del usuario, el OBJETO debe caer a un motivo de la familia');
+ok(!conflictoSinDerivacion, 'sin motivo de banco compatible, el OBJETO debe pedir una derivación semántica y no elegir uno al azar');
 ok(!conflictoSinAviso, 'el prompt debe mostrar el aviso de conflicto');
 
 /* --- 6) Preservar el objeto que el usuario nombró, aunque no sea de la familia --- */
@@ -272,7 +272,7 @@ const planAncla = _planExploreMotifs(familyBankHC, [], escena, '', '');
 ok(planAncla.list.length === 1 && planAncla.list[0] === escena,
   'concepto literal del banco: plan con UN solo motivo (el ancla), sin sustituciones');
 
-/* --- 9) Conflicto resuelto a nivel de SERIE: un solo aviso, un motivo provisional único --- */
+/* --- 9) Conflicto resuelto como derivación semántica única, sin sorteo de motivos --- */
 baseState();
 MOTOR_STATE.market = 'global_es';
 MOTOR_STATE.region = 'global';
@@ -291,17 +291,17 @@ for (let i = 0; i < 8; i++) {
   if (!(r.objectConflicts || []).length) continue;
   const prompt = formatPrompt(asResult(r));
   avisosEnSerie = prompt.split('AVISO OBJETO (conflicto)').length - 1;
-  const motivoSerie = '';
+  const motivoSerie = 'símbolo derivado del mensaje';
   const distintos = {};
   symbols(r).forEach(function (s) {
     distintos[s] = 1;
-    ok(skateBankES2.indexOf(s) !== -1, 'en conflicto, el motivo provisional debe ser de la familia: "' + s + '"');
+    ok(s.indexOf(motivoSerie) !== -1, 'en conflicto, la serie debe usar una derivación semántica, no sortear: "' + s + '"');
   });
   if (Object.keys(distintos).length > 1) motivosDistintosEnConflicto = true;
   break;
 }
 if (avisosEnSerie) {
-  ok(motivosDistintosEnConflicto === false, 'en conflicto, toda la serie debe compartir UN motivo provisional (no historias distintas por ficha)');
+  ok(motivosDistintosEnConflicto === false, 'en conflicto, toda la serie debe compartir UNA instrucción semántica');
   ok(avisosEnSerie === 1, 'el prompt debe contener UN solo aviso de conflicto por serie');
 }
 
@@ -317,6 +317,13 @@ const plan2 = _planExploreMotifs(['sombra que agrupa', 'otra cosa'],
   ['sombra que agrupa', 'otra cosa', 'arbol de biblioteca'], 'una sombra que agrupa', '', '');
 ok(plan2.conflict === '' && plan2.list[0] === 'sombra que agrupa', 'concepto compatible debe elegir el motivo afín sin conflicto');
 
+
+/* El concepto abstracto se conecta por ejes, no por coincidencia de palabras. */
+const graceConcept = 'La gracia, la fe, el amor y la fuerza de Cristo son suficientes incluso en la debilidad';
+const graceMotifs = _rankCompatibleMotifs(GOSPEL_DOMINIOS_ES.PROCESS.objetos, graceConcept);
+ok(graceMotifs.length >= 3, 'gracia/debilidad debe recuperar al menos tres motivos coherentes del dominio Proceso');
+ok(graceMotifs.some(function (x) { return /vasija|puente|ra[ií]z/i.test(x); }), 'debe preferir sostén o reparación antes que un símbolo genérico');
+ok(!graceMotifs.some(function (x) { return /escudo|cruz vac[ií]a/i.test(x); }), 'no debe elegir símbolos cristianos genéricos solo por el nicho');
 /* --- 10) Concepto textual (versículo/cita): símbolo del mensaje, sin conflicto falso --- */
 const famVerso = ['manos que oran junto a la ventana', 'cruz sobre la colina al alba', 'ancla firme en fondo movedizo'];
 
@@ -341,7 +348,8 @@ ok(planMsg.conflict === '' && planMsg.list[0] === 'manos que oran junto a la ven
 
 const planBasura = _planExploreMotifs(famVerso, famVerso, 'zzz qqq vvv', 'zzz qqq vvv', '');
 ok(planBasura.conflict !== '', 'concepto basura SIN mensaje sigue declarando conflicto (provisional controlado)');
-ok(famVerso.indexOf(planBasura.list[0]) !== -1, 'el motivo provisional sigue saliendo de la familia');
+ok(planBasura.list.length === 1 && planBasura.list[0].indexOf('símbolo derivado del mensaje') !== -1, 'si no hay motivo defendible, se deriva una instrucción semántica en vez de sortear un objeto del banco');
+ok(planBasura.list[0].indexOf('no inventes motivos ajenos') !== -1, 'la derivación prohíbe motivos no solicitados');
 
 /* --- 11) E2E exploración gospel: versículo + mensaje literal → sin AVISO OBJETO --- */
 baseState();
@@ -380,6 +388,20 @@ ok(!(rPatVerso.objectConflicts || []).length,
 const promptPatVerso = formatPrompt(asResult(rPatVerso));
 ok(promptPatVerso.indexOf('AVISO OBJETO (conflicto)') === -1, 'patrón: el prompt sin AVISO OBJETO falso');
 ok(promptPatVerso.indexOf('símbolo derivado del mensaje') !== -1, 'patrón: el símbolo se deriva del mensaje');
+
+/* El banco personal activo por dominio debe entrar al pool real del motor. */
+baseState();
+const personalMotif = 'vasija reparada que sostiene agua durante una tormenta';
+const personalBank = createPersonalBank('gospel_es', 'QA proceso dominio', 'PROCESS');
+ok(personalBank.ok, 'no se pudo crear el banco de prueba por dominio');
+const personalSaved = saveToPersonalBank('gospel_es', personalBank.id, { objects: [personalMotif] });
+ok(personalSaved.ok && personalSaved.added === 1, 'no se guardó el motivo personal del dominio');
+ok(setActivePersonalBank('gospel_es', 'PROCESS', personalBank.id).ok, 'no se activó el banco del dominio');
+Object.assign(MOTOR_STATE, { market: 'gospel_es', region: 'universal', product: 'CAMISETA SOFT', subniche: 'gospel_es', dominio: 'PROCESS', dominioDetectado: 'PROCESS', workflowMode: 'explore', concept: 'gracia suficiente incluso en la debilidad', message: 'Su gracia es suficiente para mí' });
+const domainPool = getObjectPool();
+ok(domainPool.indexOf(personalMotif) !== -1, 'el motivo personal activo no llega al pool que usa el motor');
+const domainFamily = domainPool.filter(function (x) { return _commonBankForMarket().indexOf(x) === -1; });
+ok(_rankCompatibleMotifs(domainFamily, MOTOR_STATE.concept).indexOf(personalMotif) !== -1, 'el motor no relaciona el motivo personal con el concepto abstracto');
 
 function finish() {
   const passed = failures.length === 0;

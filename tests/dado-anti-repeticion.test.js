@@ -121,6 +121,7 @@ ok(/LAST_RESULT\.score = freshEval\.score/.test(motorSrc), 'el dado debe recalcu
 ok(/LAST_RESULT\.passed = freshEval\.passed/.test(motorSrc), 'el dado debe recalcular passed');
 ok(/10\/10 verificado/.test(motorSrc), 'el status debe mostrar la verificación');
 ok(/const ev = evaluaSetOk\(cand\)/.test(motorSrc), 'generateSet debe usar la fuente compartida');
+ok(/if \(!_confirmDestructive\('¿Borrar toda la memoria/, 'borrarMemoria debe exigir doble confirmación destructiva antes de limpiar');
 
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  dado-anti-repeticion  (' + checks + ' aserciones, ' + failures.length + ' fallos)');

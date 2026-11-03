@@ -51,7 +51,7 @@ const revisor = fs.readFileSync(path.join(JS, 'ia-revisor.js'), 'utf8');
 ok(analisis.indexOf('45000') === -1, 'ia-analisis.js conserva el timeout ciego de 45s');
 ok(/openrouter\.ai\/api\/v1\/chat\/completions/.test(cliente) || /openrouter\.ai\/api\/v1\/chat\/completions/.test(analisis), 'falta endpoint OpenAI-compatible de OpenRouter');
 ok(/max-width|1024/.test(analisis) && /toDataURL\('image\/jpeg'/.test(analisis), 'downscale debe reducir a ~1024px JPEG');
-ok(/google\/gemma-4-31b-it:free/.test(analisis), 'falta default verificado gemma-4-31b-it:free');
+ok(/nvidia\/nemotron-3-nano-omni-30b:free/.test(analisis), 'falta default verificado OpenRouter :free con vision (nvidia nemotron omni)');
 ok(/gemini-3\.5-flash-lite/.test(analisis), 'falta default verificado gemini-3.5-flash-lite');
 ok(/nvidia\/nemotron-3-nano-omni/.test(analisis), 'falta fallback nemotron verificado');
 ok(/Clave inválida o sin permiso/.test(analisis), 'falta mensaje 401/403');
@@ -67,6 +67,7 @@ ok(analisis.indexOf('Groq') === -1 || !/vision.*groq|groq.*vision/i.test(analisi
 });
 ok(revisor.indexOf('pod2_vision_cfg') !== -1, 'panel no guarda pod2_vision_cfg');
 ok(/window\.getAISlots\s*=\s*getSlots/.test(revisor), 'ia-revisor.js no expone getAISlots (visión no reutiliza migrate)');
+ok(revisor.indexOf('nvidia/nemotron-3-nano-omni-30b:free') !== -1, 'panel revisor debe usar el default OpenRouter :free con vision');
 
 /* ---------- 3. Runtime: lógica pura en vm ---------- */
 vm.runInThisContext(cliente, { filename: 'ia-client.js' });
@@ -79,14 +80,14 @@ const slots = [
   { provider: 'OpenRouter', model: 'google/gemini-2.5-flash', key: 'sk-or-v1_x', timeoutMs: 15000 },
   { provider: 'Gemini', model: 'gemini-2.5-flash', key: 'AIza_x', timeoutMs: 15000 }
 ];
-const cfgAuto = { provider: 'auto', geminiModel: 'gemini-3.5-flash-lite', openrouterModel: 'google/gemma-4-31b-it:free', timeoutMs: 20000 };
+const cfgAuto = { provider: 'auto', geminiModel: 'gemini-3.5-flash-lite', openrouterModel: 'nvidia/nemotron-3-nano-omni-30b:free', timeoutMs: 20000 };
 
-// auto + Google OK → Gemini directo con modelo nuevo
+// auto: OpenRouter :free con vision es la prioridad por defecto (cero creditos)
 let t = V.pickVisionTarget(slots, cfgAuto, { google: true, openrouter: true });
-ok(t && t.kind === 'gemini' && t.model === 'gemini-3.5-flash-lite', 'auto con Google OK debe ir a Gemini 3.5 (dio ' + (t && t.kind + '/' + t.model) + ')');
-// auto + Google bloqueado → OpenRouter
-t = V.pickVisionTarget(slots, cfgAuto, { google: false, openrouter: true });
-ok(t && t.kind === 'openrouter' && t.model === 'google/gemma-4-31b-it:free', 'auto con Google bloqueado debe ir a OpenRouter (dio ' + (t && t.kind) + ')');
+ok(t && t.kind === 'openrouter' && t.model === 'nvidia/nemotron-3-nano-omni-30b:free', 'auto debe preferir OpenRouter :free con vision (dio ' + (t && t.kind) + '/' + (t && t.model) + ')');
+// auto + OpenRouter bloqueado → Gemini directo con modelo nuevo
+t = V.pickVisionTarget(slots, cfgAuto, { google: true, openrouter: false });
+ok(t && t.kind === 'gemini' && t.model === 'gemini-3.5-flash-lite', 'auto con OpenRouter bloqueado debe ir a Gemini 3.5 (dio ' + (t && t.kind) + '/' + (t && t.model) + ')');
 // fijado manual se respeta
 t = V.pickVisionTarget(slots, { provider: 'openrouter', geminiModel: 'x', openrouterModel: 'y', timeoutMs: 15000 }, { google: true, openrouter: true });
 ok(t && t.kind === 'openrouter', 'provider=openrouter debe respetarse');
@@ -108,6 +109,7 @@ ok(V.migrateVisionModel('gemini-3.5-flash-lite') === 'gemini-3.5-flash-lite', 'm
 // defaults sin localStorage configurado
 const dc = V.getVisionConfig();
 ok(dc.provider === 'auto' && dc.timeoutMs === 20000, 'defaults de visión incorrectos');
+ok(dc.openrouterModel === 'nvidia/nemotron-3-nano-omni-30b:free', 'default OpenRouter de visión debe ser el modelo :free con visión (nvidia nemotron omni)');
 
 /* ---------- 4. preflight con fetch stub ---------- */
 const realFetch = global.fetch;

@@ -25,8 +25,18 @@
   }
 
   function construirPromptContexto(ctx) {
+    ctx = ctx || {};
     var o = 'Eres redactor comercial de arte POD. El usuario no definió el mensaje visible del diseño. Escribe UNA frase original de 2 a 8 palabras para estampar en el producto.\n';
     o += 'CONTEXTO: mercado ' + (ctx.mercado || 'global') + '; producto ' + (ctx.producto || 'CAMISETA SOFT') + '; familia ' + (ctx.familia || 'sin definir') + (ctx.concepto ? '; concepto: ' + ctx.concepto : '') + (ctx.audiencia ? '; audiencia ' + ctx.audiencia : '') + '.\n';
+    /* DEBT-014: el prompt del copy-IA nace con las directivas de idioma y cultura
+       del mercado activo (mismo criterio que el motor), no solo con el contexto crudo. */
+    var mercadoCtx = ctx.mercado || (typeof MOTOR_STATE !== 'undefined' && MOTOR_STATE ? MOTOR_STATE.market : 'global');
+    var langDir = '';
+    try { if (typeof getLanguageDirective === 'function') langDir = getLanguageDirective(mercadoCtx, ctx.idioma || (typeof MOTOR_STATE !== 'undefined' && MOTOR_STATE ? MOTOR_STATE.language : 'auto')); } catch (e) { langDir = ''; }
+    var cultDir = '';
+    try { if (typeof getCulturalDirective === 'function') cultDir = getCulturalDirective(mercadoCtx); } catch (e) { cultDir = ''; }
+    if (langDir) o += 'IDIOMA: ' + langDir + '\n';
+    if (cultDir) o += 'CULTURA: ' + cultDir + '\n';
     o += 'REGLAS: nativa del idioma del mercado; concreta y comercial; prohibidas citas doctrinales, versículos, fechas, cifras, nombres propios, datos factuales, claims medibles, marcas, tildes inventadas y palabras sueltas sin sentido; no mezcles idiomas; la frase debe existir por sí sola en el arte.\n';
     o += 'También propón una frase de APOYO: 2 a 6 palabras que amplíe la misma idea sin repetir la frase principal, sin datos; si no aporta, usa "" (vacío).\n';
     o += 'Devuelve SOLO un JSON válido, sin markdown: {"frase":"frase final","apoyo":"frase de apoyo o vacía","alternativas":["frase","frase"]}.\n';
@@ -111,7 +121,8 @@
       producto: MOTOR_STATE.product,
       familia: familia,
       concepto: concepto,
-      audiencia: audiencia
+      audiencia: audiencia,
+      idioma: MOTOR_STATE.language
     };
   }
 

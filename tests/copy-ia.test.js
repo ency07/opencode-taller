@@ -70,6 +70,16 @@ const JS = path.join(ROOT, 'js');
   ok(p.indexOf('Pascua') !== -1 && p.indexOf('zapatilla en la puerta') !== -1 && p.indexOf('gospel_adulto_fe') !== -1, 'el contexto fluye al prompt');
   ok(p.indexOf('versículos') !== -1 && p.indexOf('nombres propios') !== -1, 'prohibiciones de invención presentes');
 
+  /* --- 3b) DEBT-014: el prompt incluye directivas de idioma y cultura --- */
+  const pEs = PODCopyIA.construirPromptContexto({ mercado: 'global_es', idioma: 'es', producto: 'CAMISETA SOFT', familia: 'Pascua', concepto: 'zapatilla en la puerta', audiencia: 'gospel_adulto_fe' });
+  ok(pEs.indexOf('IDIOMA') !== -1, 'DEBT-014: el prompt incluye la directiva de idioma del mercado');
+  ok(pEs.indexOf('escrito en español natural') !== -1, 'DEBT-014: idioma es → texto en español natural');
+  ok(pEs.indexOf('CULTURA') !== -1, 'DEBT-014: el prompt incluye la directiva de cultura del mercado');
+  ok(pEs.indexOf('Usa español neutro global') !== -1, 'DEBT-014: la directiva cultural de global_es fluye al prompt');
+
+  const pEn = PODCopyIA.construirPromptContexto({ mercado: 'global_en', idioma: 'en', producto: 'T-SHIRT', familia: '', concepto: '', audiencia: '' });
+  ok(pEn.indexOf('All visible design text') !== -1, 'DEBT-014: idioma en → texto en inglés nativo');
+
   /* --- 4) sin claves configuradas: aviso, nada cambia --- */
   const rSin = await PODCopyIA.sugerirCopy();
   ok(rSin && rSin.error === 'sin-clave', 'sin claves: aviso de configuración, no invención');
