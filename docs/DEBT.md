@@ -262,8 +262,15 @@ Convención de estado: `open` (registrada) · `planned` (asignada a una rama/PR)
   (jerga/localismos) por mercado/subnicho reutilizable por el copy-IA.
 - **Responsable:** Motor / IA.
 - **Fecha objetivo:** próxima revisión del subsistema de copy.
-- **Estado:** open.
+- **Estado:** closed (2026-11-03, rama `feat/ui-ux-layout-improvements-preview`).
 - **Revisión:** cada release.
+- **Cierre:** `construirPromptContexto` (`js/copy-ia.js`) inyecta ahora las directivas
+  `getLanguageDirective` (con `ctx.idioma`) y `getCulturalDirective` del mercado activo,
+  igual que `formatPrompt` del motor (`motor-nucleo.js:2445-2457`), antes de las REGLAS. El
+  contexto que arma el prompt (`contextoActual`) propaga `idioma` desde `MOTOR_STATE.language`.
+  Frases generadas por copy-IA nacen alineadas al idioma y registro cultural del mercado.
+  Tests: `tests/copy-ia.test.js` (DEBT-014: prompts con directivas en es y en en).
+  Suite completa: 48 tests, 0 failed.
 
 ### DEBT-015 — El perfil estructural no gobernaba layout ni jerarquía y el prompt daba la última palabra al estilo
 
