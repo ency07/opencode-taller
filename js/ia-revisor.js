@@ -25,7 +25,7 @@
   function defSlots() {
     return [
       { provider: 'Groq', model: 'openai/gpt-oss-20b', key: '', timeoutMs: 15000 },
-      { provider: 'OpenRouter', model: 'google/gemini-2.5-flash', key: '', timeoutMs: 15000 },
+      { provider: 'OpenRouter', model: 'nvidia/nemotron-3-nano-omni-30b:free', key: '', timeoutMs: 15000 },
       { provider: 'Gemini', model: 'gemini-3.5-flash-lite', key: '', timeoutMs: 15000 }
     ];
   }
