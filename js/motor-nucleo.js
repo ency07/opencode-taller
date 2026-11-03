@@ -121,7 +121,11 @@ let MOTOR_STATE = {
   stampSide: 'auto',
   printMethod: 'auto',
   imageReference: null,
-  imageAnalysis: null
+  imageAnalysis: null,
+  /* --- Territorio creativo (P3) --- */
+  creativeTerritory: 'auto',
+  visualIdentity: null,
+  decisionMode: 'assisted'
 };
 
 const K = ['A', 'B', 'C'];
@@ -172,6 +176,9 @@ function readStateFromDOM() {
     signature: [imageFile.name, imageFile.size, imageFile.lastModified].join('|')
   } : null;
   MOTOR_STATE.imageAnalysis = null;
+  MOTOR_STATE.creativeTerritory = v('creativeTerritory', 'auto');
+  MOTOR_STATE.visualIdentity = v('visualIdentity', '');
+  MOTOR_STATE.decisionMode = v('decisionMode', 'assisted');
   if (imageFile && imageInput.dataset && imageInput.dataset.analysisSignature === MOTOR_STATE.imageReference.signature) {
     try { MOTOR_STATE.imageAnalysis = JSON.parse(imageInput.dataset.analysisSummary || 'null'); }
     catch (e) { MOTOR_STATE.imageAnalysis = null; }
