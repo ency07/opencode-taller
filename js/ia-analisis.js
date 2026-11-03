@@ -738,8 +738,8 @@
         });
       } else {
         await window.IAClient.chat({ provider: 'OpenRouter', model: target.model, key: target.key }, {
-          user: 'Responde solo: ok',
-          maxTokens: 5,
+          openaiContent: [{ type: 'text', text: 'Responde solo: ok' }],
+          maxTokens: 50,
           timeoutMs: 15000,
           httpMessage: function (status) { return visionHttpMessage(status, 'OpenRouter'); }
         });
