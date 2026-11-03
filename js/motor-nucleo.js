@@ -3544,9 +3544,11 @@ function borrarMemoria() {
   if (!_confirmDestructive('¿Borrar toda la memoria de patrones, locks e historial de este mercado/producto?', 'BORRAR')) return;
   if (typeof clearPatternMemory === 'function') clearPatternMemory(memPatternMarket(), MOTOR_STATE.product);
   if (typeof clearLocks === 'function') clearLocks(memLocksMarket(), MOTOR_STATE.product);
+  if (typeof clearSetHistory === 'function') clearSetHistory(memPatternMarket(), MOTOR_STATE.product);
+  if (typeof clearCreativeMemory === 'function') clearCreativeMemory(memPatternMarket(), MOTOR_STATE.product);
   limpiarFichas();
   const status = document.getElementById('status');
-  if (status) status.textContent = 'Memoria borrada para este mercado/producto.';
+  if (status) status.textContent = 'Memoria borrada completamente para este mercado/producto.';
 }
 
 /* --- Exponer funciones globales --- */

@@ -1223,6 +1223,11 @@
         if (btn) {
           btn.textContent = MOTOR_STATE.fmtDense ? 'Ver formato extenso' : 'Ver formato denso';
         }
+        // Reformatear el prompt de salida con el nuevo formato
+        const outEl = $('out');
+        if (outEl && typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.set && typeof formatPrompt === 'function') {
+          outEl.value = formatPrompt(LAST_RESULT);
+        }
       }
     });
 
