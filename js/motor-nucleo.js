@@ -34,6 +34,8 @@ const _OBJECT_BANK_COMMON = typeof OBJECT_BANK_COMMON !== 'undefined' ? OBJECT_B
 const _OBJECT_BANK_COMMON_EN = typeof OBJECT_BANK_COMMON_EN !== 'undefined' ? OBJECT_BANK_COMMON_EN : [];
 const _TEXTO_FALLBACK_SECULAR = typeof TEXTO_FALLBACK_SECULAR !== 'undefined' ? TEXTO_FALLBACK_SECULAR : {};
 const _CONTACT_TREATMENT_ORDER = { A: 'HEAVY', B: 'SOFT', C: 'MODERN' };
+/* Catálogo de territorios creativos (Fase 1 — datos; integración motor en Fase 4). */
+const _CREATIVE_TERRITORIES = typeof POD_CREATIVE_TERRITORIES !== 'undefined' ? POD_CREATIVE_TERRITORIES : {};
 
 /* --- Helpers de memoria (de memoria-local.js) --- */
 const _memGetJSON = typeof getJSON === 'function' ? getJSON : function () { return null; };
@@ -2522,6 +2524,29 @@ function _promptSignature() {
   return [g('workflowMode'), g('market'), g('product'), g('subniche'), g('concept'), g('message'), g('support'), g('serie'), g('audienceSet'), img].join('§');
 }
 
+/* Resolución del territorio creativo activo (Arquitectura Creativa — Fase 1).
+   El motor NO decide territorios: solo compone la dirección creativa cuando el
+   usuario ya fijó uno (MOTOR_STATE.creativeTerritory !== 'auto'). Devuelve '' si
+   no hay territorio concreto, para no alterar el prompt existente. */
+function _resolveTerritoryDirective(territory) {
+  const t = String(territory || MOTOR_STATE.creativeTerritory || 'auto').trim();
+  if (!t || t === 'auto') return '';
+  const records = _CREATIVE_TERRITORIES || {};
+  const rec = records[t] || null;
+  if (!rec) return '';
+  const parts = [];
+  const push = function (s) { let clean = String(s || '').trim(); while (clean.length > 1 && clean.charAt(clean.length - 1) === '.') clean = clean.slice(0, -1); if (clean) parts.push(clean + '.'); };
+  push('TERRITORIO CREATIVO ACTIVO: ' + (rec.label || rec.id || t) + '.');
+  if (rec.description) push('Dirección: ' + rec.description + '.');
+  if (Array.isArray(rec.themes) && rec.themes.length) push('Temas: ' + rec.themes.join(', ') + '.');
+  if (Array.isArray(rec.restrictions) && rec.restrictions.length) push('Restricciones: ' + rec.restrictions.join('; ') + '.');
+  if (Array.isArray(rec.compatibleStyles) && rec.compatibleStyles.length) push('Estilos compatibles: ' + rec.compatibleStyles.join(', ') + '.');
+  if (Array.isArray(rec.compatibleTreatments) && rec.compatibleTreatments.length) push('Tratamientos compatibles: ' + rec.compatibleTreatments.join(', ') + '.');
+  if (Array.isArray(rec.compatibleMarkets) && rec.compatibleMarkets.length) push('Mercados compatibles: ' + rec.compatibleMarkets.join(', ') + '.');
+  if (rec.visualIdentity) push('Identidad visual declarada: ' + rec.visualIdentity + '.');
+  return parts.join(' ');
+}
+
 function formatPrompt(result) {
   if (!result || !result.set) return '';
   const set = result.set;
@@ -2798,6 +2823,13 @@ function formatPrompt(result) {
   }
   o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + (_PLACEMENT[MOTOR_STATE.product] || _PLACEMENT['CAMISETA SOFT'] || 'pecho centrado') + '; ' + ((_PRODUCT_BIAS[MOTOR_STATE.product] || {}).scale || 'escala adecuada al producto') + '\n\n';
 
+  /* Territorio creativo (Arquitectura Creativa — Fase 1): cuando el usuario
+     fijó un territorio concreto, se entrega como dirección creativa global al
+     generador. Con 'auto' no hay inyección y el prompt se mantiene idéntico al
+     comportamiento anterior. El motor no decide el territorio: solo expone el
+     ya fijado por el usuario (locks > IA). */
+  const _territorioDirective = _resolveTerritoryDirective(MOTOR_STATE.creativeTerritory);
+  if (_territorioDirective) o += 'TERRITORIO CREATIVO: ' + _territorioDirective + '\n';
   o += 'REGLAS COMUNES A LAS 3 FICHAS: ';
   o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos. ';
   o += 'INTERPRETACIÓN DEL CONCEPTO: si el concepto es ambiguo o metafórico, elige la lectura más literal de sus palabras; una parte del cuerpo nombrada se dibuja solo si es imprescindible y de forma parcial/estilizada; no inventes personas, rostros ni escenas no narradas. ';

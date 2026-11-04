@@ -1,0 +1,187 @@
+/**
+ * CATALOGO DE TERRITORIOS CREATIVOS — Fase 1 (Plan, sin modificar motor existente)
+ * Repositorio: ency07/opencode-taller (rama: feat/creative-territory-engine)
+ * Este archivo es un catálogo de datos independiente. No modifica motor-nucleo.js,
+ * data-estilos.js ni ningún archivo existente. Su integración al flujo requiere
+ * una fase posterior (Fase 3: selector) y luego Fase 4 (integración de motores).
+ */
+
+'use strict';
+
+const POD_CREATIVE_TERRITORIES = {
+  SACRED_EDITORIAL: {
+    id: "SACRED_EDITORIAL",
+    label: "Sagrado editorial",
+    label_es: "Sagrado editorial",
+    label_en: "Sacred Editorial",
+    description: "La fe interpretada mediante diseño editorial contemporáneo. Tipografía protagonista, retículas, numeración, anotaciones y bloques de texto. Lenguaje visual de una publicación cultural.",
+    resources: ["tipografia", "reticulas", "numeracion", "anotaciones", "bloques_texto", "portadas_libros", "diseno_editorial"],
+    themes: ["identidad_cristo", "verdad", "gracia", "santidad", "discipulado"],
+    restrictions: ["no_cruces_centrales_genericas", "no_tipografias_decorativas_vacias"],
+    compatibleStyles: ["SOLO_TEXTO", "BALANCEADO", "HEAVY", "MODERN", "EXPRESSIVE"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "streetwear", "lifestyle"],
+    visualIdentity: "editorial_contemporaneo",
+    brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
+    priority: 1
+  },
+
+  BIBLICAL_BOTANICAL: {
+    id: "BIBLICAL_BOTANICAL",
+    label: "Creación y botánica bíblica",
+    label_es: "Botánica bíblica",
+    label_en: "Biblical Botanical",
+    description: "La naturaleza como lenguaje visual de las Escrituras. Recursos: raíces, semillas, olivos, vides, espigas, ramas y frutos. Temas: permanecer en Cristo, fruto del Espíritu, esperanza y crecimiento.",
+    resources: ["raices", "semillas", "olivos", "vides", "espigas", "ramas", "frutos", "crecimiento", "permanencia"],
+    themes: ["permanecer_en_cristo", "crecimiento_espiritual", "fruto_espiritu", "esperanza", "vida_eterna"],
+    restrictions: ["no_plantas_ornamentales_sin_metafora_biblica", "las_plantas_deben_nacer_del_texto"],
+    compatibleStyles: ["BALANCEADO", "SOFT", "NATURAL", "EXPRESSIVE", "MODERN"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "nature_outdoor"],
+    visualIdentity: "botanica_organica_detallada",
+    brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
+    priority: 1
+  },
+
+  BIBLICAL_ARCHAEOLOGY: {
+    id: "BIBLICAL_ARCHAEOLOGY",
+    label: "Arqueología y mundo bíblico",
+    label_es: "Arqueología bíblica",
+    label_en: "Biblical Archaeology",
+    description: "Diseños inspirados en la materialidad del mundo antiguo: inscripciones, sellos, mapas históricos, tablillas, papiros y diagramas arqueológicos. Temas: orígenes, alianzas, promesas y redención.",
+    resources: ["inscripciones", "sellos", "mapas_historicos", "tablillas", "papiros", "diagramas_arqueologicos", "documentos_antiguos"],
+    themes: ["origenes", "alianzas", "promesas", "exodo", "historia_redencion", "pacto"],
+    restrictions: ["no_elementos_inventados_como_historicos", "referencias_deben_ser_verificables"],
+    compatibleStyles: ["HEAVY", "BALANCEADO", "HERITAGE", "SOFT", "MODERN"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "professional_community"],
+    visualIdentity: "archivo_documentado",
+    brandAssociation: ["BERESHITH_CO"],
+    priority: 1
+  },
+
+  THEOLOGICAL_ABSTRACTION: {
+    id: "THEOLOGICAL_ABSTRACTION",
+    label: "Abstracción teológica",
+    label_es: "Abstracción teológica",
+    label_en: "Theological Abstraction",
+    description: "Representar una verdad mediante formas, estructuras, relaciones visuales y geometría. El concepto no depende de ilustrar literalmente el texto bíblico, sino de expresar su significado a través de relaciones espaciales, tensión, contraste y repetición.",
+    resources: ["geometria", "modulos", "tension", "contraste", "repeticion", "espacio_negativo", "formas_abstractas", "estructuras"],
+    themes: ["eternidad", "unidad", "redencion", "transformacion", "esperanza", "poder_en_debilidad"],
+    restrictions: ["no_ilustracion_literal_del_texto", "el_concepto_debe_nacer_de_la_tension_teologica"],
+    compatibleStyles: ["SOLO_TEXTO", "BALANCEADO", "EXPRESSIVE", "MODERN", "HEAVY", "SOFT"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "art_design"],
+    visualIdentity: "geometria_teologica",
+    brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
+    priority: 2
+  },
+
+  CHRISTIAN_HERITAGE: {
+    id: "CHRISTIAN_HERITAGE",
+    label: "Heritage cristiano",
+    label_es: "Heritage cristiano",
+    label_en: "Christian Heritage",
+    description: "Tradición gráfica reinterpretada como identidad contemporánea: sellos, emblemas, grabados, escudos originales, ornamentos y tipografía histórica. Temas: confesión de fe, fidelidad, perseverancia y herencia espiritual.",
+    resources: ["sellos", "emblemas", "grabados", "escudos", "ornamentos", "tipografia_historica", "marcos_decorativos"],
+    themes: ["confesion_fe", "fidelidad", "perseverancia", "herencia_espiritual", "tradicion"],
+    restrictions: ["no_usar_escudos_de_organizaciones_comerciales_reales_como_ornamento", "no_copiar_escudos_de_iglesias_reales"],
+    compatibleStyles: ["HERITAGE", "BALANCEADO", "HEAVY", "SOFT", "MODERN"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "professional_community", "lifestyle"],
+    visualIdentity: "emblema_reinterpretado",
+    brandAssociation: ["BERESHITH_CO"],
+    priority: 2
+  },
+
+  NARRATIVE_ILLUSTRATION: {
+    id: "NARRATIVE_ILLUSTRATION",
+    label: "Ilustración narrativa",
+    label_es: "Ilustración narrativa",
+    label_en: "Narrative Illustration",
+    description: "La fe contada mediante escenas y secuencias visuales: viñetas, secuencias, personajes secundarios, paisajes y escenas ilustradas. Temas: parábolas, acontecimientos bíblicos y experiencias de transformación.",
+    resources: ["vinetas", "secuencias", "personajes_secundarios", "paisajes", "escenas_ilustradas", "narrativa_visual"],
+    themes: ["parabolas", "acontecimientos_biblicos", "experiencias_transformacion", "historias_fe"],
+    restrictions: ["no_imitar_francises_comerciales_conocidas", "no_usar_personajes_realistas_de_francises_reales"],
+    compatibleStyles: ["BALANCEADO", "EXPRESSIVE", "SOFT", "MODERN", "HEAVY"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "music_entertainment", "humor_pop"],
+    visualIdentity: "narrativa_secuencial",
+    brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
+    priority: 2
+  },
+
+  EVERYDAY_FAITH: {
+    id: "EVERYDAY_FAITH",
+    label: "Fe cotidiana",
+    label_es: "Fe cotidiana",
+    label_en: "Everyday Faith",
+    description: "La espiritualidad en la vida real. Recursos: objetos cotidianos, escritura manual, anotaciones, diarios y composiciones espontáneas. Temas: oración, descanso, obediencia, servicio, paciencia y vida familiar.",
+    resources: ["objetos_cotidianos", "escritura_manual", "anotaciones", "diarios", "composiciones_espontaneas", "vida_familiar"],
+    themes: ["oracion", "descanso", "obediencia", "servicio", "paciencia", "vida_familiar", "practica_diaria"],
+    restrictions: ["no_complicaciones_visuales_excesivas", "no_alejarse_de_la_cotidianidad_reconocible"],
+    compatibleStyles: ["SOFT", "BALANCEADO", "MODERN", "EXPRESSIVE", "HEAVY"],
+    compatibleTreatments: ["SOFT", "MODERN"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "professional_community", "nature_outdoor"],
+    visualIdentity: "diario_visual",
+    brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
+    priority: 2
+  },
+
+  FAITH_WORKWEAR: {
+    id: "FAITH_WORKWEAR",
+    label: "Workwear de fe",
+    label_es: "Workwear de fe",
+    label_en: "Faith Workwear",
+    description: "La fe expresada mediante el lenguaje gráfico del trabajo y la utilidad: etiquetas técnicas, numeraciones, diagramas, nomenclaturas, identificadores y gráficos funcionales. Temas: servicio, fidelidad, vocación y trabajo hecho para el Señor.",
+    resources: ["etiquetas_tecnicas", "numeraciones", "diagramas", "nomenclaturas", "identificadores", "graficos_funcionales", "documentacion_tecnica"],
+    themes: ["servicio", "fidelidad", "vocacion", "trabajo_para_el_senor", "oficio", "responsabilidad"],
+    restrictions: ["no_ornamentos_decorativos_inutiles", "no_estetica_promocional_de_iglesia"],
+    compatibleStyles: ["HEAVY", "BALANCEADO", "SOFT", "MODERN"],
+    compatibleTreatments: ["HEAVY", "MODERN", "SOFT"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "professional_community", "automotive_industrial", "streetwear"],
+    visualIdentity: "funcional_utilitario",
+    brandAssociation: ["CrossLampCo", "BERESHITH_CO"],
+    priority: 1
+  },
+
+  CONTRAST_ART: {
+    id: "CONTRAST_ART",
+    label: "Arte de contraste",
+    label_es: "Arte de contraste",
+    label_en: "Contrast Art",
+    description: "Contradicciones humanas interpretadas desde la teología cristiana mediante dualidad, fragmentación, contraste de escalas, oposición entre formas y composiciones asimétricas. Temas: debilidad y poder, muerte y resurrección, esclavitud y libertad, culpa y perdón.",
+    resources: ["dualidad", "fragmentacion", "contraste_escalas", "oposicion_formas", "asimetria", "tension_visual", "espacio_negativo_extremo"],
+    themes: ["debilidad_poder", "muerte_resurreccion", "esclavitud_libertad", "culpa_perdon", "transformacion"],
+    restrictions: ["no_simplificaciones_visuales_que_ignoren_la_tension_conceptual", "la_composicion_debe_nacer_del_mensaje"],
+    compatibleStyles: ["HEAVY", "BALANCEADO", "SOLO_TEXTO", "EXPRESSIVE", "MODERN", "SOFT"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "art_design", "professional_community"],
+    visualIdentity: "tension_asimetrica",
+    brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
+    priority: 2
+  },
+
+  LOCAL_FAITH_CULTURE: {
+    id: "LOCAL_FAITH_CULTURE",
+    label: "Cultura y fe local",
+    label_es: "Cultura y fe local",
+    label_en: "Local Faith Culture",
+    description: "La identidad cristiana vinculada a una comunidad, una región y su cultura: expresiones regionales, elementos arquitectónicos, referencias culturales, escenas cotidianas y lenguajes gráficos locales.",
+    resources: ["expresiones_regionales", "elementos_arquitectonicos", "referencias_culturales", "escenas_cotidianas", "lenguajes_graficos_locales", "arte_popular"],
+    themes: ["fe_en_comunidad", "perseverancia", "servicio", "esperanza", "pertenencia", "identidad_regional"],
+    restrictions: ["no_generalizaciones_culturales_que_borren_la_identidad", "cada_region_tiene_sus_propias_referencias"],
+    compatibleStyles: ["SOFT", "BALANCEADO", "HERITAGE", "EXPRESSIVE", "MODERN", "HEAVY"],
+    compatibleTreatments: ["SOFT", "MODERN", "HEAVY"],
+    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "professional_community", "lifestyle", "music_entertainment", "nature_outdoor"],
+    visualIdentity: "identidad_regional",
+    brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
+    priority: 2
+  }
+};
+
+// Exportación para consumo por motor-nucleo.js (en Fase 4).
+// En Fase 1 y 2, este archivo solo existe; no se importa en ningún archivo existente.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { POD_CREATIVE_TERRITORIES };
+}
