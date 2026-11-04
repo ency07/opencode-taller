@@ -1,21 +1,26 @@
-# Arquitectura de motores — P4
+# ARQUITECTURA DE MOTORES — P4
 
-## Gospel Engine (existente y protegido)
-- Ubicación: `js/motor-nucleo.js`, `js/ia-*.js`, `banco-gospel-*.js`.
-- Reglas: doctrinales, mensajes bíblicos y QA teológico.
-- Bancos: `banco-gospel-es.js`, `banco-gospel-en.js` y bancos personales Gospel.
-- No se modifica para incorporar reglas seculares.
+## Gospel Engine (existente, protegido)
+- **Ubicación**: `js/motor-nucleo.js`, `js/ia-*.js`, `banco-gospel-*.js`
+- **Reglas**: doctrinales, mensajes bíblicos, QA teológico
+- **Campos obligatorios**: `message`, `theologicalBasis` (para Gospel)
+- **Bancos**: `banco-gospel-es.js`, `banco-gospel-en.js`, `banco-personal-gospel-*.json`
+- **No se modifica** sin confirmación explícita
 
-## Secular Engine (aislado)
-- Ubicación: `secular-engine/secular-engine.js`.
-- Mercados previstos: Streetwear, Sports, Lifestyle, Music, Outdoor, Automotive, Humor, Art y Professional.
-- Reglas comerciales, sin requisito de base teológica.
-- QA comercial, separado del QA teológico.
+## Secular Engine (nuevo, independiente)
+- **Ubicación**: `secular-engine/secular-engine.js`
+- **Mercados**: Streetwear, Sports, Lifestyle, Music, Outdoor, Automotive, Humor, Art, Professional
+- **Reglas**: comerciales (no doctrinales), `theologicalBasis` opcional, `message` obligatorio
+- **Bancos**: propios (separados de los Gospel)
+- **QA**: comercial (originalidad, coherencia de marca, legibilidad, viabilidad, no duplicación)
 
-## Infraestructura compartida
-- Ubicación: `shared/shared-infra.js`.
-- Solo referencias neutrales: productos, métodos de impresión, almacenamiento y UI.
-- No debe contener reglas creativas Gospel o seculares.
+## Infraestructura compartida (neutral)
+- **Ubicación**: `shared/shared-infra.js`
+- **Compartido**: productos, métodos de impresión, exportación/importación, UI base, utilidades
+- **No contiene** reglas creativas de ningún motor
 
 ## Regla de aislamiento
-Ningún motor debe escribir en bancos, memoria o prompts del otro. La integración futura debe consumir contratos explícitos y pruebas de aislamiento; compartir interfaz no implica compartir reglas.
+- Ningún archivo de `secular-engine/` modifica `gospel-engine/`
+- Ningún archivo de `gospel-engine/` escribe en bancos/memoria/prompts del Gospel
+- La sincronización a Supabase respeta la separación (claves: `POD2|gospel_...` vs `POD2|secular_...`)
+- `shared/` solo contiene infraestructura, sin reglas creativas
