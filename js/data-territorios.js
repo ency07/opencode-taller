@@ -8,6 +8,25 @@
 
 'use strict';
 
+/**
+ * CATALOGO DE TERRITORES CREATIVOS — Fase 1 (Stage 1 closure)
+ * Estado: catalogo validado contra los ejes declarados (estilo / tratamiento / mercado).
+ *
+ * ESQUEMA (Tarea 2 — separacion de ejes):
+ * - compatibleStyles:     ids de estilo artistico del catalogo de estilos (data-estilos.js / ESTILOS_LIST).
+ *                         NO admite perfiles estructurales (HEAVY/SOFT/MODERN) ni ejes de tipografia
+ *                         (SOLO_TEXTO/BALANCEADO/TEXTO_DOMINANTE/OBJETO_DOMINANTE/SOLO_OBJETO):
+ *                         esos valores pertenecen a sus respectivos catalogos/ejes y se declaran en su lugar.
+ * - compatibleTreatments: ids de tratamiento estructural del catalogo de tratamientos (data-tratamientos.js):
+ *                         HEAVY / SOFT / MODERN (ORDEN FIJA). NO se mezclan con estilos.
+ * - compatibleMarkets:    ids de mercado con los que el territorio puede convivir.
+ *
+ * Compatibilidades NO verificables:
+ * - Los diez territorios se declaran con direcciones propias (description/themes/restrictions); las
+ *   combinaciones estilo x territorio convierten en decisiones creativas que exceden la fuente
+ *   original (pendiente de recuperacion) y se documentan aqui sin inventar pares nuevos.
+ */
+
 const POD_CREATIVE_TERRITORIES = {
   SACRED_EDITORIAL: {
     id: "SACRED_EDITORIAL",
@@ -18,7 +37,11 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["tipografia", "reticulas", "numeracion", "anotaciones", "bloques_texto", "portadas_libros", "diseno_editorial"],
     themes: ["identidad_cristo", "verdad", "gracia", "santidad", "discipulado"],
     restrictions: ["no_cruces_centrales_genericas", "no_tipografias_decorativas_vacias"],
-    compatibleStyles: ["SOLO_TEXTO", "BALANCEADO", "HEAVY", "MODERN", "EXPRESSIVE"],
+    // Eje de estilo (data-estilos.js): ids de estilos artisticos compatibles con el territorio.
+    // Los ejes de tipoografia (SOLO_TEXTO/BALANCEADO/TEXTO_DOMINANTE/OBJETO_DOMINANTE/SOLO_OBJETO)
+    // y los perfiles estructurales (HEAVY/SOFT/MODERN) NO son ids de estilo: se declaran en su eje propio.
+    compatibleStyles: ["Minimal Modern", "Gótico Ornamental"],
+    // Eje de tratamiento (data-tratamientos.js): ids de tratamiento estructural.
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "streetwear", "lifestyle"],
     visualIdentity: "editorial_contemporaneo",
@@ -35,7 +58,7 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["raices", "semillas", "olivos", "vides", "espigas", "ramas", "frutos", "crecimiento", "permanencia"],
     themes: ["permanecer_en_cristo", "crecimiento_espiritual", "fruto_espiritu", "esperanza", "vida_eterna"],
     restrictions: ["no_plantas_ornamentales_sin_metafora_biblica", "las_plantas_deben_nacer_del_texto"],
-    compatibleStyles: ["BALANCEADO", "SOFT", "NATURAL", "EXPRESSIVE", "MODERN"],
+    compatibleStyles: ["Bohemian", "Acuarela Suelta"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "nature_outdoor"],
     visualIdentity: "botanica_organica_detallada",
@@ -52,7 +75,7 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["inscripciones", "sellos", "mapas_historicos", "tablillas", "papiros", "diagramas_arqueologicos", "documentos_antiguos"],
     themes: ["origenes", "alianzas", "promesas", "exodo", "historia_redencion", "pacto"],
     restrictions: ["no_elementos_inventados_como_historicos", "referencias_deben_ser_verificables"],
-    compatibleStyles: ["HEAVY", "BALANCEADO", "HERITAGE", "SOFT", "MODERN"],
+    compatibleStyles: ["Vintage Desgastado", "Blueprint / Technical", "Grabado / Linóleo"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "professional_community"],
     visualIdentity: "archivo_documentado",
@@ -69,7 +92,7 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["geometria", "modulos", "tension", "contraste", "repeticion", "espacio_negativo", "formas_abstractas", "estructuras"],
     themes: ["eternidad", "unidad", "redencion", "transformacion", "esperanza", "poder_en_debilidad"],
     restrictions: ["no_ilustracion_literal_del_texto", "el_concepto_debe_nacer_de_la_tension_teologica"],
-    compatibleStyles: ["SOLO_TEXTO", "BALANCEADO", "EXPRESSIVE", "MODERN", "HEAVY", "SOFT"],
+    compatibleStyles: ["Minimal Modern", "Brutalist"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "art_design"],
     visualIdentity: "geometria_teologica",
@@ -86,7 +109,7 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["sellos", "emblemas", "grabados", "escudos", "ornamentos", "tipografia_historica", "marcos_decorativos"],
     themes: ["confesion_fe", "fidelidad", "perseverancia", "herencia_espiritual", "tradicion"],
     restrictions: ["no_usar_escudos_de_organizaciones_comerciales_reales_como_ornamento", "no_copiar_escudos_de_iglesias_reales"],
-    compatibleStyles: ["HERITAGE", "BALANCEADO", "HEAVY", "SOFT", "MODERN"],
+    compatibleStyles: ["Folk Popular", "Bordado / Puntada", "Vintage Desgastado"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "professional_community", "lifestyle"],
     visualIdentity: "emblema_reinterpretado",
@@ -103,7 +126,7 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["vinetas", "secuencias", "personajes_secundarios", "paisajes", "escenas_ilustradas", "narrativa_visual"],
     themes: ["parabolas", "acontecimientos_biblicos", "experiencias_transformacion", "historias_fe"],
     restrictions: ["no_imitar_francises_comerciales_conocidas", "no_usar_personajes_realistas_de_francises_reales"],
-    compatibleStyles: ["BALANCEADO", "EXPRESSIVE", "SOFT", "MODERN", "HEAVY"],
+    compatibleStyles: ["Kids Storybook", "Cómic / Halftone"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "music_entertainment", "humor_pop"],
     visualIdentity: "narrativa_secuencial",
@@ -120,7 +143,10 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["objetos_cotidianos", "escritura_manual", "anotaciones", "diarios", "composiciones_espontaneas", "vida_familiar"],
     themes: ["oracion", "descanso", "obediencia", "servicio", "paciencia", "vida_familiar", "practica_diaria"],
     restrictions: ["no_complicaciones_visuales_excesivas", "no_alejarse_de_la_cotidianidad_reconocible"],
-    compatibleStyles: ["SOFT", "BALANCEADO", "MODERN", "EXPRESSIVE", "HEAVY"],
+    // Tarea 3 (Stage 1 closure): revisión de EVERYDAY_FAITH. Asignación canónica conservada
+    // (tratamientos SOFT + MODERN; HEAVY queda fuera por la decisión canónica registrada, sin
+    // alterar la asignación sin justificación adicional).
+    compatibleStyles: ["Hand-Drawn", "Bordado / Puntada"],
     compatibleTreatments: ["SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "professional_community", "nature_outdoor"],
     visualIdentity: "diario_visual",
@@ -137,8 +163,8 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["etiquetas_tecnicas", "numeraciones", "diagramas", "nomenclaturas", "identificadores", "graficos_funcionales", "documentacion_tecnica"],
     themes: ["servicio", "fidelidad", "vocacion", "trabajo_para_el_senor", "oficio", "responsabilidad"],
     restrictions: ["no_ornamentos_decorativos_inutiles", "no_estetica_promocional_de_iglesia"],
-    compatibleStyles: ["HEAVY", "BALANCEADO", "SOFT", "MODERN"],
-    compatibleTreatments: ["HEAVY", "MODERN", "SOFT"],
+    compatibleStyles: ["Blueprint / Technical", "Stencil Urbano"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "professional_community", "automotive_industrial", "streetwear"],
     visualIdentity: "funcional_utilitario",
     brandAssociation: ["CrossLampCo", "BERESHITH_CO"],
@@ -154,7 +180,7 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["dualidad", "fragmentacion", "contraste_escalas", "oposicion_formas", "asimetria", "tension_visual", "espacio_negativo_extremo"],
     themes: ["debilidad_poder", "muerte_resurreccion", "esclavitud_libertad", "culpa_perdon", "transformacion"],
     restrictions: ["no_simplificaciones_visuales_que_ignoren_la_tension_conceptual", "la_composicion_debe_nacer_del_mensaje"],
-    compatibleStyles: ["HEAVY", "BALANCEADO", "SOLO_TEXTO", "EXPRESSIVE", "MODERN", "SOFT"],
+    compatibleStyles: ["Brutalist", "Photomontage / Dada"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "art_design", "professional_community"],
     visualIdentity: "tension_asimetrica",
@@ -171,14 +197,24 @@ const POD_CREATIVE_TERRITORIES = {
     resources: ["expresiones_regionales", "elementos_arquitectonicos", "referencias_culturales", "escenas_cotidianas", "lenguajes_graficos_locales", "arte_popular"],
     themes: ["fe_en_comunidad", "perseverancia", "servicio", "esperanza", "pertenencia", "identidad_regional"],
     restrictions: ["no_generalizaciones_culturales_que_borren_la_identidad", "cada_region_tiene_sus_propias_referencias"],
-    compatibleStyles: ["SOFT", "BALANCEADO", "HERITAGE", "EXPRESSIVE", "MODERN", "HEAVY"],
-    compatibleTreatments: ["SOFT", "MODERN", "HEAVY"],
+    compatibleStyles: ["Folk Popular", "Collage Cut-Paper", "Hand-Drawn"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["christian", "gospel_es", "gospel_en", "professional_community", "lifestyle", "music_entertainment", "nature_outdoor"],
     visualIdentity: "identidad_regional",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 2
   }
 };
+
+// Normaliza las descripciones: el eje temático vive en `themes` (identificadores propios del
+// territorio), por lo que ninguna descripción debe duplicar un bloque "Temas: ..." en su texto
+// (Tarea 2 — des-duplicación del prompt generado por la directiva).
+Object.keys(POD_CREATIVE_TERRITORIES).forEach(function (territoryId) {
+  const rec = POD_CREATIVE_TERRITORIES[territoryId];
+  const desc = String(rec && rec.description || '');
+  const match = desc.match(/^(.*)\s*Temas:\s*[\s\S]*$/);
+  if (match) rec.description = match[1].trim();
+});
 
 // Exportación para consumo por motor-nucleo.js (en Fase 4).
 // En Fase 1 y 2, este archivo solo existe; no se importa en ningún archivo existente.

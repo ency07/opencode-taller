@@ -179,6 +179,7 @@ function readStateFromDOM() {
   } : null;
   MOTOR_STATE.imageAnalysis = null;
   MOTOR_STATE.creativeTerritory = v('creativeTerritory', 'auto');
+  MOTOR_STATE.creativeTerritory = _creativeTerritoryCompatibleWithMarket(MOTOR_STATE.creativeTerritory);
   MOTOR_STATE.visualIdentity = v('visualIdentity', '');
   MOTOR_STATE.decisionMode = v('decisionMode', 'assisted');
   if (imageFile && imageInput.dataset && imageInput.dataset.analysisSignature === MOTOR_STATE.imageReference.signature) {
@@ -2547,6 +2548,40 @@ function _resolveTerritoryDirective(territory) {
   return parts.join(' ');
 }
 
+/* --- Territorio creativo: helpers de estado, persistencia y guard de mercado --- */
+function _creativeTerritoryCompatibleWithMarket(territory) {
+  const t = String(territory || '').trim();
+  if (!t || t === 'auto') return 'auto';
+  const records = _CREATIVE_TERRITORIES || {};
+  const rec = records[t];
+  if (!rec) return 'auto';
+  const markets = Array.isArray(rec.compatibleMarkets) ? rec.compatibleMarkets : [];
+  const current = String(MOTOR_STATE.market || '').trim();
+  if (markets.length && current && markets.indexOf(current) === -1) return 'auto';
+  return t;
+}
+
+function loadCreativeTerritory() {
+  try {
+    const stored = _memGetJSON(_memKey(['creativeTerritory', MOTOR_STATE.market, MOTOR_STATE.product]), null);
+    const raw = stored && typeof stored === 'object' ? stored.value : stored;
+    const t = String(raw || 'auto').trim();
+    if (!t || t === 'auto') return 'auto';
+    const records = _CREATIVE_TERRITORIES || {};
+    if (!records[t]) return 'auto';
+    return _creativeTerritoryCompatibleWithMarket(t);
+  } catch (e) { return 'auto'; }
+}
+
+function setCreativeTerritory(value) {
+  let t = String(value || 'auto').trim() || 'auto';
+  const records = _CREATIVE_TERRITORIES || {};
+  if (t !== 'auto' && !records[t]) t = 'auto';
+  MOTOR_STATE.creativeTerritory = _creativeTerritoryCompatibleWithMarket(t);
+  try { if (typeof setJSON === 'function') setJSON(_memKey(['creativeTerritory', MOTOR_STATE.market, MOTOR_STATE.product]), { value: MOTOR_STATE.creativeTerritory, updatedAt: new Date().toISOString() }); } catch (e) {}
+  return MOTOR_STATE.creativeTerritory;
+}
+
 function formatPrompt(result) {
   if (!result || !result.set) return '';
   const set = result.set;
@@ -2829,7 +2864,7 @@ function formatPrompt(result) {
      comportamiento anterior. El motor no decide el territorio: solo expone el
      ya fijado por el usuario (locks > IA). */
   const _territorioDirective = _resolveTerritoryDirective(MOTOR_STATE.creativeTerritory);
-  if (_territorioDirective) o += 'TERRITORIO CREATIVO: ' + _territorioDirective + '\n';
+  if (_territorioDirective) o += _territorioDirective + '\n';
   o += 'REGLAS COMUNES A LAS 3 FICHAS: ';
   o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos. ';
   o += 'INTERPRETACIÓN DEL CONCEPTO: si el concepto es ambiguo o metafórico, elige la lectura más literal de sus palabras; una parte del cuerpo nombrada se dibuja solo si es imprescindible y de forma parcial/estilizada; no inventes personas, rostros ni escenas no narradas. ';
@@ -3821,6 +3856,20 @@ window.renderColorAudit = renderColorAudit;
     if (subniche && !subniche.__podAudienceRefreshBound) {
       subniche.addEventListener('change', refreshAudienceSelector);
       subniche.__podAudienceRefreshBound = true;
+    }
+
+    const creativeTerritory = document.getElementById('creativeTerritory');
+    if (creativeTerritory) {
+      if (!creativeTerritory.__podCreativeTerritoryBound) {
+        creativeTerritory.addEventListener('change', function () {
+          setCreativeTerritory(this.value);
+          const statusEl2 = document.getElementById('status');
+          if (statusEl2) statusEl2.textContent = 'Territorio creativo: ' + (this.value || 'auto') + '.';
+        });
+        creativeTerritory.__podCreativeTerritoryBound = true;
+      }
+      const storedCreative = loadCreativeTerritory();
+      if (storedCreative) creativeTerritory.value = storedCreative;
     }
 
     refreshContextSelectors(true);

@@ -33,7 +33,6 @@ const diversified = diversity.aplicarDiversidad(original, 0.4, ['HEAVY', 'SOFT',
 assert.equal(diversified.length, original.length);
 assert.notDeepEqual(diversified, original);
 assert.equal(diversity.estaSaturado(diversified, 0.4), false);
-assert.deepEqual(diversity.contarEstilos(['HEAVY', 'SOFT', 'HEAVY']), { HEAVY: 2, SOFT: 1 });
 assert.equal(diversity.estaSaturado([], 0.4), false);
 assert.equal(diversity.estaSaturado(['HEAVY'], 0.4), false);
 assert.deepEqual(diversity.aplicarDiversidad(['HEAVY'], 0.4, ['HEAVY', 'SOFT']), ['HEAVY']);
@@ -50,6 +49,7 @@ vm.createContext(browser);
   'js/data-composiciones.js',
   'js/data-tecnicas.js',
   'js/data-tratamientos.js',
+  'js/data-territorios.js',
   'js/diversidad-saturacion.js',
   'secular-engine/secular-engine.js',
   'shared/shared-infra.js'
@@ -63,11 +63,28 @@ assert.ok(browser.window.PODCreativeCatalogs.diversity);
 assert.ok(browser.window.PODCreativeCatalogs.secularEngine);
 assert.ok(browser.window.PODCreativeCatalogs.sharedInfra);
 
+/* Tarea 2 (Stage 1 closure): el catalogo de territorios separa ejes y usa ids de catalogo. */
+const territories = vm.runInContext('POD_CREATIVE_TERRITORIES', browser);
+const styleIds = browser.window.ESTILOS_LIST || [];
+assert.equal(Object.keys(territories).length, 10, 'el catalogo debe declarar los diez territorios');
+Object.keys(territories).forEach(function (territoryId) {
+  const t = territories[territoryId];
+  assert.ok(Array.isArray(t.compatibleTreatments), 'el territorio ' + territoryId + ' requiere compatibleTreatments');
+  t.compatibleTreatments.forEach(function (treatmentId) {
+    assert.ok(['HEAVY', 'SOFT', 'MODERN'].indexOf(treatmentId) !== -1, 'compatibleTreatments con id invalido en ' + territoryId + ': ' + treatmentId);
+  });
+  (t.compatibleStyles || []).forEach(function (styleId) {
+    assert.ok(styleIds.indexOf(styleId) !== -1, 'compatibleStyles con id invalido en ' + territoryId + ': ' + styleId);
+  });
+});
+
+assert.deepEqual(diversity.contarEstilos(['HEAVY', 'SOFT', 'HEAVY']), { HEAVY: 2, SOFT: 1 });
+
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const motor = fs.readFileSync(path.join(root, 'js/motor-nucleo.js'), 'utf8');
 const ia = fs.readFileSync(path.join(root, 'js/ia-analisis.js'), 'utf8');
 const nav = fs.readFileSync(path.join(root, 'js/pod-nav.js'), 'utf8');
-assert.doesNotMatch(index, /id="creativeTerritory"/, 'no mostrar selector de territorio sin catálogo ni efecto real');
+assert.match(index, /id="creativeTerritory"/, 'Stage 1 closure: selector de territorio activo con catálogo y efecto real');
 assert.match(motor, /MOTOR_STATE\.creativeTerritory = v\('creativeTerritory'/);
 assert.match(motor, /clearSetHistory/);
 assert.match(motor, /clearCreativeMemory/);
