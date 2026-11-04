@@ -1,5 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
+const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.join(__dirname, '..');
@@ -33,6 +34,34 @@ assert.equal(diversified.length, original.length);
 assert.notDeepEqual(diversified, original);
 assert.equal(diversity.estaSaturado(diversified, 0.4), false);
 assert.deepEqual(diversity.contarEstilos(['HEAVY', 'SOFT', 'HEAVY']), { HEAVY: 2, SOFT: 1 });
+assert.equal(diversity.estaSaturado([], 0.4), false);
+assert.equal(diversity.estaSaturado(['HEAVY'], 0.4), false);
+assert.deepEqual(diversity.aplicarDiversidad(['HEAVY'], 0.4, ['HEAVY', 'SOFT']), ['HEAVY']);
+const impossible = ['HEAVY', 'HEAVY', 'HEAVY', 'HEAVY'];
+assert.deepEqual(diversity.aplicarDiversidad(impossible, 0.4, ['HEAVY', 'SOFT']), impossible);
+assert.equal(diversity.estaSaturado(impossible, 0.4), true);
+assert.deepEqual(diversity.aplicarDiversidad(['HEAVY', 'SOFT'], 1.5, ['HEAVY', 'SOFT']), ['HEAVY', 'SOFT']);
+
+// Cargar todos los catálogos como scripts clásicos junto al banco autoritativo.
+const browser = { window: {} };
+vm.createContext(browser);
+[
+  'js/data-estilos.js',
+  'js/data-composiciones.js',
+  'js/data-tecnicas.js',
+  'js/data-tratamientos.js',
+  'js/diversidad-saturacion.js',
+  'secular-engine/secular-engine.js',
+  'shared/shared-infra.js'
+].forEach(file => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), browser, { filename: file }));
+assert.equal(browser.window.LAYOUTS.length, 16);
+assert.equal(browser.window.COLOR_MODES.length, 6);
+assert.equal(browser.window.PODCreativeCatalogs.compositions.compositionDirections.length, 10);
+assert.equal(browser.window.PODCreativeCatalogs.techniques.illustrationTechniques.length, 24);
+assert.equal(browser.window.PODCreativeCatalogs.treatments.textIntegrations.length, 10);
+assert.ok(browser.window.PODCreativeCatalogs.diversity);
+assert.ok(browser.window.PODCreativeCatalogs.secularEngine);
+assert.ok(browser.window.PODCreativeCatalogs.sharedInfra);
 
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const motor = fs.readFileSync(path.join(root, 'js/motor-nucleo.js'), 'utf8');
@@ -47,4 +76,4 @@ assert.match(nav, /\['product', \['product', 'productSelect'\]\]/);
 assert.match(nav, /\['language', \['language', 'selLanguage'\]\]/);
 assert.doesNotMatch(motor, /SECULAR_MARKETS|secular-engine/);
 
-console.log('PASS creative-integration: 26 assertions');
+console.log('PASS creative-integration: source catalogs, namespace isolation and P5 boundaries');
