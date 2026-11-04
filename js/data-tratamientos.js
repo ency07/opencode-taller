@@ -43,12 +43,7 @@
     "la palabra principal es un elemento más del objeto: un letrero que cuelga de él, una luz dentro, un sello sobre él",
     "el texto fluye con el movimiento del símbolo: sube con el humo, cae con el agua, gira con la rueda"
   ];
-  
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { STRUCTURAL_TREATMENTS, VISUAL_TREATMENTS, TEXT_INTEGRATIONS };
-  }
-  
-  const api = { structuralTreatments, visualTreatments, textIntegrations };
+const api = { structuralTreatments, visualTreatments, textIntegrations };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) {
     root.PODCreativeCatalogs = root.PODCreativeCatalogs || {};
