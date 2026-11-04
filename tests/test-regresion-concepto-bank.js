@@ -56,7 +56,11 @@ const field = {
   }
 };
 global.confirm = function () { return true; };
+// La selección es aleatoria; fijar el primer candidato para que la regresión sea determinista.
+const originalRandom = Math.random;
+Math.random = function () { return 0; };
 useBankConcept('gospel_es', 'uso-test', field);
+Math.random = originalRandom;
 ok(field.value === 'Concepto cargado desde banco', 'useBankConcept no cargó el concepto');
 ok(inputEvents === 1, 'useBankConcept no emitió exactamente un evento input');
 
