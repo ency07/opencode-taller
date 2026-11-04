@@ -46,6 +46,13 @@ ok(_familiaLayoutArq('Columna apilada: símbolo arriba, textos apilados debajo')
 ok(_familiaLayoutArq('Diagonal ascendente') === 'diagonal', 'Diagonal es familia diagonal');
 ok(_familiaLayoutArq('Axial centrado') === 'central', 'Axial es familia central');
 
+/* --- 1B) Fallback: cada layout debe tener una arquitectura compatible --- */
+LAYOUTS.forEach(function (layout) {
+  const fallback = _fallbackTextArchitectureForLayout(layout);
+  ok(!!fallback, 'P1: existe fallback para ' + layout);
+  ok(_arquitecturaCompatible(fallback, layout), 'P1: fallback compatible con ' + layout);
+});
+
 /* --- 2) Incompatibilidades del caso real (01B: Columna apilada + TEXTO DIVIDIDO) --- */
 ok(_arquitecturaCompatible('TEXTO DIVIDIDO a ambos lados del motivo; lectura natural y pausa visual central.', 'Columna apilada') === false,
   'Columna apilada no admite TEXTO DIVIDIDO (caso real 01B)');
