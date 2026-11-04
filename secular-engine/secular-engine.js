@@ -42,14 +42,15 @@
   /* --- Función de inicialización del motor secular --- */
   function initSecularEngine(config) {
     config = config || {};
+    const market = SECULAR_MARKETS.indexOf(config.market) !== -1 ? config.market : 'streetwear';
     return {
-      market: config.market || 'streetwear',
+      market: market,
       language: config.language || 'es',
       product: config.product || 'CAMISETA SOFT',
       decisionMode: config.decisionMode || 'assisted',
       creativeTerritory: config.creativeTerritory || null,
       visualIdentity: config.visualIdentity || null,
-      brandBenchmark: SECULAR_BRAND_BENCHMARKS[config.market] || []
+      brandBenchmark: (SECULAR_BRAND_BENCHMARKS[market] || []).slice()
     };
   }
   
