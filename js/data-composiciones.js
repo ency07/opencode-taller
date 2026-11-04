@@ -34,12 +34,7 @@
     "triádico",
     "acromático"
   ];
-  
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { LAYOUTS, COLOR_MODES };
-  }
-  
-  const api = { compositionDirections, colorModes };
+const api = { compositionDirections, colorModes };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) {
     root.PODCreativeCatalogs = root.PODCreativeCatalogs || {};
