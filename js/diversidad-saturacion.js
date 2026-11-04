@@ -43,7 +43,12 @@
     const allowed = Array.isArray(alternativas) ? Array.from(new Set(alternativas.filter(Boolean))) : [];
     if (allowed.length < 2) return styles.slice();
     const result = styles.slice();
+    // No tocar valores que el contrato no declaró como alternativas.
+    if (result.some(function (style) { return allowed.indexOf(style) === -1; })) return result;
     const maxAllowed = Math.max(1, Math.floor(result.length * limit));
+    // Si ni siquiera la capacidad teórica permite cumplir el umbral, no aplicar
+    // una redistribución parcial que siga saturada.
+    if (allowed.length * maxAllowed < result.length) return result;
     let counts = contarEstilos(result);
     let guard = result.length * allowed.length;
     while (guard-- > 0) {
