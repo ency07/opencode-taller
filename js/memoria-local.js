@@ -365,34 +365,41 @@
   }
 
   function useBankConcept(market, subniche, conceptField) {
-    const bank = loadPersonalBank(market);
-    const key = '__concept__' + subniche;
-    const concepts = Array.isArray(bank[key]) ? bank[key] : [];
+    // Resolver el contexto activo cuando no se proporciona explícitamente.
+    if (typeof readStateFromDOM === 'function') readStateFromDOM();
+    var m = market || (typeof $ !== 'undefined' && $('market') ? $('market').value : null) || 'global_es';
+    var s = subniche || (typeof $ !== 'undefined' && $('subniche') ? $('subniche').value : null) || 'auto';
+    if ((!s || s === 'auto') && typeof effectiveSubniche === 'function') s = effectiveSubniche() || 'auto';
+
+    var concepts = getPersonalConcepts(m, s);
     if (!concepts.length) {
       safeTell('Aún no hay conceptos guardados en este subnicho. ¡Añádelos primero!');
       return;
     }
-    // Elegir un concepto aleatorio
-    const choice = concepts[Math.floor(Math.random() * concepts.length)];
-    const conceptFieldEl = conceptField || document.getElementById('concept');
+
+    var choice = concepts[Math.floor(Math.random() * concepts.length)];
+    var conceptFieldEl = conceptField || (typeof document !== 'undefined' ? document.getElementById('concept') : null);
     if (!conceptFieldEl) {
       safeTell('No se encontró el campo de concepto');
       return;
     }
-    // Si el campo ya tiene texto, pedir confirmación
-    const current = conceptFieldEl.value.trim();
-    if (current && confirm('El campo de concepto ya tiene texto: "' + current + '".\n¿Deseas reemplazarlo con "' + choice + '"?')) {
-      conceptFieldEl.value = choice;
-    } else if (!current) {
-      conceptFieldEl.value = choice;
-    } else {
+
+    var current = String(conceptFieldEl.value || '').trim();
+    if (current && !window.confirm('El campo de concepto ya tiene texto: "' + current + '".\\n¿Deseas reemplazarlo con "' + choice + '"?')) {
       safeTell('Concepto no cambiado.');
+      return;
+    }
+
+    conceptFieldEl.value = choice;
+    if (conceptFieldEl.dispatchEvent && typeof Event !== 'undefined') {
+      conceptFieldEl.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
 
   function addPersonalConcept(market, subniche, concept) {
     const bank = loadPersonalBank(market);
-    const key = subniche || COMMON_BANK_KEY;
+    // Mantener el mismo esquema que getPersonalConcepts().
+    const key = '__concept__' + (subniche || COMMON_BANK_KEY);
     const current = Array.isArray(bank[key]) ? bank[key] : [];
 
     const norm = function (s) {
