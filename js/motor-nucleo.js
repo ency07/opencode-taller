@@ -1479,9 +1479,82 @@ function _familiaLayoutArq(layout) {
   return 'central';
 }
 function _arquitecturaCompatible(arch, layout) {
-  var fam = _ARQ_COMPAT[_familiaLayoutArq(layout)];
-  return !!(fam && fam.test(String(arch || '')));
+  var a = String(arch || '');
+  var l = String(layout || '');
+
+  // Clasificar por estructura concreta evita que un layout axial acepte
+  // instrucciones laterales/diagonales, pero mantiene suficientes opciones.
+  if (/Órbita radial/i.test(l)) {
+    return /^(ÓRBITA PARCIAL|ARCO SUPERIOR|ARCO LATERAL|TEXTO dentro de un vacío real|SÍMBOLO integrado|BLOQUES MODULARES)/i.test(a);
+  }
+  if (/Escalinata/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|TEXTO DIVIDIDO|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|FRANJA INFERIOR|PALABRA CLAVE)/i.test(a);
+  }
+  if (/Axial centrado/i.test(l)) {
+    // Un texto dividido simétricamente a ambos lados puede conservar el eje axial;
+    // lo incompatible es la alineación lateral irregular o una diagonal ajena.
+    return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Emblema circular|Arco y cúpula/i.test(l)) {
+    return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Banda horizontal|Tríptico de bandas/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|BANDA SUPERIOR|TEXTO DIVIDIDO|DOS BLOQUES|PALABRA CLAVE|TEXTO detrás|SÍMBOLO integrado)/i.test(a);
+  }
+  if (/Sangrado total/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
+  }
+  if (/Retícula áurea/i.test(l)) {
+    return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|COLUMNA LATERAL|ARCO SUPERIOR|BLOQUE INFERIOR|DIAGONAL ascendente|DIAGONAL descendente|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|SÍMBOLO integrado|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
+  }
+  if (/Diagonal ascendente/i.test(l)) {
+    return /^(TEXTO ARRIBA|DIAGONAL ascendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
+  }
+  if (/Diagonal descendente/i.test(l)) {
+    return /^(TEXTO ARRIBA|DIAGONAL descendente|TEXTO DIVIDIDO|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|ESQUINA SUPERIOR|PALABRA CLAVE)/i.test(a);
+  }
+  if (/Columna apilada/i.test(l)) {
+    return /^(TEXTO ARRIBA|COLUMNA LATERAL|BLOQUE INFERIOR|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|FRANJA INFERIOR|PILA VERTICAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR)/i.test(a);
+  }
+  if (/Sello descentrado|Editorial asimétrica|Split 2\/3-1\/3|Tarjeta interior/i.test(l)) {
+    return /^(TEXTO ARRIBA|COLUMNA LATERAL|BLOQUE INFERIOR|DIAGONAL ascendente|BLOQUE VERTICAL|PALABRA CLAVE|TEXTO detrás|CINTA ABIERTA|DOS BLOQUES|FRANJA INFERIOR|PILA VERTICAL|ARCO LATERAL|BLOQUES MODULARES|TEXTO sigue un solo lado|ESQUINA SUPERIOR|TEXTO DIVIDIDO)/i.test(a);
+  }
+
+  var fam = _ARQ_COMPAT[_familiaLayoutArq(l)];
+  return !!(fam && fam.test(a));
 }
+
+/* Fallback estructural seguro: si el banco no ofrece una arquitectura compatible,
+   se deriva una instrucción breve del layout; nunca se conserva una contradicción. */
+function _fallbackTextArchitectureForLayout(layout) {
+  var l = String(layout || '');
+  if (/Escalinata/i.test(l)) {
+    return 'BLOQUES MODULARES en celdas irregulares; motivo ocupa un módulo independiente.';
+  }
+  if (/Órbita radial/i.test(l)) {
+    return 'ÓRBITA PARCIAL alrededor del motivo; deja una abertura amplia y conserva lectura natural.';
+  }
+  if (/Axial centrado|Emblema circular|Arco y cúpula/i.test(l)) {
+    return 'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio y separación amplia.';
+  }
+  if (/Banda horizontal|Tríptico de bandas/i.test(l)) {
+    return 'BANDA SUPERIOR estrecha y centrada; motivo debajo separado por un intervalo limpio.';
+  }
+  if (/Diagonal descendente/i.test(l)) {
+    return 'DIAGONAL descendente izquierda-derecha; sigue el eje de caída sin tapar la silueta.';
+  }
+  if (/Diagonal ascendente/i.test(l)) {
+    return 'DIAGONAL ascendente izquierda-derecha; cruza espacio negativo sin tapar la silueta.';
+  }
+  if (/Sangrado total/i.test(l)) {
+    return 'TEXTO detrás de la silueta como fondo parcial; superposición controlada y lectura intacta.';
+  }
+  if (/Retícula áurea/i.test(l)) {
+    return 'BLOQUES MODULARES en celdas irregulares; motivo ocupa un módulo independiente.';
+  }
+  return 'COLUMNA LATERAL izquierda; motivo al lado opuesto; líneas cortas y corredor de espacio negativo.';
+}
+
 /* Integración envolvente (cinta/contorno) contra disposición vertical (P1). */
 function _integracionCompatible(layout, integracion) {
   if (_familiaLayoutArq(layout) !== 'lateral') return integracion;
@@ -1933,6 +2006,13 @@ function buildCandidate(audsPerKey, fixedIdentity) {
         var pick = _pickWeighted(elegible, pesos);
         tomadas[pick] = true;
         v.distribucionTexto = pick;
+      } else {
+        // Nunca conservar una arquitectura contradictoria si el banco se agota.
+        var fallback = _fallbackTextArchitectureForLayout(v.layout);
+        if (fallback) {
+          v.distribucionTexto = fallback;
+          tomadas[fallback] = true;
+        }
       }
     });
     ['A', 'B', 'C'].forEach(function (k) {
