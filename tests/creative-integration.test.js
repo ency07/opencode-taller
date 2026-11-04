@@ -11,12 +11,12 @@ const diversity = require('../js/diversidad-saturacion.js');
 const secular = require('../secular-engine/secular-engine.js');
 const shared = require('../shared/shared-infra.js');
 
-assert.equal(compositions.LAYOUTS.length, 10);
-assert.equal(compositions.COLOR_MODES.length, 10);
-assert.equal(techniques.ILLUSTRATION_TECHNIQUES.length, 24);
-assert.equal(treatments.STRUCTURAL_TREATMENTS.length, 3);
-assert.equal(treatments.VISUAL_TREATMENTS.length, 10);
-assert.equal(treatments.TEXT_INTEGRATIONS.length, 10);
+assert.equal(compositions.compositionDirections.length, 10);
+assert.equal(compositions.colorModes.length, 10);
+assert.equal(techniques.illustrationTechniques.length, 24);
+assert.equal(treatments.structuralTreatments.length, 3);
+assert.equal(treatments.visualTreatments.length, 10);
+assert.equal(treatments.textIntegrations.length, 10);
 
 assert.equal(secular.SECULAR_MARKETS.length, 9);
 assert.equal(secular.SECULAR_RULES.qaType, 'commercial');
