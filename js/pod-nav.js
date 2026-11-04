@@ -37,6 +37,8 @@
   var FIELDS = [
     ['market', ['market', 'selMarket']],
     ['region', ['region']],
+    ['product', ['product', 'productSelect']],
+    ['language', ['language', 'selLanguage']],
     ['concepto', ['concepto', 'concept']],
     ['mensaje', ['mensaje', 'message']],
     ['audiencia', ['audiencia']],
