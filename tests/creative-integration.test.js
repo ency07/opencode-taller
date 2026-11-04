@@ -38,7 +38,7 @@ const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const motor = fs.readFileSync(path.join(root, 'js/motor-nucleo.js'), 'utf8');
 const ia = fs.readFileSync(path.join(root, 'js/ia-analisis.js'), 'utf8');
 const nav = fs.readFileSync(path.join(root, 'js/pod-nav.js'), 'utf8');
-assert.match(index, /id="creativeTerritory"/);
+assert.doesNotMatch(index, /id="creativeTerritory"/, 'no mostrar selector de territorio sin catálogo ni efecto real');
 assert.match(motor, /MOTOR_STATE\.creativeTerritory = v\('creativeTerritory'/);
 assert.match(motor, /clearSetHistory/);
 assert.match(motor, /clearCreativeMemory/);
