@@ -28,7 +28,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check js/motor-nucleo.js
-          for file in js/*.js tests/*.test.js; do
+          for file in js/*.js shared/*.js secular-engine/*.js tests/*.test.js; do
             node --check "$file"
           done
       - name: Run regression suite
