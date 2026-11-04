@@ -35,12 +35,7 @@
     "photomontage con fotografía B/N recortada",
     "Kids storybook con formas amables"
   ];
-  
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { ILLUSTRATION_TECHNIQUES };
-  }
-  
-  const api = { illustrationTechniques };
+const api = { illustrationTechniques };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) {
     root.PODCreativeCatalogs = root.PODCreativeCatalogs || {};
