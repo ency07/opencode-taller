@@ -3109,17 +3109,11 @@ function _territoryConstraints() {
    Compara contra el nombre completo y contra la base (antes de ' × ').
    Si el filtro deja el pool vacío, devuelve el original (fallback seguro). */
 function _territoryStyleFilter(candidates) {
-  const tc = _territoryConstraints();
-  if (!tc.styles || !tc.styles.length) return candidates || [];
-  const pool = Array.isArray(candidates) ? candidates : [];
-  const filtered = pool.filter(function (style) {
-    const name = String(style || '').trim();
-    const base = _getStyleBase(name);
-    return tc.styles.indexOf(name) !== -1 || tc.styles.indexOf(base) !== -1;
-  });
-  // Fallback: si el filtro deja menos de 4 estilos, usar el pool completo
-  // para evitar dropdowns con muy pocas opciones (UX rota).
-  return filtered.length >= 4 ? filtered : pool;
+  // El territorio creativo NO debe restringir el catálogo de estilos.
+  // Solo orienta conceptualmente y recomienda estilos afines (ver
+  // _resolveTerritoryDirective → "Estilos compatibles"). La disponibilidad
+  // de estilos se determina por mercado + producto + restricciones legítimas.
+  return Array.isArray(candidates) ? candidates.slice() : (candidates || []);
 }
 
 /* FIX 3A — Filtra un pool de tratamientos por el territorio activo.
