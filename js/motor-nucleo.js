@@ -2703,6 +2703,10 @@ function memPatternMarket() {
    repetición no servía de nada). Ahora es condición de aceptación y solo se
    evalúa cuando el resto de controles ya pasó. */
 function _patternConflictsOf(cand) {
+  // Durante rerollSingle, omitir la verificación de patrones recientes:
+  // el reroll es una acción del usuario para obtener una ficha distinta,
+  // no una nueva generación de set completo.
+  if (_ACTIVE_GEN_LOCKS) return 0;
   // El tratamiento es contrato fijo de la serie (01A HEAVY → 01B SOFT →
   // 01C MODERN): se repite en todos los sets, no distingue una repetición real
   // y agota la tolerancia del recuento. Solo entra a la firma cuando esta serie
@@ -4071,7 +4075,10 @@ function rerollSingle(keyLetter) {
        Si la ficha regenerada no supera el gate, no se aplica ningún cambio. */
     var testSet = JSON.parse(JSON.stringify(LAST_RESULT.set));
     testSet[keyLetter] = bestOk;
+    var _prevLocks = _ACTIVE_GEN_LOCKS;
+    _ACTIVE_GEN_LOCKS = genLocks;
     var freshEval = evaluaSetOk(testSet);
+    _ACTIVE_GEN_LOCKS = _prevLocks;
     console.log('[DBG REROLl] key=' + keyLetter + ' bestSet=' + (best ? 'si' : 'no') + ' freshEval.passed=' + freshEval.passed + ' score=' + JSON.stringify(freshEval.score) + ' detalle=' + JSON.stringify(freshEval.detalle));
     if (!freshEval.passed) {
       var rejectStatus = document.getElementById('status');
