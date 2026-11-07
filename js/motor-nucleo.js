@@ -2481,9 +2481,14 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
   set.seriesAnchor = seriesAnchor;
 
   /* FIX 3E: diversidad estructural. Se ejecuta ANTES de _applyDerivedPreservation
-     para que los locks de FIX 3C se apliquen sobre la ficha ya diversificada. */
+     para que los locks de FIX 3C se apliquen sobre la ficha ya diversificada.
+     Se omite en rerollSingle (targetKey != null) porque reroll tiene su propia
+     lógica de anti-repetición y diversificación. */
   set.diversityConflicts = [];
-  var _diversityResult = _diversifyAxes(set, usedAxes, preservation ? preservation.targetKey : null);
+  var _diversityResult = { originalDerivados: {}, changes: [] };
+  if (!(preservation && preservation.targetKey)) {
+    _diversityResult = _diversifyAxes(set, usedAxes, null);
+  }
 
   /* FIX 3D Fase 3b: overlay de preservación de derivados (solo en manual).
      Se aplica DESPUÉS de generar y ANTES de devolver, para que el scoring
