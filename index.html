@@ -176,6 +176,15 @@
                 <option value="variation">Variación desde imagen</option>
               </select>
             </div>
+            <div class="field">
+              <label for="decisionMode">Quién decide</label>
+              <select id="decisionMode">
+                <option value="auto">Automático — el motor decide</option>
+                <option value="assisted" selected>Asistido — el motor propone, tú ajustas</option>
+                <option value="manual">Controlado — conserva la ficha y regenera solo lo desbloqueado</option>
+              </select>
+              <div class="hint">Dimension distinta del modo de trabajo: define quién controla las decisiones creativas y cuánto puede modificar el motor. Los locks explícitos siempre prevalecen. Se guarda por mercado, región y producto.</div>
+            </div>
           </div>
 
           <div class="field-group">
@@ -217,6 +226,11 @@
                 <option value="LOCAL_FAITH_CULTURE">Cultura y fe local</option>
               </select>
               <div class="hint">Auto no inyecta directiva. Al elegir un territorio se fija la dirección creativa (identidad, temas, restricciones, estilos y tratamientos compatibles) y se guarda por mercado y producto.</div>
+            </div>
+            <div class="field">
+              <label for="visualIdentity">Identidad visual</label>
+              <input type="text" id="visualIdentity" placeholder="Ej.: tipografía editorial con retícula visible y paleta cálida; elementos que hacen reconocible la serie">
+              <div class="hint">Reglas visuales que hacen reconocible la serie (no es estilo, tratamiento ni composición). Si eliges territorio, tu identidad se integra con la del territorio sin contradicciones: lo que escribas aquí gobierna. Se guarda por mercado y producto.</div>
             </div>
           </div>
 
@@ -605,6 +619,7 @@
   <script src="js/data-productos.js" defer></script>
   <script src="js/pod-nav.js" defer></script>
   <script src="js/memoria-local.js" defer></script>
+  <script src="js/diversidad-saturacion.js" defer></script>
   <script src="js/motor-nucleo.js" defer></script>
   <script src="js/ia-client.js" defer></script>
   <script src="js/ia-analisis.js" defer></script>

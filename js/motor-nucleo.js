@@ -1538,7 +1538,11 @@ function _motifSceneFromMessage(concept, message) {
     return out;
   }
 function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMessage) {
-  const views = (Array.isArray(familyObjs) ? familyObjs : []).map(function (item) { return (typeof _motifView === 'function') ? _motifView(item) : { label: String(item || '').trim(), texto: String(item || '').trim(), tensiones: [], contextos: [], riesgo: '', enriquecido: false }; });
+  const _familyArr = Array.isArray(familyObjs) ? familyObjs : [];
+  const _poolArr = Array.isArray(objectPool) ? objectPool : [];
+  const _commonArr = (typeof _commonBankForMarket === 'function') ? (_commonBankForMarket() || []) : [];
+  const _bankAll = _familyArr.concat(_commonArr.filter(function (ob) { return _familyArr.indexOf(ob) === -1; }));
+  const views = _bankAll.map(function (item) { return (typeof _motifView === 'function') ? _motifView(item) : { label: String(item || '').trim(), texto: String(item || '').trim(), tensiones: [], contextos: [], riesgo: '', enriquecido: false }; });
   const inBankHit = anchor ? views.filter(function (v) { return String(v.label || '') === String(anchor || ''); })[0] : null;
   const inBank = !!inBankHit;
   if (inBank) return { list: [inBankHit.label], anchor: inBankHit.label, conflict: '' };
@@ -1851,6 +1855,244 @@ function _integracionCompatible(layout, integracion) {
   }
   return integracion;
 }
+
+// ============================================================
+// FIX 3E: _diversifyAxes — Búsqueda exhaustiva de diversidad estructural
+// ============================================================
+
+function _diversifyAxes(set, usedAxes, targetKey) {
+  var diversity = (typeof window !== 'undefined' && window.PODCreativeCatalogs)
+    ? window.PODCreativeCatalogs.diversity : null;
+  if (!diversity) return { originalDerivados: {}, changes: [] };
+
+  var _mode = _normalizeDecisionMode(MOTOR_STATE.decisionMode);
+  var _targetKey = (targetKey == null) ? null : String(targetKey);
+  var locks = _resolveLocks() || {};
+  set.diversityConflicts = set.diversityConflicts || [];
+
+  function _isModifiable(k, lockField) {
+    var fieldKey = (lockField === 'jerarquiaVisual') ? 'jerarquia' : lockField;
+    var lv = ((locks[fieldKey] || {})[k]);
+    if (lv !== undefined) return (lv === 'Auto');
+    if (_targetKey !== null && k === _targetKey && (_mode === 'auto' || _mode === 'assisted')) return true;
+    return false;
+  }
+
+  function _diversityScore(values) {
+    var distinct = {};
+    values.forEach(function (v) { distinct[v] = true; });
+    return Object.keys(distinct).length / values.length;
+  }
+
+  function _getProductPool() {
+    var productAllow = (typeof PRODUCT_LAYOUT_ALLOW !== 'undefined') ? PRODUCT_LAYOUT_ALLOW[MOTOR_STATE.product] : null;
+    if (productAllow && productAllow.length) {
+      return (_LAYOUTS || []).filter(function (x) {
+        return productAllow.some(function (h) { return x.indexOf(h) === 0; });
+      });
+    }
+    return (_LAYOUTS || []).slice();
+  }
+
+  function _getCompatiblePool(eje, v) {
+    if (eje === 'layout') {
+      var productPool = _getProductPool();
+      if (productPool.length === 0) return null;
+      var profile = _STRUCTURAL_PROFILES[String(v.perfilEstructural || '').toUpperCase()];
+      var prefixes = (profile && profile.layout) || [];
+      if (prefixes.length === 0) return productPool;
+      var profilePool = productPool.filter(function (x) {
+        return prefixes.some(function (h) { return x.indexOf(h) === 0; });
+      });
+      if (profilePool.length === 0) return null;
+      return profilePool;
+    }
+    return ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
+  }
+
+  function _registerConflict(conflict) {
+    set.diversityConflicts.push(conflict);
+  }
+
+  var originalDerivados = {};
+  K.forEach(function (k) {
+    originalDerivados[k] = {
+      distribucionTexto: set[k].distribucionTexto,
+      integracionTexto: set[k].integracionTexto,
+      jerarquia: set[k].jerarquia
+    };
+  });
+
+  var allChanges = [];
+
+  ['layout', 'jerarquiaVisual'].forEach(function (eje) {
+    var field = eje;
+    var originalValues = K.map(function (k) { return set[k][field]; });
+
+    if (!diversity.isSaturated(originalValues, 0.4)) {
+      _registerConflict({ eje: field, tipo: 'no-saturado', valores: originalValues });
+      return;
+    }
+
+    var modifiable = K.filter(function (k) { return _isModifiable(k, field); });
+    if (modifiable.length === 0) {
+      _registerConflict({ eje: field, tipo: 'sin-solucion', razon: 'todas las posiciones bloqueadas', valores: originalValues });
+      return;
+    }
+
+    var pools = {};
+    var poolError = false;
+    var i;
+    for (i = 0; i < K.length; i++) {
+      var k = K[i];
+      if (_isModifiable(k, field)) {
+        var pool = _getCompatiblePool(field, set[k]);
+        if (pool === null) {
+          poolError = true;
+          pools[k] = [];
+        } else {
+          pools[k] = pool;
+        }
+      } else {
+        pools[k] = [set[k][field]];
+      }
+    }
+
+    if (poolError) {
+      _registerConflict({ eje: field, tipo: 'sin-solucion', razon: 'pool incompatible', valores: originalValues });
+      return;
+    }
+
+    // Búsqueda exhaustiva
+    var bestCombo = null;
+    var bestScore = _diversityScore(originalValues);
+    var bestChanges = Infinity;
+    var bestComboStr = null;
+
+    function cartesian(positions, current) {
+      if (positions.length === 0) {
+        var score = _diversityScore(current);
+        var changes = 0;
+        current.forEach(function (val, idx) { if (val !== originalValues[idx]) changes++; });
+        var comboStr = current.join(',');
+        var isBetter = false;
+        if (score > bestScore) isBetter = true;
+        else if (score === bestScore && changes < bestChanges) isBetter = true;
+        else if (score === bestScore && changes === bestChanges && bestComboStr !== null && comboStr < bestComboStr) isBetter = true;
+        else if (bestCombo === null) isBetter = true;
+        if (isBetter) {
+          bestScore = score;
+          bestChanges = changes;
+          bestCombo = current.slice();
+          bestComboStr = comboStr;
+        }
+        return;
+      }
+      var pos = positions[0];
+      var rest = positions.slice(1);
+      pools[pos].forEach(function (val) {
+        current.push(val);
+        cartesian(rest, current);
+        current.pop();
+      });
+    }
+
+    cartesian(K.slice(), []);
+
+    // Preparación transaccional
+    var staging = {};
+    var allValid = true;
+    var pendingChanges = [];
+    var pendingConflicts = [];
+
+    if (bestCombo && bestScore > _diversityScore(originalValues)) {
+      for (i = 0; i < K.length && allValid; i++) {
+        var k = K[i];
+        if (bestCombo[i] === set[k][field]) continue;
+
+        var newVal = bestCombo[i];
+        var newDerivados = {};
+
+        try {
+          if (field === 'layout') {
+            if (!_arquitecturaCompatible(set[k].distribucionTexto, newVal)) {
+              var elegible = _TEXT_COMPOSITION_BANK.filter(function (a) {
+                return _arquitecturaCompatible(a, newVal);
+              });
+              newDerivados.distribucionTexto = elegible.length
+                ? elegible[0]
+                : _fallbackTextArchitectureForLayout(newVal);
+            } else {
+              newDerivados.distribucionTexto = set[k].distribucionTexto;
+            }
+            newDerivados.integracionTexto = _integracionCompatible(newVal, set[k].integracionTexto);
+          }
+          if (field === 'jerarquiaVisual') {
+            newDerivados.jerarquia = _jerarquiaTextoDeModo(newVal);
+          }
+
+          var candidateCard = {
+            perfilEstructural: set[k].perfilEstructural,
+            audiencia: set[k].audiencia,
+            estilo: set[k].estilo,
+            tipografia: set[k].tipografia,
+            formaSimbodo: set[k].formaSimbodo,
+            tratamiento: set[k].tratamiento,
+            layout: (field === 'layout') ? newVal : set[k].layout,
+            jerarquiaVisual: (field === 'jerarquiaVisual') ? newVal : set[k].jerarquiaVisual,
+            densidad: set[k].densidad,
+            paleta: set[k].paleta,
+            distribucionTexto: newDerivados.distribucionTexto || set[k].distribucionTexto,
+            integracionTexto: newDerivados.integracionTexto || set[k].integracionTexto,
+            jerarquia: newDerivados.jerarquia || set[k].jerarquia
+          };
+
+          var ctx = _FIT_CTX_BY_KEY[k];
+          var newFits = null;
+          if (ctx) {
+            newFits = _calculateFits(candidateCard, ctx);
+            if (!newFits) { allValid = false; break; }
+          }
+
+          staging[k] = { value: newVal, derivados: newDerivados, fits: newFits };
+          pendingChanges.push({ k: k, prev: set[k][field], next: newVal });
+          pendingConflicts.push({
+            eje: field, tipo: 'propuesto', targetKey: k,
+            valorAnterior: set[k][field], valorNuevo: newVal,
+            alternativasEvaluadas: pools[k].length
+          });
+        } catch (e) {
+          allValid = false;
+          break;
+        }
+      }
+    }
+
+    if (!allValid) {
+      _registerConflict({ eje: field, tipo: 'sin-solucion', razon: 'error en preparación', valores: originalValues });
+      return { originalDerivados: originalDerivados, changes: [] };
+    }
+
+    if (Object.keys(staging).length > 0) {
+      Object.keys(staging).forEach(function (k) {
+        var s = staging[k];
+        set[k][field] = s.value;
+        Object.keys(s.derivados).forEach(function (d) { set[k][d] = s.derivados[d]; });
+        if (s.fits) {
+          set[k].fitAudiencia = s.fits.fitAudiencia;
+          set[k].fitProducto = s.fits.fitProducto;
+        }
+      });
+      pendingConflicts.forEach(function (c) { _registerConflict(c); });
+      allChanges = allChanges.concat(pendingChanges);
+    } else {
+      _registerConflict({ eje: field, tipo: 'sin-mejora', razon: 'ninguna combinación mejora diversidad', valores: originalValues });
+    }
+  });
+
+  return { originalDerivados: originalDerivados, changes: allChanges };
+}
+
 
 function buildCandidate(audsPerKey, fixedIdentity, preservation) {
   const estilos = resolveEstilos(audsPerKey);
@@ -2238,11 +2480,43 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
   set.objectConflicts = objectConflicts;
   set.seriesAnchor = seriesAnchor;
 
+  /* FIX 3E: diversidad estructural. Se ejecuta ANTES de _applyDerivedPreservation
+     para que los locks de FIX 3C se apliquen sobre la ficha ya diversificada. */
+  set.diversityConflicts = [];
+  var _diversityResult = _diversifyAxes(set, usedAxes, preservation ? preservation.targetKey : null);
+
   /* FIX 3D Fase 3b: overlay de preservación de derivados (solo en manual).
      Se aplica DESPUÉS de generar y ANTES de devolver, para que el scoring
      (evaluaSetOk) vea la ficha ya preservada. No introduce aleatoriedad. */
   if (preservation && preservation.prevSet && preservation.effectiveLocks) {
     set.conflicts = _applyDerivedPreservation(set, preservation.prevSet, preservation.effectiveLocks, preservation.targetKey);
+  }
+
+  /* FIX 3E: verificación post-FIX 3C. Clasifica propuestas como redistribuido
+     o descartado-por-lock. Reconcilia derivados si FIX 3C restauró un valor. */
+  if (set.diversityConflicts && _diversityResult && _diversityResult.originalDerivados) {
+    set.diversityConflicts.forEach(function (c) {
+      if (c.tipo === 'propuesto') {
+        var _field = (c.eje === 'layout') ? 'layout' : 'jerarquiaVisual';
+        var _finalVal = set[c.targetKey][_field];
+        if (_finalVal === c.valorNuevo) {
+          c.tipo = 'redistribuido';
+        } else {
+          c.tipo = 'descartado-por-lock';
+          c.valorFinal = _finalVal;
+          var _orig = _diversityResult.originalDerivados[c.targetKey];
+          if (_orig) {
+            if (c.eje === 'layout') {
+              set[c.targetKey].distribucionTexto = _orig.distribucionTexto;
+              set[c.targetKey].integracionTexto = _orig.integracionTexto;
+            }
+            if (c.eje === 'jerarquiaVisual') {
+              set[c.targetKey].jerarquia = _orig.jerarquia;
+            }
+          }
+        }
+      }
+    });
   }
 
   return set;
