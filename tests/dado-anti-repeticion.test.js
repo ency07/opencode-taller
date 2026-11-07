@@ -115,7 +115,7 @@ ok(typeof ev.score.total === 'number', 'el score debe traer total numérico');
 /* Cableado en rerollSingle y generateSet */
 const motorSrc = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
 ok(/_ejesRepetidosConConservadas\(v, keptCards\)/.test(motorSrc), 'el dado debe excluir contra las conservadas');
-ok(/if \(clashes\.length\) continue;/.test(motorSrc), 'el choque debe descartar al candidato');
+ok(/if \(clashes\.length\) \{ __dbgStats\.clash\+\+; continue; \}/.test(motorSrc), 'el choque debe descartar al candidato');
 ok(/_recordLayoutSet\(LAST_RESULT\.set\)/.test(motorSrc), 'el dado debe registrar layouts en memoria');
 ok(/LAST_RESULT\.score = freshEval\.score/.test(motorSrc), 'el dado debe recalcular score');
 ok(/LAST_RESULT\.passed = freshEval\.passed/.test(motorSrc), 'el dado debe recalcular passed');

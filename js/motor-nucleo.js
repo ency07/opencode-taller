@@ -180,8 +180,14 @@ function readStateFromDOM() {
   MOTOR_STATE.imageAnalysis = null;
   MOTOR_STATE.creativeTerritory = v('creativeTerritory', 'auto');
   MOTOR_STATE.creativeTerritory = _creativeTerritoryCompatibleWithMarket(MOTOR_STATE.creativeTerritory);
-  MOTOR_STATE.visualIdentity = v('visualIdentity', '');
-  MOTOR_STATE.decisionMode = v('decisionMode', 'assisted');
+  /* FIX 3C: la identidad visual del usuario se lee del input; si el input está
+     vacío (p. ej. primera carga), se recupera el valor persistido. Un valor
+     explícito del usuario nunca se sobrescribe. */
+  MOTOR_STATE.visualIdentity = v('visualIdentity', '') || loadVisualIdentity();
+  /* FIX 3D: el modo de decisión se recupera del mercado|región|producto actual.
+     Es independiente del territorio: define quién controla las decisiones. */
+  var _dmDom = String(v('decisionMode', '') || '').trim();
+  MOTOR_STATE.decisionMode = _dmDom ? _normalizeDecisionMode(_dmDom) : loadDecisionMode();
   if (imageFile && imageInput.dataset && imageInput.dataset.analysisSignature === MOTOR_STATE.imageReference.signature) {
     try { MOTOR_STATE.imageAnalysis = JSON.parse(imageInput.dataset.analysisSummary || 'null'); }
     catch (e) { MOTOR_STATE.imageAnalysis = null; }
@@ -256,7 +262,7 @@ function resolveAudiences() {
   const market = MOTOR_STATE.market;
   const region = MOTOR_STATE.region;
   const pool = getCurrentAudiencePool();
-  const locks = _loadLocks(memLocksMarket(), MOTOR_STATE.product) || {};
+  const locks = _resolveLocks() || {};
   const audienceLocks = locks.audiencia || {};
   const result = {};
   const autos = [];
@@ -430,8 +436,11 @@ function _pickWeightedStable(pool, weights, seed) {
 }
 
 function resolveEstilos(audsPerKey) {
-  const locks = _loadLocks(memLocksMarket(), MOTOR_STATE.product);
-  const candidates = _styleCandidatesForContext();
+  const locks = _resolveLocks();
+  /* FIX 3A: el pool completo se usa para validar locks (locks ganan sobre el
+     territorio); el pool filtrado se usa para la selección automática. */
+  const fullCandidates = _styleCandidatesForContext();
+  const candidates = _territoryStyleFilter(fullCandidates);
   const stableBase = [MOTOR_STATE.market, MOTOR_STATE.product, MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE.groupMode, MOTOR_STATE._rerollNonce || 0].join('|');
   const fixed = {};
   const auto = [];
@@ -441,7 +450,7 @@ function resolveEstilos(audsPerKey) {
   const recentStyles = new Set([].concat.apply([], recentSets.slice(-3)));
 
   K.forEach(function (k) {
-    if (locks.estilo[k] && locks.estilo[k] !== 'Auto' && candidates.indexOf(locks.estilo[k]) !== -1) {
+    if (locks.estilo[k] && locks.estilo[k] !== 'Auto' && fullCandidates.indexOf(locks.estilo[k]) !== -1) {
       fixed[k] = locks.estilo[k];
     } else {
       auto.push(k);
@@ -537,7 +546,7 @@ function _jerarquiaTextoDeModo(modoVisual) {
 }
 
 function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
-  const locks = _loadLocks(memLocksMarket(), MOTOR_STATE.product);
+  const locks = _resolveLocks();
   const MODES = {
     SOLO_TEXTO: 'TIPO 1 · Solo texto',
     TEXTO_DOMINANTE: 'TIPO 2 · Texto dominante',
@@ -956,9 +965,11 @@ function _pickProfileDistinct(preferredPools, fallbackPool, used) {
 /* Compatibilidad explícita entre el lenguaje artístico y el tratamiento estructural.
    La técnica define la superficie; HEAVY/SOFT/MODERN define la arquitectura.
    Esta directriz resuelve aparentes conflictos sin sustituir el estilo elegido. */
-function _styleTreatmentDirective(styleValue, profileKey) {
+function _styleTreatmentDirective(styleValue, profileKey, audienceId) {
   const style = _getStyleBase(styleValue).toLowerCase();
   const key = String(profileKey || '').toUpperCase();
+  const aud = String(audienceId || '').trim();
+  const isInfantil = (aud === 'infantil_col' || /^infantil/.test(aud));
   const profileRules = {
     HEAVY: 'Prioriza masas visuales claras, contornos firmes y contraste alto. Evita que líneas finas, textura o detalles delicados debiliten la silueta. Mantén el carácter del estilo mediante su técnica aplicada en áreas amplias. Prohibido: líneas finas, microdetalle, tramas uniformes que cierren el aire.',
     SOFT: 'Prioriza aire, formas abiertas y jerarquía amable. Evita que el estilo convierta toda la superficie en una masa densa. Conserva su técnica en detalles selectivos y deja espacio negativo visible. Prohibido: salpicaduras agresivas, bordes desgarrados, masas de tinta que cierren el espacio negativo.',
@@ -983,8 +994,21 @@ function _styleTreatmentDirective(styleValue, profileKey) {
   if (key === 'MODERN' && /floral|decor|ornament|noise|asimet|asymmetry/i.test(style)) {
     techniqueRules.push('Prohibido: ornamento decorativo (p. ej. floral), ruido de fondo o asimetría decorativa; el tratamiento MODERN exige geometría limpia, bordes nítidos y síntesis controlada.');
   }
+  // Adaptación por audiencia: la audiencia modifica CÓMO se ejecuta el tratamiento,
+  // sin sustituirlo. Reglas específicas solo para combinaciones demostradas.
+  const audienceRules = [];
+  if (isInfantil) {
+    if (key === 'HEAVY') {
+      audienceRules.push('ADAPTACIÓN INFANTIL: mantén masas visuales dominantes y contraste, pero con contornos redondeados y amables (no agresivos); formas suaves; colores claros y vivos; sin textura intimidante ni letras amenazantes. El tratamiento HEAVY se adapta a la audiencia, no se rompe ni se sustituye.');
+    } else if (key === 'SOFT') {
+      audienceRules.push('ADAPTACIÓN INFANTIL: mantén formas abiertas y espacio negativo, pero con textura ligera y recursos infantiles (formas redondeadas, colores claros); sin convertirlo en otro estilo ni añadir texturas agresivas.');
+    } else if (key === 'MODERN') {
+      audienceRules.push('ADAPTACIÓN INFANTIL: mantén geometría, limpieza y síntesis, pero con formas amables y lenguaje visual infantil (colores claros, líneas suaves); evita rigidez visual adulta. El tratamiento MODERN se adapta, no se rompe.');
+    }
+  }
   return (profileRules[key] || 'Respeta el lenguaje artístico elegido y evita instrucciones visuales contradictorias.')
     + ' Estilo artístico activo: «' + _getStyleBase(styleValue) + '». ' + techniqueRules.join(' ')
+    + (audienceRules.length ? ' ' + audienceRules.join(' ') : '')
     + ' Si el estilo exige un recurso prohibido, redúcelo a acento controlado; no cambie el esqueleto.';
 }
 
@@ -999,6 +1023,267 @@ function _allowedLayoutPool() {
     return allow.some(function (h) { return x.indexOf(h) === 0; });
   });
   return pool.length >= 3 ? pool : null;
+}
+
+/* FIX 3D Fase 3b — Mapa completo de dependencias de los 32 campos.
+   Raíces (13): decisions creativas independientes (algunas con dependencia
+   condicional de 'tratamiento' cuando no están lockadas).
+   Derivados (14): se calculan a partir de las raíces.
+   Calculados (5): se recalculan al final (no se preservan). */
+var FIELD_DEPENDENCIES = {
+  /* --- 13 raíces --- */
+  estilo: [],
+  audiencia: [],
+  jerarquiaVisual: [],
+  layout: ['tratamiento'],           /* condicional: solo si NO está lockado */
+  tratamiento: [],
+  objeto: [],
+  tecnica: [],
+  tipografia: ['tratamiento'],       /* condicional */
+  formaSimbolo: ['tratamiento'],     /* condicional */
+  integracionTexto: ['tratamiento', 'layout'], /* condicional */
+  densidad: ['tratamiento'],         /* condicional */
+  negativeSpace: ['tratamiento'],    /* condicional */
+  paleta: [],
+  /* --- 19 derivados --- */
+  arquitectura: ['estilo'],
+  composicion: ['estilo'],
+  textoPrincipal: ['jerarquiaVisual'],
+  textoApoyo: ['jerarquiaVisual'],
+  textoTerciario: ['jerarquiaVisual'],
+  relacion: ['objeto', 'estilo'],
+  funcionSimbolica: ['objeto'],
+  intencionEmocional: ['objeto'],
+  guiaSimbolo: ['objeto'],
+  jerarquia: ['jerarquiaVisual'],
+  distribucionTexto: ['layout'],
+  perfilEstructural: ['tratamiento'],
+  familiaColor: ['paleta'],
+  _esquema: ['paleta'],
+  /* --- calculados (se recalculan, no se preservan) --- */
+  cara: [],
+  escalaProducto: [],
+  placement: [],
+  fitAudiencia: [],
+  fitProducto: []
+};
+
+var ROOT_FIELDS = ['estilo', 'audiencia', 'jerarquiaVisual', 'layout', 'tratamiento',
+  'objeto', 'tecnica', 'tipografia', 'formaSimbolo', 'integracionTexto',
+  'densidad', 'negativeSpace', 'paleta'];
+
+var CALCULATED_FIELDS = ['cara', 'escalaProducto', 'placement', 'fitAudiencia', 'fitProducto'];
+
+/* Contexto de cálculo de ajuste por ficha (para recalcular tras el overlay). */
+var _FIT_CTX_BY_KEY = {};
+
+/* FIX 3D Fase 3b: cálculo de ajuste audiencia/producto.
+   Extraído de buildCandidate SIN cambiar criterios ni ponderaciones.
+   Devuelve { fitAudiencia, fitProducto } sobre la ficha final.
+
+   Pertinencia medida con preferencias declaradas de audiencia y producto.
+   Solo puntúa ejes LIBRES: si ninguna opción admisible puede cumplir la
+   preferencia (intersección vacía entre el pool realmente disponible y la
+   preferencia) o el valor lo impone el contrato de la serie (tratamiento
+   fijo A/B/C, densidad única del perfil), el eje se omite en vez de sumar
+   un fallo inevitable: el umbral mide decisiones del motor, no condiciones
+   impuestas. Los ejes alcanzables siguen contando con todo su peso. */
+function _calculateFits(v, ctx) {
+  var c = ctx || {};
+  var perfilKeyFree = String(v.perfilEstructural || '').toUpperCase();
+  var perfilFijo = !!(c.contactIdentity || c.workflowMode === 'explore' || c.workflowMode === 'variation');
+  var perfilSpec = _STRUCTURAL_PROFILES[perfilKeyFree] || {};
+  var allowedPool = c.allowedPool || (_LAYOUTS || []);
+  var layoutPoolFree = perfilFijo
+    ? (function () {
+        var pool = (allowedPool || (_LAYOUTS || []).slice()).filter(function (x) {
+          return (perfilSpec.layout || []).some(function (h) { return String(x).indexOf(h) === 0; });
+        });
+        return pool.length ? pool : (allowedPool || (_LAYOUTS || []).slice());
+      })()
+    : (allowedPool || (_LAYOUTS || []));
+  var tipoPoolFree = perfilFijo
+    ? (_TIPOS || []).filter(function (x) {
+        return (perfilSpec.type || []).some(function (h) { return String(x).indexOf(h) === 0; });
+      })
+    : (_TIPOS || []);
+  var formaPoolFree = perfilFijo ? _profileCandidates(_FORMAS, perfilSpec.form, _FORMAS) : (_FORMAS || []);
+  var densPoolFree = perfilFijo
+    ? (perfilSpec.density || []).filter(function (d) { return (_POOLS.densidad || []).indexOf(d) !== -1; })
+    : (c.densityPool || (_POOLS.densidad || []));
+  var jerPoolFree = perfilFijo
+    ? (PROFILE_VISUAL_MODES[perfilKeyFree] || [])
+    : ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
+
+  var audProfile = c.audProfile || {};
+  var audStylePref = (typeof AUD_STYLE_PREF !== 'undefined' ? AUD_STYLE_PREF[v.audiencia] : []) || [];
+  var audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[v.audiencia] : []) || [];
+  var audDensity = (typeof AUD_DENSITY_PREF !== 'undefined' ? AUD_DENSITY_PREF[v.audiencia] : []) || [];
+  var audChecks = [];
+  var matchesPreference = function (actual, preferences) {
+    var value = String(actual || '').trim().toLowerCase();
+    return preferences.some(function (preference) {
+      var preferred = String(preference || '').trim().toLowerCase();
+      return !!preferred && (value === preferred || value.indexOf(preferred) !== -1 || preferred.indexOf(value) !== -1);
+    });
+  };
+  var estiloAlcanzable = audStylePref.some(function (x) {
+    var pref = String(x || '').trim().toLowerCase();
+    return (c.stylePoolFree || []).some(function (s) {
+      return pref === String(_getStyleBase(s)).trim().toLowerCase();
+    });
+  });
+  if (audStylePref.length && estiloAlcanzable) {
+    var visibleStyle = String(v.estilo || '').trim().toLowerCase();
+    var normalizedStyle = String(c.styleBase || '').trim().toLowerCase();
+    audChecks.push(audStylePref.some(function (x) {
+      var pref = String(x || '').trim().toLowerCase();
+      return pref === visibleStyle || pref === normalizedStyle;
+    }));
+  }
+  if (audProfile.tipoPref.length && tipoPoolFree.some(function (x) { return matchesPreference(x, audProfile.tipoPref); })) {
+    audChecks.push(matchesPreference(v.tipografia, audProfile.tipoPref));
+  }
+  if (audProfile.formaPref.length && formaPoolFree.some(function (x) { return matchesPreference(x, audProfile.formaPref); })) {
+    audChecks.push(matchesPreference(v.formaSimbolo, audProfile.formaPref));
+  }
+  if (audProfile.tratPref.length && !perfilFijo) {
+    audChecks.push(audProfile.tratPref.some(function (x) { return String(v.tratamiento).startsWith(x); }));
+  }
+  if (audProfile.layoutPref.length && layoutPoolFree.some(function (x) {
+    return audProfile.layoutPref.some(function (h) { return String(x).indexOf(h) === 0; });
+  })) {
+    audChecks.push(audProfile.layoutPref.some(function (x) { return String(v.layout).startsWith(x); }));
+  }
+  if (audHierarchy.length && jerPoolFree.some(function (m) { return audHierarchy.indexOf(m) !== -1; })) {
+    audChecks.push(audHierarchy.indexOf(v.jerarquiaVisual) !== -1);
+  }
+  if (audDensity.length && densPoolFree.some(function (d) { return audDensity.indexOf(d) !== -1; })) {
+    audChecks.push(audDensity.indexOf(v.densidad) !== -1);
+  }
+  var modeMatch = String(v.paleta).match(/\(modo:\s*([^)]+)\)/);
+  var preferredModes = audProfile.modoCol || [];
+  if (preferredModes.length && _COLOR_MODES.some(function (m) { return preferredModes.indexOf(m) !== -1; })) {
+    audChecks.push(!!modeMatch && preferredModes.indexOf(modeMatch[1]) !== -1);
+  }
+  var fitAudiencia = audChecks.length
+    ? Math.round(100 * audChecks.filter(Boolean).length / audChecks.length)
+    : 0;
+  console.log('DBG CALC fitAud=' + fitAudiencia + ' nChecks=' + audChecks.length + ' details=' + JSON.stringify(audChecks) + ' audStylePref=' + JSON.stringify(audStylePref) + ' vAud=' + v.audiencia + ' vStyle=' + v.estilo + ' vTipo=' + v.tipografia + ' vForma=' + v.formaSimbolo + ' vTrat=' + v.tratamiento + ' vLayout=' + v.layout + ' vHier=' + v.jerarquiaVisual + ' vDens=' + v.densidad + ' vPaleta=' + String(v.paleta).slice(0,40));
+
+  var productBias = c.productBias || {};
+  var productChecks = [];
+  if ((productBias.layout || []).length && layoutPoolFree.some(function (x) {
+    return productBias.layout.some(function (h) { return String(x).indexOf(h) === 0; });
+  })) {
+    productChecks.push(productBias.layout.some(function (x) { return String(v.layout).startsWith(x); }));
+  }
+  if ((productBias.trat || []).length && !perfilFijo) {
+    productChecks.push(productBias.trat.some(function (x) { return String(v.tratamiento).startsWith(x); }));
+  }
+  if ((productBias.density || []).length && densPoolFree.some(function (d) { return productBias.density.indexOf(d) !== -1; })) {
+    productChecks.push(productBias.density.indexOf(v.densidad) !== -1);
+  }
+  if ((productBias.hierarchy || []).length && jerPoolFree.some(function (m) { return productBias.hierarchy.indexOf(m) !== -1; })) {
+    productChecks.push(productBias.hierarchy.indexOf(v.jerarquiaVisual) !== -1);
+  }
+  var fitProducto = productChecks.length
+    ? Math.round(100 * productChecks.filter(Boolean).length / productChecks.length)
+    : 0;
+
+  return { fitAudiencia: fitAudiencia, fitProducto: fitProducto };
+}
+
+/* FIX 3D Fase 3b — Overlay de preservación de derivados.
+   Reglas:
+   - Raíz PRESERVE/FIXED → se conserva el valor de la ficha anterior.
+   - Raíz Auto → se conserva el valor recién generado.
+   - Derivado con TODAS sus dependencias preservadas → se conserva el valor anterior.
+   - Derivado con AL MENOS UNA dependencia desbloqueada → se conserva el valor generado.
+   - Campos calculados → se recalculan sobre la ficha final.
+   Nunca se introduce aleatoriedad: el overlay solo copia valores existentes.
+   Devuelve un array de conflictos (para 3d). */
+function _applyDerivedPreservation(cand, prevSet, effectiveLocks, targetKey) {
+  var conflicts = [];
+  if (!cand || !prevSet || !effectiveLocks) return conflicts;
+  console.log('DBG OVERLAY CALLED prevSet keys=' + Object.keys(prevSet || {}) + ' effectiveLocks=' + JSON.stringify(effectiveLocks));
+
+  var _targetKey = (targetKey == null) ? null : String(targetKey);
+  var _mode = _normalizeDecisionMode(MOTOR_STATE.decisionMode);
+
+  K.forEach(function (k) {
+    var prev = prevSet[k];
+    if (!prev) {
+      conflicts.push('Ficha ' + k + ': sin ficha anterior para preservar.');
+      return;
+    }
+
+    /* Determinar qué raíces están desbloqueadas (Auto) en esta ficha. */
+    var unlocked = {};
+    ROOT_FIELDS.forEach(function (f) {
+      var lv = (effectiveLocks[f] || {})[k];
+      if (lv !== undefined) {
+        unlocked[f] = (lv === 'Auto');
+      } else if (_targetKey !== null && k === _targetKey &&
+                 (_mode === 'auto' || _mode === 'assisted')) {
+        /* Root no rastreado: en auto/assisted la ficha objetivo regenera. */
+        unlocked[f] = true;
+      } else {
+        /* manual o ficha no objetivo: preserva. */
+        unlocked[f] = false;
+      }
+    });
+
+    Object.keys(cand[k]).forEach(function (field) {
+      var deps = FIELD_DEPENDENCIES[field] || [];
+      var isRoot = ROOT_FIELDS.indexOf(field) !== -1;
+      var isCalc = CALCULATED_FIELDS.indexOf(field) !== -1;
+      var allDepsPreserved = deps.every(function (d) { return !unlocked[d]; });
+
+      if (isRoot) {
+        if (!unlocked[field]) {
+          /* PRESERVE o FIXED → conservar el valor anterior (sin aleatoriedad). */
+          if (prev[field] != null) cand[k][field] = prev[field];
+        }
+        /* Auto → conservar el valor recién generado. */
+      } else if (!isCalc && deps.length > 0 && allDepsPreserved) {
+        /* Todas las dependencias preservadas → conservar el valor anterior. */
+        if (prev[field] != null) cand[k][field] = prev[field];
+      } else if (!isCalc && deps.length > 0 && !allDepsPreserved) {
+        /* Dependencias mixtas: se conserva el valor generado, pero se advierte
+           si alguna dependencia protegida podría quedar incoherente. */
+        var protectedDeps = deps.filter(function (d) { return !unlocked[d]; });
+        if (protectedDeps.length > 0) {
+          conflicts.push('Ficha ' + k + ': "' + field + '" se regeneró pero depende de raíces preservadas (' + protectedDeps.join(', ') + ').');
+        }
+      }
+      /* isCalc → se recalcula abajo. */
+    });
+
+    /* Recalcular los campos calculados sobre la ficha final. */
+    if (CALCULATED_FIELDS.length) {
+      /* cara / escalaProducto / placement dependen del producto. */
+      cand[k].cara = _stampSideForProduct();
+      var pb = _PRODUCT_BIAS[MOTOR_STATE.product] || {};
+      cand[k].placement = _PLACEMENT[MOTOR_STATE.product] || _PLACEMENT['CAMISETA SOFT'] || 'pecho centrado';
+      cand[k].escalaProducto = pb.scale || 'escala adecuada al producto';
+      /* fitAudiencia / fitProducto sobre la ficha final. */
+      var ctx = _FIT_CTX_BY_KEY[k];
+      console.log('DBG OVERLAY PRE-FIT k=' + k + ' fit=' + cand[k].fitAudiencia + ' tipografia=' + cand[k].tipografia + ' forma=' + cand[k].formaSimbolo + ' layout=' + cand[k].layout + ' jerarquia=' + cand[k].jerarquiaVisual + ' densidad=' + cand[k].densidad + ' tratamiento=' + cand[k].tratamiento + ' estilo=' + cand[k].estilo);
+      if (ctx) {
+        var _antes = cand[k].fitAudiencia;
+        var _audienciaBefore = cand[k].audiencia;
+        var _estiloBefore = cand[k].estilo;
+        var _perfilBefore = cand[k].perfilEstructural;
+        var fits = _calculateFits(cand[k], ctx);
+        console.log('DBG overlay k=' + k + ' antes=' + _antes + ' despues=' + fits.fitAudiencia + ' aud=' + _audienciaBefore + ' (after=' + cand[k].audiencia + ') estilo=' + _estiloBefore + ' (after=' + cand[k].estilo + ') perfil=' + _perfilBefore + ' (after=' + cand[k].perfilEstructural + ') ctxStyle=' + ctx.styleBase + ' | ctxAudProfile.modoCol=' + JSON.stringify(ctx.audProfile && ctx.audProfile.modoCol) + ' | ctxAud=' + JSON.stringify(Object.keys(ctx.audProfile||{})) + ' ctxTipo=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.tipoPref) + ' ctxForma=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.formaPref) + ' ctxTrat=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.tratPref) + ' ctxLayout=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.layoutPref) + ' vHier=' + JSON.stringify(AUD_HIERARCHY_PREF[cand[k].audiencia]) + ' vLayout=' + cand[k].layout + ' vDens=' + cand[k].densidad + ' vTrat=' + cand[k].tratamiento + ' vTipo=' + cand[k].tipografia + ' vForma=' + cand[k].formaSimbolo);
+        cand[k].fitAudiencia = fits.fitAudiencia;
+        cand[k].fitProducto = fits.fitProducto;
+      }
+    }
+  });
+
+  return conflicts;
 }
 
 function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, usedAxes, fixedLayout) {
@@ -1567,11 +1852,13 @@ function _integracionCompatible(layout, integracion) {
   return integracion;
 }
 
-function buildCandidate(audsPerKey, fixedIdentity) {
+function buildCandidate(audsPerKey, fixedIdentity, preservation) {
   const estilos = resolveEstilos(audsPerKey);
   // Pool de estilos realmente disponible para este contexto: con él se decide si
   // la preferencia de estilo de una audiencia es alcanzable (fit) o imposible.
-  const _stylePoolFree = _styleCandidatesForContext();
+  /* FIX 3A: el pool de ajuste también respeta el territorio (los locks ya se
+     aplicaron en resolveEstilos; aquí solo se mide viabilidad automática). */
+  const _stylePoolFree = _territoryStyleFilter(_styleCandidatesForContext());
   const objectPool = getObjectPool();
   const isVar = MOTOR_STATE.workflowMode === 'variation';
   const conservarSimb = isVar && !!MOTOR_STATE.imageReference && MOTOR_STATE.variationOptions.simbolo !== 'sustituir';
@@ -1593,9 +1880,19 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     : null;
   // DEBT-015: la asignación de modos jerárquicos conoce el perfil de cada ficha
   // (explore/contacto/variación usan el orden fijo A/B/C; patrones no aplican perfil).
+  /* FIX 3A: el territorio puede restringir los tratamientos; si el perfil
+     canónico de una ficha no está permitido, se elimina la clave para que la
+     jerarquía no quede ligada a un perfil vetado (la resolución de tratamiento
+     elegirá dentro del pool permitido). */
   const profileModeKeys = (contactIdentity || MOTOR_STATE.workflowMode === 'explore' || MOTOR_STATE.workflowMode === 'variation')
     ? Object.assign({}, _CONTACT_TREATMENT_ORDER)
     : {};
+  const _tc = _territoryConstraints();
+  if (_tc.treatments && _tc.treatments.length) {
+    Object.keys(profileModeKeys).forEach(function (k) {
+      if (_tc.treatments.indexOf(profileModeKeys[k]) === -1) delete profileModeKeys[k];
+    });
+  }
   const hierarchyPerKey = resolveTextImageModes(estilos, audsPerKey, profileModeKeys);
   const contactPrimaryText = String(MOTOR_STATE.message || '').trim().replace(/\s+/g, ' ');
   const contactSupportText = String(MOTOR_STATE.support || '').trim().replace(/\s+/g, ' ');
@@ -1778,7 +2075,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     const allowedPool = _allowedLayoutPool();
     const layoutBiasRaw = (productBias.layout || []).concat(audProfile.layoutPref || []);
     const layoutBias = allowedPool ? layoutBiasRaw.filter(function (x) { return allowedPool.some(function (a) { return a.indexOf(x) === 0 || String(x).indexOf(a) === 0; }); }) : layoutBiasRaw;
-    const fixedLayout = ((_loadLocks(memLocksMarket(), MOTOR_STATE.product).layout) || {})[k] || '';
+    const fixedLayout = ((_resolveLocks().layout) || {})[k] || '';
     v.layout = (fixedLayout && fixedLayout !== 'Auto') ? fixedLayout : _pickFresh(layoutBias, allowedPool || _LAYOUTS, usedAxes.layout);
     usedAxes.layout.push(v.layout);
 
@@ -1791,10 +2088,18 @@ function buildCandidate(audsPerKey, fixedIdentity) {
     usedAxes.formaSimbolo.push(v.formaSimbolo);
 
     const tratBias = (productBias.trat || []).concat(audProfile.tratPref || []);
-    const fixedTreatment = (contactIdentity || MOTOR_STATE.workflowMode === 'explore' || MOTOR_STATE.workflowMode === 'variation') ? _CONTACT_TREATMENT_ORDER[k] : '';
-    const fixedTreatmentSpec = fixedTreatment && _TRATAMIENTOS.find(function (x) { return _treatmentKey(x) === fixedTreatment; });
-    v.tratamiento = fixedTreatmentSpec || _pickFreshTreatment(tratBias, _TRATAMIENTOS, usedAxes.tratamiento);
+    /* FIX 3A: el pool de tratamientos respeta el territorio; el perfil canónico
+       solo se aplica si el territorio lo permite. Si no, se elige dentro del
+       pool permitido. Los locks de tratamiento del usuario siguen ganando
+       (se resuelven antes, en el bloque de locks). */
+    const treatmentPool = _territoryTreatmentFilter(_TRATAMIENTOS);
+    const canonicalTreatment = (contactIdentity || MOTOR_STATE.workflowMode === 'explore' || MOTOR_STATE.workflowMode === 'variation') ? _CONTACT_TREATMENT_ORDER[k] : '';
+    const canonicalAllowed = canonicalTreatment && (!_tc.treatments || _tc.treatments.indexOf(canonicalTreatment) !== -1);
+    const fixedTreatmentSpec = canonicalAllowed && treatmentPool.find(function (x) { return _treatmentKey(x) === canonicalTreatment; });
+    v.tratamiento = fixedTreatmentSpec || _pickFreshTreatment(tratBias, treatmentPool, usedAxes.tratamiento);
     usedAxes.tratamiento.push(v.tratamiento);
+    // FIX 3A: perfil efectivo = canónico si aplica, si no el tratamiento elegido.
+    var effectiveTreatmentKey = canonicalAllowed ? canonicalTreatment : _treatmentKey(v.tratamiento);
 
     // Asignación provisional; el perfil fijo se aplica al final para que ningún selector aleatorio lo sobrescriba.
     v.integracionTexto = _pickFresh(_INTEGRACION, _INTEGRACION, usedAxes.integracionTexto);
@@ -1823,7 +2128,7 @@ function buildCandidate(audsPerKey, fixedIdentity) {
         densidad: usedAxes.densidad,
         negativeSpace: usedAxes.negativeSpace
       };
-      _applyStructuralProfile(v, _CONTACT_TREATMENT_ORDER[k], productBias, audProfile, priorProfileAxes, fixedLayout);
+      _applyStructuralProfile(v, effectiveTreatmentKey || _CONTACT_TREATMENT_ORDER[k], productBias, audProfile, priorProfileAxes, fixedLayout);
       usedAxes.layout[usedAxes.layout.length - 1] = v.layout;
       usedAxes.tipografia[usedAxes.tipografia.length - 1] = v.tipografia;
       usedAxes.formaSimbolo[usedAxes.formaSimbolo.length - 1] = v.formaSimbolo;
@@ -1872,117 +2177,23 @@ function buildCandidate(audsPerKey, fixedIdentity) {
       v._esquema = bestEsq;
     }
 
-    /* Pertinencia medida con preferencias declaradas de audiencia y producto.
-       Solo puntúa ejes LIBRES: si ninguna opción admisible puede cumplir la
-       preferencia (intersección vacía entre el pool realmente disponible y la
-       preferencia) o el valor lo impone el contrato de la serie (tratamiento
-       fijo A/B/C, densidad única del perfil), el eje se omite en vez de sumar
-       un fallo inevitable: el umbral mide decisiones del motor, no condiciones
-       impuestas. Los ejes alcanzables siguen contando con todo su peso. */
-    const perfilKeyFree = String(v.perfilEstructural || '').toUpperCase();
-    const perfilFijo = !!(contactIdentity || MOTOR_STATE.workflowMode === 'explore' || MOTOR_STATE.workflowMode === 'variation');
-    const perfilSpec = _STRUCTURAL_PROFILES[perfilKeyFree] || {};
-    const layoutPoolFree = perfilFijo
-      ? (function () {
-          const allowed = allowedPool || (_LAYOUTS || []).slice();
-          const pool = allowed.filter(function (x) {
-            return (perfilSpec.layout || []).some(function (h) { return String(x).indexOf(h) === 0; });
-          });
-          return pool.length ? pool : allowed;
-        })()
-      : (allowedPool || (_LAYOUTS || []));
-    const tipoPoolFree = perfilFijo
-      ? (_TIPOS || []).filter(function (x) {
-          return (perfilSpec.type || []).some(function (h) { return String(x).indexOf(h) === 0; });
-        })
-      : (_TIPOS || []);
-    const formaPoolFree = perfilFijo ? _profileCandidates(_FORMAS, perfilSpec.form, _FORMAS) : (_FORMAS || []);
-    const densPoolFree = perfilFijo
-      ? (perfilSpec.density || []).filter(function (d) { return (_POOLS.densidad || []).indexOf(d) !== -1; })
-      : densityPool;
-    const jerPoolFree = perfilFijo
-      ? (PROFILE_VISUAL_MODES[perfilKeyFree] || [])
-      : ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
-
-    const audStylePref = (typeof AUD_STYLE_PREF !== 'undefined' ? AUD_STYLE_PREF[v.audiencia] : []) || [];
-    const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[v.audiencia] : []) || [];
-    const audDensity = (typeof AUD_DENSITY_PREF !== 'undefined' ? AUD_DENSITY_PREF[v.audiencia] : []) || [];
-    const audChecks = [];
-    // Las fichas contienen descripciones extendidas; evaluar coincidencia textual
-    // normalizada evita que una preferencia válida falle por incluir atributos extra.
-    const matchesPreference = function (actual, preferences) {
-      const value = String(actual || '').trim().toLowerCase();
-      return preferences.some(function (preference) {
-        const preferred = String(preference || '').trim().toLowerCase();
-        return !!preferred && (value === preferred || value.indexOf(preferred) !== -1 || preferred.indexOf(value) !== -1);
-      });
+    /* FIX 3D Fase 3b: cálculo de ajuste extraído a _calculateFits.
+       Mismos criterios y ponderaciones que el cálculo original.
+       El contexto se guarda por ficha para recalcular tras el overlay. */
+    var _fitCtx = {
+      styleBase: styleBase,
+      stylePoolFree: _stylePoolFree,
+      allowedPool: allowedPool,
+      densityPool: densityPool,
+      productBias: productBias,
+      audProfile: audProfile,
+      contactIdentity: contactIdentity,
+      workflowMode: MOTOR_STATE.workflowMode
     };
-    // AUD_STYLE_PREF contiene etiquetas visibles (p. ej. "Y2K / Cyber"), mientras
-    // styleBase es una clave interna normalizada. Comparar ambos contra la etiqueta
-    // visible evita penalizar una dirección que sí pertenece al perfil.
-    const estiloAlcanzable = audStylePref.some(function (x) {
-      const pref = String(x || '').trim().toLowerCase();
-      return _stylePoolFree.some(function (s) {
-        return pref === String(_getStyleBase(s)).trim().toLowerCase();
-      });
-    });
-    if (audStylePref.length && estiloAlcanzable) {
-      const visibleStyle = String(v.estilo || '').trim().toLowerCase();
-      const normalizedStyle = String(styleBase || '').trim().toLowerCase();
-      audChecks.push(audStylePref.some(function (x) {
-        const pref = String(x || '').trim().toLowerCase();
-        return pref === visibleStyle || pref === normalizedStyle;
-      }));
-    }
-    if (audProfile.tipoPref.length && tipoPoolFree.some(function (x) { return matchesPreference(x, audProfile.tipoPref); })) {
-      audChecks.push(matchesPreference(v.tipografia, audProfile.tipoPref));
-    }
-    if (audProfile.formaPref.length && formaPoolFree.some(function (x) { return matchesPreference(x, audProfile.formaPref); })) {
-      audChecks.push(matchesPreference(v.formaSimbolo, audProfile.formaPref));
-    }
-    // El tratamiento lo fija el contrato de la serie (01A HEAVY → 01B SOFT →
-    // 01C MODERN): no es una elección que la audiencia pueda o no preferir.
-    if (audProfile.tratPref.length && !perfilFijo) {
-      audChecks.push(audProfile.tratPref.some(function (x) { return String(v.tratamiento).startsWith(x); }));
-    }
-    if (audProfile.layoutPref.length && layoutPoolFree.some(function (x) {
-      return audProfile.layoutPref.some(function (h) { return String(x).indexOf(h) === 0; });
-    })) {
-      audChecks.push(audProfile.layoutPref.some(function (x) { return String(v.layout).startsWith(x); }));
-    }
-    if (audHierarchy.length && jerPoolFree.some(function (m) { return audHierarchy.indexOf(m) !== -1; })) {
-      audChecks.push(audHierarchy.indexOf(v.jerarquiaVisual) !== -1);
-    }
-    if (audDensity.length && densPoolFree.some(function (d) { return audDensity.indexOf(d) !== -1; })) {
-      audChecks.push(audDensity.indexOf(v.densidad) !== -1);
-    }
-    const modeMatch = String(v.paleta).match(/\(modo:\s*([^)]+)\)/);
-    const preferredModes = audProfile.modoCol || [];
-    if (preferredModes.length && _COLOR_MODES.some(function (m) { return preferredModes.indexOf(m) !== -1; })) {
-      audChecks.push(!!modeMatch && preferredModes.indexOf(modeMatch[1]) !== -1);
-    }
-    v.fitAudiencia = audChecks.length
-      ? Math.round(100 * audChecks.filter(Boolean).length / audChecks.length)
-      : 0;
-
-    const productChecks = [];
-    if ((productBias.layout || []).length && layoutPoolFree.some(function (x) {
-      return productBias.layout.some(function (h) { return String(x).indexOf(h) === 0; });
-    })) {
-      productChecks.push(productBias.layout.some(function (x) { return String(v.layout).startsWith(x); }));
-    }
-    if ((productBias.trat || []).length && !perfilFijo) {
-      productChecks.push(productBias.trat.some(function (x) { return String(v.tratamiento).startsWith(x); }));
-    }
-    if ((productBias.density || []).length && densPoolFree.some(function (d) { return productBias.density.indexOf(d) !== -1; })) {
-      productChecks.push(productBias.density.indexOf(v.densidad) !== -1);
-    }
-    if ((productBias.hierarchy || []).length && jerPoolFree.some(function (m) { return productBias.hierarchy.indexOf(m) !== -1; })) {
-      productChecks.push(productBias.hierarchy.indexOf(v.jerarquiaVisual) !== -1);
-    }
-    v.fitProducto = productChecks.length
-      ? Math.round(100 * productChecks.filter(Boolean).length / productChecks.length)
-      : 0;
+    _FIT_CTX_BY_KEY[k] = _fitCtx;
+    var _fits = _calculateFits(v, _fitCtx);
+    v.fitAudiencia = _fits.fitAudiencia;
+    v.fitProducto = _fits.fitProducto;
 
     set[k] = v;
   });
@@ -2026,6 +2237,14 @@ function buildCandidate(audsPerKey, fixedIdentity) {
 
   set.objectConflicts = objectConflicts;
   set.seriesAnchor = seriesAnchor;
+
+  /* FIX 3D Fase 3b: overlay de preservación de derivados (solo en manual).
+     Se aplica DESPUÉS de generar y ANTES de devolver, para que el scoring
+     (evaluaSetOk) vea la ficha ya preservada. No introduce aleatoriedad. */
+  if (preservation && preservation.prevSet && preservation.effectiveLocks) {
+    set.conflicts = _applyDerivedPreservation(set, preservation.prevSet, preservation.effectiveLocks, preservation.targetKey);
+  }
+
   return set;
 }
 
@@ -2120,7 +2339,7 @@ function evaluaSetOk(set) {
   // DEBT-002: jerarquía, densidad y espacio negativo también entran al gate.
   // Los locks manuales pueden repetir un eje (decisión del usuario); el gate
   // solo rechaza repetición entre tarjetas que el motor asignó en Auto.
-  const modeLocks = _loadLocks(memLocksMarket(), MOTOR_STATE.product) || {};
+  const modeLocks = _resolveLocks() || {};
   const jerLocks = modeLocks.jerarquia || {};
   const jerAutoDistintas = K.every(function (ki, i) {
     if (!set[ki]) return false;
@@ -2316,9 +2535,33 @@ function generateSet() {
   // terminar, el base avanza 1 como hace rerollSingle para que dos generaciones
   // consecutivas no repitan tampoco los ejes deterministas (texto, tipografía).
   const rerollNonceBase = Number(MOTOR_STATE._rerollNonce) || 0;
+
+  /* FIX 3D Fase 3a: locks de generación.
+     En modo manual con ficha anterior, convertimos PRESERVE en el valor real
+     para que la generación use los valores preservados como locks.
+     Condiciones:
+     - por ficha A/B/C (cada ficha tiene su propio valor);
+     - PRESERVE sin valor válido → fallback a Auto + advertencia;
+     - locks explícitos (FIXED) conservan prioridad;
+     - solo actúa en manual (auto/assisted no preservan);
+     - LAST_RESULT no se modifica aquí (se valida antes de guardar). */
+  var _prevSetForGen = null;
+  var _preservation = null;
+  if (_normalizeDecisionMode(MOTOR_STATE.decisionMode) === 'manual' && LAST_RESULT && LAST_RESULT.set) {
+    _prevSetForGen = LAST_RESULT.set;
+    _ACTIVE_GEN_LOCKS = _generationLocks(_effectiveLocks(_prevSetForGen), _prevSetForGen);
+    /* FIX 3D Fase 3b: preservación de derivados sobre la ficha anterior. */
+_preservation = {
+      prevSet: _prevSetForGen,
+      effectiveLocks: _effectiveLocks(_prevSetForGen),
+      targetKey: null
+    };
+  }
+
+  try {
   for (let i = 0; i < 3000; i++) {
     MOTOR_STATE._rerollNonce = rerollNonceBase + i;
-    const cand = buildCandidate(audsPerKey, fixedIdentity);
+    const cand = buildCandidate(audsPerKey, fixedIdentity, _preservation);
     const ev = evaluaSetOk(cand);
     const m = ev.score;
     const ok = ev.passed;
@@ -2327,6 +2570,9 @@ function generateSet() {
     // bloqueaba a los válidos (passed quedaba false aunque hubiera válidos).
     if (m.total > bestTotal) { bestTotal = m.total; best = cand; bestScore = m; }
     if (ok && m.total > bestOkTotal) { bestOkTotal = m.total; bestOk = cand; bestOkScore = m; }
+  }
+  } finally {
+    _ACTIVE_GEN_LOCKS = null;  // nunca dejar locks de generación activos
   }
   // El base avanza 1 tras la selección: la próxima generación empieza en un nonce
   // nuevo y no repite la misma secuencia de direcciones.
@@ -2538,17 +2784,80 @@ function _resolveTerritoryDirective(territory) {
   const parts = [];
   const push = function (s) { let clean = String(s || '').trim(); while (clean.length > 1 && clean.charAt(clean.length - 1) === '.') clean = clean.slice(0, -1); if (clean) parts.push(clean + '.'); };
   push('TERRITORIO CREATIVO ACTIVO: ' + (rec.label || rec.id || t) + '.');
+  /* FIX 3B: la directriz creativa explícita del territorio es la instrucción
+     operativa; se emite primero y no duplica la descripción (que queda como
+     contexto). Si un territorio no declara directriz, se conserva el
+     comportamiento anterior (composición desde description/themes). */
+  if (rec.promptDirective) push('DIRECTRIZ CREATIVA: ' + rec.promptDirective + '.');
   if (rec.description) push('Dirección: ' + rec.description + '.');
   if (Array.isArray(rec.themes) && rec.themes.length) push('Temas: ' + rec.themes.join(', ') + '.');
   if (Array.isArray(rec.restrictions) && rec.restrictions.length) push('Restricciones: ' + rec.restrictions.join('; ') + '.');
   if (Array.isArray(rec.compatibleStyles) && rec.compatibleStyles.length) push('Estilos compatibles: ' + rec.compatibleStyles.join(', ') + '.');
   if (Array.isArray(rec.compatibleTreatments) && rec.compatibleTreatments.length) push('Tratamientos compatibles: ' + rec.compatibleTreatments.join(', ') + '.');
   if (Array.isArray(rec.compatibleMarkets) && rec.compatibleMarkets.length) push('Mercados compatibles: ' + rec.compatibleMarkets.join(', ') + '.');
-  if (rec.visualIdentity) push('Identidad visual declarada: ' + rec.visualIdentity + '.');
+  /* FIX 3C: la identidad visual se resuelve integrando la del usuario y la del
+     territorio. La del usuario gobierna; la del territorio aporta contexto.
+     Sin territorio, la identidad del usuario funciona de forma independiente. */
+  const _vi = _resolveVisualIdentity();
+  if (_vi.integrated) {
+    push('Identidad visual: ' + _vi.primary + ' (el usuario fija la dirección; el territorio aporta el marco ' + _vi.secondary + ').');
+  } else if (_vi.primary) {
+    push('Identidad visual: ' + _vi.primary + '.');
+  }
+  const _conceptAnchor = String((MOTOR_STATE && (MOTOR_STATE.concept || MOTOR_STATE.message)) || '').trim();
+  if (_conceptAnchor) push('ANCLA CONCEPTO: ' + _conceptAnchor + '. El motivo visual debe derivarse de este concepto y no de una escena genérica ajena al concepto.');
   return parts.join(' ');
 }
 
 /* --- Territorio creativo: helpers de estado, persistencia y guard de mercado --- */
+
+/* FIX 3A — Restricciones del territorio activo para la resolución real.
+   Devuelve { styles, treatments } con los valores declarados por el catálogo,
+   o null cuando no hay territorio concreto o no declara restricciones.
+   Precedencia: los locks del usuario siguen ganando sobre estas restricciones
+   (se aplican ANTES de filtrar; el filtro solo limita la selección automática). */
+function _territoryConstraints() {
+  const t = String(MOTOR_STATE.creativeTerritory || 'auto').trim();
+  if (!t || t === 'auto') return { styles: null, treatments: null };
+  const records = _CREATIVE_TERRITORIES || {};
+  const rec = records[t] || null;
+  if (!rec) return { styles: null, treatments: null };
+  const styles = Array.isArray(rec.compatibleStyles) && rec.compatibleStyles.length
+    ? rec.compatibleStyles.map(function (s) { return String(s || '').trim(); }).filter(Boolean)
+    : null;
+  const treatments = Array.isArray(rec.compatibleTreatments) && rec.compatibleTreatments.length
+    ? rec.compatibleTreatments.map(function (s) { return String(s || '').trim().toUpperCase(); }).filter(Boolean)
+    : null;
+  return { styles: styles, treatments: treatments };
+}
+
+/* FIX 3A — Filtra un pool de estilos por el territorio activo.
+   Compara contra el nombre completo y contra la base (antes de ' × ').
+   Si el filtro deja el pool vacío, devuelve el original (fallback seguro). */
+function _territoryStyleFilter(candidates) {
+  const tc = _territoryConstraints();
+  if (!tc.styles || !tc.styles.length) return candidates || [];
+  const pool = Array.isArray(candidates) ? candidates : [];
+  const filtered = pool.filter(function (style) {
+    const name = String(style || '').trim();
+    const base = _getStyleBase(name);
+    return tc.styles.indexOf(name) !== -1 || tc.styles.indexOf(base) !== -1;
+  });
+  return filtered.length ? filtered : pool;
+}
+
+/* FIX 3A — Filtra un pool de tratamientos por el territorio activo.
+   Compara por clave (HEAVY/SOFT/MODERN), no por texto completo. */
+function _territoryTreatmentFilter(pool) {
+  const tc = _territoryConstraints();
+  if (!tc.treatments || !tc.treatments.length) return pool || [];
+  const list = Array.isArray(pool) ? pool : [];
+  const filtered = list.filter(function (item) {
+    return tc.treatments.indexOf(_treatmentKey(item)) !== -1;
+  });
+  return filtered.length ? filtered : list;
+}
+
 function _creativeTerritoryCompatibleWithMarket(territory) {
   const t = String(territory || '').trim();
   if (!t || t === 'auto') return 'auto';
@@ -2581,6 +2890,176 @@ function setCreativeTerritory(value) {
   try { if (typeof setJSON === 'function') setJSON(_memKey(['creativeTerritory', MOTOR_STATE.market, MOTOR_STATE.product]), { value: MOTOR_STATE.creativeTerritory, updatedAt: new Date().toISOString() }); } catch (e) {}
   return MOTOR_STATE.creativeTerritory;
 }
+
+/* FIX 3C — Identidad visual del usuario: persistencia y resolución.
+   La identidad visual es una instrucción de reconocimiento de serie, distinta
+   de seriesAnchor (narrativa), estilo, tratamiento y composición. El valor
+   explícito del usuario nunca se sobrescribe por una decisión automática. */
+function loadVisualIdentity() {
+  try {
+    const stored = _memGetJSON(_memKey(['visualIdentity', MOTOR_STATE.market, MOTOR_STATE.product]), null);
+    const raw = stored && typeof stored === 'object' ? stored.value : stored;
+    return String(raw || '').trim();
+  } catch (e) { return ''; }
+}
+
+function setVisualIdentity(value) {
+  const val = String(value || '').trim();
+  MOTOR_STATE.visualIdentity = val;
+  try { if (typeof setJSON === 'function') setJSON(_memKey(['visualIdentity', MOTOR_STATE.market, MOTOR_STATE.product]), { value: val, updatedAt: new Date().toISOString() }); } catch (e) {}
+  return val;
+}
+
+/* FIX 3C — Resuelve la identidad visual efectiva del set. Devuelve
+   { primary, secondary, integrated } donde:
+   - primary: la identidad que gobierna (la del usuario si existe, si no la del territorio).
+   - secondary: la identidad de contexto (la del territorio cuando el usuario también declara).
+   - integrated: true si ambas existen y se integran sin contradicciones. */
+function _resolveVisualIdentity() {
+  const userVI = String(MOTOR_STATE.visualIdentity || '').trim();
+  let terrVI = '';
+  const t = String(MOTOR_STATE.creativeTerritory || 'auto').trim();
+  if (t && t !== 'auto') {
+    const rec = (_CREATIVE_TERRITORIES || {})[t] || null;
+    if (rec) terrVI = String(rec.visualIdentity || '').trim();
+  }
+  if (userVI && terrVI) return { primary: userVI, secondary: terrVI, integrated: true };
+  if (userVI) return { primary: userVI, secondary: '', integrated: false };
+  if (terrVI) return { primary: terrVI, secondary: '', integrated: false };
+  return { primary: '', secondary: '', integrated: false };
+}
+
+/* --- FIX 3D: decisionMode (quién toma cada decisión creativa) -------------
+   Tres modos con comportamiento diferenciado:
+   - auto:      el motor decide en áreas no fijadas; locks explícitos respetados.
+   - assisted:  el motor propone; el usuario puede modificar (locks).
+   - manual:    conserva la ficha anterior y regenera solo lo desbloqueado.
+   Persistencia con la misma clave de aislamiento que los locks:
+   market|region|product. Nunca se contamina entre mercados o productos. */
+var DECISION_MODES = ['auto', 'assisted', 'manual'];
+
+function _normalizeDecisionMode(value) {
+  var v = String(value == null ? '' : value).trim().toLowerCase();
+  if (v === 'automatic' || v === 'automático' || v === 'automata') v = 'auto';
+  if (v === 'control' || v === 'controlado') v = 'manual';
+  if (v === 'asistido' || v === 'assisted') v = 'assisted';
+  return DECISION_MODES.indexOf(v) !== -1 ? v : 'assisted';
+}
+
+function loadDecisionMode() {
+  try {
+    var stored = _memGetJSON(_memKey(['decisionMode', MOTOR_STATE.market, MOTOR_STATE.region, MOTOR_STATE.product]), null);
+    var raw = stored && typeof stored === 'object' ? stored.value : stored;
+    return _normalizeDecisionMode(raw);
+  } catch (e) { return 'assisted'; }
+}
+
+function setDecisionMode(value) {
+  var v = _normalizeDecisionMode(value);
+  MOTOR_STATE.decisionMode = v;
+  try { if (typeof setJSON === 'function') setJSON(_memKey(['decisionMode', MOTOR_STATE.market, MOTOR_STATE.region, MOTOR_STATE.product]), { value: v, updatedAt: new Date().toISOString() }); } catch (e) {}
+  return v;
+}
+
+/* FIX 3D — Estados de lock diferenciados:
+   - 'PRESERVE': conserva el valor de LAST_RESULT (solo en modo manual).
+   - 'Auto':     el motor vuelve a decidir.
+   - valor concreto: fijado por el usuario (FIXED).
+   En modo manual, el estado inicial de un campo sin fijar es PRESERVE. */
+var LOCK_PRESERVE = 'PRESERVE';
+
+/* Lee los locks guardados SIN fusionar con defaultLocks(). Permite distinguir
+   un 'Auto' explícito del usuario de un 'Auto' por defecto (no fijado). */
+function _rawLocks() {
+  try {
+    return _memGetJSON(_memKey(['locks', memLocksMarket(), MOTOR_STATE.product]), {}) || {};
+  } catch (e) { return {}; }
+}
+
+function _lastResultValue(field, k, prevSet) {
+  try {
+    var src = prevSet || (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.set ? LAST_RESULT.set : null);
+    if (!src) return '';
+    var prev = src[k];
+    if (!prev) return '';
+    if (field === 'jerarquia') return String(prev.jerarquiaVisual || '');
+    if (field === 'tratamiento') return _treatmentKey(prev.tratamiento);
+    return String(prev[field] == null ? '' : prev[field]);
+  } catch (e) { return ''; }
+}
+
+/* Devuelve los locks efectivos según el modo. En manual, los campos sin fijar
+   pasan a PRESERVE (conservan la ficha anterior). En auto/assisted, se usan
+   los locks almacenados (Auto = motor decide). */
+function _effectiveLocks(prevSet) {
+  var locks = _loadLocks(memLocksMarket(), MOTOR_STATE.product) || {};
+  var mode = _normalizeDecisionMode(MOTOR_STATE.decisionMode);
+  if (mode !== 'manual') return locks;
+  var raw = _rawLocks();
+  var fields = ['estilo', 'audiencia', 'jerarquia', 'layout', 'tratamiento'];
+  var out = {};
+  fields.forEach(function (field) {
+    out[field] = {};
+    K.forEach(function (k) {
+      var cur = locks[field] && locks[field][k];
+      var rawVal = raw[field] && raw[field][k];
+      if (cur && cur !== 'Auto' && cur !== LOCK_PRESERVE) {
+        out[field][k] = cur;              // FIXED: el usuario lo fijó
+      } else if (rawVal === 'Auto') {
+        out[field][k] = 'Auto';           // desbloqueo explícito del usuario
+      } else {
+        // 'Auto' por defecto (no fijado) → PRESERVE en manual
+        out[field][k] = LOCK_PRESERVE;
+      }
+    });
+  });
+  return out;
+}
+
+/* --- FIX 3D Fase 3a: locks de generación ----------------------------------
+   Convierte PRESERVE en el valor real de LAST_RESULT para que la generación
+   use los valores preservados como locks. La generación es coherente por
+   construcción: las raíces preservadas se comportan como locks fijados.
+   Condiciones:
+   - por ficha A/B/C (no comparte valores entre fichas);
+   - PRESERVE sin valor válido → fallback a Auto + advertencia;
+   - locks explícitos (FIXED) conservan prioridad sobre valores heredados;
+   - solo actúa en modo manual (auto/assisted no preservan). */
+var _ACTIVE_GEN_LOCKS = null;
+var _GEN_LOCK_WARNINGS = [];
+
+function _resolveLocks() {
+  if (_ACTIVE_GEN_LOCKS) return _ACTIVE_GEN_LOCKS;
+  return _loadLocks(memLocksMarket(), MOTOR_STATE.product) || {};
+}
+
+function _generationLocks(effectiveLocks, prevSet) {
+  var out = {};
+  var fields = ['estilo', 'audiencia', 'jerarquia', 'layout', 'tratamiento'];
+  _GEN_LOCK_WARNINGS = [];
+  if (!prevSet) return null;  // sin ficha anterior: no hay preservación
+  fields.forEach(function (field) {
+    out[field] = {};
+    K.forEach(function (k) {
+      var v = (effectiveLocks && effectiveLocks[field] || {})[k];
+      if (v === LOCK_PRESERVE) {
+        var prev = _lastResultValue(field, k, prevSet);
+        if (prev) {
+          out[field][k] = prev;         // PRESERVE → valor real por ficha
+        } else {
+          out[field][k] = 'Auto';       // fallback seguro
+          _GEN_LOCK_WARNINGS.push('Ficha ' + k + ': PRESERVE en "' + field + '" sin valor válido en LAST_RESULT → Auto.');
+        }
+      } else if (v && v !== 'Auto') {
+        out[field][k] = v;              // FIXED: prioridad del usuario
+      } else {
+        out[field][k] = 'Auto';         // Auto: el motor decide
+      }
+    });
+  });
+  return out;
+}
+
 
 function formatPrompt(result) {
   if (!result || !result.set) return '';
@@ -2802,7 +3281,8 @@ function formatPrompt(result) {
   if (printPrepRule) o += 'ACABADO / PREPARACION TECNICA (' + printMethodName + '): ' + printPrepRule + '\n';
   if (mockupRule) {
     const colsByAudience = new Set(K.map(function (k) { return set[k].audiencia; })).size === 3;
-    o += 'PRESENTACION: ' + mockupRule + '\n';
+    o += 'REGLAS DEL MOCKUP COMERCIAL (el modelo que lleva la prenda — NO el arte estampado): ' + mockupRule + '\n';
+    o += 'IMPORTANTE: la prohibición de figuras humanas del bloque de arte (CONTROL DE ELEMENTOS / FIGURAS HUMANAS) NO aplica aquí. El mockup DEBE mostrar una persona acorde a la audiencia de la columna. MOCKUP OBLIGATORIO POR AUDIENCIA: infantil = niño o niña de apariencia inequívocamente infantil (proporciones corporales infantiles: cabeza grande, extremidades cortas; rostro y anatomía de niño, no de adulto joven; camiseta de corte y talla infantil; un adulto de baja estatura NO cumple). femenino = mujer con corte y talla femeninos. masculino = hombre con corte y talla masculinos. unisex = modelo acorde al perfil sin forzar género. Un modelo adulto en una ficha infantil invalida la hoja. Prohibido usar adultos como sustitutos.\n';
     o += 'EJE DE COLUMNAS: ' + (colsByAudience
       ? 'las 3 columnas se encabezan por AUDIENCIA, en palabras simples del idioma del mercado.'
       : 'las 3 columnas se encabezan por FICHA (01A · 01B · 01C) con su estilo.') + '\n';
@@ -2865,8 +3345,13 @@ function formatPrompt(result) {
      ya fijado por el usuario (locks > IA). */
   const _territorioDirective = _resolveTerritoryDirective(MOTOR_STATE.creativeTerritory);
   if (_territorioDirective) o += _territorioDirective + '\n';
-  o += 'REGLAS COMUNES A LAS 3 FICHAS: ';
-  o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos. ';
+  /* FIX 3C: sin territorio, la identidad visual del usuario sigue funcionando
+     de forma independiente (no depende del territorio). */
+  else if (MOTOR_STATE.visualIdentity) {
+    o += 'IDENTIDAD VISUAL DEL USUARIO: ' + MOTOR_STATE.visualIdentity + '.\n';
+  }
+  o += 'REGLAS DEL ARTE ESTAMPADO (solo el diseño impreso en la prenda; NO aplica al mockup comercial): ';
+  o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos. Esta prohibición se refiere exclusivamente al ARTE ESTAMPADO, no al modelo del mockup comercial. ';
   o += 'INTERPRETACIÓN DEL CONCEPTO: si el concepto es ambiguo o metafórico, elige la lectura más literal de sus palabras; una parte del cuerpo nombrada se dibuja solo si es imprescindible y de forma parcial/estilizada; no inventes personas, rostros ni escenas no narradas. ';
   const _figurasPorFicha = K.map(function (k) {
     const v = set[k];
@@ -2905,18 +3390,18 @@ function formatPrompt(result) {
       joven: 'joven → impacto inmediato pero limpio: composición viva y tipografía firme; sin recargar; nada de estética corporativa fría.',
       infantil: 'infantil → simple y redondeada: formas suaves, pocos elementos, colores claros; sin textura agresiva ni letras amenazantes.'
     }[{ adulto: 'adulto', '35-55': 'adulto', '29-55': 'adulto', joven: 'joven', '18-34': 'joven', '16-28': 'joven', infantil: 'infantil' }[audPerfil.edad]];
-    if (cargaEdad) o += 'CARGA POR EDAD: ' + cargaEdad + ' Es tono de la audiencia: no cambia el esqueleto estructural ni la jerarquía de la ficha.\n';
+    if (cargaEdad) o += 'CARGA POR EDAD: ' + cargaEdad + ' La audiencia adapta el esqueleto a su perfil: para infantil, HEAVY se vuelve masas suaves y redondeadas (no agresivas), SOFT conserva su aire con colores claros, MODERN mantiene geometría con formas amables. La audiencia no sustituye el tratamiento; lo adapta sin romperlo.\n';
     if (v.cara) {
       o += 'CARA DEL ESTAMPADO: ' + (v.cara === 'espalda' ? 'ESPALDA' : 'FRENTE') + ' — ubica el arte en esa cara; en la hoja de presentación muestra esa vista y no inventes la cara contraria.\n';
     }
     o += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
-    o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento)) + '\n';
+    o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento), v.audiencia) + '\n';
     o += 'ESQUELETO ESTRUCTURAL (MANDA): perfil ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · jerarquía ' + v.jerarquiaVisual + ' · layout ' + String(v.layout || '').split(':')[0] + ' · arquitectura textual ' + v.distribucionTexto + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + ' · forma del símbolo ' + v.formaSimbolo + ' · integración ' + v.integracionTexto + ' · tipografía ' + v.tipografia + '\n';
     o += 'ACABADO DE ESTILO (SUBORDINADO): «' + v.estilo + '» es solo la técnica de acabado sobre este esqueleto; no cambia jerarquía, layout, proporción ni densidad. Si pide un recurso que lo rompa, reduce el acabado a acento controlado.\n';
     const styleIsLettering = /graffiti|street|lettering|sign paint/i.test(String(v.estilo || ''));
     o += 'TÉCNICA GLOBAL: todo el arte de esta ficha — símbolo, letras, fondo y detalles — se ejecuta con la técnica del estilo «' + v.estilo + '»' + (styleIsLettering ? '; aquí el lettering SÍ es el estilo activo.' : '. Prohibido dibujar el copy como graffiti, lettering streetwear, lettering retro o cualquier lenguaje de letras ajeno al estilo activo: las letras también llevan la técnica del estilo.') + '\n';
-    o += 'PRIORIDAD DE IDENTIDAD — FIJOS: jerarquía (' + v.jerarquiaVisual + '), tratamiento (' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + '), estilo («' + v.estilo + '», acabado). ADAPTABLES: paleta, textura y detalles secundarios sin anular contraste ni lectura. Orden: jerarquía > tratamiento > estilo > paleta; el efecto del estilo (3D, neón, textura) nunca por encima del esqueleto.\n';
+    o += 'PRIORIDAD DE IDENTIDAD — FIJOS: jerarquía (' + v.jerarquiaVisual + '), tratamiento (' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + '), estilo («' + v.estilo + '», acabado). La audiencia modifica CÓMO se ejecutan (formas, colores, textura, acabado) sin cambiar QUÉ son. ADAPTABLES: paleta, textura, detalles, formas y acabado según la audiencia de la ficha. Orden: jerarquía > tratamiento > estilo > audiencia > paleta; el efecto del estilo (3D, neón, textura) nunca por encima del esqueleto.\n';
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
       o += 'OBJETO: NINGUNO (composición tipográfica pura).' + (seriesAnchor
         ? ' Identidad conceptual de la serie: «' + seriesAnchor + '». Esta ficha NO dibuja ese ancla: la expresa solo con tipografía, pero comunica el MISMO concepto que las demás fichas.'
@@ -3009,10 +3494,13 @@ function renderCards(result) {
         ? MOTOR_STATE.subniche
         : (typeof effectiveSubniche === 'function' ? (effectiveSubniche() || 'auto') : 'auto'))
     : '';
-  var stylePool = _styleCandidatesForContext();
-  var modeLocks = _loadLocks(memLocksMarket(), MOTOR_STATE.product);
+  var stylePool = _territoryStyleFilter(_styleCandidatesForContext());
+  /* FIX 3D: los locks efectivos respetan el modo (PRESERVE en manual). */
+  var modeLocks = _effectiveLocks();
+  var isManual = _normalizeDecisionMode(MOTOR_STATE.decisionMode) === 'manual';
   var styleLocks = modeLocks.estilo || {};
   var layoutLocks = modeLocks.layout || {};
+  var treatmentPool = ['HEAVY', 'SOFT', 'MODERN'];
   var layoutPool = (_allowedLayoutPool() || _LAYOUTS || []);
   var modes = ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
 
@@ -3051,32 +3539,37 @@ function renderCards(result) {
     html += '<div class="vbody">';
 
     html += '<div class="vrow"><span class="vk">Estilo</span><span class="vv"><select data-card="' + k + '" data-lock="estilo" onchange="setCardLock(this)">'
+      + (isManual ? '<option value="PRESERVE"' + (styleLocks[k] === 'PRESERVE' ? ' selected' : '') + '>Preservar (' + escHtml(v.estilo) + ')</option>' : '')
       + '<option value="Auto"' + ((!styleLocks[k] || styleLocks[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(v.estilo) + ')</option>'
       + stylePool.map(function (e) { return '<option value="' + escHtml(e) + '"' + (styleLocks[k] === e ? ' selected' : '') + '>' + escHtml(e) + '</option>'; }).join('')
       + '</select></span></div>';
 
     html += '<div class="vrow"><span class="vk">Audiencia</span><span class="vv"><select data-card="' + k + '" data-lock="audiencia" onchange="setCardLock(this)">'
-      + '<option value="Auto"' + ((!_loadLocks(memLocksMarket(), MOTOR_STATE.product).audiencia[k] || _loadLocks(memLocksMarket(), MOTOR_STATE.product).audiencia[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(v.audiencia) + ')</option>'
-      + audPool.map(function (a) { return '<option value="' + escHtml(a) + '"' + (_loadLocks(memLocksMarket(), MOTOR_STATE.product).audiencia[k] === a ? ' selected' : '') + '>' + escHtml(a) + audSuf + '</option>'; }).join('')
+      + (isManual ? '<option value="PRESERVE"' + ((modeLocks.audiencia || {})[k] === 'PRESERVE' ? ' selected' : '') + '>Preservar (' + escHtml(v.audiencia) + ')</option>' : '')
+      + '<option value="Auto"' + ((!((modeLocks.audiencia || {})[k]) || (modeLocks.audiencia || {})[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(v.audiencia) + ')</option>'
+      + audPool.map(function (a) { return '<option value="' + escHtml(a) + '"' + ((modeLocks.audiencia || {})[k] === a ? ' selected' : '') + '>' + escHtml(a) + audSuf + '</option>'; }).join('')
       + '</select></span></div>';
     html += '<div class="vrow"><span class="vk">Jerarquia</span><span class="vv"><select data-card="' + k + '" data-lock="jerarquia" onchange="setCardLock(this)">'
-      + '<option value="Auto"' + ((!_loadLocks(memLocksMarket(), MOTOR_STATE.product).jerarquia[k] || _loadLocks(memLocksMarket(), MOTOR_STATE.product).jerarquia[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(v.jerarquiaVisual) + ')</option>'
-      + modes.map(function (m) { return '<option value="' + m + '"' + (_loadLocks(memLocksMarket(), MOTOR_STATE.product).jerarquia[k] === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
+      + (isManual ? '<option value="PRESERVE"' + ((modeLocks.jerarquia || {})[k] === 'PRESERVE' ? ' selected' : '') + '>Preservar (' + escHtml(v.jerarquiaVisual) + ')</option>' : '')
+      + '<option value="Auto"' + ((!((modeLocks.jerarquia || {})[k]) || (modeLocks.jerarquia || {})[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(v.jerarquiaVisual) + ')</option>'
+      + modes.map(function (m) { return '<option value="' + m + '"' + ((modeLocks.jerarquia || {})[k] === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
       + '</select></span></div>';
     html += '<div class="vrow"><span class="vk">Layout</span><span class="vv"><select data-card="' + k + '" data-lock="layout" onchange="setCardLock(this)">'
+      + (isManual ? '<option value="PRESERVE"' + (layoutLocks[k] === 'PRESERVE' ? ' selected' : '') + '>Preservar (' + escHtml(String(v.layout).split(':')[0].trim()) + ')</option>' : '')
       + '<option value="Auto"' + ((!layoutLocks[k] || layoutLocks[k] === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(String(v.layout).split(':')[0].trim()) + ')</option>'
       + layoutPool.map(function (e) { return '<option value="' + escHtml(e) + '"' + (layoutLocks[k] === e ? ' selected' : '') + '>' + escHtml(String(e).split(':')[0].trim()) + '</option>'; }).join('')
       + '</select></span></div>';
 
-    // Decisiones propias de la ficha; el Dominio sube al contexto de la serie.
-    const rows = [
-      ['Objeto', v.objeto],
-      ['Tratamiento', v.tratamiento]
-    ];
+    // Objeto: solo lectura (depende del concepto/banco, no es una decisión lockable).
+    html += '<div class="vrow"><span class="vk">Objeto</span><span class="vv">' + escHtml(v.objeto) + '</span></div>';
 
-    rows.forEach(function (r) {
-      html += '<div class="vrow"><span class="vk">' + r[0] + '</span><span class="vv">' + escHtml(r[1]) + '</span></div>';
-    });
+    /* FIX 3D: el tratamiento (HEAVY/SOFT/MODERN) es una decisión creativa lockable. */
+    var tLock = (modeLocks.tratamiento || {})[k] || 'Auto';
+    html += '<div class="vrow"><span class="vk">Tratamiento</span><span class="vv"><select data-card="' + k + '" data-lock="tratamiento" onchange="setCardLock(this)">'
+      + (isManual ? '<option value="PRESERVE"' + (tLock === 'PRESERVE' ? ' selected' : '') + '>Preservar (' + escHtml(_treatmentKey(v.tratamiento)) + ')</option>' : '')
+      + '<option value="Auto"' + ((!tLock || tLock === 'Auto') ? ' selected' : '') + '>Auto (' + escHtml(_treatmentKey(v.tratamiento)) + ')</option>'
+      + treatmentPool.map(function (t) { return '<option value="' + t + '"' + (tLock === t ? ' selected' : '') + '>' + t + '</option>'; }).join('')
+      + '</select></span></div>';
 
     // Secundarios plegables para aligerar la ficha.
     const moreRows = [
@@ -3184,7 +3677,23 @@ function rerollSingle(keyLetter) {
     var auds = resolveAudiences();
     var others = K.filter(function (x) { return x !== keyLetter; });
     var current = LAST_RESULT.set[keyLetter];
-    var locksNow = _loadLocks(memLocksMarket(), MOTOR_STATE.product) || {};
+    var prevSet = LAST_RESULT.set;
+
+    /* FIX 3D Fase 3c: locks de generación para rerollSingle.
+       - La ficha seleccionada usa los locks del usuario (PRESERVE/FIXED/Auto).
+       - Las otras dos se fuerzan a PRESERVE: se conservan íntegramente.
+       - El overlay de 3b se aplica sobre la ficha regenerada. */
+    var overlayLocks = JSON.parse(JSON.stringify(_effectiveLocks(prevSet)));
+    others.forEach(function (o) {
+      Object.keys(overlayLocks).forEach(function (f) {
+        overlayLocks[f][o] = LOCK_PRESERVE;
+      });
+    });
+    var genLocks = _generationLocks(overlayLocks, prevSet);
+    _ACTIVE_GEN_LOCKS = genLocks;
+    var preservation = { prevSet: prevSet, effectiveLocks: overlayLocks, targetKey: keyLetter };
+
+    var locksNow = _resolveLocks();
     var chosenStyle = locksNow.estilo && locksNow.estilo[keyLetter] && locksNow.estilo[keyLetter] !== 'Auto'
       ? locksNow.estilo[keyLetter] : null;
     var fixedIdentity = _isLockedContactSet() ? {
@@ -3193,9 +3702,12 @@ function rerollSingle(keyLetter) {
       intencionEmocional: LAST_RESULT.set.A.intencionEmocional
     } : null;
     var best = null, bestScore = -1e9;
+    var bestOk = null, bestOkScore = -1e9;
     var clashCount = {};
+    var __dbgStats = { iter: 0, candNull: 0, nov: 0, clash: 0, same: 0, bestSet: 0, gateFail: 0, bestScoreFinal: -1e9 };
 
     var rerollNonceBase = Number(MOTOR_STATE._rerollNonce) || 0;
+    try {
     for (var i = 0; i < 600; i++) {
       var cand;
       if (MOTOR_STATE.market === 'global_en' && keyLetter === 'A') {
@@ -3203,20 +3715,22 @@ function rerollSingle(keyLetter) {
         // restaurar el nonce evita afectar el estado de la siguiente generación.
         var nonceBeforeAttempt = MOTOR_STATE._rerollNonce;
         MOTOR_STATE._rerollNonce = rerollNonceBase + i;
-        try { cand = buildCandidate(auds, fixedIdentity); }
+        try { cand = buildCandidate(auds, fixedIdentity, preservation); }
         finally { MOTOR_STATE._rerollNonce = nonceBeforeAttempt; }
       } else {
-        cand = buildCandidate(auds, fixedIdentity);
+        cand = buildCandidate(auds, fixedIdentity, preservation);
       }
       var v = cand && cand[keyLetter];
-      if (!v || (chosenStyle && v.estilo !== chosenStyle)) continue;
+      __dbgStats.iter++;
+      if (!cand) { __dbgStats.candNull++; continue; }
+      if (!v || (chosenStyle && v.estilo !== chosenStyle)) { __dbgStats.nov++; continue; }
 
       // Exclusión dura anti-repetición: si repite CUALQUIER eje con las
       // conservadas se descarta aunque puntúe bien. El dado no negocia reglas.
       var keptCards = others.map(function (o) { return LAST_RESULT.set[o]; });
       var clashes = _ejesRepetidosConConservadas(v, keptCards);
       clashes.forEach(function (ax) { clashCount[ax] = (clashCount[ax] || 0) + 1; });
-      if (clashes.length) continue;
+      if (clashes.length) { __dbgStats.clash++; continue; }
 
       // Puntuar conflictos en vez de descartar todos los candidatos:
       // el dado debe seguir funcionando aunque los pools sean restrictivos.
@@ -3248,12 +3762,26 @@ function rerollSingle(keyLetter) {
       var differs = ['estilo','layout','tipografia','formaSimbolo','integracionTexto','familiaColor','objeto'].some(function (field) {
         return v[field] !== current[field];
       });
-      if (!differs && !chosenStyle) continue;
-      if (score > bestScore) { bestScore = score; best = v; }
-      if (best && bestScore >= 55) break;
-    }
+      if (!differs && !chosenStyle) { __dbgStats.same++; continue; }
 
-    if (!best) {
+      /* FIX 3D Fase 3c: validar el gate por candidato (igual que generateSet).
+         El mejor puntaje no sirve si la ficha no supera el gate. */
+      var testSetTmp = JSON.parse(JSON.stringify(LAST_RESULT.set));
+      testSetTmp[keyLetter] = v;
+      var evTmp = evaluaSetOk(testSetTmp);
+
+      if (score > bestScore) { bestScore = score; best = v; }
+      /* FIX 3D Fase 3c: se prefiere el mejor candidato que supera el gate; el
+         mejor puntaje heurístico no sirve si la ficha no supera el gate. */
+      if (evTmp && evTmp.passed && score > bestOkScore) { bestOk = v; bestOkScore = score; }
+      if (bestOk && bestOkScore >= 55) break;
+    }
+    } finally {
+      _ACTIVE_GEN_LOCKS = null;
+    }
+    console.log('[DBG REROLl] key=' + keyLetter + ' stats=' + JSON.stringify(__dbgStats) + ' chosenStyle=' + JSON.stringify(chosenStyle) + ' curEstilo=' + current.estilo);
+    if (!bestOk) {
+      console.log('[DBG REROLl] BAIL: !bestOk');
       var noFitStatus = document.getElementById('status');
       var topClash = Object.keys(clashCount).sort(function (a, b) { return clashCount[b] - clashCount[a]; })[0];
       if (noFitStatus) noFitStatus.textContent = chosenStyle
@@ -3264,16 +3792,27 @@ function rerollSingle(keyLetter) {
       return;
     }
 
+    /* FIX 3D Fase 3c: validar ANTES de sobrescribir LAST_RESULT.
+       Si la ficha regenerada no supera el gate, no se aplica ningún cambio. */
+    var testSet = JSON.parse(JSON.stringify(LAST_RESULT.set));
+    testSet[keyLetter] = bestOk;
+    var freshEval = evaluaSetOk(testSet);
+    console.log('[DBG REROLl] key=' + keyLetter + ' bestSet=' + (best ? 'si' : 'no') + ' freshEval.passed=' + freshEval.passed + ' score=' + JSON.stringify(freshEval.score) + ' detalle=' + JSON.stringify(freshEval.detalle));
+    if (!freshEval.passed) {
+      var rejectStatus = document.getElementById('status');
+      if (rejectStatus) rejectStatus.textContent = 'La ficha regenerada no supera el gate; no se aplicó. Cambia un selector o quita un bloqueo.';
+      return;
+    }
+
     // Sustituir únicamente la tarjeta elegida; A/B permanecen intactas al tirar C, etc.
-    LAST_RESULT.set[keyLetter] = best;
+    LAST_RESULT.set[keyLetter] = bestOk;
     try {
-      const rerollColorChanges = auditFichaColors(current, best, N[K.indexOf(keyLetter)]);
+      const rerollColorChanges = auditFichaColors(current, bestOk, N[K.indexOf(keyLetter)]);
       if (rerollColorChanges.length) recordColorAudit(rerollColorChanges);
     } catch (e) { /* auditoría no bloquea el reroll */ }
     try { if (typeof _recordLayoutSet === 'function') _recordLayoutSet(LAST_RESULT.set); } catch (e) {}
     try { if (typeof _recordArchitectureSet === 'function') _recordArchitectureSet(LAST_RESULT.set); } catch (e) {}
     if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
-    var freshEval = evaluaSetOk(LAST_RESULT.set);
     LAST_RESULT.score = freshEval.score;
     LAST_RESULT.passed = freshEval.passed;
     try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
@@ -3870,6 +4409,34 @@ window.renderColorAudit = renderColorAudit;
       }
       const storedCreative = loadCreativeTerritory();
       if (storedCreative) creativeTerritory.value = storedCreative;
+    }
+
+    /* FIX 3C: identidad visual del usuario (input de texto libre). */
+    const visualIdentityInput = document.getElementById('visualIdentity');
+    if (visualIdentityInput) {
+      if (!visualIdentityInput.__podVisualIdentityBound) {
+        visualIdentityInput.addEventListener('input', function () {
+          setVisualIdentity(this.value);
+        });
+        visualIdentityInput.__podVisualIdentityBound = true;
+      }
+      const storedVI = loadVisualIdentity();
+      if (storedVI) visualIdentityInput.value = storedVI;
+    }
+
+    /* FIX 3D: modo de decisión (auto / assisted / manual). */
+    const decisionModeSel = document.getElementById('decisionMode');
+    if (decisionModeSel) {
+      if (!decisionModeSel.__podDecisionModeBound) {
+        decisionModeSel.addEventListener('change', function () {
+          setDecisionMode(this.value);
+          const st = document.getElementById('status');
+          if (st) st.textContent = 'Modo de decisión: ' + _normalizeDecisionMode(this.value) + '.';
+        });
+        decisionModeSel.__podDecisionModeBound = true;
+      }
+      const storedDM = loadDecisionMode();
+      decisionModeSel.value = storedDM;
     }
 
     refreshContextSelectors(true);

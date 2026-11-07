@@ -130,14 +130,14 @@ ok(audienceConstrainedProfile.tipografia.indexOf('Sans humanista limpia') === 0,
 ok(audienceConstrainedProfile.densidad === 'Minimal', 'el perfil estructural debe conservar la densidad preferida por la audiencia cuando es compatible');
 ok(audienceConstrainedProfile.formaSimbolo === 'contorno lineal calibrado', 'el perfil estructural debe conservar la forma simbólica preferida por la audiencia cuando es compatible');
 const motorSourceForAudience = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
-ok(/_applyStructuralProfile\(v, _CONTACT_TREATMENT_ORDER\[k\], productBias, audProfile, priorProfileAxes, fixedLayout\)/.test(motorSourceForAudience), 'la generación debe pasar las preferencias de audiencia, los ejes previos y el layout fijado al perfil estructural');
+ok(/_applyStructuralProfile\(v, effectiveTreatmentKey \|\| _CONTACT_TREATMENT_ORDER\[k\], productBias, audProfile, priorProfileAxes, fixedLayout\)/.test(motorSourceForAudience), 'la generación debe pasar las preferencias de audiencia, los ejes previos y el layout fijado al perfil estructural');
 
 // Regresiones de matriz y de audiencia automática.
 ok(/HEAVY:\s*\{[\s\S]*?type: \[[^\]]*'Rounded amable'/.test(motorSourceForAudience), 'HEAVY debe permitir una tipografía redondeada cuando la audiencia la prefiere, sin perder la dirección estructural');
 
-ok(motorSourceForAudience.includes("const visibleStyle = String(v.estilo || '').trim().toLowerCase()"), 'la puntuación de audiencia debe comparar la etiqueta visible del estilo además de la clave interna');
+ok(motorSourceForAudience.includes("visibleStyle = String(v.estilo || '').trim().toLowerCase()"), 'la puntuación de audiencia debe comparar la etiqueta visible del estilo además de la clave interna');
 ok(motorSourceForAudience.includes("MOTOR_STATE.workflowMode !== 'explore'"), 'la puntuación no debe penalizar la preferencia de tratamiento cuando HEAVY/SOFT/MODERN son obligatorios en exploración');
-ok(motorSourceForAudience.includes('const matchesPreference = function (actual, preferences)'), 'la puntuación debe admitir descripciones extendidas que contengan una preferencia de tipografía o forma');
+ok(motorSourceForAudience.includes('matchesPreference = function (actual, preferences)'), 'la puntuación debe admitir descripciones extendidas que contengan una preferencia de tipografía o forma');
 
 
 ok(motorSourceForAudience.includes('function renderMatrix(result)'), 'debe existir una función para mostrar la matriz comparativa');
@@ -182,7 +182,7 @@ ok(motorSource.includes('A/B/C deben cambiar de verdad encuadre, silueta global,
 ok(motorSource.includes('CONTRATO CREATIVO: conserva concepto, familia, función y mensaje; no inventes objetos, datos ni texto.'), 'el prompt debe usar un contrato creativo compacto y concreto');
 ok(motorSource.includes('el estilo artístico define el lenguaje visual; HEAVY/SOFT/MODERN modifican composición y jerarquía sin borrar ese estilo.'), 'el tratamiento debe subordinarse al estilo artístico sin reemplazarlo');
 ok(motorSource.includes("var chosenStyle = locksNow.estilo && locksNow.estilo[keyLetter] && locksNow.estilo[keyLetter] !== 'Auto'"), 'el dado individual debe respetar el estilo fijado explícitamente en esa tarjeta');
-ok(/if \(contactIdentity \|\| MOTOR_STATE\.workflowMode === 'explore' \|\| MOTOR_STATE\.workflowMode === 'variation'\) \{[\s\S]*?_applyStructuralProfile\(v, _CONTACT_TREATMENT_ORDER\[k\], productBias, audProfile, priorProfileAxes, fixedLayout\);/.test(motorSource), 'CONTACTSHEET, exploración y variación deben aplicar perfiles fijos y evitar repetir ejes compatibles');
+ok(/if \(contactIdentity \|\| MOTOR_STATE\.workflowMode === 'explore' \|\| MOTOR_STATE\.workflowMode === 'variation'\) \{[\s\S]*?_applyStructuralProfile\(v, effectiveTreatmentKey \|\| _CONTACT_TREATMENT_ORDER\[k\], productBias, audProfile, priorProfileAxes, fixedLayout\);/.test(motorSource), 'CONTACTSHEET, exploración y variación deben aplicar perfiles fijos y evitar repetir ejes compatibles');
 ok(motorSource.includes('VARIACIÓN: usa la referencia solo para concepto y datos visibles; no copies su composición, silueta, pose, rostro, encuadre ni jerarquía.'), 'variación guiada debe separar identidad semántica de la composición de referencia');
 ok(motorSource.includes('Si dos diseños parecen la misma imagen recoloreada, replantea su estructura.'), 'variación guiada debe rechazar imágenes que solo cambian de color');
 ok(motorSource.includes('No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado.'), 'el prompt debe limitar añadidos no solicitados para reducir alucinaciones visuales');
@@ -191,7 +191,7 @@ const rerollEnd = motorSource.indexOf('/* --- Renderizado de gates --- */', rero
 const rerollSource = motorSource.slice(rerollStart, rerollEnd);
 ok(rerollStart >= 0 && rerollEnd > rerollStart, 'rerollSingle debe existir como función delimitada');
 ok(rerollSource.includes('var score = Math.random() * 2;'), 'el dado individual debe puntuar alternativas en vez de rechazar todos los conflictos');
-ok(rerollSource.includes('LAST_RESULT.set[keyLetter] = best;'), 'el dado individual debe reemplazar solo la tarjeta solicitada');
+ok(rerollSource.includes('LAST_RESULT.set[keyLetter] = bestOk;'), 'el dado individual debe reemplazar solo la tarjeta solicitada');
 ok(rerollSource.includes("MOTOR_STATE.market === 'global_en' && keyLetter === 'A'"), 'la variación adicional de semilla debe limitarse a 01A en Global EN');
 ok(rerollSource.includes('finally { MOTOR_STATE._rerollNonce = nonceBeforeAttempt; }'), 'el dado de 01A debe restaurar el nonce para no afectar generaciones posteriores');
 ok(rerollSource.includes('sin repetir ejes con las conservadas (10/10 verificado)'), 'el estado debe confirmar verificación anti-repetición contra las conservadas');
