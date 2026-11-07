@@ -3117,7 +3117,9 @@ function _territoryStyleFilter(candidates) {
     const base = _getStyleBase(name);
     return tc.styles.indexOf(name) !== -1 || tc.styles.indexOf(base) !== -1;
   });
-  return filtered.length ? filtered : pool;
+  // Fallback: si el filtro deja menos de 4 estilos, usar el pool completo
+  // para evitar dropdowns con muy pocas opciones (UX rota).
+  return filtered.length >= 4 ? filtered : pool;
 }
 
 /* FIX 3A — Filtra un pool de tratamientos por el territorio activo.
