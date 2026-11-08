@@ -78,7 +78,12 @@ Object.keys(territories).forEach(function (territoryId) {
   });
 });
 
-assert.deepEqual(diversity.contarEstilos(['HEAVY', 'SOFT', 'HEAVY']), { HEAVY: 2, SOFT: 1 });
+const _expectedCounts = Object.create(null);
+_expectedCounts.HEAVY = 2;
+_expectedCounts.SOFT = 1;
+const _actualCounts = diversity.contarEstilos(['HEAVY', 'SOFT', 'HEAVY']);
+assert.deepEqual(_actualCounts, _expectedCounts);
+assert.equal(Object.getPrototypeOf(_actualCounts), null, 'contarEstilos debe devolver un objeto con prototipo nulo (seguridad contra contaminación de prototipo)');
 
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const motor = fs.readFileSync(path.join(root, 'js/motor-nucleo.js'), 'utf8');
@@ -88,6 +93,7 @@ assert.match(index, /id="creativeTerritory"/, 'Stage 1 closure: selector de terr
 assert.match(motor, /MOTOR_STATE\.creativeTerritory = v\('creativeTerritory'/);
 assert.match(motor, /clearSetHistory/);
 assert.match(motor, /clearCreativeMemory/);
+assert.match(motor, /ANCLA CONCEPTO:/, 'RED TEAM corrective: el territorio inyecta la ancla al concepto');
 assert.match(ia, /formatPrompt\(LAST_RESULT\)/);
 assert.match(nav, /\['product', \['product', 'productSelect'\]\]/);
 assert.match(nav, /\['language', \['language', 'selLanguage'\]\]/);
