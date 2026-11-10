@@ -4303,6 +4303,7 @@ window.renderColorAudit = renderColorAudit;
 
     refreshSubnicheSelector(!marketChanged);
     refreshAudienceSelector();
+    refreshCreativeTerritorySelector();
   }
 
   function refreshAudienceSelector() {
@@ -4336,6 +4337,27 @@ window.renderColorAudit = renderColorAudit;
         : 'Auto resuelve según contexto; con «Explorar 3 audiencias» cada Auto usa la suya.';
       helpEl.className = fallback ? 'hint warn' : 'hint';
     }
+  }
+
+  function refreshCreativeTerritorySelector() {
+    const select = document.getElementById('creativeTerritory');
+    if (!select || typeof _CREATIVE_TERRITORIES === 'undefined') return;
+    const market = (document.getElementById('market') || {}).value || MOTOR_STATE.market || '';
+    const previous = select.value || 'auto';
+    // Rebuild options: auto + compatible territories for this market
+    const autoOpt = '<option value="auto">Auto — sin territorio fijado</option>';
+    const opts = Object.keys(_CREATIVE_TERRITORIES).map(function (id) {
+      const rec = _CREATIVE_TERRITORIES[id];
+      const markets = Array.isArray(rec.compatibleMarkets) ? rec.compatibleMarkets : [];
+      if (markets.length && market && markets.indexOf(market) === -1) return ''; // hide incompatible
+      const label = rec.label_es || rec.label || id;
+      return '<option value="' + id + '">' + label + '</option>';
+    }).filter(Boolean).join('');
+    select.innerHTML = autoOpt + opts;
+    // Restore previous if still compatible
+    const allowed = Array.from(select.options).some(function (o) { return o.value === previous; });
+    select.value = allowed ? previous : 'auto';
+    if (typeof MOTOR_STATE !== 'undefined') MOTOR_STATE.creativeTerritory = select.value;
   }
 
   function refreshPrintMethodSelector() {
