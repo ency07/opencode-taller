@@ -203,6 +203,96 @@ const POD_CREATIVE_TERRITORIES = {
     visualIdentity: "identidad_regional",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 2
+  },
+
+  URBAN_STREETWEAR: {
+    id: "URBAN_STREETWEAR",
+    label: "Streetwear urbano",
+    label_es: "Streetwear urbano",
+    label_en: "Urban Streetwear",
+    description: "Estetica de calle, cultura urbana y deporte.",
+    promptDirective: "Compon el diseno con lenguaje de calle.",
+    resources: ["tipografia_bold"],
+    themes: ["identidad_urbana"],
+    restrictions: ["no_estereotipos_negativos"],
+    compatibleStyles: ["Brutalist", "Stencil Urbano"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "streetwear", "lifestyle"],
+    visualIdentity: "urbano_grafico",
+    brandAssociation: [],
+    priority: 1
+  },
+
+  NATURE_ORGANIC: {
+    id: "NATURE_ORGANIC",
+    label: "Naturaleza organica",
+    label_es: "Naturaleza organica",
+    label_en: "Organic Nature",
+    description: "La naturaleza como lenguaje visual.",
+    promptDirective: "Deriva el simbodo de elementos naturales concretos.",
+    resources: ["hojas", "ramas"],
+    themes: ["sostenibilidad", "bienestar"],
+    restrictions: ["no_naturaleza_ornamental_sin_metafora"],
+    compatibleStyles: ["Acuarela Suelta", "Folk Popular"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "nature_outdoor"],
+    visualIdentity: "organico_natural",
+    brandAssociation: [],
+    priority: 2
+  },
+
+  MINIMAL_MODERN: {
+    id: "MINIMAL_MODERN",
+    label: "Minimalismo moderno",
+    label_es: "Minimalismo moderno",
+    label_en: "Modern Minimalism",
+    description: "Menos es mas. Espacio negativo, tipografia limpia.",
+    promptDirective: "Compon el diseno con maxima economia visual.",
+    resources: ["espacio_negativo", "tipografia_limpia"],
+    themes: ["elegancia", "claridad", "modernidad"],
+    restrictions: ["no_sobrecarga_visual"],
+    compatibleStyles: ["Minimal Modern", "Brutalist"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "art_design"],
+    visualIdentity: "minimalista_contemporaneo",
+    brandAssociation: [],
+    priority: 3
+  },
+
+  RETRO_VINTAGE: {
+    id: "RETRO_VINTAGE",
+    label: "Retro / Vintage",
+    label_es: "Retro / Vintage",
+    label_en: "Retro Vintage",
+    description: "Nostalgia y tradicion visual.",
+    promptDirective: "Compon el diseno con referencias a decadas pasadas.",
+    resources: ["tipografia_retro"],
+    themes: ["nostalgia", "tradicion"],
+    restrictions: ["no_imitacion_literal_de_marcas"],
+    compatibleStyles: ["Vintage Desgastado", "Retro 70s", "Grunge / DIY"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "music_entertainment"],
+    visualIdentity: "retro_nostalgico",
+    brandAssociation: [],
+    priority: 4
+  },
+
+  TECH_DIGITAL: {
+    id: "TECH_DIGITAL",
+    label: "Tecnologia / Digital",
+    label_es: "Tecnologia / Digital",
+    label_en: "Tech Digital",
+    description: "Lenguaje visual de la era digital.",
+    promptDirective: "Compon el diseno con lenguaje digital: geometria precisa, neon, gradientes.",
+    resources: ["geometria_precisa", "neon", "gradientes"],
+    themes: ["innovacion", "futuro", "conectividad"],
+    restrictions: ["no_estereotipos_de_hacker"],
+    compatibleStyles: ["Y2K / Cyber", "Pixel / 8-bit", "Vaporwave"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "art_design", "professional_community"],
+    visualIdentity: "digital_cyber",
+    brandAssociation: [],
+    priority: 5
   }
 };
 
