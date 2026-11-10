@@ -482,10 +482,10 @@
   var VISION_DEFAULTS = {
     provider: 'auto',
     geminiModel: 'gemini-3.5-flash-lite',
-    openrouterModel: 'nvidia/nemotron-3-nano-omni-30b:free',
+    openrouterModel: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
     timeoutMs: 20000
   };
-  var VISION_FALLBACK_OR = ['nvidia/nemotron-3-nano-omni-30b:free', 'google/gemini-2.5-flash'];
+  var VISION_FALLBACK_OR = ['nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', 'google/gemini-2.5-flash'];
 
   function getVisionConfig() {
     try {
@@ -590,16 +590,23 @@
      Un 4xx cuenta como ALCANCE (conecta, pero la clave/modelo falla). */
   async function preflightVision(timeoutMs) {
     const ms = timeoutMs || 5000;
-    async function ping(url) {
+    const slots = getVisionSlots();
+    const gSlot = (slots || []).filter(function (s) { return s.provider === 'Gemini'; })[0] || null;
+    const oSlot = (slots || []).filter(function (s) { return s.provider === 'OpenRouter'; })[0] || null;
+    async function ping(url, provider, key, model) {
       const t0 = Date.now();
       try {
-        await fetchWithTimeout(url, { method: 'GET' }, ms);
+        const IC = window.IAClient;
+        const headers = (IC && key && provider)
+          ? IC.headers(provider, key, {})
+          : {};
+        await fetchWithTimeout(url, { method: 'GET', headers: headers }, ms);
         return { ok: true, ms: Date.now() - t0 };
       } catch (e) { return { ok: false, ms: Date.now() - t0 }; }
     }
     const results = await Promise.all([
-      ping('https://generativelanguage.googleapis.com/v1beta/models'),
-      ping('https://openrouter.ai/api/v1/models')
+      ping('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite', gSlot ? 'Gemini' : null, gSlot ? gSlot.key : null),
+      ping('https://openrouter.ai/api/v1/models', oSlot ? 'OpenRouter' : null, oSlot ? oSlot.key : null)
     ]);
     return { google: results[0].ok, openrouter: results[1].ok, ms: { google: results[0].ms, openrouter: results[1].ms } };
   }
@@ -631,6 +638,7 @@
   }
 
   function visionHttpMessage(status, provider) {
+    if (status === 400) return 'Solicitud rechazada (HTTP 400). Verifica que el modelo soporta imágenes y que el formato base64/MIME es válido.';
     if (status === 401 || status === 403) return 'Clave inválida o sin permiso (HTTP ' + status + '). Revisa la clave en la barra IA.';
     if (status === 404) return 'Modelo retirado o inexistente (HTTP 404). Cambia el modelo en la barra IA.';
     if (status === 429) return 'Límite del tier free (HTTP 429). Espera un minuto o sube de tier.';
@@ -669,8 +677,13 @@
         if (!txt) throw new Error('Respuesta vacía de Gemini.');
         return parseVisionJson(txt, 'Gemini');
       } catch (e) {
-        if (e && (e.httpStatus === 401 || e.httpStatus === 403 || e.httpStatus === 404)) throw e;
+        if (e && (e.httpStatus === 400 || e.httpStatus === 401 || e.httpStatus === 403 || e.httpStatus === 404)) throw e;
         if (e && e.netError) throw e;
+        // Retry on 503 (model overloaded) with backoff
+        if (e && e.httpStatus === 503 && attempt === 0) {
+          await new Promise(function (res) { setTimeout(res, 2000); });
+          continue;
+        }
         lastErr = e;
       }
     }
@@ -710,8 +723,13 @@
         if (!txt) throw new Error('Respuesta vacía de OpenRouter.');
         return parseVisionJson(txt, 'OpenRouter');
       } catch (e) {
-        if (e && (e.httpStatus === 401 || e.httpStatus === 403 || e.httpStatus === 404)) throw e;
+        if (e && (e.httpStatus === 400 || e.httpStatus === 401 || e.httpStatus === 403 || e.httpStatus === 404)) throw e;
         if (e && e.netError) throw e;
+        // Retry on 503 (model overloaded) with backoff
+        if (e && e.httpStatus === 503 && attempt === 0) {
+          await new Promise(function (res) { setTimeout(res, 2000); });
+          continue;
+        }
         lastErr = e;
       }
     }
@@ -721,7 +739,12 @@
     throw lastErr;
   }
 
-  /* Ping real mínimo para el botón "Probar conexión": preflight + 1 texto corto. */
+  /* Ping real de visión para el botón "Probar conexión": envía una imagen
+     tiny (1x1) y verifica que el modelo la acepte. Un test de texto NO
+     demuestra que el modelo soporte imágenes. */
+  var VISION_PROBE_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  var VISION_PROBE_MIME = 'image/png';
+
   async function testVisionConnection() {
     const cfg = getVisionConfig();
     const slots = getVisionSlots();
@@ -729,29 +752,39 @@
     try { reach = await preflightVision(5000); } catch (e) {}
     const target = pickVisionTarget(slots, cfg, reach);
     if (!target) return { ok: false, message: 'Sin claves con modelo. Configura la barra IA.' };
+    const prompt = 'Describe el color de esta imagen en una palabra.';
     try {
       if (target.kind === 'gemini') {
         await window.IAClient.chat({ provider: 'Gemini', model: target.model, key: target.key }, {
-          user: 'Responde solo: ok',
+          user: prompt,
+          geminiParts: [{ inlineData: { mimeType: VISION_PROBE_MIME, data: VISION_PROBE_URI.split(',')[1] } }],
+          maxTokens: 256,
           timeoutMs: 15000,
           httpMessage: function (status) { return visionHttpMessage(status, 'Gemini'); }
         });
       } else {
         await window.IAClient.chat({ provider: 'OpenRouter', model: target.model, key: target.key }, {
-          openaiContent: [{ type: 'text', text: 'Responde solo: ok' }],
-          maxTokens: 50,
+          openaiContent: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: VISION_PROBE_URI } }
+          ],
+          maxTokens: 256,
           timeoutMs: 15000,
           httpMessage: function (status) { return visionHttpMessage(status, 'OpenRouter'); }
         });
       }
-      return { ok: true, message: target.kind + ' / ' + target.model + ' responde (red OK).' };
+      return { ok: true, vision: true, message: target.kind + ' / ' + target.model + ' responde VISIÓN (modelo acepta imágenes).' };
     } catch (e) {
       if (e && e.name === 'AbortError') {
-        return { ok: false, message: 'Timeout: la red no llega a ' + target.kind + ' (¿bloqueo geográfico?).' };
+        return { ok: false, vision: false, message: 'Timeout: la red no llega a ' + target.kind + ' (¿bloqueo geográfico?).' };
       }
-      return { ok: false, message: String((e && e.message) || e) };
+      if (e && e.httpStatus === 400) {
+        return { ok: false, vision: false, message: target.kind + ' / ' + target.model + ' rechazó la imagen (HTTP 400). El modelo puede no soportar visión o el formato no es válido.' };
+      }
+      return { ok: false, vision: false, message: String((e && e.message) || e) };
     }
   }
+
 
   async function analyzeImageWithVision() {
     const fileInput = $('imageUpload');

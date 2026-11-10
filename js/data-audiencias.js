@@ -12,7 +12,7 @@ const AUD_PROFILES = {
   /* ================= COSTA CARIBE ================= */
 
   coste_joven_m: {
-    label: "Costeño joven 16-28",
+    label: "Hombres jóvenes costeños",
     region: "costa_caribe",
     genero: "masculino",
     edad: "joven",
@@ -42,7 +42,7 @@ const AUD_PROFILES = {
   },
 
   coste_joven_f: {
-    label: "Costeña joven 16-28",
+    label: "Mujeres jóvenes costeñas",
     region: "costa_caribe",
     genero: "femenino",
     edad: "joven",
@@ -72,7 +72,7 @@ const AUD_PROFILES = {
   },
 
   coste_adulto_m: {
-    label: "Costeño adulto 29-55",
+    label: "Hombres adultos costeños",
     region: "costa_caribe",
     genero: "masculino",
     edad: "adulto",
@@ -102,7 +102,7 @@ const AUD_PROFILES = {
   },
 
   coste_adulta_f: {
-    label: "Costeña adulta 29-55",
+    label: "Mujeres adultas costeñas",
     region: "costa_caribe",
     genero: "femenino",
     edad: "adulto",
@@ -134,7 +134,7 @@ const AUD_PROFILES = {
   /* ================= ANDINA ================= */
 
   andino_joven_m: {
-    label: "Andino joven 16-28",
+    label: "Hombres jóvenes andinos",
     region: "andina",
     genero: "masculino",
     edad: "joven",
@@ -164,7 +164,7 @@ const AUD_PROFILES = {
   },
 
   andino_joven_f: {
-    label: "Andina joven 16-28",
+    label: "Mujeres jóvenes andinas",
     region: "andina",
     genero: "femenino",
     edad: "joven",
@@ -194,7 +194,7 @@ const AUD_PROFILES = {
   },
 
   andino_adulto_m: {
-    label: "Andino adulto 29-55",
+    label: "Hombres adultos andinos",
     region: "andina",
     genero: "masculino",
     edad: "adulto",
@@ -224,7 +224,7 @@ const AUD_PROFILES = {
   },
 
   andino_adulta_f: {
-    label: "Andina adulta 29-55",
+    label: "Mujeres adultas andinas",
     region: "andina",
     genero: "femenino",
     edad: "adulto",
@@ -256,7 +256,7 @@ const AUD_PROFILES = {
   /* ================= PACÍFICO ================= */
 
   pacifico_raiz: {
-    label: "Pacífico raíz",
+    label: "Cultura y raíces del Pacífico",
     region: "pacifica",
     genero: "unisex",
     edad: "adulto",
@@ -288,7 +288,7 @@ const AUD_PROFILES = {
   /* ================= LLANOS ================= */
 
   llanos_identidad: {
-    label: "Llanos identidad",
+    label: "Cultura e identidad llanera",
     region: "llanos",
     genero: "unisex",
     edad: "adulto",
@@ -320,7 +320,7 @@ const AUD_PROFILES = {
   /* ================= AMAZONÍA ================= */
 
   amazonia_territorio: {
-    label: "Amazonía territorio",
+    label: "Cultura y territorio amazónico",
     region: "amazonia",
     genero: "unisex",
     edad: "adulto",
@@ -352,7 +352,7 @@ const AUD_PROFILES = {
   /* ================= INFANTIL NACIONAL ================= */
 
   infantil_col: {
-    label: "Infantil Colombia",
+    label: "Niños y niñas de Colombia",
     region: "nacional",
     genero: "unisex",
     edad: "infantil",
@@ -382,7 +382,7 @@ const AUD_PROFILES = {
   /* ================= UNISEX NACIONAL ================= */
 
   unisex_nacional: {
-    label: "Unisex nacional — todas las edades",
+    label: "Público colombiano unisex",
     region: "nacional",
     genero: "unisex",
     edad: "amplia",

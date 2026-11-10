@@ -109,7 +109,7 @@ MOTOR_STATE._rerollNonce = 7;
 clearLocks(memLocksMarket(), 'CAMISETA SOFT');
 const resFinal = buildCandidate(resolveAudiences(), null);
 const out = formatPrompt({ set: resFinal });
-ok(count(out, 'REGLAS COMUNES A LAS 3 FICHAS:') === 1, 'D: REGLAS COMUNES aparece una vez');
+ok(count(out, 'REGLAS DEL ARTE ESTAMPADO') === 1, 'D: REGLAS DEL ARTE ESTAMPADO aparece una vez');
 ok(count(out, 'CONTROL DE ELEMENTOS:') === 1, 'D: CONTROL DE ELEMENTOS izado, una sola vez');
 ok(count(out, 'FIGURAS HUMANAS:') <= 1, 'D: FIGURAS HUMANAS ya no triplica el prompt');
 ok(count(out, 'ARQUITECTURA DOMINANTE') === 1, 'D: ARQUITECTURA DOMINANTE izada, una sola vez');

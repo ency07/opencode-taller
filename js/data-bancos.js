@@ -107,15 +107,33 @@ const POD_SUBNICHES = {
         "ventilador de techo como testigo de todas las verdades",
         "limonada de coco que resuelve lo que la diplomacia no pudo",
         "puesto de fritanga donde el calor firma la conversación",
-        "sombra de almendro que organiza la tertulia del barrio",
-        "picó que presta el bajo para la felicidad ajena",
+        "recocha que se arma sin aviso en la esquina",
+        "picó que presta el bajo para la recocha ajena",
         "abuela costeña regañando con cariño y sazón",
-        "bicicleta con parrilla que carga más que su peso"
+        "mamagallismo que convierte la fila del banco en tertulia",
+        "mamadera de gallo que se alarga hasta el amanecer",
+        "nojoda que se convierte en carcajada colectiva",
+        "eche que desarma cualquier discusión seria",
+        "bololó que se arma sin motivo en la esquina",
+        "erda que se escucha en toda la cuadra",
+        "ajá que abre cualquier conversación",
+        "cuadro que se gana con una sola mirada",
+        "calidad que pide el favor sin pedirlo",
+        "ñapa que se regala sin que la pidan",
+        "tatequieto que frena la recocha a tiempo",
+        "cantaleta que la abuela repite sin cansarse",
+        "bochinche que se arma en la esquina"
       ],
       nacional: [
         "costeñol traducido a gesto",
-        "calor que une al barrio",
-        "carcajada que se escucha de esquina a esquina"
+        "mamadera de gallo que une al barrio",
+        "carcajada que se escucha de esquina a esquina",
+        "picardía que se hereda de abuela a nieto",
+        "franqueza que dice lo que piensa sin filtro",
+        "humor que aligera la adversidad costeña",
+        "costeñol que se hereda sin estudiarlo",
+        "picardía que se transmite en la mesa familiar",
+        "franqueza que no pide permiso"
       ]
     }
   },
@@ -210,7 +228,13 @@ const POD_SUBNICHES = {
         "suero atollabuey en mesa de madera",
         "arroz con coco que perfuma la casa",
         "pescado frito con patacón y promesa",
-        "limonada de coco servida en vaso de vidrio"
+        "limonada de coco servida en vaso de vidrio",
+        "sancocho de pescado que cura el alma",
+        "butifarra con yuca y suero costeño",
+        "carimañola que se fríe al instante",
+        "arroz con coco y pasas de fiesta",
+        "patacón pisao con hogao",
+        "raspao de tamarindo en la esquina"
       ],
       andina: [
         "bandeja paisa con todos los componentes",
@@ -218,27 +242,51 @@ const POD_SUBNICHES = {
         "tamal tolimense con chocolate",
         "lechona de fiesta con cuero crocante",
         "mondongo que resucita la mañana",
-        "arepa de choclo con queso"
+        "arepa de choclo con queso",
+        "ajiaco santafereño con guascas",
+        "bandeja paisa con huevo frito",
+        "tamal tolimense envuelto en hoja",
+        "lechona tolimense con cuero crocante",
+        "mondongo que resucita el domingo",
+        "chocolate santafereño con queso"
       ],
       pacifica: [
         "encocado de piangua en hoja de bijao",
         "sopa de borojó servida en totuma",
         "arroz con coco dulce de costa pacífica",
         "pescado del manglar con hierbas",
-        "tamal de pipián"
+        "tamal de pipián",
+        "encocado de cangrejo con coco",
+        "sancocho de gallina del pacífico",
+        "arroz atollado con camarón",
+        "ceviche de piangua con limón",
+        "tortilla de plátano con suero",
+        "bebida de borojó bien fría"
       ],
       llanos: [
         "mamona asada con yuca y guacamole",
         "carne a la llanera en fogón",
         "queso llanero rallado",
         "café cerrero de sabana",
-        "hallaca de maíz"
+        "hallaca de maíz",
+        "mamona asada con yuca y guacamole",
+        "carne a la llanera sobre el fogón",
+        "queso llanero rallado sobre arepa",
+        "hallaca de maíz con hogao",
+        "sancocho llanero de res",
+        "café cerrero de la sabana"
       ],
       amazonia: [
         "pescado de río envuelto en hoja",
         "fruto de selva con nombre propio",
         "café amazónico en taza caliente",
-        "comida de comunidad junto al agua"
+        "comida de comunidad junto al agua",
+        "pescado de río en hoja de bijao",
+        "casabe con mojo de ajo",
+        "fruto de selva con nombre propio",
+        "sopa de pescado con yuca",
+        "chontaduro asado en la brasa",
+        "café amazónico en taza de totumo"
       ],
       nacional: [
         "café de origen en taza de barro",
@@ -246,7 +294,13 @@ const POD_SUBNICHES = {
         "agua de panela con limón",
         "arroz con coco",
         "cacao con historia",
-        "cocina que huele a hogar"
+        "cocina que huele a hogar",
+        "café de origen en taza de barro",
+        "panela con queso fresco",
+        "agua de panela con limón",
+        "chocolate con arepa",
+        "tinto que espera sin juzgar",
+        "sancocho que une la familia"
       ]
     }
   },
@@ -296,32 +350,62 @@ const POD_SUBNICHES = {
         "gaita que abre camino",
         "champeta que se baila descalza",
         "porro que levanta la fiesta",
-        "tambor alegre que manda en la cumbiamba"
+        "tambor alegre que manda en la cumbiamba",
+        "vallenato que cuenta la historia del pueblo",
+        "champeta que se baila descalza",
+        "cumbia que levanta polvo",
+        "gaita que abre camino",
+        "porro sabanero con tambor",
+        "fandango hasta el amanecer"
       ],
       andina: [
         "vinilo rayado que suena mejor que nuevo",
         "rock bogotano en garaje",
         "salsa que abraza después del trabajo",
         "guitarra de serenata puntual",
-        "audífonos que protegen la ciudad"
+        "audífonos que protegen la ciudad",
+        "rock bogotano en garaje",
+        "salsa que abraza después del trabajo",
+        "guitarra de serenata puntual",
+        "pasillo colombiano con tiple",
+        "bambuco que cuenta el campo",
+        "vals que se baila en la plaza"
       ],
       pacifica: [
         "marimba de chonta llamando al río",
         "currulao que huele a manglar",
         "cununo que marca el paso",
-        "canto de arrullo para la comunidad"
+        "canto de arrullo para la comunidad",
+        "marimba de chonta llamando al río",
+        "currulao que huele a manglar",
+        "cununo que marca el paso",
+        "alabaos de luto y vida",
+        "bunde que celebra el nacimiento",
+        "chirimía que anuncia la fiesta"
       ],
       llanos: [
         "arpa que amansa el horizonte",
         "joropo que levanta polvo",
         "cuatro llanero junto al fogón",
-        "zapateo que retumba en la sabana"
+        "zapateo que retumba en la sabana",
+        "arpa que amansa el horizonte",
+        "joropo que levanta polvo",
+        "cuatro llanero junto al fogón",
+        "pasaje que cuenta el llano",
+        "contrapunteo de sabana",
+        "golpe llanero con zapateo"
       ],
       nacional: [
         "ritmo que se hereda",
         "bocina vieja que sigue fiel",
         "canción que identifica al barrio",
-        "baile que no necesita permiso"
+        "baile que no necesita permiso",
+        "ritmo que se hereda",
+        "bocina vieja que sigue fiel",
+        "canción que identifica al barrio",
+        "música que une al país",
+        "playlist que suena en todo el bus",
+        "canción que se canta sin saber la letra"
       ]
     }
   },
@@ -550,7 +634,14 @@ const POD_SUBNICHES = {
         "Real Cartagena con muralla y esperanza",
         "béisbol de barrio",
         "boxeo de esquina",
-        "kilómetro de playa como cancha"
+        "kilómetro de playa como cancha",
+        "Junior como sentimiento",
+        "Unión Magdalena con alma de puerto",
+        "Real Cartagena con muralla y esperanza",
+        "béisbol de barrio",
+        "boxeo de esquina",
+        "fútbol sala de barrio",
+        "balón de parque con nombre de equipo"
       ],
       andina: [
         "Nacional de corazón verde",
@@ -558,19 +649,40 @@ const POD_SUBNICHES = {
         "América caleño",
         "Millonarios embajador",
         "ciclismo de montaña",
-        "patinaje de barrio"
+        "patinaje de barrio",
+        "Nacional de corazón verde",
+        "Medellín poderoso",
+        "América caleño",
+        "Millonarios embajador",
+        "ciclismo de montaña",
+        "patinaje sobre ruedas",
+        "equipo de salón con bandera"
       ],
       pacifica: [
         "fútbol de arena",
         "balón que llega en lancha",
         "cancha improvisada entre lluvia",
-        "barra con tambor"
+        "barra con tambor",
+        "fútbol de arena",
+        "balón que llega en lancha",
+        "cancha improvisada entre lluvia",
+        "barra con tambor y canto",
+        "deporte de río",
+        "atletismo comunitario",
+        "carrera de la costa con paso"
       ],
       llanos: [
         "coleo como destreza",
         "caballo y jinete",
         "cancha de sabana",
-        "equipo de vereda"
+        "equipo de vereda",
+        "coleo como destreza",
+        "caballo y jinete",
+        "cancha de sabana",
+        "fútbol de vereda",
+        "béisbol llanero",
+        "deporte ecuestre de sabana",
+        "cancha de pique con penal"
       ],
       nacional: [
         "camiseta firmada por los que estuvieron",
@@ -578,7 +690,14 @@ const POD_SUBNICHES = {
         "grito de gol compartido",
         "medalla escolar",
         "selección que une al país",
-        "cancha de barrio"
+        "cancha de barrio",
+        "camiseta firmada por los que estuvieron",
+        "balón gastado con nombre",
+        "grito de gol compartido",
+        "medalla escolar",
+        "selección que une al país",
+        "cancha de barrio con portería de piedra",
+        "ligas de barrio con banderín"
       ]
     }
   },
@@ -623,7 +742,13 @@ const POD_SUBNICHES = {
         "vela encendida por promesa cumplida",
         "procesión con música y fe",
         "altar popular con flores de papel",
-        "milagro contado en voz baja"
+        "milagro contado en voz baja",
+        "promesa de carnaval con vela",
+        "santo de barrio en la esquina",
+        "romería de la virgen del carmen",
+        "exvoto pintado a mano costeño",
+        "altar casero con flores frescas",
+        "fe que se hereda de abuela"
       ],
       andina: [
         "Señor de los Milagros en Buga",
@@ -631,25 +756,49 @@ const POD_SUBNICHES = {
         "procesión de Popayán",
         "vela de silencio",
         "cofradía con capirote",
-        "capilla de carretera"
+        "capilla de carretera",
+        "Virgen de Chiquinquirá en su santuario",
+        "Señor de los Milagros de Buga",
+        "procesión de semana santa",
+        "vela de silencio en la capilla",
+        "cofradía con capirote y fe",
+        "romería de montaña"
       ],
       pacifica: [
         "santo de río",
         "vela que acompaña la canoa",
         "canto de promesa",
-        "altar de madera oscura"
+        "altar de madera oscura",
+        "santo de río que cuida la canoa",
+        "vela que acompaña la pesca",
+        "canto de promesa en el manglar",
+        "altar de madera con flores",
+        "fe de comunidad ribereña",
+        "milagro del río"
       ],
       llanos: [
         "cruz de sabana",
         "vela de madrugada",
         "promesa de camino",
-        "capilla de pueblo"
+        "capilla de pueblo",
+        "cruz de sabana que guía",
+        "vela de madrugada en la vereda",
+        "promesa de camino llanero",
+        "capilla de pueblo con fe",
+        "santo patrono del llano",
+        "romería de sabana"
       ],
       amazonia: [
         "fe de comunidad",
         "vela junto al río",
         "promesa de selva",
-        "espíritu de territorio"
+        "espíritu de territorio",
+        "fe de comunidad amazónica",
+        "vela junto al río",
+        "promesa de selva",
+        "espíritu de territorio que protege",
+        "altar de comunidad",
+        "milagro del río amazónico"
       ],
       nacional: [
         "exvoto pintado a mano",
@@ -657,7 +806,13 @@ const POD_SUBNICHES = {
         "romería con polvo y esperanza",
         "promesa cumplida",
         "altar casero",
-        "milagro pequeño de cada día"
+        "milagro pequeño de cada día",
+        "exvoto pintado a mano",
+        "vela encendida por promesa",
+        "romería con polvo y esperanza",
+        "promesa cumplida",
+        "altar casero con fe",
+        "santo que acompaña el hogar"
       ]
     }
   },
@@ -788,38 +943,74 @@ const POD_SUBNICHES = {
         "mochila arhuaca",
         "hamaca san jacinto",
         "totumo convertido en taza",
-        "trenzado de palma"
+        "trenzado de palma",
+        "sombrero vueltiao tejido a mano",
+        "mochila arhuaca con colores",
+        "hamaca san jacinto de algodón",
+        "totumo convertido en taza",
+        "trenzado de palma con memoria",
+        "artesanía costeña con firma local"
       ],
       andina: [
         "cerámica raquira",
         "ruana de lana",
         "sombrero aguadeño",
         "filigrana momposina",
-        "candela de fogón"
+        "candela de fogón",
+        "cerámica raquira con color",
+        "ruana de lana tejida a mano",
+        "sombrero aguadeño de palma",
+        "filigrana momposina de oro",
+        "candela de fogón que calienta",
+        "artesanía andina con tradición"
       ],
       pacifica: [
         "marimba artesanal",
         "tejido de fibra",
         "canoa tallada",
-        "madera con memoria"
+        "madera con memoria",
+        "marimba artesanal de chonta",
+        "tejido de fibra con color",
+        "canoa tallada a mano",
+        "madera con memoria de río",
+        "artesanía del pacífico con ritmo",
+        "objeto hecho a mano"
       ],
       llanos: [
         "cuero trabajado",
         "soga trenzada",
         "sombrero llanero",
-        "silla de montar"
+        "silla de montar",
+        "cuero trabajado a mano",
+        "soga trenzada con fuerza",
+        "sombrero llanero de palma",
+        "silla de montar con memoria",
+        "artesanía llanera con tradición",
+        "artesanía llanera con firma local"
       ],
       amazonia: [
         "tejido de comunidad",
         "semilla como joya",
         "cerámica ancestral",
-        "pintura de tierra"
+        "pintura de tierra",
+        "tejido de comunidad con color",
+        "semilla como joya artesanal",
+        "cerámica ancestral con memoria",
+        "pintura de tierra con historia",
+        "artesanía amazónica con tradición",
+        "objeto hecho a mano con identidad"
       ],
       nacional: [
         "manos que tejen historia",
         "objeto hecho a mano",
         "tradición que pasa de abuela a nieta",
-        "detalle artesanal con firma local"
+        "detalle artesanal con firma local",
+        "manos que tejen historia",
+        "objeto hecho a mano con orgullo",
+        "tradición que pasa de abuela a nieta",
+        "artesanía colombiana con identidad",
+        "objeto que cuenta la región",
+        "tradición que se hereda"
       ]
     }
   },
@@ -873,7 +1064,13 @@ const POD_SUBNICHES = {
         "la lista de metas tachada línea por línea",
         "el podio improvisado en la sala de la casa",
         "la primera medalla guardada como oro",
-        "el calendario con una sola palabra repetida: TODAVÍA"
+        "el calendario con una sola palabra repetida: TODAVÍA",
+        "el podio que se construye con horas robadas al sueño",
+        "la medalla que no pesa pero sostiene todo",
+        "el primer paso que se dio con miedo y se repitió con orgullo",
+        "la lista de metas que se tacha sin prisa pero sin pausa",
+        "el trofeo improvisado en la sala de la casa",
+        "la meta que se escribe en el espejo y se cumple en silencio"
       ]
     }
   },
@@ -925,7 +1122,13 @@ const POD_SUBNICHES = {
         "fuego de campamento rodeado de sillas desiguales",
         "el coro del barrio desentonando a gusto",
         "manos distintas sosteniendo la misma tarea",
-        "el local pequeño que siempre tiene espacio para uno más"
+        "el local pequeño que siempre tiene espacio para uno más",
+        "la mesa que se alarga cuando llega alguien nuevo",
+        "el grupo que se reúne sin convocatoria",
+        "la receta que se pasa de mano en mano sin papel",
+        "el equipo que juega sin cancha pero con corazón",
+        "la foto del barrio que nunca se completa porque siempre falta alguien",
+        "la silla que se suma sin que nadie la pida"
       ]
     }
   },
@@ -976,7 +1179,13 @@ const POD_SUBNICHES = {
         "la postal enviada desde el lugar equivocado y amada igual",
         "carretera que se hace nube al horizonte",
         "el sello del pasaporte como tatuaje de época",
-        "acampar bajo un cielo que no cobra por las estrellas"
+        "acampar bajo un cielo que no cobra por las estrellas",
+        "el mapa que se dobla en la página equivocada y aún así guía",
+        "la mochila que pesa menos cuando se comparte",
+        "el kilómetro cero pintado en la acera del pueblo",
+        "la carretera que se hace nube al horizonte",
+        "el sello del pasaporte como tatuaje de época",
+        "el campamento que se arma con lo que hay"
       ]
     }
   },
@@ -1028,7 +1237,13 @@ const POD_SUBNICHES = {
         "el regalo hecho a mano envuelto en periódico",
         "la hora feliz que se convirtió en tradición",
         "un pastel cuyo ingrediente real es la gente",
-        "el brindis de los que empezaron sin nada"
+        "el brindis de los que empezaron sin nada",
+        "la vela que se apaga con un solo soplo y un deseo",
+        "el confeti que aún cae del techo del recuerdo",
+        "la foto grupal que nunca sale perfecta y por eso es perfecta",
+        "el pastel cuyo ingrediente real es la gente",
+        "la hora feliz que se convirtió en tradición",
+        "el regalo hecho a mano envuelto en periódico"
       ]
     }
   },
@@ -1072,7 +1287,13 @@ const POD_SUBNICHES = {
         "el tag que firma sin robar la pared",
         "portería de dos piedras y un sueño",
         "la fila de la peluquería como noticiero",
-        "escalón que fue asiento, mesa y escritorio"
+        "escalón que fue asiento, mesa y escritorio",
+        "el muro que cuenta el barrio sin permiso",
+        "la esquina con nombre propio",
+        "la tiendita que abre de madrugada",
+        "el jugador de dominó que nunca pierde",
+        "la fila de la peluquería como noticiero",
+        "la bici con cinta en el manubrio"
       ]
     }
   },
@@ -1122,7 +1343,13 @@ const POD_SUBNICHES = {
         "la calle mojada que refleja los colores que le faltan",
         "voz que no necesita micrófono",
         "zapatos gastados que conocen cada hueco",
-        "la gorra puesta de frente cuando hay que mirar de frente"
+        "la gorra puesta de frente cuando hay que mirar de frente",
+        "el puño abierto que contiene una semilla",
+        "la barbilla arriba cuando todo baja",
+        "la verja pintada de colores aunque la pinten gris",
+        "el barrio que se abriga con lo que tiene",
+        "la voz que no necesita micrófono",
+        "los zapatos gastados que conocen cada hueco"
       ]
     }
   },
@@ -1169,7 +1396,13 @@ const POD_SUBNICHES = {
         "cable enredado que conecta la manzana",
         "la freestyle aprendida en la fila del bus",
         "micrófono improvisado y ritmo de brocha",
-        "el volumen exacto donde empieza el barrio"
+        "el volumen exacto donde empieza el barrio",
+        "la bocina en la ventana que prestó el ritmo al barrio",
+        "el beat que dobla la esquina antes que la gente",
+        "el silencio de tres segundos antes del drop",
+        "la freestyle aprendida en la fila del bus",
+        "el parlante hecho de dos cajas y fe",
+        "el cable enredado que conecta la manzana"
       ]
     }
   },
@@ -1213,7 +1446,13 @@ const POD_SUBNICHES = {
         "vapor que dibuja nubes de fábrica",
         "reja que enmarca el atardecer gratis",
         "pared con capas de todos los inviernos",
-        "cruce peatonal donde la gente cruza igual"
+        "cruce peatonal donde la gente cruza igual",
+        "el edificio que mira a otro edificio",
+        "la sombra del puente como casa",
+        "la antena que atrapa señales y pájaros",
+        "la ventana repetida que hace retícula",
+        "el vapor que dibuja nubes de fábrica",
+        "la reja que enmarca el atardecer gratis"
       ]
     }
   },
@@ -1269,7 +1508,31 @@ const POD_SUBNICHES = {
         "farol del malecón sobre el río magdalena",
         "ventana al mundo con vidrios de colores",
         "brisa del río que despeina el malecón",
-        "currambero con sombrero vueltiao ladeado"
+        "currambero con sombrero vueltiao ladeado",
+        "butifarra con yuca y suero costeño",
+        "carimañola que se fríe al instante",
+        "champeta que retumba en el barrio",
+        "suero costeño que acompaña todo",
+        "cumbia que se baila descalzo en la calle",
+        "tamarindo que se chupa en la esquina",
+        "marimonda de overol que provoca carcajadas",
+        "monocuco que baila con la multitud",
+        "guacherna de velas y tambores",
+        "cumbiamba que se arma en la acera",
+        "batalla de flores con confeti y sonrisas",
+        "arroyo que se desborda en temporada de lluvias",
+        "ventana al mundo de vidrio que cuenta la historia de la quilla",
+        "aleta de tiburón que homenajea al junior de barranquilla",
+        "puente pumarejo que cruza el magdalena de orilla a orilla",
+        "malecón del río que le volvió la cara al magdalena",
+        "caimán del río que homenajea al hombre caimán",
+        "luna del río que gira sobre el malecón",
+        "bocas de ceniza donde el magdalena encuentra el caribe",
+        "puerto mocho con playa urbana frente al caribe",
+        "monumento a joe arroyo en el parque de los músicos",
+        "estatua de shakira en el malecón del río",
+        "ciénaga de mallorquín con senderos ecológicos",
+        "museo del carnaval que guarda la memoria de la fiesta", "monumento a la ventana al mundo en la vía 40", "escultura del caimán del río en el malecón", "puente pumarejo iluminado de noche", "gran malecón del río con vista al magdalena", "luna del río noria panorámica", "bocas de ceniza mirador del río y el mar"
       ]
     }
   },

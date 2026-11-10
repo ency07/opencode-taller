@@ -25,7 +25,7 @@
   function defSlots() {
     return [
       { provider: 'Groq', model: 'openai/gpt-oss-20b', key: '', timeoutMs: 15000 },
-      { provider: 'OpenRouter', model: 'nvidia/nemotron-3-nano-omni-30b:free', key: '', timeoutMs: 15000 },
+      { provider: 'OpenRouter', model: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', key: '', timeoutMs: 15000 },
       { provider: 'Gemini', model: 'gemini-3.5-flash-lite', key: '', timeoutMs: 15000 }
     ];
   }
@@ -315,7 +315,9 @@
       [8000, 10000, 12000, 15000, 20000, 30000].map(function (t) {
         return '<option value="' + t + '"' + (s.timeoutMs === t ? ' selected' : '') + '>' + (t / 1000) + 's</option>';
       }).join('') +
-      '</select></div></div></div>';
+      '</select></div></div>' +
+      '<div style="margin:6px 0 2px;font-size:12px"><span data-slot-status class="hint" style="margin:0">Estado: sin verificar</span></div>' +
+      '</div>';
   }
 
   function readPanelSlots() {
@@ -327,6 +329,45 @@
         key: q('key').value.trim(),
         timeoutMs: parseInt(q('timeoutMs').value, 10) || 10000
       };
+    });
+  }
+
+  var MARCAS_PREFIJO = { Groq: ['gsk_'], OpenRouter: ['sk-or-'], Gemini: ['AIza', 'AQ.'] };
+  function estadoSlot(slot) {
+    if (!slot) return { estado: 'incompleto', msg: 'Estado: incompleto (sin datos)' };
+    var prov = slot.provider, key = String(slot.key || '').trim(), model = String(slot.model || '').trim();
+    if (!key) return { estado: 'incompleto', msg: 'Estado: incompleto — falta la clave API' };
+    if (!model) return { estado: 'incompleto', msg: 'Estado: incompleto — falta el modelo' };
+    // Validar prefijo de clave según proveedor
+    var marcasPropias = MARCAS_PREFIJO[prov] || [];
+    var propiaOk = marcasPropias.some(function (m) { return key.indexOf(m) === 0; });
+    var ajena = '';
+    Object.keys(MARCAS_PREFIJO).forEach(function (p) {
+      if (p === prov) return;
+      var ms = MARCAS_PREFIJO[p];
+      for (var i = 0; i < ms.length; i++) {
+        if (key.indexOf(ms[i]) === 0) ajena = p;
+      }
+    });
+    if (ajena) return { estado: 'error', msg: 'Estado: error — la clave parece de ' + ajena + ', no de ' + prov };
+    if (!propiaOk) return { estado: 'incompleto', msg: 'Estado: incompleto — prefijo de clave no reconocido para ' + prov };
+    return { estado: 'configurado', msg: 'Estado: configurado (' + prov + ' · ' + model + ')' };
+  }
+
+  function actualizarEstadoSlots() {
+    if (!panel) return;
+    Array.prototype.forEach.call(panel.querySelectorAll('.aiSlot'), function (b) {
+      var q = function (f) { return b.querySelector('[data-f="' + f + '"]'); };
+      var slot = {
+        provider: q('provider') ? q('provider').value : '',
+        model: q('model') ? q('model').value.trim() : '',
+        key: q('key') ? q('key').value.trim() : ''
+      };
+      var st = b.querySelector('[data-slot-status]');
+      if (!st) return;
+      var e = estadoSlot(slot);
+      st.textContent = e.msg;
+      st.style.color = e.estado === 'configurado' ? '#15803d' : (e.estado === 'error' ? '#b91c1c' : '#b45309');
     });
   }
 
@@ -363,7 +404,7 @@
     var sl = getSlots();
 
     // Config de visión (la lee/escribe ia-analisis.js; defaults si no cargó).
-    var vcfg = { provider: 'auto', geminiModel: 'gemini-3.5-flash-lite', openrouterModel: 'nvidia/nemotron-3-nano-omni-30b:free', timeoutMs: 20000 };
+    var vcfg = { provider: 'auto', geminiModel: 'gemini-3.5-flash-lite', openrouterModel: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', timeoutMs: 20000 };
     try {
       if (typeof window.PODVision !== 'undefined' && window.PODVision.getVisionConfig) {
         vcfg = window.PODVision.getVisionConfig();
@@ -378,6 +419,7 @@
     panel.innerHTML =
       '<div style="font-weight:700;margin-bottom:4px">Revisor con IA (opcional)</div>' +
       '<div class="hint" style="margin:0 0 6px">La IA revisa la ficha escrita antes de generar; no ve ni califica la imagen final. Prioridad 1 es el modelo principal; los demás son respaldo si el proveedor falla.</div>' +
+      '<div class="hint" style="margin:0 0 8px;padding:8px;border:1px solid rgba(148,163,184,.35);border-radius:8px;background:rgba(91,141,239,.06)"><b>Importante:</b> las claves API se guardan solo en esta pestaña (sessionStorage) por seguridad. Después de pegar una clave, pulsa <b>Guardar</b> o no se conservará. Al abrir una pestaña nueva tendrás que volver a introducirlas. El proveedor y el modelo sí se recuerdan (localStorage).</div>' +
       '<div id="aiSlots">' + sl.map(slotHTML).join('') + '</div>' +
       '<div style="font-weight:700;margin:10px 0 4px">Visión — analizar imagen</div>' +
       '<div class="hint" style="margin:0 0 6px">OpenRouter :free con visión (NANO-OMNI free, 50 req/día, sin consumir créditos). Gemini directo: serie 3.x para proyectos nuevos. Groq no tiene visión free.</div>' +
@@ -392,6 +434,7 @@
       }).join('') + '</select></div></div>' +
       '<div class="frow"><div><label>Modelo Gemini</label><input id="ai-vgmodel" value="' + escA(vgmodel) + '"></div>' +
       '<div><label>Modelo OpenRouter</label><input id="ai-vomodel" value="' + escA(vomodel) + '"></div></div>' +
+      '<div class="hint" style="margin:0 0 4px">Probar conexión hace una llamada real de VISIÓN al proveedor y modelo seleccionados (envía una imagen tiny). No marca éxito solo por tener una clave ni por responder texto: verifica que el modelo acepte imágenes.</div>' +
       '<div style="display:flex;gap:6px;align-items:center;margin:0 0 8px"><button id="ai-vtest" class="ghost">Probar conexión</button><span id="ai-vstatus" class="hint" style="margin:0"></span></div>' +
       '<label style="display:flex;align-items:center;gap:6px;margin:10px 0 4px"><input type="checkbox" id="ai-auto"' + (isAuto() ? ' checked' : '') + '> Revisar automáticamente al crear</label>' +
       '<label style="display:flex;align-items:center;gap:6px;margin:0 0 8px"><input type="checkbox" id="ai-apply"' + (autoApply() ? ' checked' : '') + '> Permitir que la IA cambie fichas automáticamente</label>' +
@@ -399,9 +442,33 @@
 
     document.body.appendChild(panel);
     bindSlotActions();
+    actualizarEstadoSlots();
+    panel.addEventListener('input', function () { actualizarEstadoSlots(); });
+    panel.addEventListener('change', function () { actualizarEstadoSlots(); });
 
     panel.querySelector('#ai-save').onclick = function () {
       var arr = readPanelSlots();
+      // Validar prefijos de clave antes de guardar (no enviar claves evidentemente incompatibles).
+      var avisos = [];
+      arr.forEach(function (sl, i) {
+        if (!sl.key) return;
+        var marcas = MARCAS_PREFIJO[sl.provider] || [];
+        var propiaOk = marcas.some(function (m) { return sl.key.indexOf(m) === 0; });
+        var ajena = '';
+        Object.keys(MARCAS_PREFIJO).forEach(function (p) {
+          if (p === sl.provider) return;
+          var ms = MARCAS_PREFIJO[p];
+          for (var j = 0; j < ms.length; j++) {
+            if (sl.key.indexOf(ms[j]) === 0) ajena = p;
+          }
+        });
+        if (ajena) avisos.push('Slot ' + (i + 1) + ': la clave parece de ' + ajena + ', no de ' + sl.provider + '. Corrige el proveedor o la clave.');
+        else if (!propiaOk) avisos.push('Slot ' + (i + 1) + ': prefijo de clave no reconocido para ' + sl.provider + '. Verifica la clave.');
+      });
+      if (avisos.length) {
+        tellStatus('Aviso: ' + avisos.join(' '), 'warn');
+        // No bloqueamos el guardado, pero avisamos. El usuario decide.
+      }
       // Las claves API solo se guardan en sessionStorage; localStorage conserva configuración no secreta.
       var sessionSaved = writeSessionKeys(arr);
       LS.setItem(SLOTS_KEY, JSON.stringify(arr.map(function (s) { return Object.assign({}, s, { key: '' }); })));
@@ -414,7 +481,7 @@
       LS.setItem('pod2_vision_cfg', JSON.stringify({
         provider: panel.querySelector('#ai-vprov').value,
         geminiModel: panel.querySelector('#ai-vgmodel').value.trim() || 'gemini-3.5-flash-lite',
-        openrouterModel: panel.querySelector('#ai-vomodel').value.trim() || 'nvidia/nemotron-3-nano-omni-30b:free',
+        openrouterModel: panel.querySelector('#ai-vomodel').value.trim() || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
         timeoutMs: parseInt(panel.querySelector('#ai-vtimeout').value, 10) || 20000
       }));
 

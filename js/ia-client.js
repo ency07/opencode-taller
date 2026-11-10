@@ -139,7 +139,7 @@
   /* OpenRouter: solo modelos con etiqueta :free (costo cero; el usuario tiene
      presupuesto limitado en el plan gratuito). Cualquier otro modelo se fuerza
      al default verificado. */
-  var OPENROUTER_DEFAULT_FREE = 'nvidia/nemotron-3-nano-omni-30b:free';
+  var OPENROUTER_DEFAULT_FREE = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
   function esOpenRouterFree(m) {
     var s = String(m || '');
     var i = s.lastIndexOf(':');
@@ -214,6 +214,20 @@
             detail = (eb && eb.error && eb.error.message) ? String(eb.error.message) : '';
           }
         } catch (e) { detail = ''; }
+        // Mensaje específico para 403 de Gemini: clave probablemente vinculada
+        // a Agent Platform y no a la Gemini API (o restricciones de servicio).
+        if (r.status === 403 && s.provider === 'Gemini') {
+          var detailLower = (detail || '').toLowerCase();
+          if (detailLower.indexOf('api key not valid') !== -1 || detailLower.indexOf('invalid api key') !== -1) {
+            detail = 'La clave Gemini es inválida. Genera una nueva en aistudio.google.com/apikey.';
+          } else if (detailLower.indexOf('permission') !== -1 || detailLower.indexOf('access') !== -1) {
+            detail = 'La clave Gemini no tiene permisos para este modelo. Verifica las restricciones de la clave en Google AI Studio.';
+          } else if (detailLower.indexOf('not enabled') !== -1 || detailLower.indexOf('api has not been used') !== -1) {
+            detail = 'La API de Gemini no está habilitada en tu proyecto. Actívala en Google Cloud Console.';
+          } else {
+            detail = 'La clave Gemini no tiene acceso a la Gemini API (posible clave de Agent Platform). Crea una clave Gemini API en aistudio.google.com/apikey.';
+          }
+        }
         var err = new Error(o.httpMessage ? o.httpMessage(r.status, detail) : ('HTTP ' + r.status));
         err.status = r.status;
         err.httpStatus = r.status;

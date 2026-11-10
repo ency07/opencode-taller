@@ -51,7 +51,7 @@ const revisor = fs.readFileSync(path.join(JS, 'ia-revisor.js'), 'utf8');
 ok(analisis.indexOf('45000') === -1, 'ia-analisis.js conserva el timeout ciego de 45s');
 ok(/openrouter\.ai\/api\/v1\/chat\/completions/.test(cliente) || /openrouter\.ai\/api\/v1\/chat\/completions/.test(analisis), 'falta endpoint OpenAI-compatible de OpenRouter');
 ok(/max-width|1024/.test(analisis) && /toDataURL\('image\/jpeg'/.test(analisis), 'downscale debe reducir a ~1024px JPEG');
-ok(/nvidia\/nemotron-3-nano-omni-30b:free/.test(analisis), 'falta default verificado OpenRouter :free con vision (nvidia nemotron omni)');
+ok(/nvidia\/nemotron-3-nano-omni-30b-a3b-reasoning:free/.test(analisis), 'falta default verificado OpenRouter :free con vision (nvidia nemotron omni)');
 ok(/gemini-3\.5-flash-lite/.test(analisis), 'falta default verificado gemini-3.5-flash-lite');
 ok(/nvidia\/nemotron-3-nano-omni/.test(analisis), 'falta fallback nemotron verificado');
 ok(/Clave inválida o sin permiso/.test(analisis), 'falta mensaje 401/403');
@@ -66,8 +66,9 @@ ok(analisis.indexOf('Groq') === -1 || !/vision.*groq|groq.*vision/i.test(analisi
   ok(revisor.indexOf('id="' + id + '"') !== -1, 'ia-revisor.js sin #' + id + ' en panel visión');
 });
 ok(revisor.indexOf('pod2_vision_cfg') !== -1, 'panel no guarda pod2_vision_cfg');
+ok(revisor.indexOf('llamada real de VISIÓN') !== -1, 'el hint de Probar conexión debe aclarar que es prueba de visión (envía imagen)');
 ok(/window\.getAISlots\s*=\s*getSlots/.test(revisor), 'ia-revisor.js no expone getAISlots (visión no reutiliza migrate)');
-ok(revisor.indexOf('nvidia/nemotron-3-nano-omni-30b:free') !== -1, 'panel revisor debe usar el default OpenRouter :free con vision');
+ok(revisor.indexOf('nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free') !== -1, 'panel revisor debe usar el default OpenRouter :free con vision');
 
 /* ---------- 3. Runtime: lógica pura en vm ---------- */
 vm.runInThisContext(cliente, { filename: 'ia-client.js' });
@@ -80,11 +81,11 @@ const slots = [
   { provider: 'OpenRouter', model: 'google/gemini-2.5-flash', key: 'sk-or-v1_x', timeoutMs: 15000 },
   { provider: 'Gemini', model: 'gemini-2.5-flash', key: 'AIza_x', timeoutMs: 15000 }
 ];
-const cfgAuto = { provider: 'auto', geminiModel: 'gemini-3.5-flash-lite', openrouterModel: 'nvidia/nemotron-3-nano-omni-30b:free', timeoutMs: 20000 };
+const cfgAuto = { provider: 'auto', geminiModel: 'gemini-3.5-flash-lite', openrouterModel: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', timeoutMs: 20000 };
 
 // auto: OpenRouter :free con vision es la prioridad por defecto (cero creditos)
 let t = V.pickVisionTarget(slots, cfgAuto, { google: true, openrouter: true });
-ok(t && t.kind === 'openrouter' && t.model === 'nvidia/nemotron-3-nano-omni-30b:free', 'auto debe preferir OpenRouter :free con vision (dio ' + (t && t.kind) + '/' + (t && t.model) + ')');
+ok(t && t.kind === 'openrouter' && t.model === 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', 'auto debe preferir OpenRouter :free con vision (dio ' + (t && t.kind) + '/' + (t && t.model) + ')');
 // auto + OpenRouter bloqueado → Gemini directo con modelo nuevo
 t = V.pickVisionTarget(slots, cfgAuto, { google: true, openrouter: false });
 ok(t && t.kind === 'gemini' && t.model === 'gemini-3.5-flash-lite', 'auto con OpenRouter bloqueado debe ir a Gemini 3.5 (dio ' + (t && t.kind) + '/' + (t && t.model) + ')');
@@ -109,7 +110,7 @@ ok(V.migrateVisionModel('gemini-3.5-flash-lite') === 'gemini-3.5-flash-lite', 'm
 // defaults sin localStorage configurado
 const dc = V.getVisionConfig();
 ok(dc.provider === 'auto' && dc.timeoutMs === 20000, 'defaults de visión incorrectos');
-ok(dc.openrouterModel === 'nvidia/nemotron-3-nano-omni-30b:free', 'default OpenRouter de visión debe ser el modelo :free con visión (nvidia nemotron omni)');
+ok(dc.openrouterModel === 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', 'default OpenRouter de visión debe ser el modelo :free con visión (nvidia nemotron omni)');
 
 /* ---------- 4. preflight con fetch stub ---------- */
 const realFetch = global.fetch;
@@ -126,7 +127,49 @@ async function runPreflightTests() {
   stubFetch(realFetch);
 }
 
-runPreflightTests().then(function () {
+/* ---------- 5. testVisionConnection envía imagen (no solo texto) ---------- */
+async function runVisionProbeTests() {
+  // Stub IAClient.chat para capturar argumentos (sin sobrescribir el cliente real)
+  var captured = null;
+  var realChat = global.window.IAClient.chat;
+  var realTextOf = global.window.IAClient.textOf;
+  global.window.IAClient.chat = function (slot, opts) {
+    captured = { slot: slot, opts: opts };
+    return Promise.resolve({ candidates: [{ content: { parts: [{ text: 'rojo' }] } }] });
+  };
+  global.window.IAClient.textOf = function () { return 'rojo'; };
+  // Stub fetch para preflight
+  stubFetch(function () { return Promise.resolve({ ok: false, status: 400, json: function () { return Promise.resolve({}); } }); });
+  // Configurar slots con OpenRouter
+  global.window.getAISlots = function () {
+    return [{ provider: 'OpenRouter', model: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', key: 'sk-or-test', timeoutMs: 15000 }];
+  };
+  var r = await window.testVisionConnection();
+  ok(r && r.ok === true && r.vision === true, 'testVisionConnection debe devolver vision:true cuando el modelo acepta imagen');
+  ok(captured && captured.opts && captured.opts.openaiContent && captured.opts.openaiContent.length === 2, 'testVisionConnection debe enviar openaiContent con 2 elementos (texto + imagen)');
+  ok(captured && captured.opts.openaiContent && captured.opts.openaiContent[1] && captured.opts.openaiContent[1].type === 'image_url', 'testVisionConnection debe enviar image_url');
+  ok(captured && captured.opts.openaiContent && captured.opts.openaiContent[1] && captured.opts.openaiContent[1].image_url && captured.opts.openaiContent[1].image_url.url && captured.opts.openaiContent[1].image_url.url.indexOf('data:image/png;base64,') === 0, 'testVisionConnection debe enviar data-URI PNG');
+  // Gemini path
+  global.window.getAISlots = function () {
+    return [{ provider: 'Gemini', model: 'gemini-3.5-flash-lite', key: 'AIza-test', timeoutMs: 15000 }];
+  };
+  captured = null;
+  r = await window.testVisionConnection();
+  ok(r && r.ok === true && r.vision === true, 'testVisionConnection Gemini debe devolver vision:true');
+  ok(captured && captured.opts && captured.opts.geminiParts && captured.opts.geminiParts.length === 1, 'testVisionConnection Gemini debe enviar geminiParts');
+  ok(captured && captured.opts.geminiParts && captured.opts.geminiParts[0] && captured.opts.geminiParts[0].inlineData && captured.opts.geminiParts[0].inlineData.mimeType === 'image/png', 'testVisionConnection Gemini debe enviar inlineData PNG');
+  // 400 → vision:false
+  global.window.IAClient.chat = function () {
+    var e = new Error('rechazó la imagen'); e.httpStatus = 400; throw e;
+  };
+  r = await window.testVisionConnection();
+  ok(r && r.ok === false && r.vision === false, 'testVisionConnection debe devolver vision:false en HTTP 400');
+  global.window.IAClient.chat = realChat;
+  global.window.IAClient.textOf = realTextOf;
+  stubFetch(realFetch);
+}
+
+runPreflightTests().then(runVisionProbeTests).then(function () {
   const passed = failures.length === 0;
   console.log((passed ? 'PASS' : 'FAIL') + '  ai-vision-diag  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
   failures.forEach(function (f) { console.log('  X ' + f); });
