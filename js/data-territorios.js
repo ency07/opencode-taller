@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CATALOGO DE TERRITORIOS CREATIVOS — Fase 1 (Plan, sin modificar motor existente)
  * Repositorio: ency07/opencode-taller (rama: feat/creative-territory-engine)
  * Este archivo es un catálogo de datos independiente. No modifica motor-nucleo.js,
@@ -257,6 +257,78 @@ const POD_CREATIVE_TERRITORIES = {
     visualIdentity: "minimalista_contemporaneo",
     brandAssociation: [],
     priority: 3
+  },
+
+  PET_LOVERS: {
+    id: "PET_LOVERS",
+    label: "Mascotas",
+    label_es: "Mascotas",
+    label_en: "Pet Lovers",
+    description: "El nicho mas fuerte de POD. Razas especificas, identidad de pet parent, regalos emocionales.",
+    promptDirective: "Deriva el simbodo de la mascota concreta (raza, especie) y su vinculo con el humano. Evita mascotas genericas sin identidad.",
+    resources: ["silueta_raza", "patas", "collar"],
+    themes: ["pet_parent", "rescue_dog", "breed_pride"],
+    restrictions: ["no_mascota_generica_sin_identidad", "no_humanizar_en_exceso"],
+    compatibleStyles: ["Kids Storybook", "Hand-Drawn", "Minimal Modern", "Retro 70s", "Acuarela Suelta", "Folk Popular", "Collage Cut-Paper", "Pixel / 8-bit"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle"],
+    visualIdentity: "mascotas_afecto",
+    brandAssociation: [],
+    priority: 1
+  },
+
+  PROFESSION_PRIDE: {
+    id: "PROFESSION_PRIDE",
+    label: "Profesiones y oficios",
+    label_es: "Profesiones y oficios",
+    label_en: "Profession Pride",
+    description: "Evergreen. Enfermeras, profesores, bomberos, policias, electricistas. Humor interno y regalos entre colegas.",
+    promptDirective: "Construye el diseno desde el orgullo profesional y el humor interno del oficio. El simbolo debe ser reconocible para alguien del gremio.",
+    resources: ["herramienta_oficio", "uniforme", "insignia"],
+    themes: ["orgullo_profesional", "humor_laboral", "regalo_colega"],
+    restrictions: ["no_estereotipo_oficico", "no_humanizar_en_exceso"],
+    compatibleStyles: ["Vintage Desgastado", "Blueprint / Technical", "Brutalist", "Hand-Drawn", "Retro 70s", "Bordado / Puntada", "Folk Popular", "Stencil Urbano"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "professional_community"],
+    visualIdentity: "profesion_orgullo",
+    brandAssociation: [],
+    priority: 2
+  },
+
+  SARCASM_HUMOR: {
+    id: "SARCASM_HUMOR",
+    label: "Humor sarcastico",
+    label_es: "Humor sarcastico",
+    label_en: "Sarcastic Humor",
+    description: "El mayor motor de compras impulsivas. Humor de oficina, memes, in-jokes especificos que solo un grupo entiende.",
+    promptDirective: "El texto es el protagonista: fraSe sarcastica, autoironica o de in-joke. El simbolo debe reforzar el chiste, no competir con el.",
+    resources: ["tipografia_bold", "onomatopeya", "cara_expresiva"],
+    themes: ["sarcasmo", "introvertido", "burnout", "in_joke"],
+    restrictions: ["no_humor_generico_saturado", "no_ofender_grupos"],
+    compatibleStyles: ["Brutalist", "Y2K / Cyber", "Retro 80s Neon", "Vaporwave", "Stencil Urbano", "Grunge / DIY", "Risograph", "Pixel / 8-bit"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle"],
+    visualIdentity: "humor_sarcastico",
+    brandAssociation: [],
+    priority: 3
+  },
+
+  HOBBY_MICRO: {
+    id: "HOBBY_MICRO",
+    label: "Hobbies micro-nicho",
+    label_es: "Hobbies micro-nicho",
+    label_en: "Hobby Micro-Niche",
+    description: "Pickleball, disc golf, pesca, caza, jardineria, gaming. Identidad fuerte, busqueda long-tail, comunidades activas.",
+    promptDirective: "Deriva el simbolo del hobby concreto: su equipo, su terreno, su vocabulario. El diseno debe ser reconocible para el practicante.",
+    resources: ["equipo_hobby", "terreno", "vocabulario_propio"],
+    themes: ["identidad_hobby", "regalo_hobby", "comunidad"],
+    restrictions: ["no_hobby_generico_sin_equipo", "no_confundir_deporte_con_hobby"],
+    compatibleStyles: ["Hand-Drawn", "Retro 70s", "Minimal Modern", "Kids Storybook", "Acuarela Suelta", "Collage Cut-Paper", "Vintage Desgastado", "Blueprint / Technical"],
+    compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle"],
+    visualIdentity: "hobby_identidad",
+    brandAssociation: [],
+    priority: 4
   },
 
   RETRO_VINTAGE: {
