@@ -58,7 +58,28 @@ const ESTILO_INFO = {
   "Metallic Foil Ready / Listo para foil": "áreas planas = adhesivo + foil en post-proceso (DTF)",
   "Glitter Zone / Zona glitter": "zona plana = base + glitter, sin detalle fino",
   "Glow Zone / Zona fosforescente": "capa plana fosforescente sobre blanco",
-  "Deportiva / Sports": "deporte, atletismo, movimiento, contraste de intensidad, energía"
+  "Deportiva / Sports": "deporte, atletismo, movimiento, contraste de intensidad, energía",
+
+  /* ===== ESTILOS NUEVOS (20) ===== */
+  "Neón punk": "neón agresivo, negro profundo, rebeldía urbana, alto contraste",
+  "Cómic grunge": "viñeta sucia, trama rota, tinta corrida, actitud underground",
+  "Noir gráfico": "blanco y negro, sombras duras, contraste extremo, misterio",
+  "Superflat": "planos de color, contorno fino, pop japonés, superficie lisa",
+  "Neoexpresionismo": "pincelada violenta, color crudo, emoción directa, textura",
+  "Cartoon moderno": "línea limpia, formas redondeadas, color plano, expresivo",
+  "Constructivismo": "geometría angular, rojo y negro, tipografía funcional, propaganda",
+  "Caricatura": "exageración, rasgos distorsionados, humor, trazo rápido",
+  "Art déco": "geométrico simétrico, dorado y negro, elegancia, década de 1920",
+  "Bauhaus": "funcional, geométrico primario, tipografía sans, rojo/azul/amarillo",
+  "Line art minimalista": "línea continua, sin relleno, elegancia, espacio negativo",
+  "Pop art": "colores saturados, repetición, ícono de masa, Ben-Day dots",
+  "Pintura al óleo": "pincelada visible, textura rica, claroscuro, tradición",
+  "Cartoon retro": "línea gruesa, colores vintage, expresión exagerada, años 30-50",
+  "Flat geométrico": "formas geométricas planas, sin degradados, color sólido, moderno",
+  "Doodle a dos colores": "garabato a mano, dos tintas, espontáneo, divertido",
+  "Línea a dos tintas": "dos colores de línea, sin relleno, elegante, minimal",
+  "Línea art de una tinta": "una sola tinta, línea pura, sin sombreado, clásico",
+  "Blanco y negro": "monocromo, contraste, sin color, atemporal"
 };
 
 const ESTILOS_LIST = Object.keys(ESTILO_INFO);
@@ -115,7 +136,28 @@ const SATURACION = {
   "Metallic Foil Ready / Listo para foil": ["áreas complejas que no registran foil", "adhesivo que sangra en detalles finos"],
   "Glitter Zone / Zona glitter": ["glitter en zonas con detalle", "base que no sostiene la partícula"],
   "Glow Zone / Zona fosforescente": ["fosforescencia en áreas finas", "capa base blanca insuficiente"],
-  "Deportiva / Sports": ["ilustración decorativa sin deporte", "paleta genérica sin energía"]
+  "Deportiva / Sports": ["ilustración decorativa sin deporte", "paleta genérica sin energía"],
+
+  /* ===== SATURACIÓN ESTILOS NUEVOS ===== */
+  "Neón punk": ['neón decorativo sin mensaje', 'glow que compite con el texto'],
+  "Cómic grunge": ['suciedad que borra la lectura', 'trama rota sin narrativa'],
+  "Noir gráfico": ['contraste que aplasta detalles', 'sombra sin contenido'],
+  "Superflat": ['planos sin jerarquía', 'color que compite con la palabra'],
+  "Neoexpresionismo": ['pincelada que tapa el texto', 'textura sin foco'],
+  "Cartoon moderno": ['línea gruesa que cierra formas', 'color plano sin jerarquía'],
+  "Constructivismo": ['geometría que aplasta la lectura', 'tipografía ilegible por ángulos'],
+  "Caricatura": ['exageración que deforma el texto', 'rasgo sin narrativa'],
+  "Art déco": ['ornamento que compite con el mensaje', 'simetría sin jerarquía de lectura'],
+  "Bauhaus": ['funcionalismo vacío', 'geometría sin contenido'],
+  "Line art minimalista": ['línea demasiado fina para imprimir', 'minimalismo que vacía el diseño'],
+  "Pop art": ['saturación que fatiga', 'repetición sin sentido'],
+  "Pintura al óleo": ['textura que tapa detalles finos', 'pincelada que deforma la letra'],
+  "Cartoon retro": ['línea gruesa que cierra contornos', 'vintage sin mensaje'],
+  "Flat geométrico": ['formas sin composición', 'color plano sin jerarquía'],
+  "Doodle a dos colores": ['garabato sin narrativa', 'dos tintas que compiten'],
+  "Línea a dos tintas": ['línea que se cruza sin orden', 'dos tintas sin jerarquía'],
+  "Línea art de una tinta": ['línea demasiado fina para tejido', 'sin tinta de relleno que dé peso'],
+  "Blanco y negro": ['contraste sin grises que aplasta', 'monocromo sin jerarquía de valores']
 };
 
 const LAYOUTS = [
