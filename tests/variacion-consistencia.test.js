@@ -34,8 +34,8 @@ const NAMES = ['01A', '01B', '01C'];
 const KEYS = ['HEAVY', 'SOFT', 'MODERN'];
 
 /* 1) Estático: el tratamiento fijo se aplica también en variación. */
-ok(/const fixedTreatment = \(contactIdentity \|\| MOTOR_STATE\.workflowMode === 'explore' \|\| MOTOR_STATE\.workflowMode === 'variation'\) \? _CONTACT_TREATMENT_ORDER\[k\] : '';/.test(motor),
-  'variación debe fijar el tratamiento A/B/C igual que CONTACTSHEET y exploración');
+ok(/const canonicalTreatment = \(contactIdentity \|\| MOTOR_STATE\.workflowMode === 'explore' \|\| MOTOR_STATE\.workflowMode === 'variation'\) \? _CONTACT_TREATMENT_ORDER\[k\] : '';/.test(motor),
+  'variación debe fijar el tratamiento A/B/C igual que CONTACTSHEET y exploración (respetando el territorio)');
 
 /* 2) Estático: audiencia legible en ficha y en el árbitro. */
 ok(/function _audienceDisplay\(/.test(motor), 'debe existir el helper de audiencia legible');

@@ -48,7 +48,7 @@ DEAD.forEach(function (m) {
   ok(!inDefSlot, 'modelo muerto como default: ' + m);
 });
 ok(revisor.indexOf("model: 'gemini-3.5-flash-lite'") !== -1, 'falta default vivo gemini-3.5-flash-lite (serie 3.x p/ claves nuevas)');
-ok(revisor.indexOf("model: 'nvidia/nemotron-3-nano-omni-30b:free'") !== -1, 'falta default vivo OpenRouter :free (nvidia nemotron omni)');
+ok(revisor.indexOf("model: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'") !== -1, 'falta default vivo OpenRouter :free (nvidia nemotron omni)');
 ok(revisor.indexOf("model: 'openai/gpt-oss-20b'") !== -1, 'falta default vivo openai/gpt-oss-20b');
 ok(/'gemini-2\.5-flash': 'gemini-3\.5-flash-lite'/.test(cliente), 'DEAD_MODELS (ia-client) debe migrar 2.5 → 3.5 (slots guardados con claves nuevas)');
 ok(!/:\s*'gemini-2\.5-flash'/.test(codeWithoutComments(cliente).replace(/'gemini-2\.5-flash':/g, '')), 'ningún objetivo muerto debe apuntar a 2.5 (ia-client)');

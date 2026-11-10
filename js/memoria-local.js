@@ -283,7 +283,8 @@
       estilo: { A: 'Auto', B: 'Auto', C: 'Auto' },
       audiencia: { A: 'Auto', B: 'Auto', C: 'Auto' },
       jerarquia: { A: 'Auto', B: 'Auto', C: 'Auto' },
-      layout: { A: 'Auto', B: 'Auto', C: 'Auto' }
+      layout: { A: 'Auto', B: 'Auto', C: 'Auto' },
+      tratamiento: { A: 'Auto', B: 'Auto', C: 'Auto' }
     };
   }
 
@@ -291,7 +292,7 @@
     const saved = getJSON(memKey(['locks', market, product]), {});
     const base = defaultLocks();
 
-    ['estilo', 'audiencia', 'jerarquia', 'layout'].forEach(function (field) {
+    ['estilo', 'audiencia', 'jerarquia', 'layout', 'tratamiento'].forEach(function (field) {
       ['A', 'B', 'C'].forEach(function (card) {
         if (saved && saved[field] && saved[field][card]) {
           base[field][card] = saved[field][card];
@@ -307,8 +308,11 @@
   }
 
   function setLockValue(market, product, field, card, value) {
-    const locks = loadLocks(market, product);
-    if (!locks[field]) locks[field] = defaultLocks()[field];
+    /* FIX 3D: guardar solo los valores explícitos del usuario (sin fusionar
+       con defaultLocks). Así _rawLocks() distingue un 'Auto' explícito de un
+       'Auto' por defecto (no fijado), necesario para el estado PRESERVE. */
+    const locks = getJSON(memKey(['locks', market, product]), {}) || {};
+    if (!locks[field]) locks[field] = {};
     locks[field][card] = value;
     const persisted = saveLocks(market, product, locks);
     return { locks: locks, persisted: persisted };

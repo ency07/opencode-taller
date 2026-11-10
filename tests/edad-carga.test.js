@@ -58,8 +58,8 @@ function ficha(jerarquia, extra) {
 ok(motorSrc.includes('CARGA POR EDAD'), 'la línea CARGA POR EDAD existe en el motor');
 ok(motorSrc.includes("adulto: 'adulto → sobrio y de peso") && motorSrc.includes("joven: 'joven → impacto inmediato") && motorSrc.includes("infantil: 'infantil → simple y redondeada"),
   'las 3 variantes por edad existen en la fuente');
-ok(motorSrc.includes('no cambia el esqueleto estructural ni la jerarquía de la ficha'),
-  'la línea declara subordinación al esqueleto y la jerarquía');
+ok(motorSrc.includes('La audiencia adapta el esqueleto a su perfil'),
+  'la línea declara adaptación del esqueleto a la audiencia');
 
 /* --- 1) Set manual mixto: variante correcta por ficha (determinista) --- */
 MOTOR_STATE.workflowMode = 'explore';
@@ -89,7 +89,7 @@ ok(bloqueDe(outMix, '01B').indexOf('CARGA POR EDAD: joven → impacto inmediato'
 ok(bloqueDe(outMix, '01C').indexOf('CARGA POR EDAD: infantil → simple y redondeada') !== -1, '01C recibe la variante infantil');
 ok(bloqueDe(outMix, '01A').indexOf('joven →') === -1 && bloqueDe(outMix, '01B').indexOf('adulto →') === -1,
   'ninguna ficha mezcla variantes de otra edad');
-ok(count(outMix, 'no cambia el esqueleto estructural ni la jerarquía de la ficha') === 3, 'el remate de subordinación va en las 3 fichas');
+ok(count(outMix, 'La audiencia adapta el esqueleto a su perfil') === 3, 'el remate de adaptación va en las 3 fichas');
 
 /* --- 2) Rangos numéricos normalizados; edad amplia no inventa línea --- */
 const rango = {
@@ -152,7 +152,7 @@ ok(count(outSin, 'CARGA POR EDAD:') === 0, 'sin edad no se emite la línea (nada
 ok(count(outSin, 'ID DE VALIDACIÓN DE AUDIENCIA:') === 3, 'las demás líneas de la ficha siguen intactas');
 
 /* --- 4) Blindaje de lo construido (conteos exactos) --- */
-ok(count(outMix, 'REGLAS COMUNES A LAS 3 FICHAS:') === 1, 'REGLAS COMUNES sigue en 1');
+ok(count(outMix, 'REGLAS DEL ARTE ESTAMPADO') === 1, 'REGLAS DEL ARTE ESTAMPADO sigue en 1');
 ok(count(outMix, 'LAYOUT (ubicación):') === 3, 'LAYOUT sigue en 3');
 ok(count(outMix, 'TÉCNICA GLOBAL:') === 3, 'TÉCNICA GLOBAL sigue en 3');
 ok(count(outMix, 'ESQUELETO ESTRUCTURAL (MANDA):') === 3, 'ESQUELETO (MANDA) sigue en 3');

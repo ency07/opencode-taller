@@ -55,7 +55,7 @@ MOTOR_STATE.subniche = 'celebracion_col';
 lockAudience('infantil_col');
 let set = buildCandidate(resolveAudiences(), null);
 let prompt = formatPrompt({ set: set });
-ok(count(prompt, 'AUDIENCIA DE LA FICHA: «Infantil Colombia»') === 3, 'las 3 fichas deben nombrar la audiencia en palabras humanas');
+ok(count(prompt, 'AUDIENCIA DE LA FICHA: «Niños y niñas de Colombia»') === 3, 'las 3 fichas deben nombrar la audiencia en palabras humanas');
 ok(count(prompt, 'modelo infantil') === 3, 'la audiencia infantil debe exigir modelo infantil en el mockup');
 ok(prompt.indexOf('talla de niño') !== -1, 'la audiencia infantil debe exigir talla de niño');
 ok(prompt.indexOf('un modelo adulto genérico invalida la ficha') !== -1, 'debe invalidar el modelo adulto genérico');
@@ -71,7 +71,7 @@ const costeñoKey = 'colombia|costa_caribe';
 lockAudience('coste_adulta_f', costeñoKey);
 set = buildCandidate(resolveAudiences(), null);
 prompt = formatPrompt({ set: set });
-ok(prompt.indexOf('AUDIENCIA DE LA FICHA: «Costeña adulta 29-55»') !== -1, 'la etiqueta debe llegar al prompt');
+ok(prompt.indexOf('AUDIENCIA DE LA FICHA: «Mujeres adultas costeñas»') !== -1, 'la etiqueta debe llegar al prompt');
 ok(prompt.indexOf('modelo mujer adulta con corte y talla femeninos') !== -1, 'mujer adulta: modelo mujer adulta y corte femenino');
 clearAudience(costeñoKey);
 

@@ -102,10 +102,15 @@ MOTOR_STATE.product = 'CAMISETA SOFT';
 MOTOR_STATE.stampSide = 'auto';
 
 /* --- 4) parser de veredictos --- */
-ok(PODValidador.parseVerdict('```json\n{"resumen":"x"}\n```').resumen === 'x', 'JSON con cerca de markdown ok');
-ok(PODValidador.parseVerdict('prefacio texto {"resumen":"y"} colón').resumen === 'y', 'JSON entremezclado ok');
+const _fv = '{"fichas":[{"ficha":"01A","estilo_ok":true},{"ficha":"01B","estilo_ok":true},{"ficha":"01C","estilo_ok":true}],"resumen":"x"}';
+ok(PODValidador.parseVerdict('```json\n' + _fv + '\n```').resumen === 'x', 'JSON con cerca de markdown ok');
+ok(PODValidador.parseVerdict('prefacio texto ' + _fv + ' colon').resumen === 'x', 'JSON entremezclado ok');
 ok(PODValidador.parseVerdict('no es json') === null, 'texto basura da null');
-ok(PODValidador.parseVerdict('{"resumen":"z"') === null, 'JSON incompleto da null (sin romper)');
+ok(PODValidador.parseVerdict('{"resumen":"z"}') === null, 'JSON sin fichas da null');
+ok(PODValidador.parseVerdict('{"fichas":[{"ficha":"01A"}],"resumen":"z"}') === null, 'JSON con menos de 3 fichas da null');
+ok(PODValidador.parseVerdict(_fv) !== null, 'JSON con 3 fichas validas parsea ok');
+ok(PODValidador.parseVerdict('texto {suelto} alrededor ' + _fv + ' y otra llave {x}') !== null, 'JSON con llaves sueltas alrededor se extrae balanceado');
+ok(PODValidador.parseVerdict('{"fichas":[{"ficha":"01A"},{"ficha":"01B"},{"ficha":"01C"}],"nota":"tiene {llaves} anidadas"}') !== null, 'JSON con llaves anidadas en strings parsea ok');
 
 /* --- 5) estático: panel y script conectados en index.html --- */
 const idx = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');

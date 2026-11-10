@@ -70,9 +70,9 @@ ok(/Paletas distintas/.test(motor) && !/Colores distintos/.test(motor), 'el badg
 
 // Los selectores muestran el bloqueo guardado, no confunden la ficha generada
 // con una elección manual que luego impediría volver a Auto.
-ok(/_loadLocks\(memLocksMarket\(\), MOTOR_STATE\.product\)\.audiencia\[k\] === a/.test(motor), 'la audiencia seleccionada debe reflejar el lock manual');
-ok(/_loadLocks\(memLocksMarket\(\), MOTOR_STATE\.product\)\.jerarquia\[k\] === m/.test(motor), 'la jerarquía seleccionada debe reflejar el lock manual');
-ok(/_loadLocks\(memLocksMarket\(\), MOTOR_STATE\.product\)\.jerarquia\[k\] === 'Auto'/.test(motor), 'Auto debe quedar seleccionado si no existe jerarquía fijada');
+ok(/\(modeLocks\.audiencia \|\| \{\}\)\[k\] === a/.test(motor), 'la audiencia seleccionada debe reflejar el lock manual');
+ok(/\(modeLocks\.jerarquia \|\| \{\}\)\[k\] === m/.test(motor), 'la jerarquía seleccionada debe reflejar el lock manual');
+ok(/\(modeLocks\.jerarquia \|\| \{\}\)\[k\] === 'Auto'/.test(motor), 'Auto debe quedar seleccionado si no existe jerarquía fijada');
  
 // La jerarquía seleccionada manda sobre escala/peso; la arquitectura decide ubicación.
 ok(/si existe mensaje proporcionado, conservarlo literalmente y usarlo como único copy principal; no exigir tres niveles/i.test(motor), 'el prompt general no debe exigir tres niveles que contradigan un mensaje único');

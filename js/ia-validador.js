@@ -38,6 +38,49 @@
     }[j] || 'franja no declarada';
   }
 
+  function _audienceMockupExpectation(audienceId) {
+    var ap = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES && AUD_PROFILES[audienceId]) || {};
+    var edad = String(ap.edad || '').toLowerCase();
+    var genero = String(ap.genero || '').toLowerCase();
+    if (edad === 'infantil') return 'modelo infantil (niño o niña según el perfil) con talla infantil; un modelo adulto genérico invalida la ficha';
+    if (genero === 'femenino') return 'modelo mujer' + (edad ? ' (' + edad + ')' : '') + ' con corte y talla femeninos';
+    if (genero === 'masculino') return 'modelo hombre' + (edad ? ' (' + edad + ')' : '') + ' con corte y talla masculinos';
+    return 'modelo acorde al perfil (edad y género del perfil), sin forzar género ni edad';
+  }
+
+  function _audienceProfile(audienceId) {
+    var ap = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES && AUD_PROFILES[audienceId]) || {};
+    return {
+      id: String(audienceId || ''),
+      label: String((typeof getAudienceLabel === 'function' ? getAudienceLabel(audienceId) : '') || ap.label || audienceId || ''),
+      edad: String(ap.edad || ''),
+      genero: String(ap.genero || ''),
+      perfil: String(ap.perfil || ''),
+      region: String(ap.region || ''),
+      requisitoMockup: _audienceMockupExpectation(audienceId)
+    };
+  }
+
+  function _truncarReglaMockup(texto, limite) {
+    var t = String(texto == null ? '' : texto);
+    if (!t) return '';
+    limite = (typeof limite === 'number' && limite > 0) ? limite : 3000;
+    if (t.length <= limite) return t;
+    var mejor = -1;
+    for (var i = Math.min(limite, t.length) - 1; i >= 0; i--) {
+      var ch = t.charAt(i);
+      if (ch === '.' || ch === ';' || ch === ')') {
+        var siguiente = t.charAt(i + 1);
+        if (siguiente === '' || siguiente === ' ' || siguiente === '\n' || siguiente === '\r') {
+          mejor = i + 1;
+          break;
+        }
+      }
+    }
+    if (mejor <= 0) mejor = limite;
+    return t.slice(0, mejor).trim();
+  }
+
   function extraerContrato() {
     var set = null;
     try { set = typeof LAST_RESULT !== 'undefined' && LAST_RESULT ? LAST_RESULT.set : null; } catch (e) { set = null; }
@@ -103,11 +146,13 @@
   function construirPromptValidador(contrato, estructuraHoja) {
     var lineas = [];
     (contrato || []).forEach(function (f) {
+      var _ap = _audienceProfile(f.audiencia);
       lineas.push(
-        f.ficha + ': estilo «' + (f.estilo || 'sin declarar') + '» (inmutable)' +
-        '; jerarquía ' + (f.jerarquia || '?') + ' (peso exigido ' + (f.peso || '?') + ')' +
-        (f.objeto ? '; objeto autorizado «' + f.objeto + '»' : '; sin objeto autorizado') +
-        (f.tratamiento ? '; tratamiento ' + f.tratamiento : '') +
+      f.ficha + ': estilo «' + (f.estilo || 'sin declarar') + '» (inmutable)' +
+      '; jerarquía ' + (f.jerarquia || '?') + ' (peso exigido ' + (f.peso || '?') + ')' +
+      (f.objeto ? '; objeto autorizado «' + f.objeto + '»' : '; sin objeto autorizado') +
+      (f.tratamiento ? '; tratamiento ' + f.tratamiento : '') +
+      '; audiencia ID=' + (f.audiencia || 'sin declarar') + ' / perfil=' + _ap.perfil + ' / edad=' + _ap.edad + ' / género=' + _ap.genero + ' (mockup esperado: ' + _audienceMockupExpectation(f.audiencia) + '); evaluar de forma independiente para esta columna, sin mezclar con otras fichas' +
         '; cara ' + (!f.cara
           ? 'sin declaración (producto sin caras: no exijas vistas traseras ni espaldas de persona)'
           : (f.cara === 'espalda' ? 'espalda (pide lifestyle de espaldas y recuadro de espalda en esta columna)' : 'frente (prohibida espalda de persona o prenda en esta columna)'))
@@ -123,8 +168,9 @@
     o += '- textos_inventados: rótulos, serie, versículos o frases no presentes en el copy ni en los encabezados editoriales de columna; estos encabezados están permitidos (código de ficha, estilo si el eje lo pide, audiencia si es el eje).\n';
     o += '- fondo_ok: false si hay cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas o escenas de fondo DENTRO del arte de cada diseño (en recuadros de ambiente de mockup, el ambiente es normal).\n';
     o += '- espalda_ok: false si una columna con cara frente muestra espalda de persona o prenda, o una columna con cara espalda carece de vista de espalda.\n';
+    o += '- audiencia_ok: false si el mockup de la columna no representa la audiencia asignada (edad/género/talla). Infantil = modelo infantil con talla infantil (un modelo adulto genérico invalida); femenino = mujer con corte y talla femeninos; masculino = hombre con corte y talla masculinos; unisex/amplia = modelo acorde al perfil sin forzar género. Evalúa cada columna de forma independiente según su audiencia; no traslades restricciones de una ficha a otra. Si no hay evidencia visual suficiente para verificar, marca audiencia_ok como null (INDETERMINADO) en lugar de true.\n';
     o += 'FORMATO EXACTO:\n';
-    o += '{"fichas":[{"ficha":"01A","estilo_asignado":"X","estilo_detectado":"X o descripcion breve","estilo_ok":true,"jerarquia_medida":"80% texto / 20% simbolo","jerarquia_ok":true,"objetos_inventados":[],"textos_inventados":[],"fondo_ok":true,"espalda_ok":true,"nota":"una frase"}],"estilos_correctos":3,"resumen":"frase corta","avisos_generales":[]}';
+    o += '{"fichas":[{"ficha":"01A","estilo_asignado":"X","estilo_detectado":"X o descripcion breve","estilo_ok":true,"jerarquia_medida":"80% texto / 20% simbolo","jerarquia_ok":true,"objetos_inventados":[],"textos_inventados":[],"fondo_ok":true,"espalda_ok":true,"audiencia_ok":true,"audiencia_detectada":"descripcion breve del modelo visto","modelo_mockup":"infantil/femenino/masculino/unisex","nota_audiencia":"una frase","nota":"una frase"}],"estilos_correctos":3,"resumen":"frase corta","avisos_generales":[]}';
     return o;
     }
 
@@ -133,12 +179,53 @@
      ============================================================ */
 
   function parseVerdict(text) {
-    var s = String(text || '').trim();
-    s = s.replace(/^```(?:json)?/i, '').replace(/```\s*$/, '').trim();
-    var a = s.indexOf('{');
-    var b = s.lastIndexOf('}');
-    if (a === -1 || b === -1 || b <= a) return null;
-    try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return null; }
+    // Aceptar: objeto ya parseado, string JSON, JSON en Markdown, texto con JSON alrededor.
+    var obj = null;
+    if (text && typeof text === 'object' && !Array.isArray(text)) {
+      obj = text;
+    } else {
+      var s = String(text == null ? '' : text).trim();
+      // Eliminar cercas de markdown
+      s = s.replace(/^```(?:json)?/i, '').replace(/```\s*$/m, '').trim();
+      obj = extraerObjetoBalanceado(s);
+    }
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
+    // Validar que tenga fichas como array con las 3 esperadas
+    if (!Array.isArray(obj.fichas) || obj.fichas.length !== 3) return null;
+    var ids = obj.fichas.map(function (f) { return String(f && f.ficha || ''); });
+    if (ids.indexOf('01A') === -1 || ids.indexOf('01B') === -1 || ids.indexOf('01C') === -1) return null;
+    return obj;
+  }
+
+  /* Extrae el primer objeto JSON balanceado de un texto (soporta llaves
+     anidadas y llaves sueltas en el texto alrededor). Si un candidato no
+     parsea, prueba con el siguiente { que encuentre. */
+  function extraerObjetoBalanceado(s) {
+    if (!s || typeof s !== 'string') return null;
+    var start = -1, depth = 0, inStr = false, esc = false;
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charAt(i);
+      if (start === -1) {
+        if (ch === '{') { start = i; depth = 1; inStr = false; esc = false; }
+        continue;
+      }
+      if (inStr) {
+        if (esc) { esc = false; continue; }
+        if (ch === '\\') { esc = true; continue; }
+        if (ch === '"') { inStr = false; continue; }
+        continue;
+      }
+      if (ch === '"') { inStr = true; continue; }
+      if (ch === '{') { depth++; continue; }
+      if (ch === '}') {
+        depth--;
+        if (depth === 0) {
+          var candidate = s.slice(start, i + 1);
+          try { return JSON.parse(candidate); } catch (e) { start = -1; continue; }
+        }
+      }
+    }
+    return null;
   }
 
   /* ============================================================
@@ -164,6 +251,10 @@
       if (f.textos_inventados && f.textos_inventados.length) lineas.push(warn() + ' textos inventados: ' + f.textos_inventados.map(esc).join(', '));
       if (f.fondo_ok === false) lineas.push(warn() + ' fondo del arte con escena/ornamento no pedido');
       if (f.espalda_ok === false) lineas.push(bad() + ' caras de la columna no respetadas');
+      if (f.audiencia_ok === false) lineas.push(bad() + ' audiencia del mockup no corresponde al perfil asignado' + (f.audiencia_detectada ? ' — detectado: «' + esc(f.audiencia_detectada) + '»' : '') + (f.modelo_mockup ? ' (modelo: ' + esc(f.modelo_mockup) + ')' : ''));
+      else if (f.audiencia_ok === null) lineas.push(warn() + ' audiencia del mockup no verificable (INDETERMINADO)' + (f.audiencia_detectada ? ' — visto: «' + esc(f.audiencia_detectada) + '»' : ''));
+      else if (f.audiencia_ok === true && f.audiencia_detectada) lineas.push(good() + ' audiencia del mockup verificada: «' + esc(f.audiencia_detectada) + '»');
+      if (f.nota_audiencia) lineas.push('<em>' + esc(f.nota_audiencia) + '</em>');
       if (f.nota) lineas.push('<em>' + esc(f.nota) + '</em>');
       html += '<div style="border:1px solid rgba(148,163,184,.35);border-radius:10px;padding:10px;margin-top:8px;"><b>' + esc(f.ficha) + '</b><ul style="margin:6px 0 0 16px;padding:0;">' + lineas.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul></div>';
     });
@@ -217,7 +308,7 @@
     var estructura = '';
     try {
       var mockup = typeof getMockupRule === 'function' ? getMockupRule(String(MOTOR_STATE.product || 'CAMISETA SOFT')) : '';
-      estructura = mockup ? String(mockup).slice(0, 1400) : '';
+      estructura = mockup ? _truncarReglaMockup(mockup, 3000) : '';
     } catch (e) { estructura = ''; }
 
     tell('Leyendo imagen y contrato (' + contrato.length + ' fichas)...');
@@ -273,7 +364,11 @@
     extraerDePrompt: extraerDePrompt,
     construirPromptValidador: construirPromptValidador,
     parseVerdict: parseVerdict,
-    validarHoja: validarHoja
+    validarHoja: validarHoja,
+    _audienceMockupExpectation: _audienceMockupExpectation,
+    _audienceProfile: _audienceProfile,
+    _truncarReglaMockup: _truncarReglaMockup,
+    _extraerObjetoBalanceado: extraerObjetoBalanceado
   };
 
 })();
