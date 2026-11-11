@@ -32,8 +32,10 @@ function _norm(s) {
 }
 
 function getDominiosGospel(market) {
-  if (market === 'gospel_en' && window.GOSPEL_DOMINIOS_EN) return window.GOSPEL_DOMINIOS_EN;
-  if (window.GOSPEL_DOMINIOS_ES) return window.GOSPEL_DOMINIOS_ES;
+  // Nunca cruzar idiomas como fallback: si falta el banco exacto, devolver
+  // vacío para que el motor aplique su ruta de error/fallback controlado.
+  if (market === 'gospel_en') return window.GOSPEL_DOMINIOS_EN || {};
+  if (market === 'gospel_es') return window.GOSPEL_DOMINIOS_ES || {};
   return {};
 }
 
