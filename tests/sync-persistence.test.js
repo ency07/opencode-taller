@@ -52,4 +52,4 @@ assert.ok(
   'the sync UI must show the persistence error without a misleading RLS/network hint'
 );
 
-console.log('PASS sync-persistence (5 assertions, 0 failures)');
+console.log('PASS sync-persistence (7 assertions, 0 failures)');
