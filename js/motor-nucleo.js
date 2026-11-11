@@ -437,8 +437,8 @@ function _pickWeightedStable(pool, weights, seed) {
 
 function resolveEstilos(audsPerKey) {
   const locks = _resolveLocks();
-  /* FIX 3A: el pool completo se usa para validar locks (locks ganan sobre el
-     territorio); el pool filtrado se usa para la selección automática. */
+  /* El territorio recomienda estilos; no reduce el catálogo disponible.
+     Los locks se validan contra el catálogo completo y siempre prevalecen. */
   const fullCandidates = _styleCandidatesForContext();
   const candidates = _territoryStyleFilter(fullCandidates);
   const stableBase = [MOTOR_STATE.market, MOTOR_STATE.product, MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE.groupMode, MOTOR_STATE._rerollNonce || 0].join('|');

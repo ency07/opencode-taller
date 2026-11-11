@@ -1,6 +1,6 @@
-/* FIX 3A — Compatibilidad territorial en la resolución real.
-   Verifica que compatibleStyles / compatibleTreatments se aplican de verdad
-   (no solo como texto del prompt) y que los locks del usuario siguen ganando.
+/* RED TEAM — Contrato territorial actualizado.
+   compatibleStyles recomienda; no restringe el catálogo. compatibleTreatments
+   sí aplica restricciones duras. Los locks explícitos siempre ganan.
 
    Ejecutar:  node tests/fix3a-territorio-resolucion.test.js
    Sale con código 1 si falla cualquier aserción. */
@@ -71,16 +71,23 @@ tc = _territoryConstraints();
 ok(Array.isArray(tc.treatments) && tc.treatments.length === 2, 'EVERYDAY_FAITH declara 2 tratamientos (got ' + JSON.stringify(tc.treatments) + ')');
 ok(tc.treatments.indexOf('HEAVY') === -1, 'EVERYDAY_FAITH NO permite HEAVY');
 
-/* ---------- 2. resolveEstilos respeta compatibleStyles ---------- */
+/* ---------- 2. El territorio recomienda estilos sin restringir el catálogo ---------- */
 baseState();
 clearStyleLocks();
 MOTOR_STATE.creativeTerritory = 'SACRED_EDITORIAL';
+const fullStylePool = _styleCandidatesForContext();
+const territoryStylePool = _territoryStyleFilter(fullStylePool);
+ok(territoryStylePool.length === fullStylePool.length,
+  'SACRED_EDITORIAL no debe reducir el catálogo de estilos');
+ok(territoryStylePool.indexOf('Superflat') !== -1,
+  'un estilo no listado como compatible debe seguir disponible');
+const territoryDirective = _resolveTerritoryDirective('SACRED_EDITORIAL');
+ok(territoryDirective.indexOf('Estilos compatibles: Minimal Modern, Gótico Ornamental') !== -1,
+  'el prompt debe comunicar las recomendaciones de estilo del territorio');
 let est = resolveEstilos(AUD_KEYS);
-let allowed = ['Minimal Modern', 'Gótico Ornamental'];
 ['A', 'B', 'C'].forEach(function (k) {
-  const base = _getStyleBase(est[k]);
-  ok(allowed.indexOf(est[k]) !== -1 || allowed.indexOf(base) !== -1,
-    'SACRED_EDITORIAL: ficha ' + k + ' debe usar Minimal Modern / Gótico Ornamental (dio «' + est[k] + '»)');
+  ok(fullStylePool.indexOf(est[k]) !== -1,
+    'SACRED_EDITORIAL: ficha ' + k + ' debe usar un estilo del catálogo completo (dio «' + est[k] + '»)');
 });
 
 /* ---------- 3. resolveEstilos SIN territorio no restringe ---------- */
