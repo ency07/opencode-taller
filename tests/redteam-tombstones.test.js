@@ -10,11 +10,11 @@ function ok(value, message) { checks++; if (!value) failures.push(message); }
 const storage = {};
 global.window = global;
 global.localStorage = {
-  setItem: function (k, v) { storage[k] = String(v); },
+  setItem: function (k, v) { storage[k] = String(v); this[k] = String(v); },
   getItem: function (k) { return Object.prototype.hasOwnProperty.call(storage, k) ? storage[k] : null; },
-  removeItem: function (k) { delete storage[k]; },
+  removeItem: function (k) { delete storage[k]; delete this[k]; },
   key: function (i) { return Object.keys(storage)[i] || null; },
-  clear: function () { Object.keys(storage).forEach(function (k) { delete storage[k]; }); }
+  clear: function () { Object.keys(storage).forEach(function (k) { delete storage[k]; delete this[k]; }, this); }
 };
 global.document = { getElementById: function () { return null; }, addEventListener: function () {} };
 vm.runInThisContext(fs.readFileSync(path.join(ROOT, 'js/memoria-local.js'), 'utf8'), { filename: 'memoria-local.js' });
