@@ -1403,6 +1403,22 @@ const STYLE_TIPO_PREF = {
   STYLE_COLOR_PREF["Blanco y negro"] = STYLE_COLOR_PREF["Dark Tattoo"].slice();
   STYLE_TIPO_PREF["Blanco y negro"] = STYLE_TIPO_PREF["Dark Tattoo"].slice();
 
+
+/* RED TEAM: completar metadatos de los 19 lenguajes visuales incorporados.
+   Cada uno hereda una estructura de una familia cercana mediante copias aisladas,
+   y mantiene sus propias reglas anti-saturación. */
+(function completeVisualStyleMetadata() {
+ const parents={"Neón punk":"Y2K / Cyber","Cómic grunge":"Grunge / DIY","Noir gráfico":"Dark Tattoo","Superflat":"Vector Flat / Plano vectorial","Neoexpresionismo":"Hand-Drawn","Cartoon moderno":"Kids Storybook","Constructivismo":"Brutalist","Caricatura":"Kids Storybook","Art déco":"Gótico Ornamental","Bauhaus":"Brutalist","Line art minimalista":"Minimal Modern","Pop art":"Cómic / Halftone","Pintura al óleo":"Acuarela Suelta","Cartoon retro":"Kids Storybook","Flat geométrico":"Vector Flat / Plano vectorial","Doodle a dos colores":"Hand-Drawn","Línea a dos tintas":"Grabado / Linóleo","Línea art de una tinta":"Grabado / Linóleo","Blanco y negro":"Dark Tattoo"};
+ const rules={"Neón punk":["neón gratuito sin jerarquía","códigos punk genéricos sin mensaje"],"Cómic grunge":["trama rota que destruye la legibilidad","viñetas decorativas sin narrativa"],"Noir gráfico":["sombras sin punto focal","monocromo sin separación de planos"],"Superflat":["planos de color sin jerarquía","contornos uniformes que aplanan todo"],"Neoexpresionismo":["pincelada aleatoria sin intención","color emocional sin relación conceptual"],"Cartoon moderno":["personajes genéricos sin rasgos propios","formas amables sin función narrativa"],"Constructivismo":["geometría propagandística sin concepto","diagonales decorativas sin dirección"],"Caricatura":["exageración sin intención narrativa","rasgos deformados sin propósito"],"Art déco":["ornamento dorado sin estructura","simetría que no responde al concepto"],"Bauhaus":["geometría primaria decorativa","retícula sin jerarquía funcional"],"Line art minimalista":["línea continua sin foco","minimalismo vacío sin símbolo"],"Pop art":["repetición de iconos sin significado","puntos Ben-Day usados como relleno"],"Pintura al óleo":["pincelada digital genérica","textura pictórica que reduce legibilidad"],"Cartoon retro":["gestos vintage sin narrativa","contorno retro genérico"],"Flat geométrico":["figuras geométricas intercambiables","planos sin relación con el mensaje"],"Doodle a dos colores":["garabatos sin jerarquía","dos tintas sin contraste suficiente"],"Línea a dos tintas":["dos colores sin función diferenciada","líneas finas que no imprimen"],"Línea art de una tinta":["trazo demasiado fino para impresión","contorno sin jerarquía"],"Blanco y negro":["monocromo sin valores intermedios","contraste extremo que pierde detalles"]};
+ Object.keys(parents).forEach(function(style){
+  const parent=parents[style];
+  if(!STYLE_POOLS[style] && STYLE_POOLS[parent]) { const source=STYLE_POOLS[parent], copy={}; Object.keys(source).forEach(function(k){copy[k]=Array.isArray(source[k])?source[k].slice():source[k];}); STYLE_POOLS[style]=copy; }
+  if(!SATURACION[style]) SATURACION[style]=rules[style].slice();
+  if(!STYLE_COLOR_PREF[style] && STYLE_COLOR_PREF[parent]) STYLE_COLOR_PREF[style]=STYLE_COLOR_PREF[parent].slice();
+  if(!STYLE_TIPO_PREF[style] && STYLE_TIPO_PREF[parent]) STYLE_TIPO_PREF[style]=STYLE_TIPO_PREF[parent].slice();
+ });
+})();
+
 /* Compatibilidad global */
 window.ESTILO_INFO = ESTILO_INFO;
 window.ESTILOS_LIST = ESTILOS_LIST;
