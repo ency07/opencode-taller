@@ -123,6 +123,34 @@ window.GOSPEL_DOMINIOS_ES = savedGospelEs;
 ok(Object.keys(getDominiosGospel('global_en')).length === 0,
   'los mercados seculares no deben resolver dominios Gospel');
 
+MOTOR_STATE.market = 'gospel_es';
+MOTOR_STATE.region = 'universal_es';
+MOTOR_STATE.subniche = 'auto';
+MOTOR_STATE.dominio = 'PROCESS';
+MOTOR_STATE.dominioDetectado = 'auto';
+const routedGospelEs = getObjectPool();
+ok(routedGospelEs[0] === gospelEsDomains.PROCESS.objetos[0],
+  'Gospel ES debe tomar objetos del dominio español seleccionado');
+
+MOTOR_STATE.market = 'gospel_en';
+MOTOR_STATE.region = 'universal_en';
+MOTOR_STATE.subniche = 'auto';
+MOTOR_STATE.dominio = 'PROCESS';
+const routedGospelEn = getObjectPool();
+ok(routedGospelEn[0] === gospelEnDomains.PROCESS.objetos[0],
+  'Gospel EN debe tomar objetos del dominio inglés seleccionado');
+
+MOTOR_STATE.market = 'global_en';
+MOTOR_STATE.region = 'global';
+MOTOR_STATE.subniche = 'pets';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.concept = 'dog';
+const routedSecular = getObjectPool();
+ok(routedSecular.length > 0 && routedSecular[0] === getBankForSubniche('pets', 'global', 'global_en')[0],
+  'Global EN debe resolver el banco secular del subnicho activo');
+ok(routedSecular.indexOf(gospelEnDomains.PROCESS.objetos[0]) === -1,
+  'el router secular no debe importar objetos del banco Gospel');
+
 /* ---------- 3. Integridad de los 19 territorios creativos ---------- */
 const TERRITORY_IDS = Object.keys(POD_CREATIVE_TERRITORIES || {});
 const VALID_TREATMENTS = ['HEAVY', 'SOFT', 'MODERN'];
