@@ -2299,7 +2299,14 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     }
 
     const tecPool = _tecnicaSinObjetos(sp.tecnica || ['técnica mixta']);
-    v.tecnica = _pickFresh(tecPool, tecPool, usedAxes.tecnica);
+    // Preferir la técnica del estilo; ampliar al catálogo global cuando el
+    // pool contextual se agota para no repetir dentro de A/B/C.
+    const allStyleTechniques = Object.keys(typeof STYLE_POOLS !== 'undefined' ? STYLE_POOLS : {}).reduce(function (all, styleKey) {
+      const stylePool = STYLE_POOLS[styleKey] || {};
+      return all.concat(Array.isArray(stylePool.tecnica) ? stylePool.tecnica : []);
+    }, []);
+    const globalTechniquePool = _tecnicaSinObjetos(Array.from(new Set(allStyleTechniques)));
+    v.tecnica = _pickFresh(tecPool, globalTechniquePool.length ? globalTechniquePool : tecPool, usedAxes.tecnica);
     usedAxes.tecnica.push(v.tecnica);
     v.relacion = contactIdentity
       ? 'Integra el mensaje siguiendo solo el contorno y los espacios reales del símbolo; si afecta la lectura, separa texto e imagen. No añadas materiales u objetos no indicados.'
