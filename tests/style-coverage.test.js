@@ -509,38 +509,38 @@ ok(/MOTOR_STATE\.groupMode, MOTOR_STATE\._rerollNonce \|\| 0\]\.join\('\|'\)/.te
 /* ---------- 9. Smoke de integración interfaz -> motor -> prompt ---------- */
 const htmlSourceForTest = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const iaSourceForTest = fs.readFileSync(path.join(JS, 'ia-analisis.js'), 'utf8');
-const htmlIdsForTest = [...htmlSourceForTest.matchAll(/\\bid=["']([^"']+)["']/g)].map(function (m) { return m[1]; });
+const htmlIdsForTest = [...htmlSourceForTest.matchAll(/\bid=["']([^"']+)["']/g)].map(function (m) { return m[1]; });
 const uniqueHtmlIds = new Set(htmlIdsForTest);
 ok(uniqueHtmlIds.size === htmlIdsForTest.length, 'index.html no debe contener IDs DOM duplicados');
 
-const scriptPathsForTest = [...htmlSourceForTest.matchAll(/<script\\s+src=["']([^"']+)["']([^>]*)>/g)];
+const scriptPathsForTest = [...htmlSourceForTest.matchAll(/<script\s+src=["']([^"']+)["']([^>]*)>/g)];
 ok(scriptPathsForTest.length > 0 && scriptPathsForTest.every(function (m) {
-  return /\\bdefer\\b/.test(m[2]) && !/\\basync\\b/.test(m[2])
+  return /\bdefer\b/.test(m[2]) && !/\basync\b/.test(m[2])
     && fs.existsSync(path.join(ROOT, m[1]));
 }), 'todos los scripts deben existir y cargar en orden defer, sin async');
 
-const buttonTagsForTest = [...htmlSourceForTest.matchAll(/<button\\b([^>]*)>/g)].map(function (m) { return m[1]; });
+const buttonTagsForTest = [...htmlSourceForTest.matchAll(/<button\b([^>]*)>/g)].map(function (m) { return m[1]; });
 ok(buttonTagsForTest.length > 0 && buttonTagsForTest.every(function (attrs) {
-  return /\\btype=["'](?:button|submit|reset)["']/.test(attrs);
+  return /\btype=["'](?:button|submit|reset)["']/.test(attrs);
 }), 'ningún botón puede depender del type submit implícito');
 
-const uiHandlersForTest = [...iaSourceForTest.matchAll(/\\bon\\(['"]([^'"]+)['"],\\s*['"](?:click|change|input)['"]/g)]
+const uiHandlersForTest = [...iaSourceForTest.matchAll(/\bon\(['"]([^'"]+)['"],\s*['"](?:click|change|input)['"]/g)]
   .map(function (m) { return m[1]; });
 uiHandlersForTest.forEach(function (id) {
   ok(uniqueHtmlIds.has(id), 'handler de interfaz apunta a un ID inexistente: #' + id);
 });
-const motorDomIdsForTest = [...motorSourceForTest.matchAll(/getElementById\\(['"]([^'"]+)['"]\\)/g)]
+const motorDomIdsForTest = [...motorSourceForTest.matchAll(/getElementById\(['"]([^'"]+)['"]\)/g)]
   .map(function (m) { return m[1]; });
 [...new Set(motorDomIdsForTest)].forEach(function (id) {
   ok(uniqueHtmlIds.has(id), 'motor apunta a un ID inexistente: #' + id);
 });
-ok(/on\\('btnDirector', 'click',[\\s\\S]*?crearLos3Disenos\\(\\)/.test(iaSourceForTest),
+ok(/on\('btnDirector', 'click',[\s\S]*?crearLos3Disenos\(\)/.test(iaSourceForTest),
   'el botón Crear debe invocar el motor');
-ok(/on\\('btnCopy', 'click',[\\s\\S]*?copiarPrompt\\(\\)/.test(iaSourceForTest),
+ok(/on\('btnCopy', 'click',[\s\S]*?copiarPrompt\(\)/.test(iaSourceForTest),
   'el botón Copiar debe invocar copiarPrompt');
-ok(/on\\('btnBuild', 'click',[\\s\\S]*?validarSetActual\\(\\)/.test(iaSourceForTest),
+ok(/on\('btnBuild', 'click',[\s\S]*?validarSetActual\(\)/.test(iaSourceForTest),
   'el botón Validar debe invocar validarSetActual');
-ok(/const result = generateSet\\(\\);[\\s\\S]*?const prompt = formatPrompt\\(result\\);[\\s\\S]*?outEl\\.value = prompt;[\\s\\S]*?renderCards\\(result\\)/.test(motorSourceForTest),
+ok(/const result = generateSet\(\);[\s\S]*?const prompt = formatPrompt\(result\);[\s\S]*?outEl\.value = prompt;[\s\S]*?renderCards\(result\)/.test(motorSourceForTest),
   'el flujo de generación debe conectar motor, prompt, salida y fichas');
 
 const passed = failures.length === 0;
