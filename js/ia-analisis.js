@@ -197,24 +197,26 @@
     const defaultLang = market.language || 'auto';
 
     const langs = (typeof POD_LANGUAGES !== 'undefined') ? POD_LANGUAGES : {};
+    const gospelLanguageLocked = market.culture === 'gospel'
+      && (defaultLang === 'es' || defaultLang === 'en');
+    const availableLanguageIds = gospelLanguageLocked ? [defaultLang] : Object.keys(langs);
     // Si el usuario no había tocado el idioma (sigue en el default anterior),
-    // lo llevo al default del nuevo mercado. Si lo fijó a mano, respeto su elección.
+    // lo llevo al default del nuevo mercado. Los mercados Gospel no admiten
+    // override: su banco y su doctrina están ligados al idioma del mercado.
     const prevVal = langSel.value;
-    // 'auto' es una elección del usuario ("según mercado"): hay que conservarla,
-    // no confundirla con el default resuelto del mercado.
     const isAutoChoice = prevVal === 'auto';
-    const keepManual = !isAutoChoice && prevVal && prevVal !== _lastLangAuto && langs[prevVal];
+    const keepManual = !gospelLanguageLocked && !isAutoChoice
+      && prevVal && prevVal !== _lastLangAuto && langs[prevVal];
 
     let html = '';
-    Object.keys(langs).forEach(function (id) {
+    availableLanguageIds.forEach(function (id) {
       const selected = (!keepManual && !isAutoChoice && id === defaultLang) ? ' selected' : '';
       html += '<option value="' + _escapeOptionText(id) + '"' + selected + '>' + _escapeOptionText(langs[id]) + '</option>';
     });
-    // innerHTML RESETea la selección al primer option: había que restaurar el
-    // valor guardado ANTES, no reasignar el valor ya perdido.
+    // innerHTML RESETea la selección al primer option: restaurar el valor
+    // únicamente cuando siga siendo una opción permitida.
     langSel.innerHTML = html;
-    if (_marketResetPending) {
-      // Reset total: el idioma sigue al mercado nuevo aunque se hubiera fijado a mano.
+    if (_marketResetPending || gospelLanguageLocked) {
       if (langs[defaultLang]) langSel.value = defaultLang;
     }
     else if (isAutoChoice && langs['auto']) langSel.value = 'auto';
