@@ -211,7 +211,29 @@ ok(autoGospelEnPool.length >= 18 && autoGospelEnPool.indexOf(gospelEnDomains.PRO
 ok(autoGospelEnPool.indexOf(gospelEsDomains.PROCESS.objetos[0]) === -1,
   'Gospel EN en Auto no debe mezclar motivos españoles');
 
-/* ---------- 3. Integridad de los 19 territorios creativos ---------- */
+/* ---------- 3. Router secular: mercados, regiones e idioma ---------- */
+const secularMarketIds = Object.keys(POD_MARKETS).filter(function (market) {
+  return market !== 'gospel_es' && market !== 'gospel_en';
+});
+secularMarketIds.forEach(function (market) {
+  MOTOR_STATE.market = market;
+  MOTOR_STATE.region = getDefaultRegionForMarket(market);
+  MOTOR_STATE.subniche = market === 'colombia' ? 'humor_costeno' : 'pets';
+  MOTOR_STATE.dominio = 'auto';
+  MOTOR_STATE.dominioDetectado = 'auto';
+  MOTOR_STATE.concept = market === 'colombia' ? 'hamaca costeña' : 'dog pet';
+  const directBank = getBankForSubniche(MOTOR_STATE.subniche, MOTOR_STATE.region, market);
+  const routedBank = getObjectPool();
+  ok(directBank.length > 0 && routedBank.length > 0 && routedBank[0] === directBank[0],
+    market + ': debe resolver el banco secular del subnicho permitido');
+  ok(routedBank.indexOf(gospelEsDomains.PROCESS.objetos[0]) === -1
+    && routedBank.indexOf(gospelEnDomains.PROCESS.objetos[0]) === -1,
+    market + ': no debe importar objetos Gospel');
+});
+MOTOR_STATE.market = 'global_es';
+MOTOR_STATE.region = 'global';
+
+/* ---------- 4. Integridad de los 19 territorios creativos ---------- */
 const TERRITORY_IDS = Object.keys(POD_CREATIVE_TERRITORIES || {});
 const VALID_TREATMENTS = ['HEAVY', 'SOFT', 'MODERN'];
 const VALID_MARKETS = Object.keys(POD_MARKETS || {});
