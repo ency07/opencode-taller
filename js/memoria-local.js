@@ -1160,17 +1160,32 @@
 
   function applyMergedMemoryObject(merged) {
     merged = merged || {};
+    const failedKeys = [];
     const meta = _parseSyncMeta(merged[SYNC_META_KEY]);
+
     Object.keys(meta).forEach(function (key) {
       if (meta[key] && meta[key].op === 'delete') POD_LS.removeItem(key);
     });
+
     Object.keys(merged).forEach(function (key) {
-      if (String(key).indexOf(MEM_PREFIX) === 0 && key !== SYNC_META_KEY) POD_LS.setItem(key, merged[key]);
+      if (String(key).indexOf(MEM_PREFIX) !== 0 || key === SYNC_META_KEY) return;
+      try {
+        if (POD_LS.setItem(key, merged[key]) !== true) failedKeys.push(key);
+      } catch (e) {
+        failedKeys.push(key);
+      }
     });
+
     if (Object.prototype.hasOwnProperty.call(merged, SYNC_META_KEY)) {
       // Write metadata last so applying merged values does not change its timestamps.
-      POD_LS.setItem(SYNC_META_KEY, merged[SYNC_META_KEY]);
+      try {
+        if (POD_LS.setItem(SYNC_META_KEY, merged[SYNC_META_KEY]) !== true) failedKeys.push(SYNC_META_KEY);
+      } catch (e) {
+        failedKeys.push(SYNC_META_KEY);
+      }
     }
+
+    return { ok: failedKeys.length === 0, failedKeys: failedKeys };
   }
 
   function mergeMemoryObjects(local, remote) {
