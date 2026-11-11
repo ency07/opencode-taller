@@ -2,6 +2,7 @@
    Ejecutar: node tests/visual-prompt-contract.test.js
    Este test valida instrucciones generadas en código; NO certifica imágenes reales. */
 'use strict';
+console.log('[REDTEAM-DIAG] visual-prompt-contract START');
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..');
@@ -11,7 +12,7 @@ let checks = 0;
 const failures = [];
 function ok(condition, message) {
   checks++;
-  if (!condition) failures.push(message);
+  if (!condition) { failures.push(message); console.error('[REDTEAM-DIAG] FAIL:', message); }
 }
 
 // SOLO_TEXTO debe mapear las 20 arquitecturas a geometrías tipográficas, no a ilustraciones.
@@ -143,6 +144,7 @@ ok(motor.includes("'). El bloque tipográfico (' + v.distribucionTexto + ') se e
 ok(motor.includes("evita dos bloques desconectados") && motor.includes("unidad compositiva"), 'BALANCEADO debe integrar texto y símbolo en una unidad compositiva');
 ok(motor.includes("if (v.jerarquiaVisual === 'SOLO_TEXTO')") && motor.includes('CONTROL ABSOLUTO: no dibujar personas'), 'SOLO_TEXTO debe seguir excluyendo objetos y escenas');
 
+console.log('[REDTEAM-DIAG] visual-prompt-contract END', { checks, failures: failures.length });
 if (failures.length) {
   console.error('FALLOS visual-prompt-contract:');
   failures.forEach(function (failure) { console.error(' - ' + failure); });
