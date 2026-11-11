@@ -518,6 +518,20 @@ ok(scriptPathsForTest.length > 0 && scriptPathsForTest.every(function (m) {
   return /\bdefer\b/.test(m[2]) && !/\basync\b/.test(m[2])
     && fs.existsSync(path.join(ROOT, m[1]));
 }), 'todos los scripts deben existir y cargar en orden defer, sin async');
+const loadedScriptPaths = scriptPathsForTest.map(function (m) { return m[1]; });
+const requiredScriptOrder = [
+  'js/data-mercados.js', 'js/data-audiencias.js', 'js/data-bancos.js',
+  'js/banco-gospel-es.js', 'js/banco-gospel-en.js', 'js/banco-global.js',
+  'js/dominios.js', 'js/data-estilos.js', 'js/data-territorios.js',
+  'js/data-productos.js', 'js/memoria-local.js', 'js/diversidad-saturacion.js',
+  'js/motor-nucleo.js', 'js/ia-client.js', 'js/ia-analisis.js'
+];
+const loadedRequiredOrder = requiredScriptOrder.map(function (path) {
+  return loadedScriptPaths.indexOf(path);
+});
+ok(loadedRequiredOrder.every(function (index, i) {
+  return index !== -1 && (i === 0 || index > loadedRequiredOrder[i - 1]);
+}), 'los módulos deben cargarse en orden de dependencia');
 
 const buttonTagsForTest = [...htmlSourceForTest.matchAll(/<button\b([^>]*)>/g)].map(function (m) { return m[1]; });
 ok(buttonTagsForTest.length > 0 && buttonTagsForTest.every(function (attrs) {
