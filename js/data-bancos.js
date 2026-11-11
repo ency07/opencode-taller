@@ -2021,3 +2021,4 @@ window.POD_NICHO_GROUPS = POD_NICHO_GROUPS;
 window.POD_REGIONS = POD_REGIONS;
 window.POD_SUBNICHE_GROUPS = POD_SUBNICHE_GROUPS;
 window.POD_SUBNICHES = POD_SUBNICHES;
+window.getBankAudiencesForSubniche = getBankAudiencesForSubniche;

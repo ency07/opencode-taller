@@ -1224,7 +1224,8 @@ function getAudiencesForSubniche(subniche, region, marketId) {
   if (!subniche || subniche === 'auto' || subniche === 'evergreen' || subniche === 'temporada') return base;
 
   const id = String(subniche).toLowerCase();
-  const record = (typeof POD_SUBNICHES !== 'undefined' && POD_SUBNICHES) ? POD_SUBNICHES[id] : null;
+  const catalog = (typeof window !== 'undefined' && window.POD_SUBNICHES) ? window.POD_SUBNICHES : ((typeof POD_SUBNICHES !== 'undefined') ? POD_SUBNICHES : null);
+  const record = catalog ? catalog[id] : null;
   if (record && record.audienciasGenericas === true) {
     return getMarketAudiencesForSubniche(id, region, market);
   }
