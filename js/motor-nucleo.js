@@ -54,6 +54,11 @@ const _loadSetHistory = typeof loadSetHistory === 'function' ? loadSetHistory : 
 const _saveSetHistory = typeof saveSetHistory === 'function' ? saveSetHistory : function () { };
 const _confirmDestructive = typeof confirmDestructive === 'function' ? confirmDestructive : function () { return window.confirm(arguments[0]); };
 
+/* Debug detallado desactivado por defecto para evitar saturar CI/console. Activar con window.POD_DEBUG = true. */
+function _debugLog() {
+  if (typeof window !== 'undefined' && window.POD_DEBUG === true && typeof console !== 'undefined' && console.log) console.log.apply(console, arguments);
+}
+
 /* --- Utilidades internas --- */
 function _pick(arr) {
   if (!arr || !arr.length) return '';
@@ -1169,7 +1174,7 @@ function _calculateFits(v, ctx) {
   var fitAudiencia = audChecks.length
     ? Math.round(100 * audChecks.filter(Boolean).length / audChecks.length)
     : 0;
-  console.log('DBG CALC fitAud=' + fitAudiencia + ' nChecks=' + audChecks.length + ' details=' + JSON.stringify(audChecks) + ' audStylePref=' + JSON.stringify(audStylePref) + ' vAud=' + v.audiencia + ' vStyle=' + v.estilo + ' vTipo=' + v.tipografia + ' vForma=' + v.formaSimbolo + ' vTrat=' + v.tratamiento + ' vLayout=' + v.layout + ' vHier=' + v.jerarquiaVisual + ' vDens=' + v.densidad + ' vPaleta=' + String(v.paleta).slice(0,40));
+  _debugLog('DBG CALC fitAud=' + fitAudiencia + ' nChecks=' + audChecks.length + ' details=' + JSON.stringify(audChecks) + ' audStylePref=' + JSON.stringify(audStylePref) + ' vAud=' + v.audiencia + ' vStyle=' + v.estilo + ' vTipo=' + v.tipografia + ' vForma=' + v.formaSimbolo + ' vTrat=' + v.tratamiento + ' vLayout=' + v.layout + ' vHier=' + v.jerarquiaVisual + ' vDens=' + v.densidad + ' vPaleta=' + String(v.paleta).slice(0,40));
 
   var productBias = c.productBias || {};
   var productChecks = [];
@@ -1206,7 +1211,7 @@ function _calculateFits(v, ctx) {
 function _applyDerivedPreservation(cand, prevSet, effectiveLocks, targetKey) {
   var conflicts = [];
   if (!cand || !prevSet || !effectiveLocks) return conflicts;
-  console.log('DBG OVERLAY CALLED prevSet keys=' + Object.keys(prevSet || {}) + ' effectiveLocks=' + JSON.stringify(effectiveLocks));
+  _debugLog('DBG OVERLAY CALLED prevSet keys=' + Object.keys(prevSet || {}) + ' effectiveLocks=' + JSON.stringify(effectiveLocks));
 
   var _targetKey = (targetKey == null) ? null : String(targetKey);
   var _mode = _normalizeDecisionMode(MOTOR_STATE.decisionMode);
@@ -1269,14 +1274,14 @@ function _applyDerivedPreservation(cand, prevSet, effectiveLocks, targetKey) {
       cand[k].escalaProducto = pb.scale || 'escala adecuada al producto';
       /* fitAudiencia / fitProducto sobre la ficha final. */
       var ctx = _FIT_CTX_BY_KEY[k];
-      console.log('DBG OVERLAY PRE-FIT k=' + k + ' fit=' + cand[k].fitAudiencia + ' tipografia=' + cand[k].tipografia + ' forma=' + cand[k].formaSimbolo + ' layout=' + cand[k].layout + ' jerarquia=' + cand[k].jerarquiaVisual + ' densidad=' + cand[k].densidad + ' tratamiento=' + cand[k].tratamiento + ' estilo=' + cand[k].estilo);
+      _debugLog('DBG OVERLAY PRE-FIT k=' + k + ' fit=' + cand[k].fitAudiencia + ' tipografia=' + cand[k].tipografia + ' forma=' + cand[k].formaSimbolo + ' layout=' + cand[k].layout + ' jerarquia=' + cand[k].jerarquiaVisual + ' densidad=' + cand[k].densidad + ' tratamiento=' + cand[k].tratamiento + ' estilo=' + cand[k].estilo);
       if (ctx) {
         var _antes = cand[k].fitAudiencia;
         var _audienciaBefore = cand[k].audiencia;
         var _estiloBefore = cand[k].estilo;
         var _perfilBefore = cand[k].perfilEstructural;
         var fits = _calculateFits(cand[k], ctx);
-        console.log('DBG overlay k=' + k + ' antes=' + _antes + ' despues=' + fits.fitAudiencia + ' aud=' + _audienciaBefore + ' (after=' + cand[k].audiencia + ') estilo=' + _estiloBefore + ' (after=' + cand[k].estilo + ') perfil=' + _perfilBefore + ' (after=' + cand[k].perfilEstructural + ') ctxStyle=' + ctx.styleBase + ' | ctxAudProfile.modoCol=' + JSON.stringify(ctx.audProfile && ctx.audProfile.modoCol) + ' | ctxAud=' + JSON.stringify(Object.keys(ctx.audProfile||{})) + ' ctxTipo=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.tipoPref) + ' ctxForma=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.formaPref) + ' ctxTrat=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.tratPref) + ' ctxLayout=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.layoutPref) + ' vHier=' + JSON.stringify(AUD_HIERARCHY_PREF[cand[k].audiencia]) + ' vLayout=' + cand[k].layout + ' vDens=' + cand[k].densidad + ' vTrat=' + cand[k].tratamiento + ' vTipo=' + cand[k].tipografia + ' vForma=' + cand[k].formaSimbolo);
+        _debugLog('DBG overlay k=' + k + ' antes=' + _antes + ' despues=' + fits.fitAudiencia + ' aud=' + _audienciaBefore + ' (after=' + cand[k].audiencia + ') estilo=' + _estiloBefore + ' (after=' + cand[k].estilo + ') perfil=' + _perfilBefore + ' (after=' + cand[k].perfilEstructural + ') ctxStyle=' + ctx.styleBase + ' | ctxAudProfile.modoCol=' + JSON.stringify(ctx.audProfile && ctx.audProfile.modoCol) + ' | ctxAud=' + JSON.stringify(Object.keys(ctx.audProfile||{})) + ' ctxTipo=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.tipoPref) + ' ctxForma=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.formaPref) + ' ctxTrat=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.tratPref) + ' ctxLayout=' + JSON.stringify(ctx.audProfile&&ctx.audProfile.layoutPref) + ' vHier=' + JSON.stringify(AUD_HIERARCHY_PREF[cand[k].audiencia]) + ' vLayout=' + cand[k].layout + ' vDens=' + cand[k].densidad + ' vTrat=' + cand[k].tratamiento + ' vTipo=' + cand[k].tipografia + ' vForma=' + cand[k].formaSimbolo);
         cand[k].fitAudiencia = fits.fitAudiencia;
         cand[k].fitProducto = fits.fitProducto;
       }
@@ -4071,9 +4076,9 @@ function rerollSingle(keyLetter) {
     } finally {
       _ACTIVE_GEN_LOCKS = null;
     }
-    console.log('[DBG REROLl] key=' + keyLetter + ' stats=' + JSON.stringify(__dbgStats) + ' chosenStyle=' + JSON.stringify(chosenStyle) + ' curEstilo=' + current.estilo);
+    _debugLog('[DBG REROLl] key=' + keyLetter + ' stats=' + JSON.stringify(__dbgStats) + ' chosenStyle=' + JSON.stringify(chosenStyle) + ' curEstilo=' + current.estilo);
     if (!bestOk) {
-      console.log('[DBG REROLl] BAIL: !bestOk');
+      _debugLog('[DBG REROLl] BAIL: !bestOk');
       var noFitStatus = document.getElementById('status');
       var topClash = Object.keys(clashCount).sort(function (a, b) { return clashCount[b] - clashCount[a]; })[0];
       if (noFitStatus) noFitStatus.textContent = chosenStyle
