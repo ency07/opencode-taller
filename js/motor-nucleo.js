@@ -4641,6 +4641,17 @@ window.renderColorAudit = renderColorAudit;
     if (!marketEl || !regionEl) return;
     const market = marketEl.value;
 
+    if (marketChanged && typeof getLanguageOptionsHTML === 'function') {
+      const languageEl = document.getElementById('language');
+      if (languageEl) {
+        const previousLanguage = languageEl.value;
+        languageEl.innerHTML = getLanguageOptionsHTML(market);
+        const marketLanguage = typeof getMarket === 'function'
+          ? ((getMarket(market) || {}).language || 'auto') : 'auto';
+        keepOrDefault(languageEl, previousLanguage, marketLanguage);
+      }
+    }
+
     if (marketChanged && typeof getRegionOptionsHTML === 'function') {
       const previousRegion = regionEl.value;
       regionEl.innerHTML = getRegionOptionsHTML(market, previousRegion);
