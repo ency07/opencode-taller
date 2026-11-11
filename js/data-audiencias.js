@@ -1229,10 +1229,12 @@ function getAudiencesForSubniche(subniche, region, marketId) {
     return getMarketAudiencesForSubniche(id, region, market);
   }
 
-  const bankPool = typeof getBankAudiencesForSubniche === 'function'
-    ? getBankAudiencesForSubniche(id, region, market) : [];
-  if (Array.isArray(bankPool) && bankPool.length) {
-    const compatible = base.filter(function (audience) { return bankPool.indexOf(audience) !== -1; });
+  // Colombia dispone de listas demográficas curadas por subnicho en POD_SUBNICHES.
+  // Los bancos globales comparten una lista técnica de seis IDs EN+ES, no un filtro
+  // demográfico; para ellos manda la clasificación por mercado del helper inferior.
+  if (market === 'colombia' && record && record.audienciasGenericas !== true
+      && Array.isArray(record.audiencias) && record.audiencias.length) {
+    const compatible = base.filter(function (audience) { return record.audiencias.indexOf(audience) !== -1; });
     if (compatible.length) return compatible;
   }
   return getMarketAudiencesForSubniche(id, region, market);
