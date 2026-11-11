@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const ROOT = 'C:/Users/Administrator/Desktop/POD/Taller-pod-copia opencode';
+const ROOT = path.join(__dirname, '..');
 global.window = global;
 var DOM_VALUES = {
   language: 'es', marketplace: 'generic', subniche: 'auto', serie: '',
