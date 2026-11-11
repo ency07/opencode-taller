@@ -116,13 +116,14 @@ TERRITORY_IDS.forEach(function (id) {
   ok(Array.isArray(rec.compatibleTreatments) && rec.compatibleTreatments.length > 0
     && rec.compatibleTreatments.every(function (t) { return VALID_TREATMENTS.indexOf(t) !== -1; }),
     id + ': contiene tratamientos vacíos o inválidos');
-  ok(Array.isArray(rec.compatibleMarkets) && rec.compatibleMarkets.some(function (m) {
-    return VALID_MARKETS.indexOf(m) !== -1;
-  }), id + ': no es compatible con ningún mercado real del catálogo');
+  ok(Array.isArray(rec.compatibleMarkets) && rec.compatibleMarkets.length > 0
+    && rec.compatibleMarkets.every(function (m) { return VALID_MARKETS.indexOf(m) !== -1; }),
+    id + ': compatibleMarkets debe contener exclusivamente IDs reales');
+  ok(!rec.compatibleMarketTags || (Array.isArray(rec.compatibleMarketTags)
+    && rec.compatibleMarketTags.every(function (tag) { return typeof tag === 'string' && !!tag.trim(); })),
+    id + ': compatibleMarketTags debe contener solo etiquetas descriptivas');
 
-  const compatibleRealMarkets = rec.compatibleMarkets.filter(function (m) {
-    return VALID_MARKETS.indexOf(m) !== -1;
-  });
+  const compatibleRealMarkets = rec.compatibleMarkets;
   compatibleRealMarkets.forEach(function (market) {
     MOTOR_STATE.market = market;
     ok(_creativeTerritoryCompatibleWithMarket(id) === id,
