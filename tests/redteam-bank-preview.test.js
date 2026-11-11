@@ -56,7 +56,7 @@ ok(checkbox.attributes['data-fila'] === '1', 'el checkbox conserva el índice or
 ok(detail.children[0].textContent === 'good-1', 'el ID se representa con textContent');
 ok(detail.children[1].textContent.indexOf(hostile) !== -1, 'campos hostiles del banco se muestran como texto');
 ok(!detail.children.some(function (n) { return /script|img|svg|iframe/i.test(n.tagName || '') && n.tagName !== 'strong'; }), 'el contenido del banco no crea nodos HTML');
-ok(preview.children[0].children[1].textContent === '1 rechazados', 'el contador de rechazados recibe la propiedad correcta');
+ok(preview.children[0].children[2].textContent === '1 rechazados', 'el contador de rechazados se renderiza en el segundo badge (después del separador)');
 
 const selected = api.selectRecords(records, [1, 2, 1, -1, 999, 'no']);
 ok(selected.length === 2 && selected[0] === records[1] && selected[1] === records[2], 'la importación usa índices originales, elimina duplicados e ignora índices inválidos');
