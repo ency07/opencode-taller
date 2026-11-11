@@ -1,4 +1,4 @@
-/* Test de cobertura de estilos: los 37 estilos visuales deben ser alcanzables en Auto; los 12 tratamientos se mantienen separados.
+/* Test de cobertura de estilos: los 57 estilos visuales deben ser alcanzables en Auto; los 12 tratamientos se mantienen separados.
    Regresión del bug donde AUD_STYLE_PREF (3 estilos/audiencia) actuaba como
    candado duro y solo 8 estilos salían en la práctica (20 inalcanzables).
 
@@ -35,9 +35,9 @@ ORDER.forEach(function (f) {
   vm.runInThisContext(fs.readFileSync(path.join(JS, f), 'utf8'), { filename: f });
 });
 
-/* ---------- 1. Catálogo: 37 estilos visuales + 12 tratamientos separados ---------- */
+/* ---------- 1. Catálogo: 57 estilos visuales + 12 tratamientos separados ---------- */
 ok(typeof ESTILOS_LIST !== 'undefined', 'ESTILOS_LIST no cargado');
-ok(ESTILOS_LIST.length === 50, 'el catálogo debe conservar 50 elementos (38 visuales + 12 tratamientos), tiene ' + (ESTILOS_LIST && ESTILOS_LIST.length));
+ok(ESTILOS_LIST.length === 69, 'el catálogo debe conservar 69 elementos (57 visuales + 12 tratamientos), tiene ' + (ESTILOS_LIST && ESTILOS_LIST.length));
 
 const DTF = [
   'Indexed Palette / Paleta indizada',
@@ -54,7 +54,7 @@ const DTF = [
   'Glow Zone / Zona fosforescente'
 ];
 const VISUAL_STYLES = ESTILOS_LIST.filter(function (s) { return DTF.indexOf(s) === -1; });
-ok(VISUAL_STYLES.length === 38, 'deben existir 38 lenguajes visuales separados de los tratamientos');
+ok(VISUAL_STYLES.length === 57, 'deben existir 38 lenguajes visuales separados de los tratamientos');
 DTF.forEach(function (s) {
   ok(ESTILOS_LIST.indexOf(s) !== -1, 'falta estilo DTF en ESTILO_INFO: ' + s);
   ok(STYLE_POOLS[s] && STYLE_POOLS[s].arquitectura && STYLE_POOLS[s].arquitectura.length >= 4, 'STYLE_POOLS incompleto: ' + s);
@@ -150,7 +150,7 @@ ok(unreachable.length === 0, 'estilos visuales inalcanzables en Auto: ' + unreac
 MOTOR_STATE.market = 'global_en';
 MOTOR_STATE.subniche = 'skate_culture';
 const candidatesWithSubniche = _styleCandidatesForContext();
-ok(candidatesWithSubniche.length === 38, 'STYLE_CANDIDATES no debe filtrar los 38 estilos visuales en mercados no Gospel');
+ok(candidatesWithSubniche.length === VISUAL_STYLES.length, 'STYLE_CANDIDATES no debe filtrar los 57 estilos visuales en mercados no Gospel');
 ok(VISUAL_STYLES.every(function (s) { return candidatesWithSubniche.indexOf(s) !== -1; }), 'todos los estilos visuales deben seguir disponibles');
 MOTOR_STATE.market = 'global_es';
 MOTOR_STATE.subniche = 'auto';

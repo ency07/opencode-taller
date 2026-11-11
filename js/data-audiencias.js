@@ -861,8 +861,7 @@ const AUD_STYLE_PREF = {
     "Paste-up Wheatpaste",
     "Puff Print / 3D Ink",
     "Glow Zone / Zona fosforescente",
-    "Deportiva / Sports"
-  ],
+    "Deportiva / Sports", "Neón punk", "Cómic grunge", "Noir gráfico", "Pop art", "Constructivismo", "Cartoon moderno"],
   coste_joven_f: [
     "Folk Popular",
     "Hand-Drawn",
@@ -940,7 +939,7 @@ const AUD_STYLE_PREF = {
     "Irezumi / Wabori",
     "Tattoo Old School",
     "Spot Color Simulated / Tintas planas simuladas",
-    "Choke/Spread Trapping"],
+    "Choke/Spread Trapping", "Art déco", "Pintura al óleo", "Blanco y negro", "Línea a dos tintas", "Line art minimalista"],
   andino_adulta_f: [
     "Bohemian",
     "Hand-Drawn",
@@ -974,7 +973,7 @@ const AUD_STYLE_PREF = {
     "Distress Production / Desgaste de producción",
     "Halftone Controlled / Tramado controlado"
   ,
-    "Knockout / Reserva blanca"],
+    "Knockout / Reserva blanca", "Flat geométrico", "Doodle a dos colores", "Línea art de una tinta", "Superflat"],
   amazonia_territorio: [
     "Acuarela Suelta",
     "Bohemian",
@@ -995,7 +994,7 @@ const AUD_STYLE_PREF = {
     "Folk Popular",
     "Collage Cut-Paper"
   ,
-    "Glitter Zone / Zona glitter"],
+    "Glitter Zone / Zona glitter", "Cartoon moderno", "Caricatura", "Cartoon retro", "Superflat", "Doodle a dos colores"],
   unisex_nacional: [
     "Minimal Modern",
     "Hand-Drawn",
@@ -1004,17 +1003,16 @@ const AUD_STYLE_PREF = {
     "Vintage Desgastado",
     "Brutalist",
     "Bohemian",
-    "Kids Storybook"
-  ],
+    "Kids Storybook", "Superflat", "Bauhaus", "Flat geométrico", "Línea art de una tinta", "Blanco y negro", "Art déco", "Line art minimalista"],
   global_young_en: ["Minimal Modern", "Brutalist", "Retro 70s", "Y2K / Cyber", "Stencil Urbano", "Pixel / 8-bit", "Vaporwave", "Grunge / DIY",
-    "Puff Print / 3D Ink"],
-  global_adult_en: ["Vintage Desgastado", "Minimal Modern", "Retro 70s", "Blueprint / Technical", "Hand-Drawn", "Folk Popular", "Grabado / Lin\u00f3leo", "Brutalist", "Vector Flat / Plano vectorial", "CMYK Safe Gamut / Gamut CMYK seguro"],
+    "Puff Print / 3D Ink", "Neón punk", "Cómic grunge", "Noir gráfico", "Pop art", "Cartoon moderno", "Constructivismo", "Doodle a dos colores"],
+  global_adult_en: ["Vintage Desgastado", "Minimal Modern", "Retro 70s", "Blueprint / Technical", "Hand-Drawn", "Folk Popular", "Grabado / Lin\u00f3leo", "Brutalist", "Vector Flat / Plano vectorial", "CMYK Safe Gamut / Gamut CMYK seguro", "Art déco", "Bauhaus", "Pintura al óleo", "Blanco y negro", "Línea a dos tintas", "Flat geométrico"],
   global_family_en: ["Folk Popular", "Kids Storybook", "Hand-Drawn", "Retro 70s", "Bohemian", "Acuarela Suelta", "Collage Cut-Paper", "Airbrush Smooth"],
-  global_joven_es: ["Minimal Modern", "Brutalist", "Retro 70s", "Y2K / Cyber", "Stencil Urbano", "Pixel / 8-bit", "Retro 80s Neon", "Vaporwave"],
+  global_joven_es: ["Minimal Modern", "Brutalist", "Retro 70s", "Y2K / Cyber", "Stencil Urbano", "Pixel / 8-bit", "Retro 80s Neon", "Vaporwave", "Neón punk", "Cómic grunge", "Superflat", "Constructivismo", "Pop art", "Doodle a dos colores", "Cartoon moderno"],
   global_adulto_es: ["Vintage Desgastado", "Minimal Modern", "Retro 70s", "Blueprint / Technical", "Hand-Drawn", "Folk Popular", "Grabado / Lin\u00f3leo", "Bordado / Puntada", "Vector Flat / Plano vectorial", "Halftone Controlled / Tramado controlado",
-    "Spot Color Simulated / Tintas planas simuladas"],
+    "Spot Color Simulated / Tintas planas simuladas", "Noir gráfico", "Art déco", "Bauhaus", "Pintura al óleo", "Blanco y negro", "Línea a dos tintas", "Line art minimalista"],
   global_familia_es: ["Folk Popular", "Kids Storybook", "Hand-Drawn", "Retro 70s", "Bohemian", "Acuarela Suelta", "Collage Cut-Paper", "Bordado / Puntada",
-    "White Ink Optimized / Tinta blanca optimizada"],
+    "White Ink Optimized / Tinta blanca optimizada", "Caricatura", "Cartoon retro", "Doodle a dos colores", "Superflat", "Flat geométrico"],
   gospel_joven_fe: ["Minimal Modern", "Hand-Drawn", "Folk Popular", "Vitral / Mosaico", "Barroco Ornamental", "Acuarela Suelta", "Kids Storybook", "Airbrush Smooth"],
   gospel_adulto_fe: ["Folk Popular", "Vintage Desgastado", "Grabado / Lin\u00f3leo", "Vitral / Mosaico", "Barroco Ornamental", "Hand-Drawn", "Foil Stamp / Metallic", "Retro 70s",
     "Metallic Foil Ready / Listo para foil"],

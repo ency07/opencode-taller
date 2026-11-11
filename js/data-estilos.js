@@ -1074,6 +1074,709 @@ const STYLE_POOLS = {
     textoTerciario: ["tercer nivel: dato de serie en cinta deportiva", "sello de serie como pulsera", "tríptico de identidad en tres atletas rotulados", "fecha de edición en cronómetro", "dominio en marco de competición"],
     tecnica: ["Silueta de movimiento", "Contraste de intensidad", "Deporte con fondo claro", "Jersey textil", "Cronómetro", "Línea de meta"],
     relacion: ["la energía del movimiento es la metáfora: la palabra es el sprint", "el texto se lee sobre el campo: acción y mensaje", "símbolo y texto comparten la intensidad del deporte", "todo es movimiento, nada es estático"]
+  },
+  "Neón punk": {
+    "arquitectura": [
+      "cartel nocturno con un bloque tipográfico cortado por una diagonal de luz",
+      "emblema angular sobre campo negro con una sola línea neón",
+      "composición de flyer pegado con titular comprimido y borde eléctrico",
+      "sello urbano asimétrico con un vacío negro dominante"
+    ],
+    "composicion": [
+      "tipografía condensada en tensión contra una forma angular",
+      "símbolo recortado por una franja luminosa",
+      "capas desplazadas con una sola dirección de lectura",
+      "contraste entre masa negra y acento eléctrico"
+    ],
+    "textoPrincipal": [
+      "titular corto en mayúsculas condensadas, alto contraste y tracking controlado",
+      "palabra principal como bloque duro con cortes geométricos"
+    ],
+    "textoApoyo": [
+      "apoyo pequeño en una línea técnica, separado del titular",
+      "segunda frase en etiqueta estrecha sin competir con el foco"
+    ],
+    "textoTerciario": [
+      "microdato solo si es real y legible; de lo contrario omitir"
+    ],
+    "tecnica": [
+      "serigrafía de alto contraste",
+      "tinta plana neón sobre negro",
+      "stencil de bordes duros",
+      "desregistro cromático controlado"
+    ],
+    "relacion": [
+      "el texto funciona como golpe visual y el símbolo como ancla",
+      "la luz de acento separa planos, nunca sustituye la forma principal"
+    ]
+  },
+  "Cómic grunge": {
+    "arquitectura": [
+      "viñeta rota con titular fuera del marco",
+      "portada de cómic fotocopiada con foco central",
+      "panel diagonal con onomatopeya funcional y símbolo dominante",
+      "página de fanzine con recortes y márgenes irregulares"
+    ],
+    "composicion": [
+      "trama de puntos interrumpida por una silueta clara",
+      "recorte de papel rasgado como marco, no como ruido",
+      "acción congelada en una diagonal fuerte",
+      "dos masas de tinta con un único punto de impacto"
+    ],
+    "textoPrincipal": [
+      "titular de cómic grueso, corto y legible",
+      "palabra de impacto integrada al ritmo de la viñeta"
+    ],
+    "textoApoyo": [
+      "subtítulo en caja editorial limpia",
+      "frase secundaria en bloque estrecho con aire"
+    ],
+    "textoTerciario": [
+      "número de edición únicamente si forma parte del concepto"
+    ],
+    "tecnica": [
+      "halftone roto controlado",
+      "fotocopia de alto contraste",
+      "tinta negra con trama gruesa",
+      "collage de papel impreso"
+    ],
+    "relacion": [
+      "la textura de fotocopia enmarca el símbolo sin tapar su lectura",
+      "el texto acompaña la acción y no se convierte en decoración"
+    ]
+  },
+  "Noir gráfico": {
+    "arquitectura": [
+      "composición vertical de sombra y luz con un foco aislado",
+      "cartel monocromo con bloque oscuro y corte de luz",
+      "encuadre cinematográfico reducido a silueta y vacío",
+      "placa tipográfica austera con sombra geométrica"
+    ],
+    "composicion": [
+      "silueta recortada contra un campo vacío",
+      "contraste de masas negras con una reserva blanca precisa",
+      "diagonal de luz que conduce al mensaje",
+      "figura parcial que deja espacio para el texto"
+    ],
+    "textoPrincipal": [
+      "serif o sans condensada en blanco, peso firme y pocas palabras",
+      "titular sobrio con espacio amplio entre letras"
+    ],
+    "textoApoyo": [
+      "apoyo breve en cuerpo menor y alineación estricta",
+      "segunda línea en gris neutro solo si mejora la lectura"
+    ],
+    "textoTerciario": [
+      "sin microtexto decorativo; omitir información no confirmada"
+    ],
+    "tecnica": [
+      "duotono negro y blanco",
+      "grabado de sombra dura",
+      "reserva de tinta",
+      "trama monocroma de grano fino"
+    ],
+    "relacion": [
+      "el vacío dirige la mirada hacia el símbolo y el titular",
+      "la sombra construye tensión sin inventar objetos"
+    ]
+  },
+  "Superflat": {
+    "arquitectura": [
+      "campos planos delimitados por contornos limpios",
+      "composición frontal de figura y bloque cromático",
+      "retícula simple de dos o tres planos sin profundidad simulada",
+      "sello gráfico de silueta compacta y color uniforme"
+    ],
+    "composicion": [
+      "figura central con contorno constante",
+      "superposición plana sin sombras re,
+  "Neón punk": ["neón / cyber","noche / contraste","flúor / risografía"],
+  "Cómic grunge": ["noche / contraste","retro vibrante","papel / suave"],
+  "Noir gráfico": ["noche / contraste","mínimo frío","industrial"],
+  "Superflat": ["retro vibrante","pastel ácido / vapor","mínimo frío"],
+  "Neoexpresionismo": ["tierra cálida","noche / contraste","flúor / risografía"],
+  "Cartoon moderno": ["retro vibrante","pastel ácido / vapor","papel / suave"],
+  "Constructivismo": ["noche / contraste","industrial","retro vibrante"],
+  "Caricatura": ["retro vibrante","tierra cálida","pastel ácido / vapor"],
+  "Art déco": ["dorado / premium","noche / contraste","mínimo frío"],
+  "Bauhaus": ["retro vibrante","mínimo frío","industrial"],
+  "Line art minimalista": ["mínimo frío","papel / suave","noche / contraste"],
+  "Pop art": ["retro vibrante","flúor / risografía","noche / contraste"],
+  "Pintura al óleo": ["tierra cálida","dorado / premium","noche / contraste"],
+  "Cartoon retro": ["retro vibrante","tierra cálida","papel / suave"],
+  "Flat geométrico": ["mínimo frío","retro vibrante","industrial"],
+  "Doodle a dos colores": ["papel / suave","retro vibrante","tierra cálida"],
+  "Línea a dos tintas": ["mínimo frío","flúor / risografía","noche / contraste"],
+  "Línea art de una tinta": ["mínimo frío","papel / suave","noche / contraste"],
+  "Blanco y negro": ["noche / contraste","mínimo frío","industrial"]alistas",
+      "formas simplificadas con jerarquía de escala",
+      "contraste de color sólido y espacio negativo"
+    ],
+    "textoPrincipal": [
+      "sans geométrica de peso medio, sin efectos tridimensionales",
+      "titular breve alineado con los planos de color"
+    ],
+    "textoApoyo": [
+      "apoyo discreto en una banda plana secundaria",
+      "segunda línea con interlineado amplio"
+    ],
+    "textoTerciario": [
+      "sin numeración ornamental ni microtexto"
+    ],
+    "tecnica": [
+      "tinta plana vectorial",
+      "contorno uniforme de grosor constante",
+      "separación de planos de color",
+      "serigrafía de colores sólidos"
+    ],
+    "relacion": [
+      "el texto comparte la retícula del símbolo sin superponerse al contorno",
+      "cada plano cromático tiene una función de jerarquía"
+    ]
+  },
+  "Neoexpresionismo": {
+    "arquitectura": [
+      "gesto pictórico dominante con una zona tipográfica estable",
+      "composición asimétrica de pincelada y símbolo",
+      "masa gestual concentrada en un lado con vacío opuesto",
+      "campo pictórico fragmentado con eje de lectura firme"
+    ],
+    "composicion": [
+      "pincelada amplia que conduce al símbolo",
+      "trazos gestuales que rodean sin ocultar la palabra",
+      "contraste entre mancha orgánica y tipografía seca",
+      "fragmentación expresiva con un foco reconocible"
+    ],
+    "textoPrincipal": [
+      "titular robusto y directo, sin imitar la pincelada",
+      "palabra principal con forma irregular controlada"
+    ],
+    "textoApoyo": [
+      "apoyo en sans limpia para equilibrar la energía",
+      "segunda línea corta, separada del gesto pictórico"
+    ],
+    "textoTerciario": [
+      "evitar notas falsas o firmas inventadas"
+    ],
+    "tecnica": [
+      "pincelada acrílica gestual",
+      "tinta expresiva de alto contraste",
+      "raspado pictórico controlado",
+      "monotipo de capas"
+    ],
+    "relacion": [
+      "el gesto amplifica la emoción del mensaje sin deformar el símbolo",
+      "la tipografía estabiliza la composición expresiva"
+    ]
+  },
+  "Cartoon moderno": {
+    "arquitectura": [
+      "figura expresiva centrada con titular en banda flexible",
+      "composición de personaje y dos bloques de apoyo",
+      "silueta compacta con fondo de formas simples",
+      "escena mínima con un foco y una línea de texto"
+    ],
+    "composicion": [
+      "formas redondeadas con contorno limpio",
+      "gesto claro y pose legible a tamaño de camiseta",
+      "exageración selectiva de una característica relevante",
+      "paleta plana con separación clara de figura y fondo"
+    ],
+    "textoPrincipal": [
+      "display redondeada de peso medio-alto, lectura inmediata",
+      "titular breve con terminales suaves"
+    ],
+    "textoApoyo": [
+      "apoyo en sans simple sin efectos caricaturescos",
+      "frase secundaria corta y equilibrada"
+    ],
+    "textoTerciario": [
+      "no añadir etiquetas o cifras sin función narrativa"
+    ],
+    "tecnica": [
+      "vector cartoon de contorno limpio",
+      "relleno plano de color",
+      "línea de peso variable controlado",
+      "serigrafía de paleta limitada"
+    ],
+    "relacion": [
+      "el personaje comunica primero y el texto remata el significado",
+      "el contorno mantiene separadas las formas para impresión"
+    ]
+  },
+  "Constructivismo": {
+    "arquitectura": [
+      "retícula diagonal con bloques tipográficos y geometría funcional",
+      "cartel modular de planos superpuestos y eje ascendente",
+      "composición de círculo, barra y triángulo con jerarquía clara",
+      "estructura asimétrica de dos campos y titular dominante"
+    ],
+    "composicion": [
+      "diagonales con tensión y dirección",
+      "geometría básica usada como estructura, no como adorno",
+      "bloques de texto alineados a una retícula rígida",
+      "contraste de escala entre símbolo y tipografía"
+    ],
+    "textoPrincipal": [
+      "sans geométrica en caja alta, peso fuerte y alineación modular",
+      "titular corto integrado al sistema de bloques"
+    ],
+    "textoApoyo": [
+      "apoyo en mono técnica o sans funcional",
+      "segunda línea alineada a la retícula"
+    ],
+    "textoTerciario": [
+      "código o numeración solo cuando el concepto lo justifique"
+    ],
+    "tecnica": [
+      "tinta plana geométrica",
+      "serigrafía de dos o tres colores",
+      "collage constructivo de planos",
+      "reserva de tinta por bloques"
+    ],
+    "relacion": [
+      "la tipografía forma parte de la estructura y no se añade al final",
+      "las diagonales conducen la lectura hacia el símbolo"
+    ]
+  },
+  "Caricatura": {
+    "arquitectura": [
+      "retrato caricaturizado con un foco expresivo y margen amplio",
+      "figura exagerada en un lado con titular de respuesta",
+      "composición de busto y sello tipográfico corto",
+      "escena mínima con gesto reconocible y fondo limpio"
+    ],
+    "composicion": [
+      "exagerar un rasgo pertinente sin deformar la identidad del co,
+  "Neón punk": ["Grotesca black condensada","Stencil de plantilla","Mono técnica","Custom modular geométrica"],
+  "Cómic grunge": ["Grotesca black condensada","Stencil de plantilla","Display caligráfica expresiva","Rounded amable"],
+  "Noir gráfico": ["Serif clásica titulada","Sans humanista limpia","Mono técnica","Grotesca black condensada"],
+  "Superflat": ["Sans humanista limpia","Geométrica deconstructivista","Rounded amable","Custom modular geométrica"],
+  "Neoexpresionismo": ["Lettering brush gestual","Display caligráfica expresiva","Grotesca black condensada","Sans humanista limpia"],
+  "Cartoon moderno": ["Rounded amable","Sans humanista limpia","Display caligráfica expresiva","Grotesca black condensada"],
+  "Constructivismo": ["Custom modular geométrica","Grotesca black condensada","Mono técnica","Sans humanista limpia"],
+  "Caricatura": ["Rounded amable","Display caligráfica expresiva","Grotesca black condensada","Script de pluma"],
+  "Art déco": ["Serif moderna alto contraste","Serif clásica titulada","Sans humanista limpia","Itálica solemne"],
+  "Bauhaus": ["Sans humanista limpia","Geométrica deconstructivista","Mono técnica","Custom modular geométrica"],
+  "Line art minimalista": ["Sans humanista limpia","Serif moderna alto contraste","Mono técnica","Itálica solemne"],
+  "Pop art": ["Grotesca black condensada","Rounded amable","Display caligráfica expresiva","Stencil de plantilla"],
+  "Pintura al óleo": ["Serif clásica titulada","Itálica solemne","Serif moderna alto contraste","Sans humanista limpia"],
+  "Cartoon retro": ["Rounded amable","Slab pesada de oficio","Display caligráfica expresiva","Grotesca black condensada"],
+  "Flat geométrico": ["Sans humanista limpia","Geométrica deconstructivista","Custom modular geométrica","Mono técnica"],
+  "Doodle a dos colores": ["Manuscrita de cuaderno","Lettering brush gestual","Rounded amable","Sans humanista limpia"],
+  "Línea a dos tintas": ["Sans humanista limpia","Serif moderna alto contraste","Mono técnica","Rounded amable"],
+  "Línea art de una tinta": ["Sans humanista limpia","Serif clásica titulada","Manuscrita de cuaderno","Mono técnica"],
+  "Blanco y negro": ["Grotesca black condensada","Serif clásica titulada","Sans humanista limpia","Mono técnica"]ncepto",
+      "silueta clara con expresión legible",
+      "gesto corporal que refuerza el mensaje",
+      "contraste entre figura expresiva y tipografía estable"
+    ],
+    "textoPrincipal": [
+      "display contundente con tono humorístico controlado",
+      "titular corto que complementa el gesto, no lo repite"
+    ],
+    "textoApoyo": [
+      "apoyo breve en sans legible",
+      "remate tipográfico en una sola línea"
+    ],
+    "textoTerciario": [
+      "no inventar nombres, citas ni datos de personaje"
+    ],
+    "tecnica": [
+      "tinta de caricatura con línea variable",
+      "vector expresivo de contorno",
+      "sombreado de masas simples",
+      "color plano con acento"
+    ],
+    "relacion": [
+      "el gesto visual lleva el chiste y el texto aporta el giro",
+      "la exageración se limita a lo que hace reconocible el concepto"
+    ]
+  },
+  "Art déco": {
+    "arquitectura": [
+      "simetría vertical con abanico geométrico y título centrado",
+      "marco escalonado con emblema y banda tipográfica",
+      "composición axial de líneas paralelas y formas radiantes",
+      "placa ornamental contenida con márgenes amplios"
+    ],
+    "composicion": [
+      "geometría escalonada y simetría controlada",
+      "líneas radiales que enmarcan el foco",
+      "ornamento repetido con función de jerarquía",
+      "contraste de masas oscuras y acento metálico"
+    ],
+    "textoPrincipal": [
+      "serif elegante de alto contraste o sans geométrica estilizada",
+      "titular en mayúsculas con espaciado deliberado"
+    ],
+    "textoApoyo": [
+      "apoyo en serif limpia y tamaño claramente menor",
+      "segunda línea centrada dentro de una banda"
+    ],
+    "textoTerciario": [
+      "evitar fechas o numeración de época inventadas"
+    ],
+    "tecnica": [
+      "serigrafía de tintas planas",
+      "línea geométrica dorada simulada sin degradado",
+      "grabado ornamental de líneas firmes",
+      "reserva de tinta en planos oscuros"
+    ],
+    "relacion": [
+      "el marco geométrico ordena el símbolo y el titular",
+      "el ornamento refuerza el eje central sin competir con el mensaje"
+    ]
+  },
+  "Bauhaus": {
+    "arquitectura": [
+      "retícula funcional de círculos, barras y cuadrados",
+      "composición modular con jerarquía de tres tamaños",
+      "símbolo geométrico en un campo y texto en otro",
+      "cartel de información con bloques primarios"
+    ],
+    "composicion": [
+      "formas básicas con proporciones claras",
+      "alineación a retícula y contraste de escala",
+      "paleta primaria controlada con un neutro",
+      "asimetría equilibrada por peso visual"
+    ],
+    "textoPrincipal": [
+      "sans funcional de caja alta y baja, sin ornamento",
+      "titular corto alineado a la retícula"
+    ],
+    "textoApoyo": [
+      "apoyo en mono o sans de lectura",
+      "segunda línea dentro de un módulo independiente"
+    ],
+    "textoTerciario": [
+      "dato funcional real o se omite"
+    ],
+    "tecnica": [
+      "vector geométrico plano",
+      "serigrafía de colores primarios",
+      "construcción modular de formas",
+      "contorno preciso sin textura simulada"
+    ],
+    "relacion": [
+      "texto y forma se organizan como un sistema funcional",
+      "cada geometría tiene una función de composición"
+    ]
+  },
+  "Line art minimalista": {
+    "arquitectura": [
+      "un solo trazo continuo con gran margen vacío",
+      "símbolo lineal aislado y titular discreto",
+      "composición vertical de línea y espacio negativo",
+      "marco abierto definido por un único contorno"
+    ],
+    "composicion": [
+      "línea continua de grosor imprimible",
+      "una sola forma reconocible sin sombreado",
+      "vacío dominante alrededor del motivo",
+      "trazo que conecta símbolo y palabra sin cruzar la lectura"
+    ],
+    "textoPrincipal": [
+      "sans limpia de peso regular, pocas palabras",
+      "titular pequeño pero legible con tracking amplio"
+    ],
+    "textoApoyo": [
+      "apoyo opcional en una línea sencilla",
+      "segunda frase solo si aporta información"
+    ],
+    "textoTerciario": [
+      "omitir microtexto y adornos tipográficos"
+    ],
+    "tecnica": [
+      "monoline de grosor constante",
+      "línea vectorial continua",
+      "tinta única sin sombreado",
+      "contorno abierto con terminaciones limpias"
+    ],
+    "relacion": [
+      "el trazo conecta mensaje y símbolo sin añadir elementos",
+      "el espacio vacío es parte activa de la composición"
+    ]
+  },
+  "Pop art": {
+    "arquitectura": [
+      "repetición modular de un motivo con una sola palabra de impacto",
+      "viñeta frontal con bloques de color y trama",
+      "composición de cuatro campos con variación controlada",
+      "símbolo central con ráfagas gráficas laterales"
+    ],
+    "composicion": [
+      "repetición de escala para enfatizar el símbolo",
+      "trama Ben-Day en zonas amplias y separadas",
+      "contraste cromático saturado con lectura inmediata",
+      "contorno negro firme y áreas de color plano"
+    ],
+    "textoPrincipal": [
+      "display bold de alto impacto, caja alta y lectura inmediata",
+      "onomatopeya solo si nace del concepto"
+    ],
+    "textoApoyo": [
+      "apoyo en banda sólida de contraste",
+      "segunda línea breve sin competir con el foco"
+    ],
+    "textoTerciario": [
+      "sin precios, etiquetas comerciales ni datos ficticios"
+    ],
+    "tecnica": [
+      "Ben-Day dots controlados",
+      "serigrafía de tintas planas",
+      "registro cromático desplazado de forma intencional",
+      "contorno negro de cómic"
+    ],
+    "relacion": [
+      "la repetición aumenta el impacto sin sustituir el símbolo principal",
+      "el titular funciona como golpe verbal de la imagen"
+    ]
+  },
+  "Pintura al óleo": {
+    "arquitectura": [
+      "composición pictórica con foco de luz y margen tipográfico",
+      "busto o símbolo aislado sobre fondo de pincelada amplia",
+      "estructura clásica con masa central y texto inferior",
+      "campo pictórico oscuro con reserva clara para lectura"
+    ],
+    "composicion": [
+      "pincelada visible con jerarquía de valores",
+      "claroscuro controlado sin perder silueta",
+      "textura pictórica en áreas amplias",
+      "contraste entre foco iluminado y fondo profundo"
+    ],
+    "textoPrincipal": [
+      "serif clásica o sans sobria separada de la pintura",
+      "titular de lectura clara sin textura dentro de las letras"
+    ],
+    "textoApoyo": [
+      "apoyo breve en serif de cuerpo menor",
+      "segunda línea con contraste suficiente"
+    ],
+    "textoTerciario": [
+      "no añadir firma, fecha o procedencia inventada"
+    ],
+    "tecnica": [
+      "pincelada de óleo digital visible",
+      "claroscuro pictórico controlado",
+      "impasto simulado en masas amplias",
+      "reproducción de textura de lienzo"
+    ],
+    "relacion": [
+      "la pintura construye atmósfera y el texto conserva lectura independiente",
+      "la textura no invade los contornos esenciales"
+    ]
+  },
+  "Cartoon retro": {
+    "arquitectura": [
+      "mascota o símbolo con contorno grueso y rótulo curvo",
+      "placa vintage con personaje frontal y título",
+      "composición de insignia de animación con fondo simple",
+      "figura de gesto exagerado con banda inferior"
+    ],
+    "composicion": [
+      "formas redondeadas de animación clásica",
+      "contorno grueso y rellenos planos",
+      "pose clara con silueta reconocible",
+      "paleta limitada de contraste cálido"
+    ],
+    "textoPrincipal": [
+      "lettering de cartel retro, grueso y redondeado",
+      "titular arqueado solo si mejora la lectura"
+    ],
+    "textoApoyo": [
+      "apoyo en sans o slab sencilla",
+      "remate corto dentro de banda inferior"
+    ],
+    "textoTerciario": [
+      "evitar marcas, sellos o fechas de estudio ficticios"
+    ],
+    "tecnica": [
+      "cel animation de color plano",
+      "tinta de contorno grueso",
+      "serigrafía de paleta limitada",
+      "sombreado por bloques simples"
+    ],
+    "relacion": [
+      "la figura genera simpatía y el texto define el mensaje",
+      "el rótulo sigue la silueta sin deformar las letras"
+    ]
+  },
+  "Flat geométrico": {
+    "arquitectura": [
+      "bloques geométricos de color con foco central",
+      "composición de dos planos y símbolo compacto",
+      "retícula modular de formas simples y texto lateral",
+      "emblema plano con márgenes precisos"
+    ],
+    "composicion": [
+      "formas vectoriales sin volumen simulado",
+      "paleta reducida con contraste por valor",
+      "superposición plana de dos o tres figuras",
+      "asimetría limpia con espacio negativo"
+    ],
+    "textoPrincipal": [
+      "sans geométrica de peso medio, sin sombra ni volumen",
+      "titular corto con alineación precisa"
+    ],
+    "textoApoyo": [
+      "apoyo pequeño en sans funcional",
+      "segunda línea separada por espacio, no por ornamento"
+    ],
+    "textoTerciario": [
+      "no usar microtexto como textura"
+    ],
+    "tecnica": [
+      "vector flat de tintas sólidas",
+      "separación limpia de planos",
+      "contorno opcional de grosor constante",
+      "serigrafía de color plano"
+    ],
+    "relacion": [
+      "las formas geométricas construyen el símbolo, no un fondo genérico",
+      "el texto se integra por alineación y escala"
+    ]
+  },
+  "Doodle a dos colores": {
+    "arquitectura": [
+      "hoja de apuntes con doodles organizados alrededor del foco",
+      "composición espontánea con símbolo central y notas cortas",
+      "margen de cuaderno con pequeños gestos repetidos",
+      "campo abierto con un trazo principal y dos acentos"
+    ],
+    "composicion": [
+      "garabatos funcionales que nacen del concepto",
+      "dos tintas con jerarquía clara",
+      "línea irregular controlada y áreas abiertas",
+      "repetición manual sin saturar el espacio"
+    ],
+    "textoPrincipal": [
+      "manuscrita legible o display informal de trazo firme",
+      "titular corto con gesto manual reconocible"
+    ],
+    "textoApoyo": [
+      "apoyo manuscrito de menor peso",
+      "nota secundaria solo si añade contexto"
+    ],
+    "textoTerciario": [
+      "no convertir anotaciones en texto ficticio ilegible"
+    ],
+    "tecnica": [
+      "doodle de tinta a dos colores",
+      "brush pen con línea irregular",
+      "serigrafía de dos tintas",
+      "marcador plano de contorno limpio"
+    ],
+    "relacion": [
+      "los garabatos acompañan la idea y no reemplazan el símbolo",
+      "el trazo manual conecta texto y motivo con espontaneidad"
+    ]
+  },
+  "Línea a dos tintas": {
+    "arquitectura": [
+      "dos líneas cromáticas definen el símbolo y el texto",
+      "composición lineal de un foco y una banda tipográfica",
+      "marco abierto de dos trazos con amplio vacío",
+      "símbolo de contorno doble con texto alineado"
+    ],
+    "composicion": [
+      "líneas de dos tintas separadas y limpias",
+      "contornos paralelos sin cruces confusos",
+      "contraste de grosor entre línea principal y secundaria",
+      "espacio negativo visible entre trazos"
+    ],
+    "textoPrincipal": [
+      "sans ligera o serif limpia con cuerpo legible",
+      "titular corto en una sola línea"
+    ],
+    "textoApoyo": [
+      "apoyo en sans pequeña con contraste suficiente",
+      "segunda línea opcional y separada"
+    ],
+    "textoTerciario": [
+      "omitir detalles menores que no sobrevivan a escala real"
+    ],
+    "tecnica": [
+      "line art a dos tintas",
+      "serigrafía de dos colores",
+      "contorno doble calibrado",
+      "reserva blanca entre líneas"
+    ],
+    "relacion": [
+      "las dos tintas diferencian estructura y énfasis sin duplicar el dibujo",
+      "la línea principal conserva la lectura del símbolo"
+    ]
+  },
+  "Línea art de una tinta": {
+    "arquitectura": [
+      "símbolo dibujado con una línea continua y texto independiente",
+      "composición de trazo único centrado con margen amplio",
+      "marco lineal abierto que deja respirar el motivo",
+      "emblema de contorno simple y palabra secundaria"
+    ],
+    "composicion": [
+      "una sola tinta sin degradados ni sombras",
+      "trazo continuo con grosor imprimible",
+      "formas abiertas y reconocibles",
+      "vacío amplio alrededor del contorno"
+    ],
+    "textoPrincipal": [
+      "sans humanista limpia en una sola línea",
+      "serif sencilla de cuerpo medio, sin ornamento"
+    ],
+    "textoApoyo": [
+      "apoyo opcional en cuerpo menor y alto contraste",
+      "segunda frase solo si el concepto la exige"
+    ],
+    "textoTerciario": [
+      "no usar microtexto ni líneas aisladas decorativas"
+    ],
+    "tecnica": [
+      "line art de una tinta",
+      "monoline vectorial",
+      "contorno continuo de grosor calibrado",
+      "tinta negra con reserva de fondo"
+    ],
+    "relacion": [
+      "la línea única une símbolo y mensaje sin añadir adornos",
+      "el texto permanece legible y separado del trazo esencial"
+    ]
+  },
+  "Blanco y negro": {
+    "arquitectura": [
+      "bloque monocromo de alto contraste con foco central",
+      "silueta blanca sobre masa negra y titular opuesto",
+      "composición tipográfica y simbólica en dos campos",
+      "emblema de tinta única con vacío dominante"
+    ],
+    "composicion": [
+      "contraste puro entre negro, blanco y reserva",
+      "silueta reconocible sin depender del color",
+      "trama limitada solo en zonas amplias",
+      "jerarquía por valor, escala y espacio negativo"
+    ],
+    "textoPrincipal": [
+      "grotesca black o serif de alto contraste, legibilidad máxima",
+      "titular en blanco o negro sólido sin efectos"
+    ],
+    "textoApoyo": [
+      "apoyo en cuerpo menor con contraste claro",
+      "segunda línea opcional sin grises de bajo contraste"
+    ],
+    "textoTerciario": [
+      "no usar grises ni microtexto que se pierdan en impresión"
+    ],
+    "tecnica": [
+      "serigrafía monocroma",
+      "grabado blanco y negro",
+      "reserva de tinta",
+      "halftone grueso de una tinta"
+    ],
+    "relacion": [
+      "el contraste de valor define el mensaje y la silueta",
+      "la ausencia de color no debe reducir la jerarquía"
+    ]
   }
 };
 
