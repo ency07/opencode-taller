@@ -1,8 +1,8 @@
-/* FIX 3B — promptDirective en los 10 territorios + compatibilidad con
+/* FIX 3B — promptDirective en los 19 territorios + compatibilidad con
    _resolveTerritoryDirective().
 
    Verifica:
-   - Los 10 territorios declaran promptDirective (instrucción concreta).
+   - Los 19 territorios declaran promptDirective (instrucción concreta).
    - La directriz aparece en la directiva resuelta por el motor.
    - 'auto' no inyecta directriz.
    - La directriz no duplica la descripción.
@@ -35,12 +35,15 @@ const JS = path.join(ROOT, 'js');
 const TERR_IDS = [
   'SACRED_EDITORIAL', 'BIBLICAL_BOTANICAL', 'BIBLICAL_ARCHAEOLOGY',
   'THEOLOGICAL_ABSTRACTION', 'CHRISTIAN_HERITAGE', 'NARRATIVE_ILLUSTRATION',
-  'EVERYDAY_FAITH', 'FAITH_WORKWEAR', 'CONTRAST_ART', 'LOCAL_FAITH_CULTURE'
+  'EVERYDAY_FAITH', 'FAITH_WORKWEAR', 'CONTRAST_ART', 'LOCAL_FAITH_CULTURE',
+  'URBAN_STREETWEAR', 'NATURE_ORGANIC', 'MINIMAL_MODERN', 'PET_LOVERS',
+  'PROFESSION_PRIDE', 'SARCASM_HUMOR', 'HOBBY_MICRO', 'RETRO_VINTAGE',
+  'TECH_DIGITAL'
 ];
 
-/* ---------- 1. Los 10 territorios existen y declaran promptDirective ---------- */
+/* ---------- 1. Los 19 territorios existen y declaran promptDirective ---------- */
 const TERR = (typeof POD_CREATIVE_TERRITORIES !== 'undefined') ? POD_CREATIVE_TERRITORIES : {};
-ok(Object.keys(TERR).length === 10, 'el catálogo debe tener 10 territorios (dio ' + Object.keys(TERR).length + ')');
+ok(Object.keys(TERR).length === 19, 'el catálogo debe tener 19 territorios (dio ' + Object.keys(TERR).length + ')');
 
 TERR_IDS.forEach(function (id) {
   const rec = TERR[id];

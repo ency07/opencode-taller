@@ -1,9 +1,7 @@
 ﻿/**
- * CATALOGO DE TERRITORIOS CREATIVOS — Fase 1 (Plan, sin modificar motor existente)
- * Repositorio: ency07/opencode-taller (rama: feat/creative-territory-engine)
- * Este archivo es un catálogo de datos independiente. No modifica motor-nucleo.js,
- * data-estilos.js ni ningún archivo existente. Su integración al flujo requiere
- * una fase posterior (Fase 3: selector) y luego Fase 4 (integración de motores).
+ * CATALOGO DE TERRITORIOS CREATIVOS — 19 territorios activos.
+ * Los datos se consumen desde motor-nucleo.js y el selector creativeTerritory.
+ * compatibleStyles son recomendaciones; compatibleTreatments son restricciones del eje estructural.
  */
 
 'use strict';
@@ -34,6 +32,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Sagrado editorial",
     label_en: "Sacred Editorial",
     description: "La fe interpretada mediante diseño editorial contemporáneo. Tipografía protagonista, retículas, numeración, anotaciones y bloques de texto. Lenguaje visual de una publicación cultural.",
+    promptDirective: "Construye la pieza como una página editorial contemporánea: establece una retícula legible, jerarquía tipográfica deliberada y anotaciones funcionales; deriva el símbolo del concepto y evita cruces genéricas u ornamento tipográfico vacío.",
     resources: ["tipografia", "reticulas", "numeracion", "anotaciones", "bloques_texto", "portadas_libros", "diseno_editorial"],
     themes: ["identidad_cristo", "verdad", "gracia", "santidad", "discipulado"],
     restrictions: ["no_cruces_centrales_genericas", "no_tipografias_decorativas_vacias"],
@@ -55,6 +54,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Botánica bíblica",
     label_en: "Biblical Botanical",
     description: "La naturaleza como lenguaje visual de las Escrituras. Recursos: raíces, semillas, olivos, vides, espigas, ramas y frutos. Temas: permanecer en Cristo, fruto del Espíritu, esperanza y crecimiento.",
+    promptDirective: "Elige una especie o estructura botánica concreta que nazca de la metáfora bíblica indicada; cada raíz, hoja, fruto o rama debe cumplir una función semántica y no convertirse en decoración vegetal gratuita.",
     resources: ["raices", "semillas", "olivos", "vides", "espigas", "ramas", "frutos", "crecimiento", "permanencia"],
     themes: ["permanecer_en_cristo", "crecimiento_espiritual", "fruto_espiritu", "esperanza", "vida_eterna"],
     restrictions: ["no_plantas_ornamentales_sin_metafora_biblica", "las_plantas_deben_nacer_del_texto"],
@@ -72,6 +72,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Arqueología bíblica",
     label_en: "Biblical Archaeology",
     description: "Diseños inspirados en la materialidad del mundo antiguo: inscripciones, sellos, mapas históricos, tablillas, papiros y diagramas arqueológicos. Temas: orígenes, alianzas, promesas y redención.",
+    promptDirective: "Trata la pieza como un documento visual del mundo antiguo: usa inscripciones, sellos, mapas o materiales verificables y distingue claramente la interpretación artística de cualquier dato histórico; no inventes hallazgos ni símbolos como hechos.",
     resources: ["inscripciones", "sellos", "mapas_historicos", "tablillas", "papiros", "diagramas_arqueologicos", "documentos_antiguos"],
     themes: ["origenes", "alianzas", "promesas", "exodo", "historia_redencion", "pacto"],
     restrictions: ["no_elementos_inventados_como_historicos", "referencias_deben_ser_verificables"],
@@ -89,6 +90,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Abstracción teológica",
     label_en: "Theological Abstraction",
     description: "Representar una verdad mediante formas, estructuras, relaciones visuales y geometría. El concepto no depende de ilustrar literalmente el texto bíblico, sino de expresar su significado a través de relaciones espaciales, tensión, contraste y repetición.",
+    promptDirective: "Traduce la tensión teológica central a relaciones espaciales, geometría, escala, contraste y vacío; evita ilustrar literalmente el pasaje y asegúrate de que cada forma abstracta exprese una relación conceptual reconocible.",
     resources: ["geometria", "modulos", "tension", "contraste", "repeticion", "espacio_negativo", "formas_abstractas", "estructuras"],
     themes: ["eternidad", "unidad", "redencion", "transformacion", "esperanza", "poder_en_debilidad"],
     restrictions: ["no_ilustracion_literal_del_texto", "el_concepto_debe_nacer_de_la_tension_teologica"],
@@ -106,6 +108,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Heritage cristiano",
     label_en: "Christian Heritage",
     description: "Tradición gráfica reinterpretada como identidad contemporánea: sellos, emblemas, grabados, escudos originales, ornamentos y tipografía histórica. Temas: confesión de fe, fidelidad, perseverancia y herencia espiritual.",
+    promptDirective: "Diseña un emblema original con lenguaje de sello, grabado o heráldica reinterpretada; construye su identidad desde el mensaje y no reproduzcas escudos, insignias ni ornamentos identificables de iglesias u organizaciones reales.",
     resources: ["sellos", "emblemas", "grabados", "escudos", "ornamentos", "tipografia_historica", "marcos_decorativos"],
     themes: ["confesion_fe", "fidelidad", "perseverancia", "herencia_espiritual", "tradicion"],
     restrictions: ["no_usar_escudos_de_organizaciones_comerciales_reales_como_ornamento", "no_copiar_escudos_de_iglesias_reales"],
@@ -123,6 +126,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Ilustración narrativa",
     label_en: "Narrative Illustration",
     description: "La fe contada mediante escenas y secuencias visuales: viñetas, secuencias, personajes secundarios, paisajes y escenas ilustradas. Temas: parábolas, acontecimientos bíblicos y experiencias de transformación.",
+    promptDirective: "Cuenta una verdad bíblica mediante una escena o secuencia visual con acción, contexto y punto de lectura claros; cada personaje y elemento secundario debe contribuir al relato, sin imitar franquicias ni personajes comerciales existentes.",
     resources: ["vinetas", "secuencias", "personajes_secundarios", "paisajes", "escenas_ilustradas", "narrativa_visual"],
     themes: ["parabolas", "acontecimientos_biblicos", "experiencias_transformacion", "historias_fe"],
     restrictions: ["no_imitar_francises_comerciales_conocidas", "no_usar_personajes_realistas_de_francises_reales"],
@@ -140,6 +144,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Fe cotidiana",
     label_en: "Everyday Faith",
     description: "La espiritualidad en la vida real. Recursos: objetos cotidianos, escritura manual, anotaciones, diarios y composiciones espontáneas. Temas: oración, descanso, obediencia, servicio, paciencia y vida familiar.",
+    promptDirective: "Parte de una situación u objeto cotidiano reconocible y conecta su función con la verdad espiritual concreta; conserva espontaneidad y claridad, evita escenas recargadas y no añadas símbolos religiosos genéricos sin relación con el concepto.",
     resources: ["objetos_cotidianos", "escritura_manual", "anotaciones", "diarios", "composiciones_espontaneas", "vida_familiar"],
     themes: ["oracion", "descanso", "obediencia", "servicio", "paciencia", "vida_familiar", "practica_diaria"],
     restrictions: ["no_complicaciones_visuales_excesivas", "no_alejarse_de_la_cotidianidad_reconocible"],
@@ -160,6 +165,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Workwear de fe",
     label_en: "Faith Workwear",
     description: "La fe expresada mediante el lenguaje gráfico del trabajo y la utilidad: etiquetas técnicas, numeraciones, diagramas, nomenclaturas, identificadores y gráficos funcionales. Temas: servicio, fidelidad, vocación y trabajo hecho para el Señor.",
+    promptDirective: "Construye la gráfica como un sistema utilitario de trabajo: etiquetas, nomenclaturas, diagramas o identificadores deben organizar información real del concepto; evita ornamentos promocionales y detalles técnicos inventados que no aporten significado.",
     resources: ["etiquetas_tecnicas", "numeraciones", "diagramas", "nomenclaturas", "identificadores", "graficos_funcionales", "documentacion_tecnica"],
     themes: ["servicio", "fidelidad", "vocacion", "trabajo_para_el_senor", "oficio", "responsabilidad"],
     restrictions: ["no_ornamentos_decorativos_inutiles", "no_estetica_promocional_de_iglesia"],
@@ -177,6 +183,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Arte de contraste",
     label_en: "Contrast Art",
     description: "Contradicciones humanas interpretadas desde la teología cristiana mediante dualidad, fragmentación, contraste de escalas, oposición entre formas y composiciones asimétricas. Temas: debilidad y poder, muerte y resurrección, esclavitud y libertad, culpa y perdón.",
+    promptDirective: "Haz que la composición nazca de una oposición teológica concreta: distribuye fuerzas, escalas, fragmentos y espacios negativos para que el conflicto se entienda visualmente; no reduzcas la tensión a un contraste cromático decorativo.",
     resources: ["dualidad", "fragmentacion", "contraste_escalas", "oposicion_formas", "asimetria", "tension_visual", "espacio_negativo_extremo"],
     themes: ["debilidad_poder", "muerte_resurreccion", "esclavitud_libertad", "culpa_perdon", "transformacion"],
     restrictions: ["no_simplificaciones_visuales_que_ignoren_la_tension_conceptual", "la_composicion_debe_nacer_del_mensaje"],
@@ -194,6 +201,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Cultura y fe local",
     label_en: "Local Faith Culture",
     description: "La identidad cristiana vinculada a una comunidad, una región y su cultura: expresiones regionales, elementos arquitectónicos, referencias culturales, escenas cotidianas y lenguajes gráficos locales.",
+    promptDirective: "Integra referencias regionales concretas y comprobables en el lenguaje visual sin convertirlas en estereotipos; conserva la identidad local indicada y conecta cada referencia cultural con el mensaje de fe.",
     resources: ["expresiones_regionales", "elementos_arquitectonicos", "referencias_culturales", "escenas_cotidianas", "lenguajes_graficos_locales", "arte_popular"],
     themes: ["fe_en_comunidad", "perseverancia", "servicio", "esperanza", "pertenencia", "identidad_regional"],
     restrictions: ["no_generalizaciones_culturales_que_borren_la_identidad", "cada_region_tiene_sus_propias_referencias"],
@@ -211,7 +219,7 @@ const POD_CREATIVE_TERRITORIES = {
     label_es: "Streetwear urbano",
     label_en: "Urban Streetwear",
     description: "Estetica de calle, cultura urbana y deporte.",
-    promptDirective: "Compon el diseno con lenguaje de calle.",
+    promptDirective: "Construye la composición con códigos gráficos urbanos y jerarquía de streetwear; el símbolo debe sostener la identidad de calle sin recurrir a estereotipos ni imitar marcas existentes.",
     resources: ["tipografia_bold"],
     themes: ["identidad_urbana"],
     restrictions: ["no_estereotipos_negativos"],
@@ -378,8 +386,7 @@ Object.keys(POD_CREATIVE_TERRITORIES).forEach(function (territoryId) {
   if (match) rec.description = match[1].trim();
 });
 
-// Exportación para consumo por motor-nucleo.js (en Fase 4).
-// En Fase 1 y 2, este archivo solo existe; no se importa en ningún archivo existente.
+// Exportación para pruebas Node y consumo por el runtime del navegador.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { POD_CREATIVE_TERRITORIES };
 }
