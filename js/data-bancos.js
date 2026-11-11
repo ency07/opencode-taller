@@ -1873,13 +1873,13 @@ function getKeywordsForSubniche(id) {
   return s && Array.isArray(s.keywords) ? s.keywords : [];
 }
 
-function getBankAudiencesForSubniche(id, region) {
+function getBankAudiencesForSubniche(id, region, marketId) {
   const s = POD_SUBNICHES[id];
   if (!s || !Array.isArray(s.audiencias)) return [];
 
-  const regionalAudiences = typeof getAudiencesForRegion === "function"
-    ? getAudiencesForRegion(region)
-    : null;
+  const regionalAudiences = marketId && typeof getAudiencesForMarketRegion === "function"
+    ? getAudiencesForMarketRegion(marketId, region || "global")
+    : (typeof getAudiencesForRegion === "function" ? getAudiencesForRegion(region) : null);
 
   if (!regionalAudiences || !regionalAudiences.length) return s.audiencias;
 

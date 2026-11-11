@@ -1230,7 +1230,7 @@ function getAudiencesForSubniche(subniche, region, marketId) {
   }
 
   const bankPool = typeof getBankAudiencesForSubniche === 'function'
-    ? getBankAudiencesForSubniche(id, region) : [];
+    ? getBankAudiencesForSubniche(id, region, market) : [];
   if (Array.isArray(bankPool) && bankPool.length) {
     const compatible = base.filter(function (audience) { return bankPool.indexOf(audience) !== -1; });
     if (compatible.length) return compatible;
