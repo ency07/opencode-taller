@@ -832,8 +832,13 @@ function getDefaultRegionForMarket(marketId) {
 function getLanguageOptionsHTML(marketId) {
   const market = getMarket(marketId);
   const defaultLang = market.language || "auto";
+  // Gospel ES y Gospel EN son mercados distintos, no un selector bilingüe.
+  // Exponer un solo idioma evita desalinear el banco doctrinal del prompt.
+  const languageIds = market.culture === "gospel" && (defaultLang === "es" || defaultLang === "en")
+    ? [defaultLang]
+    : Object.keys(POD_LANGUAGES);
 
-  return Object.keys(POD_LANGUAGES).map(function (id) {
+  return languageIds.map(function (id) {
     const selected = id === defaultLang ? " selected" : "";
     return '<option value="' + id + '"' + selected + '>' + POD_LANGUAGES[id] + "</option>";
   }).join("");
@@ -943,9 +948,10 @@ function getSubnicheOptionsHTML(marketId, group, region, selectedId) {
 
 function getLanguageDirective(marketId, languageOverride) {
   const market = getMarket(marketId);
-  const lang = languageOverride && languageOverride !== "auto"
-    ? languageOverride
-    : market.language;
+  // La identidad del mercado Gospel fija el idioma del banco y del prompt.
+  const lang = market.culture === "gospel"
+    ? market.language
+    : (languageOverride && languageOverride !== "auto" ? languageOverride : market.language);
 
   if (lang === "en") {
     return "All visible design text and prompt output must be written in natural, native English. Do not translate literally from Spanish.";
