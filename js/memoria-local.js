@@ -9,6 +9,7 @@
      ============================================================ */
 
   const MEM_PREFIX = 'POD2|';
+  const SYNC_META_KEY = MEM_PREFIX + 'syncMeta';
 
   const POD_LS = (function () {
     let mem = {};
@@ -20,6 +21,41 @@
       ok = true;
     } catch (e) {
       ok = false;
+    }
+
+    function readSyncMeta() {
+      var raw = mem[SYNC_META_KEY];
+      if (raw === undefined && ok) {
+        try { raw = window.localStorage.getItem(SYNC_META_KEY); } catch (e) { raw = null; }
+      }
+      try {
+        var parsed = JSON.parse(raw || '{}');
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+      } catch (e) { return {}; }
+    }
+    function writeSyncMeta(meta) {
+      var raw = JSON.stringify(meta || {});
+      if (ok) {
+        try {
+          window.localStorage.setItem(SYNC_META_KEY, raw);
+          delete mem[SYNC_META_KEY];
+          return true;
+        } catch (e) {
+          mem[SYNC_META_KEY] = raw;
+          return false;
+        }
+      }
+      mem[SYNC_META_KEY] = raw;
+      return true;
+    }
+    function touchSyncMeta(key, operation) {
+      try {
+        var meta = readSyncMeta();
+        meta[key] = { op: operation, at: new Date().toISOString() };
+        writeSyncMeta(meta);
+      } catch (e) {
+        // Metadata failure must not block the user's local operation.
+      }
     }
 
     return {
@@ -35,6 +71,7 @@
         return null;
       },
       setItem: function (k, v) {
+        if (String(k).indexOf(MEM_PREFIX) === 0 && k !== SYNC_META_KEY) touchSyncMeta(k, 'set');
         if (ok) {
           try {
             window.localStorage.setItem(k, v);
@@ -50,12 +87,14 @@
         return true;
       },
       removeItem: function (k) {
+        if (String(k).indexOf(MEM_PREFIX) === 0 && k !== SYNC_META_KEY) touchSyncMeta(k, 'delete');
         delete mem[k];
         if (ok) {
           try {
             window.localStorage.removeItem(k);
           } catch (e) {
-            // ignore
+            // A failed physical deletion is still recorded as a tombstone;
+            // merge/apply will keep the key logically deleted across devices.
           }
         }
       },
@@ -1099,13 +1138,64 @@
     summary.keysMerged = keys.length;
     return { ok: true, importedKeys: keys.length, summary: summary };
   }
+  function _parseSyncMeta(raw) {
+    try {
+      const value = typeof raw === 'string' ? JSON.parse(raw || '{}') : (raw || {});
+      return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    } catch (e) { return {}; }
+  }
+
+  function applyMergedMemoryObject(merged) {
+    merged = merged || {};
+    const meta = _parseSyncMeta(merged[SYNC_META_KEY]);
+    Object.keys(meta).forEach(function (key) {
+      if (meta[key] && meta[key].op === 'delete') POD_LS.removeItem(key);
+    });
+    Object.keys(merged).forEach(function (key) {
+      if (String(key).indexOf(MEM_PREFIX) === 0 && key !== SYNC_META_KEY) POD_LS.setItem(key, merged[key]);
+    });
+    if (Object.prototype.hasOwnProperty.call(merged, SYNC_META_KEY)) {
+      // Write metadata last so applying merged values does not change its timestamps.
+      POD_LS.setItem(SYNC_META_KEY, merged[SYNC_META_KEY]);
+    }
+  }
+
   function mergeMemoryObjects(local, remote) {
     local = local || {};
     remote = remote || {};
 
     const out = Object.assign({}, remote, local);
+    const localMeta = _parseSyncMeta(local[SYNC_META_KEY]);
+    const remoteMeta = _parseSyncMeta(remote[SYNC_META_KEY]);
+    const mergedMeta = {};
+    const deletedKeys = Object.create(null);
+    const replacedKeys = Object.create(null);
+    const metaKeys = Array.from(new Set(Object.keys(localMeta).concat(Object.keys(remoteMeta))));
+
+    metaKeys.forEach(function (key) {
+      const lm = localMeta[key], rm = remoteMeta[key];
+      var winner = lm || rm, winnerSide = lm ? 'local' : 'remote';
+      if (lm && rm) {
+        const lt = Date.parse(lm.at || '') || 0;
+        const rt = Date.parse(rm.at || '') || 0;
+        if (rt > lt || (rt === lt && rm.op === 'delete' && lm.op !== 'delete')) {
+          winner = rm; winnerSide = 'remote';
+        }
+      }
+      mergedMeta[key] = winner;
+      if (winner.op === 'delete') {
+        deletedKeys[key] = true;
+        delete out[key];
+      } else if (lm && rm && lm.op !== rm.op) {
+        // A write newer than a deletion is a deliberate recreation. Do not
+        // union stale values from the deleted copy back into the new value.
+        replacedKeys[key] = true;
+        out[key] = winnerSide === 'local' ? local[key] : remote[key];
+      }
+    });
 
     Object.keys(out).forEach(function (k) {
+      if (k === SYNC_META_KEY || deletedKeys[k] || replacedKeys[k]) return;
       if (String(k).indexOf(MEM_PREFIX) !== 0) return;
 
       try {
@@ -1179,6 +1269,7 @@
       }
     });
 
+    if (metaKeys.length) out[SYNC_META_KEY] = JSON.stringify(mergedMeta);
     return out;
   }
 
@@ -1190,9 +1281,7 @@
       const local = exportMemoryObject();
       const merged = mergeMemoryObjects(local, data);
 
-      Object.keys(merged).forEach(function (k) {
-        POD_LS.setItem(k, merged[k]);
-      });
+      applyMergedMemoryObject(merged);
 
       return {
         restored: Object.keys(merged).length,
@@ -1233,7 +1322,8 @@
   }
 
   function clearAllMemory() {
-    listMemoryKeys().forEach(function (k) {
+    // Keep the sync metadata so remote copies receive deletion tombstones.
+    listMemoryKeys().filter(function (k) { return k !== SYNC_META_KEY; }).forEach(function (k) {
       POD_LS.removeItem(k);
     });
   }
@@ -1563,6 +1653,8 @@
   window.exportPersonalBanksJSON = exportPersonalBanksJSON;
   window.importPersonalBanksJSON = importPersonalBanksJSON;
   window.mergeMemoryObjects = mergeMemoryObjects;
+  window.applyMergedMemoryObject = applyMergedMemoryObject;
+  window.SYNC_META_KEY = SYNC_META_KEY;
   window.importMemoryJSON = importMemoryJSON;
   window.downloadMemoryFile = downloadMemoryFile;
   window.clearAllMemory = clearAllMemory;

@@ -185,12 +185,14 @@
       }
     }
 
-    // Aplicar localmente
-    Object.keys(merged).forEach(function (k) {
-      if (String(k).indexOf('POD2|') === 0) {
-        LS.setItem(k, merged[k]);
-      }
-    });
+    // Aplicar localmente, incluyendo eliminaciones remotas marcadas con tombstones.
+    if (typeof applyMergedMemoryObject === 'function') {
+      applyMergedMemoryObject(merged);
+    } else {
+      Object.keys(merged).forEach(function (k) {
+        if (String(k).indexOf('POD2|') === 0) LS.setItem(k, merged[k]);
+      });
+    }
 
     status('Sincronización completada. Memoria fusionada.');
     return merged;
