@@ -2299,15 +2299,7 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     }
 
     const tecPool = _tecnicaSinObjetos(sp.tecnica || ['técnica mixta']);
-    // La preferencia del estilo es prioritaria, pero no puede degradar la
-    // diversidad del set cuando varias fichas comparten un pool corto o genérico.
-    // El fallback global solo se consulta después de agotar las técnicas propias.
-    const allStyleTechniques = Object.keys(typeof STYLE_POOLS !== 'undefined' ? STYLE_POOLS : {}).reduce(function (all, styleKey) {
-      const stylePool = STYLE_POOLS[styleKey] || {};
-      return all.concat(Array.isArray(stylePool.tecnica) ? stylePool.tecnica : []);
-    }, []);
-    const globalTechniquePool = _tecnicaSinObjetos(Array.from(new Set(allStyleTechniques)));
-    v.tecnica = _pickFresh(tecPool, globalTechniquePool.length ? globalTechniquePool : tecPool, usedAxes.tecnica);
+    v.tecnica = _pickFresh(tecPool, tecPool, usedAxes.tecnica);
     usedAxes.tecnica.push(v.tecnica);
     v.relacion = contactIdentity
       ? 'Integra el mensaje siguiendo solo el contorno y los espacios reales del símbolo; si afecta la lectura, separa texto e imagen. No añadas materiales u objetos no indicados.'
