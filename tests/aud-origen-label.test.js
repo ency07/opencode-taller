@@ -103,14 +103,6 @@ const regActiva = els.region.value;
 const poolAutenticos = getAudiencesForMarketRegion('colombia', regActiva);
 ok(poolAutenticos.every(function (id) { return valuesAuto.indexOf(id) !== -1; }), 'el pool del mercado completo está en el selector');
 
-console.log('RTDEBUG audience', {
-  region: regActiva,
-  marketPool: getAudiencesForMarketRegion('colombia', regActiva),
-  bankPool: window.getBankAudiencesForSubniche ? window.getBankAudiencesForSubniche('humor_costeno', regActiva, 'colombia') : 'missing',
-  recordAudiences: window.POD_SUBNICHES && window.POD_SUBNICHES.humor_costeno && window.POD_SUBNICHES.humor_costeno.audiencias,
-  recordGeneric: window.POD_SUBNICHES && window.POD_SUBNICHES.humor_costeno && window.POD_SUBNICHES.humor_costeno.audienciasGenericas,
-  canonical: getAudiencesForSubniche('humor_costeno', regActiva, 'colombia')
-});
 els.subniche.value = 'humor_costeno';
 global.cascadeUpdate();
 const htmlHumor = els.audienceSet._html;

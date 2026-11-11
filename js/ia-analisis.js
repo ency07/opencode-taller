@@ -159,7 +159,7 @@
       : (typeof getAudiencesForRegion === 'function' ? getAudiencesForRegion(effRegion) : (typeof AUD_NAMES !== 'undefined' ? AUD_NAMES.slice() : []));
     const subniche = $('subniche') ? $('subniche').value : 'auto';
     if (subniche !== 'auto' && typeof getAudiencesForSubniche === 'function') {
-      const subPool = getAudiencesForSubniche(subniche, effRegion) || [];
+      const subPool = getAudiencesForSubniche(subniche, effRegion, marketId) || [];
       const compatible = audiences.filter(function (a) { return subPool.indexOf(a) !== -1; });
       if (compatible.length) audiences = compatible;
     }
