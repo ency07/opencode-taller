@@ -1022,6 +1022,24 @@ const AUD_STYLE_PREF = {
   gospel_family_faith: ["Folk Popular", "Kids Storybook", "Hand-Drawn", "Vitral / Mosaico", "Acuarela Suelta", "Bohemian", "Bordado / Puntada", "Collage Cut-Paper"]
 };
 
+
+/* RED TEAM: ampliar cobertura de preferencias sin convertirlas en candados.
+   Los estilos siguen disponibles en todos los mercados; estas preferencias
+   solo orientan el peso de selección por audiencia. */
+(function completeAudienceStyleCoverage() {
+ const additions={
+  global_joven_es:["Neón punk","Cómic grunge","Superflat","Neoexpresionismo","Cartoon moderno","Constructivismo","Pop art","Doodle a dos colores"],
+  global_adulto_es:["Noir gráfico","Art déco","Bauhaus","Pintura al óleo","Blanco y negro","Línea a dos tintas","Line art minimalista","Flat geométrico"],
+  global_familia_es:["Caricatura","Cartoon retro","Superflat","Doodle a dos colores","Pop art"],
+  coste_joven_m:["Neón punk","Cómic grunge","Constructivismo","Pop art","Cartoon moderno"],
+  andino_adulto_m:["Noir gráfico","Art déco","Bauhaus","Blanco y negro","Línea a dos tintas"],
+  llanos_identidad:["Flat geométrico","Doodle a dos colores","Línea art de una tinta","Superflat"],
+  infantil_col:["Caricatura","Cartoon retro","Cartoon moderno","Superflat"],
+  unisex_nacional:["Art déco","Bauhaus","Neoexpresionismo","Pintura al óleo","Línea art de una tinta","Blanco y negro"]
+ };
+ Object.keys(additions).forEach(function(a){ if(!AUD_STYLE_PREF[a]) AUD_STYLE_PREF[a]=[]; additions[a].forEach(function(s){if(AUD_STYLE_PREF[a].indexOf(s)===-1) AUD_STYLE_PREF[a].push(s);}); });
+})();
+
 const AUD_LAYOUT_PREF = {
   coste_joven_m: [
     "Diagonal descendente",
