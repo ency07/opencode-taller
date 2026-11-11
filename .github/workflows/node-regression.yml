@@ -7,9 +7,12 @@ on:
       - fix/redteam-semantic-identity
       - fix/debt-015-profile-governs
       - integration/taller-pod-consolidation
+      - preview/fix3e-structural-diversity
+      - fix/redteam-production-hardening
   pull_request:
     branches:
       - main
+      - integration/taller-pod-consolidation
   workflow_dispatch:
 
 permissions:

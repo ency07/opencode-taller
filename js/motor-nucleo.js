@@ -1907,7 +1907,13 @@ function _diversifyAxes(set, usedAxes, targetKey) {
       if (profilePool.length === 0) return null;
       return profilePool;
     }
-    return ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
+    var profileKey = String(v.perfilEstructural || '').toUpperCase();
+    var allowedModes = PROFILE_VISUAL_MODES[profileKey];
+    // Un perfil estructural declarado es un límite duro. Solo las fichas sin
+    // perfil explícito conservan el catálogo completo de jerarquías.
+    return Array.isArray(allowedModes) && allowedModes.length
+      ? allowedModes.slice()
+      : ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
   }
 
   function _registerConflict(conflict) {
@@ -2036,7 +2042,7 @@ function _diversifyAxes(set, usedAxes, targetKey) {
             audiencia: set[k].audiencia,
             estilo: set[k].estilo,
             tipografia: set[k].tipografia,
-            formaSimbodo: set[k].formaSimbodo,
+            formaSimbolo: set[k].formaSimbolo,
             tratamiento: set[k].tratamiento,
             layout: (field === 'layout') ? newVal : set[k].layout,
             jerarquiaVisual: (field === 'jerarquiaVisual') ? newVal : set[k].jerarquiaVisual,
