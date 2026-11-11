@@ -26,6 +26,7 @@ const ORDER = [
   'data-audiencias.js',
   'data-bancos.js',
   'data-estilos.js',
+  'data-territorios.js',
   'dominios.js',
   'data-productos.js',
   'memoria-local.js',
@@ -90,7 +91,62 @@ DERIVED_VISUAL_STYLES.forEach(function (style) {
     style + ': arquitectura y composición no deben ser listas idénticas');
 });
 
-/* ---------- 2. AUD_STYLE_PREF ampliado (no solo 3/audiencia) ---------- */
+/* ---------- 2. Integridad de los 19 territorios creativos ---------- */
+const TERRITORY_IDS = Object.keys(POD_CREATIVE_TERRITORIES || {});
+const VALID_TREATMENTS = ['HEAVY', 'SOFT', 'MODERN'];
+const VALID_MARKETS = Object.keys(POD_MARKETS || {});
+const PRODUCTION_TREATMENTS = [
+  'Indexed Palette / Paleta indizada', 'Vector Flat / Plano vectorial',
+  'Spot Color Simulated / Tintas planas simuladas', 'Halftone Controlled / Tramado controlado',
+  'Knockout / Reserva blanca', 'Choke/Spread Trapping', 'Distress Production / Desgaste de producción',
+  'White Ink Optimized / Tinta blanca optimizada', 'CMYK Safe Gamut / Gamut CMYK seguro',
+  'Metallic Foil Ready / Listo para foil', 'Glitter Zone / Zona glitter', 'Glow Zone / Zona fosforescente'
+];
+ok(TERRITORY_IDS.length === 19, 'deben cargarse exactamente 19 territorios; cargados: ' + TERRITORY_IDS.length);
+TERRITORY_IDS.forEach(function (id) {
+  const rec = POD_CREATIVE_TERRITORIES[id] || {};
+  ok(rec.id === id, id + ': id interno distinto de la clave');
+  ok(!!rec.label && !!rec.label_es && !!rec.label_en, id + ': faltan etiquetas');
+  ok(!!rec.description && !!rec.promptDirective, id + ': falta descripción o directriz operativa');
+  ok(Array.isArray(rec.compatibleStyles) && rec.compatibleStyles.length > 0,
+    id + ': debe declarar estilos compatibles');
+  ok((rec.compatibleStyles || []).every(function (style) {
+    return ESTILOS_LIST.indexOf(style) !== -1 && PRODUCTION_TREATMENTS.indexOf(style) === -1;
+  }), id + ': contiene estilos inexistentes o tratamientos de producción en compatibleStyles');
+  ok(Array.isArray(rec.compatibleTreatments) && rec.compatibleTreatments.length > 0
+    && rec.compatibleTreatments.every(function (t) { return VALID_TREATMENTS.indexOf(t) !== -1; }),
+    id + ': contiene tratamientos vacíos o inválidos');
+  ok(Array.isArray(rec.compatibleMarkets) && rec.compatibleMarkets.some(function (m) {
+    return VALID_MARKETS.indexOf(m) !== -1;
+  }), id + ': no es compatible con ningún mercado real del catálogo');
+
+  const compatibleRealMarkets = rec.compatibleMarkets.filter(function (m) {
+    return VALID_MARKETS.indexOf(m) !== -1;
+  });
+  compatibleRealMarkets.forEach(function (market) {
+    MOTOR_STATE.market = market;
+    ok(_creativeTerritoryCompatibleWithMarket(id) === id,
+      id + ': rechaza su mercado declarado ' + market);
+  });
+  const incompatibleMarket = VALID_MARKETS.filter(function (m) {
+    return compatibleRealMarkets.indexOf(m) === -1;
+  })[0];
+  if (incompatibleMarket) {
+    MOTOR_STATE.market = incompatibleMarket;
+    ok(_creativeTerritoryCompatibleWithMarket(id) === 'auto',
+      id + ': acepta mercado no compatible ' + incompatibleMarket);
+  }
+
+  MOTOR_STATE.creativeTerritory = id;
+  const filteredTreatments = _territoryTreatmentFilter(VALID_TREATMENTS);
+  ok(filteredTreatments.length > 0 && filteredTreatments.every(function (t) {
+    return rec.compatibleTreatments.indexOf(t) !== -1;
+  }), id + ': el filtro de tratamientos no respeta el contrato');
+});
+MOTOR_STATE.market = 'global_es';
+MOTOR_STATE.creativeTerritory = 'auto';
+
+/* ---------- 3. AUD_STYLE_PREF ampliado (no solo 3/audiencia) ---------- */
 const audIds = Object.keys(AUD_STYLE_PREF);
 ok(audIds.length >= 20, 'AUD_STYLE_PREF debe tener 20+ audiencias, tiene ' + audIds.length);
 const thin = audIds.filter(function (a) { return (AUD_STYLE_PREF[a] || []).length < 6; });
