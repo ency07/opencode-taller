@@ -17,7 +17,8 @@
  *                         esos valores pertenecen a sus respectivos catalogos/ejes y se declaran en su lugar.
  * - compatibleTreatments: ids de tratamiento estructural del catalogo de tratamientos (data-tratamientos.js):
  *                         HEAVY / SOFT / MODERN (ORDEN FIJA). NO se mezclan con estilos.
- * - compatibleMarkets:    ids de mercado con los que el territorio puede convivir.
+ * - compatibleMarkets:    IDs reales definidos en POD_MARKETS; el motor valida compatibilidad exacta.
+ * - compatibleMarketTags: categorías descriptivas (p. ej. lifestyle, streetwear); no son IDs y no habilitan mercados.
  *
  * Compatibilidades NO verificables:
  * - Los diez territorios se declaran con direcciones propias (description/themes/restrictions); las
@@ -42,7 +43,8 @@ const POD_CREATIVE_TERRITORIES = {
     compatibleStyles: ["Minimal Modern", "Gótico Ornamental"],
     // Eje de tratamiento (data-tratamientos.js): ids de tratamiento estructural.
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "streetwear", "lifestyle"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "streetwear", "lifestyle"]
     visualIdentity: "editorial_contemporaneo",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 1
@@ -60,7 +62,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_plantas_ornamentales_sin_metafora_biblica", "las_plantas_deben_nacer_del_texto"],
     compatibleStyles: ["Bohemian", "Acuarela Suelta"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "nature_outdoor"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "lifestyle", "nature_outdoor"]
     visualIdentity: "botanica_organica_detallada",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 1
@@ -78,7 +81,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_elementos_inventados_como_historicos", "referencias_deben_ser_verificables"],
     compatibleStyles: ["Vintage Desgastado", "Blueprint / Technical", "Grabado / Linóleo"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "professional_community"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "lifestyle", "professional_community"]
     visualIdentity: "archivo_documentado",
     brandAssociation: ["BERESHITH_CO"],
     priority: 1
@@ -96,7 +100,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_ilustracion_literal_del_texto", "el_concepto_debe_nacer_de_la_tension_teologica"],
     compatibleStyles: ["Minimal Modern", "Brutalist"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "art_design"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "lifestyle", "art_design"]
     visualIdentity: "geometria_teologica",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 2
@@ -114,7 +119,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_usar_escudos_de_organizaciones_comerciales_reales_como_ornamento", "no_copiar_escudos_de_iglesias_reales"],
     compatibleStyles: ["Folk Popular", "Bordado / Puntada", "Vintage Desgastado"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "professional_community", "lifestyle"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "professional_community", "lifestyle"]
     visualIdentity: "emblema_reinterpretado",
     brandAssociation: ["BERESHITH_CO"],
     priority: 2
@@ -132,7 +138,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_imitar_francises_comerciales_conocidas", "no_usar_personajes_realistas_de_francises_reales"],
     compatibleStyles: ["Kids Storybook", "Cómic / Halftone"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "music_entertainment", "humor_pop"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "lifestyle", "music_entertainment", "humor_pop"]
     visualIdentity: "narrativa_secuencial",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 2
@@ -153,7 +160,8 @@ const POD_CREATIVE_TERRITORIES = {
     // alterar la asignación sin justificación adicional).
     compatibleStyles: ["Hand-Drawn", "Bordado / Puntada"],
     compatibleTreatments: ["SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "professional_community", "nature_outdoor"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "lifestyle", "professional_community", "nature_outdoor"]
     visualIdentity: "diario_visual",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 2
@@ -171,7 +179,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_ornamentos_decorativos_inutiles", "no_estetica_promocional_de_iglesia"],
     compatibleStyles: ["Blueprint / Technical", "Stencil Urbano"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "professional_community", "automotive_industrial", "streetwear"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "professional_community", "automotive_industrial", "streetwear"]
     visualIdentity: "funcional_utilitario",
     brandAssociation: ["CrossLampCo", "BERESHITH_CO"],
     priority: 1
@@ -189,7 +198,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_simplificaciones_visuales_que_ignoren_la_tension_conceptual", "la_composicion_debe_nacer_del_mensaje"],
     compatibleStyles: ["Brutalist", "Photomontage / Dada"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "lifestyle", "art_design", "professional_community"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "lifestyle", "art_design", "professional_community"]
     visualIdentity: "tension_asimetrica",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 2
@@ -207,7 +217,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_generalizaciones_culturales_que_borren_la_identidad", "cada_region_tiene_sus_propias_referencias"],
     compatibleStyles: ["Folk Popular", "Collage Cut-Paper", "Hand-Drawn"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["christian", "gospel_es", "gospel_en", "professional_community", "lifestyle", "music_entertainment", "nature_outdoor"],
+    compatibleMarkets: ["gospel_es", "gospel_en"],
+    compatibleMarketTags: ["christian", "professional_community", "lifestyle", "music_entertainment", "nature_outdoor"]
     visualIdentity: "identidad_regional",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 2
@@ -225,7 +236,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_estereotipos_negativos"],
     compatibleStyles: ["Brutalist", "Stencil Urbano"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "streetwear", "lifestyle"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es"],
+    compatibleMarketTags: ["streetwear", "lifestyle"]
     visualIdentity: "urbano_grafico",
     brandAssociation: [],
     priority: 1
@@ -243,7 +255,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_naturaleza_ornamental_sin_metafora"],
     compatibleStyles: ["Acuarela Suelta", "Folk Popular"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "nature_outdoor"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es"],
+    compatibleMarketTags: ["lifestyle", "nature_outdoor"]
     visualIdentity: "organico_natural",
     brandAssociation: [],
     priority: 2
@@ -261,7 +274,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_sobrecarga_visual"],
     compatibleStyles: ["Minimal Modern", "Brutalist"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "art_design"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es"],
+    compatibleMarketTags: ["lifestyle", "art_design"]
     visualIdentity: "minimalista_contemporaneo",
     brandAssociation: [],
     priority: 3
@@ -279,7 +293,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_mascota_generica_sin_identidad", "no_humanizar_en_exceso"],
     compatibleStyles: ["Kids Storybook", "Hand-Drawn", "Minimal Modern", "Retro 70s", "Acuarela Suelta", "Folk Popular", "Collage Cut-Paper", "Pixel / 8-bit"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es"],
+    compatibleMarketTags: ["lifestyle"]
     visualIdentity: "mascotas_afecto",
     brandAssociation: [],
     priority: 1
@@ -297,7 +312,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_estereotipo_oficico", "no_humanizar_en_exceso"],
     compatibleStyles: ["Vintage Desgastado", "Blueprint / Technical", "Brutalist", "Hand-Drawn", "Retro 70s", "Bordado / Puntada", "Folk Popular", "Stencil Urbano"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "professional_community"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es"],
+    compatibleMarketTags: ["lifestyle", "professional_community"]
     visualIdentity: "profesion_orgullo",
     brandAssociation: [],
     priority: 2
@@ -315,7 +331,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_humor_generico_saturado", "no_ofender_grupos"],
     compatibleStyles: ["Brutalist", "Y2K / Cyber", "Retro 80s Neon", "Vaporwave", "Stencil Urbano", "Grunge / DIY", "Risograph", "Pixel / 8-bit"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es"],
+    compatibleMarketTags: ["lifestyle"]
     visualIdentity: "humor_sarcastico",
     brandAssociation: [],
     priority: 3
@@ -333,7 +350,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_hobby_generico_sin_equipo", "no_confundir_deporte_con_hobby"],
     compatibleStyles: ["Hand-Drawn", "Retro 70s", "Minimal Modern", "Kids Storybook", "Acuarela Suelta", "Collage Cut-Paper", "Vintage Desgastado", "Blueprint / Technical"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es"],
+    compatibleMarketTags: ["lifestyle"]
     visualIdentity: "hobby_identidad",
     brandAssociation: [],
     priority: 4
@@ -351,7 +369,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_imitacion_literal_de_marcas"],
     compatibleStyles: ["Vintage Desgastado", "Retro 70s", "Grunge / DIY"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "music_entertainment"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es"],
+    compatibleMarketTags: ["lifestyle", "music_entertainment"]
     visualIdentity: "retro_nostalgico",
     brandAssociation: [],
     priority: 4
@@ -369,7 +388,8 @@ const POD_CREATIVE_TERRITORIES = {
     restrictions: ["no_estereotipos_de_hacker"],
     compatibleStyles: ["Y2K / Cyber", "Pixel / 8-bit", "Vaporwave"],
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
-    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es", "lifestyle", "art_design", "professional_community"],
+    compatibleMarkets: ["global_en", "anglo", "colombia", "latam", "spain", "diaspora_col", "custom", "global_es"],
+    compatibleMarketTags: ["lifestyle", "art_design", "professional_community"]
     visualIdentity: "digital_cyber",
     brandAssociation: [],
     priority: 5
