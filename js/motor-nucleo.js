@@ -536,6 +536,19 @@ const PROFILE_VISUAL_MODES = {
   MODERN: ['OBJETO_DOMINANTE', 'BALANCEADO', 'TEXTO_DOMINANTE']
 };
 
+/* Cuando el territorio veta el tratamiento canónico de una ficha, el motor
+   puede elegir entre varios perfiles permitidos. La jerarquía debe pertenecer
+   a la intersección de todos ellos para seguir siendo válida tras esa elección. */
+function _sharedVisualModesForTreatments(treatments) {
+  const profiles = (treatments || []).map(function (t) {
+    return PROFILE_VISUAL_MODES[_treatmentKey(t)] || [];
+  }).filter(function (modes) { return modes.length > 0; });
+  if (!profiles.length) return [];
+  return profiles.slice(1).reduce(function (shared, modes) {
+    return shared.filter(function (mode) { return modes.indexOf(mode) !== -1; });
+  }, profiles[0].slice());
+}
+
 /* Franja descriptiva de jerarquía derivada del modo asignado (revisor/UI).
    El modo manda; el texto es consecuencia, nunca una elección aparte. */
 const _JERARQUIA_FRANJA_DE_MODO = {
@@ -583,14 +596,16 @@ function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
     const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[audsPerKey[key]] : []) || [];
     audHierarchy.forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : 1); });
     // Preferencia del perfil: +2 primera opción, +1 segunda, +0 tercera.
-    const profileModes = (profileByKey && PROFILE_VISUAL_MODES[profileByKey[key]]) || null;
+    const profileValue = profileByKey && profileByKey[key];
+    const profileModes = Array.isArray(profileValue) ? profileValue : (PROFILE_VISUAL_MODES[profileValue] || null);
     (profileModes || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : (i === 1 ? 1 : 0)); });
     return score;
   }
 
   const allowedByKey = {};
   auto.forEach(function (k) {
-    const profileModes = (profileByKey && PROFILE_VISUAL_MODES[profileByKey[k]]) || null;
+    const profileValue = profileByKey && profileByKey[k];
+    const profileModes = Array.isArray(profileValue) ? profileValue : (PROFILE_VISUAL_MODES[profileValue] || null);
     allowedByKey[k] = profileModes ? profileModes.slice() : Object.keys(MODES);
   });
 
@@ -2143,7 +2158,11 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
   const _tc = _territoryConstraints();
   if (_tc.treatments && _tc.treatments.length) {
     Object.keys(profileModeKeys).forEach(function (k) {
-      if (_tc.treatments.indexOf(profileModeKeys[k]) === -1) delete profileModeKeys[k];
+      if (_tc.treatments.indexOf(profileModeKeys[k]) === -1) {
+        // No dejar la ficha sin perfil: limita su jerarquía a modos válidos
+        // para cualquiera de los tratamientos que el territorio puede asignar.
+        profileModeKeys[k] = _sharedVisualModesForTreatments(_tc.treatments);
+      }
     });
   }
   const hierarchyPerKey = resolveTextImageModes(estilos, audsPerKey, profileModeKeys);
