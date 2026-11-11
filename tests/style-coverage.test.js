@@ -177,6 +177,34 @@ ok(routedSecular.length > 0 && routedSecular[0] === getBankForSubniche('pets', '
 ok(routedSecular.indexOf(gospelEnDomains.PROCESS.objetos[0]) === -1,
   'el router secular no debe importar objetos del banco Gospel');
 
+MOTOR_STATE.market = 'gospel_es';
+MOTOR_STATE.region = 'universal_es';
+MOTOR_STATE.subniche = 'auto';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+MOTOR_STATE.concept = '';
+MOTOR_STATE.message = '';
+ok(effectiveSubniche() === 'gospel_es',
+  'Gospel ES en Auto debe resolver su único subnicho sin depender de keywords');
+const autoGospelEsPool = getObjectPool();
+ok(autoGospelEsPool.length >= 18 && autoGospelEsPool.indexOf(gospelEsDomains.PROCESS.objetos[0]) !== -1,
+  'Gospel ES en Auto debe disponer de su banco universal');
+ok(autoGospelEsPool.indexOf(gospelEnDomains.PROCESS.objetos[0]) === -1,
+  'Gospel ES en Auto no debe mezclar motivos ingleses');
+
+MOTOR_STATE.market = 'gospel_en';
+MOTOR_STATE.region = 'universal_en';
+MOTOR_STATE.subniche = 'auto';
+MOTOR_STATE.dominio = 'auto';
+MOTOR_STATE.dominioDetectado = 'auto';
+ok(effectiveSubniche() === 'gospel_en',
+  'Gospel EN en Auto debe resolver su único subnicho sin depender de keywords');
+const autoGospelEnPool = getObjectPool();
+ok(autoGospelEnPool.length >= 18 && autoGospelEnPool.indexOf(gospelEnDomains.PROCESS.objetos[0]) !== -1,
+  'Gospel EN en Auto debe disponer de su banco universal');
+ok(autoGospelEnPool.indexOf(gospelEsDomains.PROCESS.objetos[0]) === -1,
+  'Gospel EN en Auto no debe mezclar motivos españoles');
+
 /* ---------- 3. Integridad de los 19 territorios creativos ---------- */
 const TERRITORY_IDS = Object.keys(POD_CREATIVE_TERRITORIES || {});
 const VALID_TREATMENTS = ['HEAVY', 'SOFT', 'MODERN'];
