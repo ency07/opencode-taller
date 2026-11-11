@@ -1188,7 +1188,7 @@ function getFirstAudienceForRegion(region) {
 
 /* Compatibilidad mercado + región + subnicho. Identidad visual y demografía
    son dimensiones separadas; el motor no deduce una subcultura del género. */
-function getAudiencesForSubniche(subniche, region, marketId) {
+function getMarketAudiencesForSubniche(subniche, region, marketId) {
   const market = marketId || (typeof window !== "undefined" && window.MOTOR_STATE ? window.MOTOR_STATE.market : "global_en");
   const base = getAudiencesForMarketRegion(market, region || "global").filter(function (id) { return !!AUD_PROFILES[id]; });
   if (!subniche || subniche === "auto" || subniche === "evergreen" || subniche === "temporada") return base;
@@ -1212,6 +1212,30 @@ function getAudiencesForSubniche(subniche, region, marketId) {
   if (!wanted) return base;
   const compatible = base.filter(function (aud) { return wanted.indexOf(aud) !== -1; });
   return compatible.length ? compatible : base;
+}
+
+/* Resolver canónico: conserva los perfiles específicos de los bancos locales,
+   pero no trata la lista genérica de seis perfiles del catálogo Global como filtro.
+   Para esos subnichos se aplica la clasificación demográfica por mercado. */
+function getAudiencesForSubniche(subniche, region, marketId) {
+  const market = marketId || (typeof window !== 'undefined' && window.MOTOR_STATE ? window.MOTOR_STATE.market : 'global_en');
+  const base = getAudiencesForMarketRegion(market, region || 'global')
+    .filter(function (id) { return !!AUD_PROFILES[id]; });
+  if (!subniche || subniche === 'auto' || subniche === 'evergreen' || subniche === 'temporada') return base;
+
+  const id = String(subniche).toLowerCase();
+  const record = (typeof POD_SUBNICHES !== 'undefined' && POD_SUBNICHES) ? POD_SUBNICHES[id] : null;
+  if (record && record.audienciasGenericas === true) {
+    return getMarketAudiencesForSubniche(id, region, market);
+  }
+
+  const bankPool = typeof getBankAudiencesForSubniche === 'function'
+    ? getBankAudiencesForSubniche(id, region) : [];
+  if (Array.isArray(bankPool) && bankPool.length) {
+    const compatible = base.filter(function (audience) { return bankPool.indexOf(audience) !== -1; });
+    if (compatible.length) return compatible;
+  }
+  return getMarketAudiencesForSubniche(id, region, market);
 }
 
 /* Sufijo de origen para los selectores de audiencia: si el subnicho filtra de

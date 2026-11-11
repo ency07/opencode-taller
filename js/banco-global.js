@@ -1908,6 +1908,7 @@
         grupo: groupName,
         regiones: MARKET_REGIONES.slice(),
         audiencias: MARKET_AUDIENCIAS.slice(),
+        audienciasGenericas: true,
         keywords: (meta.keywords || []).concat(KEYWORDS_ES[id] || []),
         bank: bankFor(enMap[id], esMap[id] || enMap[id])
       });
