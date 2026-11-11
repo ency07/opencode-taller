@@ -69,6 +69,27 @@ ESTILOS_LIST.forEach(function (s) {
   ok(STYLE_TIPO_PREF[s], 'STYLE_TIPO_PREF sin entrada: ' + s);
 });
 
+/* Los estilos derivados deben tener arquitectura y composición diferenciadas.
+   La mera existencia de arrays no garantiza una identidad visual propia. */
+const DERIVED_VISUAL_STYLES = [
+  'Neón punk', 'Cómic grunge', 'Noir gráfico', 'Superflat', 'Neoexpresionismo',
+  'Cartoon moderno', 'Constructivismo', 'Caricatura', 'Art déco', 'Bauhaus',
+  'Line art minimalista', 'Pop art', 'Pintura al óleo', 'Cartoon retro',
+  'Flat geométrico', 'Doodle a dos colores', 'Línea a dos tintas',
+  'Línea art de una tinta', 'Blanco y negro'
+];
+DERIVED_VISUAL_STYLES.forEach(function (style) {
+  const pool = STYLE_POOLS[style] || {};
+  ok(Array.isArray(pool.arquitectura) && pool.arquitectura.length >= 4,
+    style + ': arquitectura debe tener al menos 4 direcciones');
+  ok(Array.isArray(pool.composicion) && pool.composicion.length >= 4,
+    style + ': composición debe tener al menos 4 direcciones');
+  ok(pool.arquitectura !== pool.composicion,
+    style + ': arquitectura y composición no deben compartir la misma referencia');
+  ok(JSON.stringify(pool.arquitectura) !== JSON.stringify(pool.composicion),
+    style + ': arquitectura y composición no deben ser listas idénticas');
+});
+
 /* ---------- 2. AUD_STYLE_PREF ampliado (no solo 3/audiencia) ---------- */
 const audIds = Object.keys(AUD_STYLE_PREF);
 ok(audIds.length >= 20, 'AUD_STYLE_PREF debe tener 20+ audiencias, tiene ' + audIds.length);
