@@ -666,15 +666,28 @@
   function getActivePersonalBank(market, subniche) {
     const data = _loadNamedBanks(market);
     const ctx = subniche || COMMON_BANK_KEY;
-    const id = data.active[ctx] || data.active[COMMON_BANK_KEY];
-    if (!id || !data.banks[id]) return null;
-    return data.banks[id];
+
+    // Un banco especializado solo puede alimentar su propio subnicho.
+    // El banco común es el único fallback compartido dentro del mercado.
+    const id = data.active[ctx];
+    const selected = id && data.banks[id];
+    if (selected && (selected.subniche || COMMON_BANK_KEY) === ctx) return selected;
+
+    if (ctx !== COMMON_BANK_KEY) {
+      const commonId = data.active[COMMON_BANK_KEY];
+      const commonBank = commonId && data.banks[commonId];
+      if (commonBank && (commonBank.subniche || COMMON_BANK_KEY) === COMMON_BANK_KEY) return commonBank;
+    }
+    return null;
   }
 
   function setActivePersonalBank(market, subniche, id) {
     const data = _loadNamedBanks(market);
     const ctx = subniche || COMMON_BANK_KEY;
     if (id && !data.banks[id]) return { ok: false, error: 'el banco no existe' };
+    if (id && (data.banks[id].subniche || COMMON_BANK_KEY) !== ctx) {
+      return { ok: false, error: 'el banco pertenece a otro subnicho y no puede activarse en este contexto' };
+    }
     if (id) data.active[ctx] = id;
     else delete data.active[ctx];
     if (!_saveNamedBanks(market, data)) return { ok: false, error: 'No se pudo guardar: el almacenamiento del navegador puede estar lleno.' };
