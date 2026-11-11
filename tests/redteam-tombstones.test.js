@@ -57,4 +57,4 @@ ok(JSON.parse(POD_LS.getItem(metaKey))[applyKey].op === 'delete', 'la aplicació
 
 console.log((failures.length ? 'FAIL' : 'PASS') + ' redteam-tombstones (' + checks + ' comprobaciones, ' + failures.length + ' fallos)');
 failures.forEach(function (failure) { console.error(' - ' + failure); });
-process.exit(failures.length ? 1 : 0);
+process.exitCode = failures.length ? 1 : 0;
