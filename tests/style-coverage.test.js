@@ -226,7 +226,32 @@ ok(locksA.estilo.A === 'Dark Tattoo', 'el lock debe persistir en su contexto ori
 ok(locksB.estilo.A === 'Auto', 'un mercado/región distinto no debe heredar locks');
 ok(locksOtherProduct.estilo.A === 'Auto', 'un producto distinto no debe heredar locks');
 
-/* ---------- 7. LAST_RESULT no se puede preservar fuera de su contexto ---------- */
+/* ---------- 7. Bancos nombrados aislados por subnicho ---------- */
+const skateBank = createPersonalBank('global_en', 'RT Bank Skate', 'skate_culture');
+ok(skateBank.ok, 'debe poder crearse un banco especializado');
+ok(setActivePersonalBank('global_en', 'skate_culture', skateBank.id).ok,
+  'el banco debe poder activarse en su subnicho');
+const crossSubnicheActivation = setActivePersonalBank('global_en', 'gospel_es', skateBank.id);
+ok(!crossSubnicheActivation.ok, 'no debe permitirse activar un banco en otro subnicho');
+ok(getActivePersonalBank('global_en', 'gospel_es') === null,
+  'un subnicho no debe recuperar el banco especializado de otro');
+
+const namedBanksKey = memKey(['personalBanks', 'global_en']);
+const namedBanksData = getJSON(namedBanksKey, {});
+namedBanksData.active.gospel_es = skateBank.id; // simula un registro heredado/corrupto
+setJSON(namedBanksKey, namedBanksData);
+ok(getActivePersonalBank('global_en', 'gospel_es') === null,
+  'la lectura debe rechazar asignaciones cruzadas antiguas aunque estén guardadas');
+
+const commonBank = createPersonalBank('global_en', 'RT Bank Common', COMMON_BANK_KEY);
+ok(commonBank.ok && setActivePersonalBank('global_en', COMMON_BANK_KEY, commonBank.id).ok,
+  'el banco común debe poder activarse como fallback del mercado');
+ok(getActivePersonalBank('global_en', 'gospel_es').id === commonBank.id,
+  'el fallback compartido debe ser exclusivamente el banco común del mismo mercado');
+ok(getActivePersonalBank('gospel_es', 'skate_culture') === null,
+  'los bancos nombrados tampoco deben cruzar mercados');
+
+/* ---------- 8. LAST_RESULT no se puede preservar fuera de su contexto ---------- */
 MOTOR_STATE.market = 'gospel_es';
 MOTOR_STATE.region = 'spain';
 MOTOR_STATE.product = 'CAMISETA SOFT';
