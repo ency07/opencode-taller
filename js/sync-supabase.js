@@ -187,11 +187,35 @@
 
     // Aplicar localmente, incluyendo eliminaciones remotas marcadas con tombstones.
     if (typeof applyMergedMemoryObject === 'function') {
-      applyMergedMemoryObject(merged);
+      var applyResult = applyMergedMemoryObject(merged);
+      if (!applyResult || applyResult.ok !== true) {
+        var failedKeys = applyResult && Array.isArray(applyResult.failedKeys) ? applyResult.failedKeys : [];
+        var persistenceError = new Error(
+          'La copia en nube se guardó, pero no se pudo persistir toda la memoria local' +
+          (failedKeys.length ? ' (claves: ' + failedKeys.join(', ') + ')' : '') +
+          '. Libera espacio del navegador y vuelve a sincronizar.'
+        );
+        persistenceError.code = 'LOCAL_PERSISTENCE_FAILED';
+        throw persistenceError;
+      }
     } else {
+      var fallbackFailures = [];
       Object.keys(merged).forEach(function (k) {
-        if (String(k).indexOf('POD2|') === 0) LS.setItem(k, merged[k]);
+        if (String(k).indexOf('POD2|') !== 0) return;
+        try {
+          if (LS.setItem(k, merged[k]) !== true) fallbackFailures.push(k);
+        } catch (e) {
+          fallbackFailures.push(k);
+        }
       });
+      if (fallbackFailures.length) {
+        var fallbackError = new Error(
+          'La copia en nube se guardó, pero falló la persistencia local de: ' +
+          fallbackFailures.join(', ') + '. Libera espacio del navegador y vuelve a sincronizar.'
+        );
+        fallbackError.code = 'LOCAL_PERSISTENCE_FAILED';
+        throw fallbackError;
+      }
     }
 
     status('Sincronización completada. Memoria fusionada.');
@@ -395,7 +419,11 @@
         await mergeAndSync(statusMsg);
         setTimeout(function () { location.reload(); }, 1000);
       } catch (e) {
-        statusMsg('Error al sincronizar: ' + (e.message || String(e)) + '. Verifica supabase-sync.sql, RLS y conexión.', true);
+        if (e && e.code === 'LOCAL_PERSISTENCE_FAILED') {
+          statusMsg(e.message || 'La nube se actualizó, pero falló el guardado local.', true);
+        } else {
+          statusMsg('Error al sincronizar: ' + (e.message || String(e)) + '. Verifica supabase-sync.sql, RLS y conexión.', true);
+        }
         this.disabled = false;
       }
     };
