@@ -25,6 +25,9 @@ const ORDER = [
   'data-mercados.js',
   'data-audiencias.js',
   'data-bancos.js',
+  'banco-gospel-es.js',
+  'banco-gospel-en.js',
+  'banco-global.js',
   'data-estilos.js',
   'data-territorios.js',
   'dominios.js',
@@ -91,7 +94,36 @@ DERIVED_VISUAL_STYLES.forEach(function (style) {
     style + ': arquitectura y composición no deben ser listas idénticas');
 });
 
-/* ---------- 2. Integridad de los 19 territorios creativos ---------- */
+/* ---------- 2. Router Gospel ES/EN y aislamiento Secular ---------- */
+const gospelEsDomains = getDominiosGospel('gospel_es');
+const gospelEnDomains = getDominiosGospel('gospel_en');
+ok(gospelEsDomains === window.GOSPEL_DOMINIOS_ES, 'Gospel ES debe resolver exclusivamente su banco');
+ok(gospelEnDomains === window.GOSPEL_DOMINIOS_EN, 'Gospel EN debe resolver exclusivamente su banco');
+const gospelEsIds = Object.keys(gospelEsDomains);
+const gospelEnIds = Object.keys(gospelEnDomains);
+ok(gospelEsIds.length === 13 && gospelEnIds.length === 13,
+  'Gospel ES y EN deben declarar 13 dominios cada uno');
+ok(gospelEsIds.every(function (id) { return gospelEnIds.indexOf(id) !== -1; })
+  && gospelEnIds.every(function (id) { return gospelEsIds.indexOf(id) !== -1; }),
+  'Gospel ES y EN deben compartir el mismo conjunto de IDs de dominio');
+gospelEsIds.forEach(function (id) {
+  ok(gospelEsDomains[id].objetos.length >= 18 && gospelEnDomains[id].objetos.length >= 18,
+    id + ': faltan motivos en uno de los bancos Gospel');
+});
+const savedGospelEn = window.GOSPEL_DOMINIOS_EN;
+window.GOSPEL_DOMINIOS_EN = null;
+ok(Object.keys(getDominiosGospel('gospel_en')).length === 0,
+  'si falta el banco EN, el router no debe sustituirlo por el banco ES');
+window.GOSPEL_DOMINIOS_EN = savedGospelEn;
+const savedGospelEs = window.GOSPEL_DOMINIOS_ES;
+window.GOSPEL_DOMINIOS_ES = null;
+ok(Object.keys(getDominiosGospel('gospel_es')).length === 0,
+  'si falta el banco ES, el router no debe sustituirlo por el banco EN');
+window.GOSPEL_DOMINIOS_ES = savedGospelEs;
+ok(Object.keys(getDominiosGospel('global_en')).length === 0,
+  'los mercados seculares no deben resolver dominios Gospel');
+
+/* ---------- 3. Integridad de los 19 territorios creativos ---------- */
 const TERRITORY_IDS = Object.keys(POD_CREATIVE_TERRITORIES || {});
 const VALID_TREATMENTS = ['HEAVY', 'SOFT', 'MODERN'];
 const VALID_MARKETS = Object.keys(POD_MARKETS || {});
