@@ -566,15 +566,15 @@ const uiHandlersForTest = [...iaSourceForTest.matchAll(/\bon\(['"]([^'"]+)['"],\
 // Los onclick inline no pasan por el registro on() de ia-analisis.js.
 // Verificar que cada función invocada existe en el ámbito global de algún
 // script cargado; evita botones visualmente presentes pero rotos al pulsar.
-const inlineHandlersForTest = [...htmlSourceForTest.matchAll(/\\bonclick=["']([^"']+)["']/g)]
+const inlineHandlersForTest = [...htmlSourceForTest.matchAll(/\bonclick=["']([^"']+)["']/g)]
   .map(function (m) { return m[1]; });
 const loadedSourcesForInlineHandlers = loadedScriptPaths.map(function (scriptPath) {
   return fs.readFileSync(path.join(ROOT, scriptPath), 'utf8');
-}).join('\\n');
+}).join('\n');
 inlineHandlersForTest.forEach(function (handler) {
-  const fn = (handler.match(/^\\s*([A-Za-z_$][\\w$]*)\\s*\\(/) || [])[1];
+  const fn = (handler.match(/^\s*([A-Za-z_$][\w$]*)\s*\(/) || [])[1];
   if (!fn) return;
-  const exposed = new RegExp('(?:function\\\\s+' + fn + '\\\\s*\\\\(|window\\\\.' + fn + '\\\\s*=)').test(loadedSourcesForInlineHandlers);
+  const exposed = new RegExp('(?:function\\s+' + fn + '\\s*\\(|window\\.' + fn + '\\s*=)').test(loadedSourcesForInlineHandlers);
   ok(exposed, 'onclick inline invoca una función no expuesta globalmente: ' + fn);
 });
 uiHandlersForTest.forEach(function (id) {
