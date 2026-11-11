@@ -44,7 +44,7 @@ const POD_CREATIVE_TERRITORIES = {
     // Eje de tratamiento (data-tratamientos.js): ids de tratamiento estructural.
     compatibleTreatments: ["HEAVY", "SOFT", "MODERN"],
     compatibleMarkets: ["gospel_es", "gospel_en"],
-    compatibleMarketTags: ["christian", "streetwear", "lifestyle"]
+    compatibleMarketTags: ["christian", "streetwear", "lifestyle"],
     visualIdentity: "editorial_contemporaneo",
     brandAssociation: ["BERESHITH_CO", "CrossLampCo"],
     priority: 1
