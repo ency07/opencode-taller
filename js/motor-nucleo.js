@@ -3117,7 +3117,8 @@ function _resolveTerritoryDirective(territory) {
   if (Array.isArray(rec.restrictions) && rec.restrictions.length) push('Restricciones: ' + rec.restrictions.join('; ') + '.');
   if (Array.isArray(rec.compatibleStyles) && rec.compatibleStyles.length) push('Estilos compatibles: ' + rec.compatibleStyles.join(', ') + '.');
   if (Array.isArray(rec.compatibleTreatments) && rec.compatibleTreatments.length) push('Tratamientos compatibles: ' + rec.compatibleTreatments.join(', ') + '.');
-  if (Array.isArray(rec.compatibleMarkets) && rec.compatibleMarkets.length) push('Mercados compatibles: ' + rec.compatibleMarkets.join(', ') + '.');
+  if (Array.isArray(rec.compatibleMarkets) && rec.compatibleMarkets.length) push('IDs de mercado compatibles: ' + rec.compatibleMarkets.join(', ') + '.');
+  if (Array.isArray(rec.compatibleMarketTags) && rec.compatibleMarketTags.length) push('Contextos comerciales afines (referenciales, no habilitan mercados): ' + rec.compatibleMarketTags.join(', ') + '.');
   /* FIX 3C: la identidad visual se resuelve integrando la del usuario y la del
      territorio. La del usuario gobierna; la del territorio aporta contexto.
      Sin territorio, la identidad del usuario funciona de forma independiente. */
