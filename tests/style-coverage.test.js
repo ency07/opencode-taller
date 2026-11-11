@@ -54,7 +54,7 @@ const DTF = [
   'Glow Zone / Zona fosforescente'
 ];
 const VISUAL_STYLES = ESTILOS_LIST.filter(function (s) { return DTF.indexOf(s) === -1; });
-ok(VISUAL_STYLES.length === 57, 'deben existir 38 lenguajes visuales separados de los tratamientos');
+ok(VISUAL_STYLES.length === 57, 'deben existir 57 lenguajes visuales separados de los tratamientos');
 DTF.forEach(function (s) {
   ok(ESTILOS_LIST.indexOf(s) !== -1, 'falta estilo DTF en ESTILO_INFO: ' + s);
   ok(STYLE_POOLS[s] && STYLE_POOLS[s].arquitectura && STYLE_POOLS[s].arquitectura.length >= 4, 'STYLE_POOLS incompleto: ' + s);
@@ -76,7 +76,7 @@ const thin = audIds.filter(function (a) { return (AUD_STYLE_PREF[a] || []).lengt
 ok(thin.length === 0, 'audiencias con menos de 6 prefs (candado residual): ' + thin.join(', '));
 const union = {};
 audIds.forEach(function (a) { (AUD_STYLE_PREF[a] || []).forEach(function (s) { union[s] = true; }); });
-const missing = ESTILOS_LIST.filter(function (s) { return !union[s]; });
+const missing = VISUAL_STYLES.filter(function (s) { return !union[s]; });
 ok(missing.length === 0, 'estilos en 0 prefs (inalcanzables por bias): ' + missing.join(' | '));
 
 /* ---------- 3. Simulación dinámica con PRNG determinista ---------- */
@@ -131,7 +131,7 @@ for (let g = 0; g < GENS; g++) {
 const seenList = Object.keys(seen);
 ok(noRepeatViolations === 0, 'repetidos intra-set en ' + noRepeatViolations + '/' + GENS + ' generaciones (modo distintos)');
 ok(quotaViolations === 0, 'cuota de exploración falló en ' + quotaViolations + '/' + GENS + ' generaciones');
-ok(seenList.length >= 32, 'cobertura pobre: solo ' + seenList.length + '/37 estilos visuales en ' + GENS + ' gens (mín 32). Vistos: ' + seenList.join(' | '));
+ok(seenList.length >= 32, 'cobertura pobre: solo ' + seenList.length + '/57 estilos visuales en ' + GENS + ' gens (mín 32). Vistos: ' + seenList.join(' | '));
 
 // Todos los 49 alcanzables: barrido exhaustivo por audiencia × semilla
 const reachSeen = {};

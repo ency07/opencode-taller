@@ -1740,6 +1740,178 @@ const STYLE_POOLS = {
       "ausencia de color no reduce jerarquía"
     ]
   }
+  "Neón punk": Object.assign({}, STYLE_POOLS["Retro 80s Neon"], {
+    arquitectura: STYLE_POOLS["Retro 80s Neon"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Retro 80s Neon"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Retro 80s Neon"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Retro 80s Neon"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Retro 80s Neon"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Retro 80s Neon"].tecnica.slice(),
+    relacion: STYLE_POOLS["Retro 80s Neon"].relacion.slice()
+  }),
+  "Cómic grunge": Object.assign({}, STYLE_POOLS["Grunge / DIY"], {
+    arquitectura: STYLE_POOLS["Grunge / DIY"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Grunge / DIY"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Grunge / DIY"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Grunge / DIY"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Grunge / DIY"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Grunge / DIY"].tecnica.slice(),
+    relacion: STYLE_POOLS["Grunge / DIY"].relacion.slice()
+  }),
+  "Noir gráfico": Object.assign({}, STYLE_POOLS["Photomontage / Dada"], {
+    arquitectura: STYLE_POOLS["Photomontage / Dada"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Photomontage / Dada"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Photomontage / Dada"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Photomontage / Dada"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Photomontage / Dada"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Photomontage / Dada"].tecnica.slice(),
+    relacion: STYLE_POOLS["Photomontage / Dada"].relacion.slice()
+  }),
+  "Superflat": Object.assign({}, STYLE_POOLS["Vector Flat / Plano vectorial"], {
+    arquitectura: STYLE_POOLS["Vector Flat / Plano vectorial"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Vector Flat / Plano vectorial"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Vector Flat / Plano vectorial"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Vector Flat / Plano vectorial"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Vector Flat / Plano vectorial"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Vector Flat / Plano vectorial"].tecnica.slice(),
+    relacion: STYLE_POOLS["Vector Flat / Plano vectorial"].relacion.slice()
+  }),
+  "Neoexpresionismo": Object.assign({}, STYLE_POOLS["Hand-Drawn"], {
+    arquitectura: STYLE_POOLS["Hand-Drawn"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Hand-Drawn"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Hand-Drawn"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Hand-Drawn"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Hand-Drawn"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Hand-Drawn"].tecnica.slice(),
+    relacion: STYLE_POOLS["Hand-Drawn"].relacion.slice()
+  }),
+  "Cartoon moderno": Object.assign({}, STYLE_POOLS["Kids Storybook"], {
+    arquitectura: STYLE_POOLS["Kids Storybook"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Kids Storybook"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Kids Storybook"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Kids Storybook"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Kids Storybook"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Kids Storybook"].tecnica.slice(),
+    relacion: STYLE_POOLS["Kids Storybook"].relacion.slice()
+  }),
+  "Constructivismo": Object.assign({}, STYLE_POOLS["Brutalist"], {
+    arquitectura: STYLE_POOLS["Brutalist"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Brutalist"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Brutalist"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Brutalist"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Brutalist"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Brutalist"].tecnica.slice(),
+    relacion: STYLE_POOLS["Brutalist"].relacion.slice()
+  }),
+  "Caricatura": Object.assign({}, STYLE_POOLS["Kids Storybook"], {
+    arquitectura: STYLE_POOLS["Kids Storybook"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Kids Storybook"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Kids Storybook"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Kids Storybook"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Kids Storybook"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Kids Storybook"].tecnica.slice(),
+    relacion: STYLE_POOLS["Kids Storybook"].relacion.slice()
+  }),
+  "Art déco": Object.assign({}, STYLE_POOLS["Gótico Ornamental"], {
+    arquitectura: STYLE_POOLS["Gótico Ornamental"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Gótico Ornamental"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Gótico Ornamental"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Gótico Ornamental"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Gótico Ornamental"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Gótico Ornamental"].tecnica.slice(),
+    relacion: STYLE_POOLS["Gótico Ornamental"].relacion.slice()
+  }),
+  "Bauhaus": Object.assign({}, STYLE_POOLS["Brutalist"], {
+    arquitectura: STYLE_POOLS["Brutalist"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Brutalist"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Brutalist"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Brutalist"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Brutalist"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Brutalist"].tecnica.slice(),
+    relacion: STYLE_POOLS["Brutalist"].relacion.slice()
+  }),
+  "Line art minimalista": Object.assign({}, STYLE_POOLS["Minimal Modern"], {
+    arquitectura: STYLE_POOLS["Minimal Modern"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Minimal Modern"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Minimal Modern"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Minimal Modern"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Minimal Modern"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Minimal Modern"].tecnica.slice(),
+    relacion: STYLE_POOLS["Minimal Modern"].relacion.slice()
+  }),
+  "Pop art": Object.assign({}, STYLE_POOLS["Cómic / Halftone"], {
+    arquitectura: STYLE_POOLS["Cómic / Halftone"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Cómic / Halftone"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Cómic / Halftone"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Cómic / Halftone"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Cómic / Halftone"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Cómic / Halftone"].tecnica.slice(),
+    relacion: STYLE_POOLS["Cómic / Halftone"].relacion.slice()
+  }),
+  "Pintura al óleo": Object.assign({}, STYLE_POOLS["Acuarela Suelta"], {
+    arquitectura: STYLE_POOLS["Acuarela Suelta"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Acuarela Suelta"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Acuarela Suelta"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Acuarela Suelta"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Acuarela Suelta"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Acuarela Suelta"].tecnica.slice(),
+    relacion: STYLE_POOLS["Acuarela Suelta"].relacion.slice()
+  }),
+  "Cartoon retro": Object.assign({}, STYLE_POOLS["Kids Storybook"], {
+    arquitectura: STYLE_POOLS["Kids Storybook"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Kids Storybook"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Kids Storybook"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Kids Storybook"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Kids Storybook"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Kids Storybook"].tecnica.slice(),
+    relacion: STYLE_POOLS["Kids Storybook"].relacion.slice()
+  }),
+  "Flat geométrico": Object.assign({}, STYLE_POOLS["Vector Flat / Plano vectorial"], {
+    arquitectura: STYLE_POOLS["Vector Flat / Plano vectorial"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Vector Flat / Plano vectorial"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Vector Flat / Plano vectorial"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Vector Flat / Plano vectorial"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Vector Flat / Plano vectorial"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Vector Flat / Plano vectorial"].tecnica.slice(),
+    relacion: STYLE_POOLS["Vector Flat / Plano vectorial"].relacion.slice()
+  }),
+  "Doodle a dos colores": Object.assign({}, STYLE_POOLS["Hand-Drawn"], {
+    arquitectura: STYLE_POOLS["Hand-Drawn"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Hand-Drawn"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Hand-Drawn"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Hand-Drawn"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Hand-Drawn"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Hand-Drawn"].tecnica.slice(),
+    relacion: STYLE_POOLS["Hand-Drawn"].relacion.slice()
+  }),
+  "Línea a dos tintas": Object.assign({}, STYLE_POOLS["Grabado / Linóleo"], {
+    arquitectura: STYLE_POOLS["Grabado / Linóleo"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Grabado / Linóleo"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Grabado / Linóleo"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Grabado / Linóleo"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Grabado / Linóleo"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Grabado / Linóleo"].tecnica.slice(),
+    relacion: STYLE_POOLS["Grabado / Linóleo"].relacion.slice()
+  }),
+  "Línea art de una tinta": Object.assign({}, STYLE_POOLS["Grabado / Linóleo"], {
+    arquitectura: STYLE_POOLS["Grabado / Linóleo"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Grabado / Linóleo"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Grabado / Linóleo"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Grabado / Linóleo"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Grabado / Linóleo"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Grabado / Linóleo"].tecnica.slice(),
+    relacion: STYLE_POOLS["Grabado / Linóleo"].relacion.slice()
+  }),
+  "Blanco y negro": Object.assign({}, STYLE_POOLS["Dark Tattoo"], {
+    arquitectura: STYLE_POOLS["Dark Tattoo"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Dark Tattoo"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Dark Tattoo"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Dark Tattoo"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Dark Tattoo"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Dark Tattoo"].tecnica.slice(),
+    relacion: STYLE_POOLS["Dark Tattoo"].relacion.slice()
+  }),
+
 };
 
 const STYLE_COLOR_PREF = {
@@ -1890,6 +2062,26 @@ const STYLE_COLOR_PREF = {
     "mínimo frío",
     "industrial"
   ]
+  "Neón punk": STYLE_COLOR_PREF["Retro 80s Neon"].slice(),
+  "Cómic grunge": STYLE_COLOR_PREF["Grunge / DIY"].slice(),
+  "Noir gráfico": STYLE_COLOR_PREF["Photomontage / Dada"].slice(),
+  "Superflat": STYLE_COLOR_PREF["Vector Flat / Plano vectorial"].slice(),
+  "Neoexpresionismo": STYLE_COLOR_PREF["Hand-Drawn"].slice(),
+  "Cartoon moderno": STYLE_COLOR_PREF["Kids Storybook"].slice(),
+  "Constructivismo": STYLE_COLOR_PREF["Brutalist"].slice(),
+  "Caricatura": STYLE_COLOR_PREF["Kids Storybook"].slice(),
+  "Art déco": STYLE_COLOR_PREF["Gótico Ornamental"].slice(),
+  "Bauhaus": STYLE_COLOR_PREF["Brutalist"].slice(),
+  "Line art minimalista": STYLE_COLOR_PREF["Minimal Modern"].slice(),
+  "Pop art": STYLE_COLOR_PREF["Cómic / Halftone"].slice(),
+  "Pintura al óleo": STYLE_COLOR_PREF["Acuarela Suelta"].slice(),
+  "Cartoon retro": STYLE_COLOR_PREF["Kids Storybook"].slice(),
+  "Flat geométrico": STYLE_COLOR_PREF["Vector Flat / Plano vectorial"].slice(),
+  "Doodle a dos colores": STYLE_COLOR_PREF["Hand-Drawn"].slice(),
+  "Línea a dos tintas": STYLE_COLOR_PREF["Grabado / Linóleo"].slice(),
+  "Línea art de una tinta": STYLE_COLOR_PREF["Grabado / Linóleo"].slice(),
+  "Blanco y negro": STYLE_COLOR_PREF["Dark Tattoo"].slice(),
+
 };
 
 const STYLE_TIPO_PREF = {
@@ -2059,6 +2251,26 @@ const STYLE_TIPO_PREF = {
     "Sans humanista limpia",
     "Mono técnica"
   ]
+  "Neón punk": STYLE_TIPO_PREF["Retro 80s Neon"].slice(),
+  "Cómic grunge": STYLE_TIPO_PREF["Grunge / DIY"].slice(),
+  "Noir gráfico": STYLE_TIPO_PREF["Photomontage / Dada"].slice(),
+  "Superflat": STYLE_TIPO_PREF["Vector Flat / Plano vectorial"].slice(),
+  "Neoexpresionismo": STYLE_TIPO_PREF["Hand-Drawn"].slice(),
+  "Cartoon moderno": STYLE_TIPO_PREF["Kids Storybook"].slice(),
+  "Constructivismo": STYLE_TIPO_PREF["Brutalist"].slice(),
+  "Caricatura": STYLE_TIPO_PREF["Kids Storybook"].slice(),
+  "Art déco": STYLE_TIPO_PREF["Gótico Ornamental"].slice(),
+  "Bauhaus": STYLE_TIPO_PREF["Brutalist"].slice(),
+  "Line art minimalista": STYLE_TIPO_PREF["Minimal Modern"].slice(),
+  "Pop art": STYLE_TIPO_PREF["Cómic / Halftone"].slice(),
+  "Pintura al óleo": STYLE_TIPO_PREF["Acuarela Suelta"].slice(),
+  "Cartoon retro": STYLE_TIPO_PREF["Kids Storybook"].slice(),
+  "Flat geométrico": STYLE_TIPO_PREF["Vector Flat / Plano vectorial"].slice(),
+  "Doodle a dos colores": STYLE_TIPO_PREF["Hand-Drawn"].slice(),
+  "Línea a dos tintas": STYLE_TIPO_PREF["Grabado / Linóleo"].slice(),
+  "Línea art de una tinta": STYLE_TIPO_PREF["Grabado / Linóleo"].slice(),
+  "Blanco y negro": STYLE_TIPO_PREF["Dark Tattoo"].slice(),
+
 };
 
 /* Compatibilidad global */
