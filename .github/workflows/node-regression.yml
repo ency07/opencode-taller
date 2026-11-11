@@ -34,6 +34,8 @@ jobs:
           for file in js/*.js shared/*.js secular-engine/*.js tests/*.test.js; do
             node --check "$file"
           done
+      - name: Run focused sync persistence regression
+        run: node tests/sync-persistence.test.js
       - name: Run regression suite
         run: |
           set -e
