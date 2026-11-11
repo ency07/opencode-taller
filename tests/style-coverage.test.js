@@ -99,6 +99,20 @@ const gospelEsDomains = getDominiosGospel('gospel_es');
 const gospelEnDomains = getDominiosGospel('gospel_en');
 ok(gospelEsDomains === window.GOSPEL_DOMINIOS_ES, 'Gospel ES debe resolver exclusivamente su banco');
 ok(gospelEnDomains === window.GOSPEL_DOMINIOS_EN, 'Gospel EN debe resolver exclusivamente su banco');
+const gospelEsLanguageOptions = getLanguageOptionsHTML('gospel_es');
+const gospelEnLanguageOptions = getLanguageOptionsHTML('gospel_en');
+ok(gospelEsLanguageOptions.indexOf('value="es"') !== -1
+  && gospelEsLanguageOptions.indexOf('value="en"') === -1,
+  'Gospel ES debe ofrecer exclusivamente español');
+ok(gospelEnLanguageOptions.indexOf('value="en"') !== -1
+  && gospelEnLanguageOptions.indexOf('value="es"') === -1,
+  'Gospel EN debe ofrecer exclusivamente inglés');
+ok(getLanguageDirective('gospel_es', 'en').indexOf('español natural') !== -1,
+  'un override no debe cambiar el idioma de Gospel ES');
+ok(getLanguageDirective('gospel_en', 'es').indexOf('natural, native English') !== -1,
+  'un override no debe cambiar el idioma de Gospel EN');
+ok(getLanguageDirective('global_en', 'es').indexOf('español natural') !== -1,
+  'los mercados comerciales deben conservar su override de idioma');
 const gospelEsIds = Object.keys(gospelEsDomains);
 const gospelEnIds = Object.keys(gospelEnDomains);
 ok(gospelEsIds.length === 13 && gospelEnIds.length === 13,
