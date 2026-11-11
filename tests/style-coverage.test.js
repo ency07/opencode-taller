@@ -162,6 +162,40 @@ TERRITORY_IDS.forEach(function (id) {
       id + ': jerarquía de ' + card + ' incompatible con tratamientos permitidos');
   });
 });
+
+/* Los perfiles A/B/C deben producir diferencias estructurales reales,
+   no solo etiquetas HEAVY/SOFT/MODERN distintas. */
+MOTOR_STATE.product = 'CAMISETA SOFT';
+Math.random = mulberry32(20261111);
+const profileAxes = {
+  layout: [], tipografia: [], formaSimbolo: [],
+  integracionTexto: [], densidad: [], negativeSpace: []
+};
+const usedProfileAxes = {
+  layout: [], tipografia: [], formaSimbolo: [],
+  integracionTexto: [], densidad: [], negativeSpace: []
+};
+['HEAVY', 'SOFT', 'MODERN'].forEach(function (profile) {
+  const card = { jerarquiaVisual: 'TEXTO_DOMINANTE' };
+  _applyStructuralProfile(card, profile, {}, {}, usedProfileAxes, null);
+  profileAxes.layout.push(card.layout);
+  profileAxes.tipografia.push(card.tipografia);
+  profileAxes.formaSimbolo.push(card.formaSimbolo);
+  profileAxes.integracionTexto.push(card.integracionTexto);
+  profileAxes.densidad.push(card.densidad);
+  profileAxes.negativeSpace.push(card.negativeSpace);
+  Object.keys(usedProfileAxes).forEach(function (axis) {
+    usedProfileAxes[axis].push(card[axis]);
+  });
+});
+Object.keys(profileAxes).forEach(function (axis) {
+  ok(profileAxes[axis].every(Boolean) && new Set(profileAxes[axis]).size === 3,
+    'A/B/C deben diferenciar el eje estructural ' + axis);
+});
+const textArchitectures = _assignTextCompositions();
+ok(new Set([textArchitectures.A, textArchitectures.B, textArchitectures.C]).size === 3,
+  'A/B/C deben recibir arquitecturas textuales distintas');
+
 MOTOR_STATE.market = 'global_es';
 MOTOR_STATE.creativeTerritory = 'auto';
 
