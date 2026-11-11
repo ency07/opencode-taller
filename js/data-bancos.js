@@ -1873,7 +1873,7 @@ function getKeywordsForSubniche(id) {
   return s && Array.isArray(s.keywords) ? s.keywords : [];
 }
 
-function getAudiencesForSubniche(id, region) {
+function getBankAudiencesForSubniche(id, region) {
   const s = POD_SUBNICHES[id];
   if (!s || !Array.isArray(s.audiencias)) return [];
 
@@ -2011,7 +2011,7 @@ function getSubnicheSummary(id, region) {
 
   const bankCount = getBankForSubniche(id, region).length;
   const keywords = getKeywordsForSubniche(id).length;
-  const audiences = getAudiencesForSubniche(id, region).length;
+  const audiences = getBankAudiencesForSubniche(id, region).length;
 
   return s.nombre + " · " + bankCount + " objetos · " + keywords + " keywords · " + audiences + " audiencias compatibles";
 }

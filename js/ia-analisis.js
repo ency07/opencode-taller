@@ -1064,23 +1064,14 @@
   function renderBankPreview(payload) {
     var el = $('bankPreview');
     if (!el) return;
-    if (!payload || !payload.ok) {
-      el.innerHTML = '<span class="badge">' + ((payload && payload.error) || 'Sin datos para previsualizar. Pega un lote JSON valido.') + '</span>';
+    if (window.PODBankPreview && typeof window.PODBankPreview.render === 'function') {
+      window.PODBankPreview.render(el, payload);
       return;
     }
-    var validos = payload.validos || [];
-    var rechazados = payload.rechazados || [];
-    var html = '<div style="margin-bottom:8px;"><span class="badge">' + validos.length + ' registros validos</span> <span class="badge">' + rechazados.length + ' rechazados</span></div>';
-    if (!validos.length) { html += '<div class="hint">Ningun registro del lote completo paso la validacion.</div>'; el.innerHTML = html; return; }
-    html += '<div style="display:flex; flex-direction: column; gap: 6px; max-height: 220px; overflow: auto;">';
-    validos.forEach(function (r, i) {
-      html += '<label style="display:flex; gap:8px; align-items: baseline;">';
-      html += '<input type="checkbox" data-fila="' + i + '" value="' + (r.id || '') + '" />';
-      html += '<span><strong>' + (r.id || '') + '</strong> — ' + (r.motivo || '') + ' | ' + (r.idea_comunicada || '') + ' | tensiones: ' + (r.tensiones || []).join(', ') + ' | contextos: ' + (r.contextos || []).join(', ') + ' | riesgo: ' + (r.riesgo_cliche || '') + '</span>';
-      html += '</label>';
-    });
-    html += '</div>';
-    el.innerHTML = html;
+    // Fail closed: nunca insertar contenido dinámico como HTML si falta el módulo.
+    el.textContent = (!payload || !payload.ok)
+      ? String((payload && payload.error) || 'Sin datos para previsualizar.')
+      : 'El módulo seguro de previsualización no está disponible.';
   }
 
   function validarTextoBanco(text) {
@@ -1092,9 +1083,9 @@
     var rechazos = [];
     (datos.registros || []).forEach(function (r, i) {
       var v = typeof window.validateMotifRegistro === 'function' ? window.validateMotifRegistro(r, i) : { ok: true };
-      if (v.ok) validos.push(r); else rechazos.push(v.error);
+      if (v.ok) validos.push({ record: r, sourceIndex: i }); else rechazos.push(v.error);
     });
-    renderBankPreview({ ok: true, validos: validos, rechazos: rechazos });
+    renderBankPreview({ ok: true, validos: validos, rechazados: rechazos });
   }
 
   function validarBancoDesdeUI() {
@@ -1117,8 +1108,11 @@
     var parsed;
     try { parsed = JSON.parse(lastBankJsonText); } catch (e) { tell('<span class="bad">JSON invalido.</span>'); return; }
     var checks = Array.from(document.querySelectorAll('#bankPreview input[type=checkbox][data-fila]'));
-    var elegidos = [];
-    checks.forEach(function (cb) { if (cb.checked) { var idx = Number(cb.getAttribute('data-fila')); var r = (parsed.registros || [])[idx]; if (r) elegidos.push(r); } });
+    var selectedIndices = checks.filter(function (cb) { return cb.checked; })
+      .map(function (cb) { return Number(cb.getAttribute('data-fila')); });
+    var elegidos = window.PODBankPreview && typeof window.PODBankPreview.selectRecords === 'function'
+      ? window.PODBankPreview.selectRecords(parsed.registros || [], selectedIndices)
+      : [];
     if (!elegidos.length) { tell('<span class="info">No hay registros seleccionados.</span>'); return; }
     var loteElegido = JSON.stringify(Object.assign({}, parsed, { registros: elegidos }));
     var res = typeof window.importarMotivosEnriquecidos === 'function' ? window.importarMotivosEnriquecidos(loteElegido, $('market').value, (typeof effectiveSubniche === 'function' ? effectiveSubniche() : ($('subniche') ? $('subniche').value : 'comun')), false) : { ok: false, error: 'Importador no disponible.' };
@@ -1135,7 +1129,14 @@
     var res = window[fn];
     if (typeof res !== 'function') { tell('<span class="bad">Propuesta no disponible.</span>'); return; }
     var out = res(market, subniche);
-    if ($('bankPreview')) $('bankPreview').innerHTML = '<span class="badge">Propuesta: ' + ((out && out.ok === false) ? (out.error || 'sin datos disponibles') : 'lista para revision') + '</span>';
+    if ($('bankPreview')) {
+      var proposalText = 'Propuesta: ' + ((out && out.ok === false) ? String(out.error || 'sin datos disponibles') : 'lista para revisión');
+      if (window.PODBankPreview && typeof window.PODBankPreview.renderMessage === 'function') {
+        window.PODBankPreview.renderMessage($('bankPreview'), proposalText);
+      } else {
+        $('bankPreview').textContent = proposalText;
+      }
+    }
     if (out && out.ok) { tell('<span class="good">Propuesta generada desde el banco personal. Revisa antes de aceptarla.</span>'); }
   }
 
