@@ -113,6 +113,12 @@ ok(getLanguageDirective('gospel_en', 'es').indexOf('natural, native English') !=
   'un override no debe cambiar el idioma de Gospel EN');
 ok(getLanguageDirective('global_en', 'es').indexOf('español natural') !== -1,
   'los mercados comerciales deben conservar su override de idioma');
+const iaAnalysisSourceForTest = fs.readFileSync(path.join(JS, 'ia-analisis.js'), 'utf8');
+ok(iaAnalysisSourceForTest.indexOf("market.culture === 'gospel'") !== -1
+  && iaAnalysisSourceForTest.indexOf("availableLanguageIds = gospelLanguageLocked ? [defaultLang]") !== -1,
+  'la cascada de interfaz no debe volver a ofrecer overrides en mercados Gospel');
+ok(motorSourceForTest.indexOf("languageEl.innerHTML = getLanguageOptionsHTML(market)") !== -1,
+  'el cambio de mercado debe refrescar el selector de idioma del motor');
 
 ok(getCulturalDirective('gospel_es').indexOf('Trinitario') !== -1
   && getCulturalDirective('gospel_es').indexOf('cristocéntrico') !== -1,
