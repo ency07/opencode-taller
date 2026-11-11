@@ -2708,6 +2708,17 @@ function _ejesRepetidosConConservadas(v, keptList) {
   }).map(function (ax) { return ax[0]; });
 }
 let LAST_RESULT = null;
+
+/* Un resultado anterior solo puede preservarse dentro del mismo contexto.
+   Evita que el modo manual copie fichas de otro mercado/región/producto. */
+function _lastResultMatchesContext(result) {
+  var candidate = result || LAST_RESULT;
+  if (!candidate || !candidate.set || !candidate.context) return false;
+  return candidate.context.market === MOTOR_STATE.market
+    && candidate.context.region === MOTOR_STATE.region
+    && candidate.context.product === MOTOR_STATE.product;
+}
+
 function memLocksMarket() {
   try { return MOTOR_STATE.market + '|' + MOTOR_STATE.region; } catch (e) { return MOTOR_STATE.market; }
 }
@@ -2848,7 +2859,7 @@ function generateSet() {
      - LAST_RESULT no se modifica aquí (se valida antes de guardar). */
   var _prevSetForGen = null;
   var _preservation = null;
-  if (_normalizeDecisionMode(MOTOR_STATE.decisionMode) === 'manual' && LAST_RESULT && LAST_RESULT.set) {
+  if (_normalizeDecisionMode(MOTOR_STATE.decisionMode) === 'manual' && _lastResultMatchesContext()) {
     _prevSetForGen = LAST_RESULT.set;
     _ACTIVE_GEN_LOCKS = _generationLocks(_effectiveLocks(_prevSetForGen), _prevSetForGen);
     /* FIX 3D Fase 3b: preservación de derivados sobre la ficha anterior. */
@@ -2919,8 +2930,19 @@ _preservation = {
   const usedObjs = K.filter(function (k) { return best[k].jerarquiaVisual !== 'SOLO_TEXTO'; }).map(function (k) { return best[k].objeto; });
   _addUsedObjects(historyKey, usedObjs);
 
-  const prevColorAuditSet = (LAST_RESULT && LAST_RESULT.set) ? LAST_RESULT.set : null;
-  LAST_RESULT = { set: best, score: bestScore, passed: passed, explorationBrief: MOTOR_STATE.explorationBrief, objectConflicts: (best && best.objectConflicts) || [] };
+  const prevColorAuditSet = _lastResultMatchesContext() ? LAST_RESULT.set : null;
+  LAST_RESULT = {
+    set: best,
+    score: bestScore,
+    passed: passed,
+    explorationBrief: MOTOR_STATE.explorationBrief,
+    objectConflicts: (best && best.objectConflicts) || [],
+    context: {
+      market: MOTOR_STATE.market,
+      region: MOTOR_STATE.region,
+      product: MOTOR_STATE.product
+    }
+  };
   try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
   try { window.V = best; } catch (e) {} // Puente para el revisor IA (ia-revisor.js lee window.V con fichas A/B/C).
   try {
@@ -3970,6 +3992,12 @@ function rerollSingle(keyLetter) {
     }
 
     readStateFromDOM();
+    if (!_lastResultMatchesContext()) {
+      // La ficha visible pertenece a otro mercado/región/producto: no se puede
+      // regenerar parcialmente ni preservar sus valores en el nuevo contexto.
+      crearLos3Disenos();
+      return;
+    }
     MOTOR_STATE._rerollNonce = (Number(MOTOR_STATE._rerollNonce) || 0) + 1;
     var auds = resolveAudiences();
     var others = K.filter(function (x) { return x !== keyLetter; });
