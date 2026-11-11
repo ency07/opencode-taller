@@ -215,8 +215,38 @@ const counter = getStyleUsageCounter('global_es', 'CAMISETA SOFT');
 ok(counter['Vector Flat / Plano vectorial'] > 0, 'recordStyleUse no registra uso');
 
 
-// El dado introduce una nueva semilla de variación, sin afectar la generación
-// normal del mismo contexto.
+/* ---------- 6. Aislamiento de locks por mercado, región y producto ---------- */
+const lockCtxA = 'global_en|global';
+const lockCtxB = 'gospel_es|spain';
+setLockValue(lockCtxA, 'CAMISETA SOFT', 'estilo', 'A', 'Dark Tattoo');
+const locksA = loadLocks(lockCtxA, 'CAMISETA SOFT');
+const locksB = loadLocks(lockCtxB, 'CAMISETA SOFT');
+const locksOtherProduct = loadLocks(lockCtxA, 'HOODIE');
+ok(locksA.estilo.A === 'Dark Tattoo', 'el lock debe persistir en su contexto original');
+ok(locksB.estilo.A === 'Auto', 'un mercado/región distinto no debe heredar locks');
+ok(locksOtherProduct.estilo.A === 'Auto', 'un producto distinto no debe heredar locks');
+
+/* ---------- 7. LAST_RESULT no se puede preservar fuera de su contexto ---------- */
+MOTOR_STATE.market = 'gospel_es';
+MOTOR_STATE.region = 'spain';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+LAST_RESULT = {
+  set: { A: {}, B: {}, C: {} },
+  context: { market: 'global_en', region: 'global', product: 'CAMISETA SOFT' }
+};
+ok(!_lastResultMatchesContext(), 'no debe preservar fichas de otro mercado/región');
+LAST_RESULT.context = { market: 'gospel_es', region: 'spain', product: 'CAMISETA SOFT' };
+ok(_lastResultMatchesContext(), 'debe preservar fichas del mismo contexto');
+MOTOR_STATE.region = 'colombia';
+ok(!_lastResultMatchesContext(), 'no debe preservar fichas de otra región');
+MOTOR_STATE.region = 'spain';
+MOTOR_STATE.product = 'HOODIE';
+ok(!_lastResultMatchesContext(), 'no debe preservar fichas de otro producto');
+LAST_RESULT.context = null;
+ok(!_lastResultMatchesContext(), 'un resultado antiguo sin contexto debe tratarse como no compatible');
+
+/* El dado introduce una nueva semilla de variación, sin afectar la generación
+   normal del mismo contexto. */
 const motorSource = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
 ok(/MOTOR_STATE\._rerollNonce\s*=\s*\(Number\(MOTOR_STATE\._rerollNonce\)\s*\|\|\s*0\)\s*\+\s*1/.test(motorSource), 'el dado debe incrementar la semilla de regeneración');
 ok(/MOTOR_STATE\.message, MOTOR_STATE\._rerollNonce \|\| 0, k/.test(motorSource), 'la audiencia Auto por tarjeta debe variar al regenerar');
