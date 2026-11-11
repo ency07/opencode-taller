@@ -62,6 +62,6 @@ const selected = api.selectRecords(records, [1, 2, 1, -1, 999, 'no']);
 ok(selected.length === 2 && selected[0] === records[1] && selected[1] === records[2], 'la importación usa índices originales, elimina duplicados e ignora índices inválidos');
 ok(api.selectRecords(records, []).length === 0, 'selección vacía no importa registros');
 
-console.log((failures.length ? 'FAIL' : 'PASS') + ' redteam-bank-preview (' + checks + ' comprobaciones, ' + failures.length + ' fallos)');
+console.log((failures.length ? 'FAIL' : 'PASS') + ' redteam-bank-preview (' + checks + ' comprobaciones, ' + failures.length + ' fallos)', JSON.stringify(failures));
 failures.forEach(function (failure) { console.error(' - ' + failure); });
 process.exit(failures.length ? 1 : 0);
