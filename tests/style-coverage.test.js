@@ -113,6 +113,18 @@ ok(getLanguageDirective('gospel_en', 'es').indexOf('natural, native English') !=
   'un override no debe cambiar el idioma de Gospel EN');
 ok(getLanguageDirective('global_en', 'es').indexOf('español natural') !== -1,
   'los mercados comerciales deben conservar su override de idioma');
+
+ok(getCulturalDirective('gospel_es').indexOf('Trinitario') !== -1
+  && getCulturalDirective('gospel_es').indexOf('cristocéntrico') !== -1,
+  'Gospel ES debe emitir directiva doctrinal en español');
+ok(getCulturalDirective('gospel_en').indexOf('Trinitarian') !== -1
+  && getCulturalDirective('gospel_en').indexOf('Christ-centered') !== -1,
+  'Gospel EN debe emitir directiva doctrinal en inglés');
+ok(getLegalDirective('gospel_es', 'generic').indexOf('No incluyas marcas registradas') !== -1,
+  'Gospel ES debe emitir directiva legal en español');
+ok(getLegalDirective('gospel_en', 'generic').indexOf('Do not include') !== -1
+  || getLegalDirective('gospel_en', 'generic').indexOf('trademark') !== -1,
+  'Gospel EN debe emitir directiva legal en inglés');
 const gospelEsIds = Object.keys(gospelEsDomains);
 const gospelEnIds = Object.keys(gospelEnDomains);
 ok(gospelEsIds.length === 13 && gospelEnIds.length === 13,
