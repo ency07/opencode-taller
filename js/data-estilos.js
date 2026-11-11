@@ -1075,843 +1075,7 @@ const STYLE_POOLS = {
     tecnica: ["Silueta de movimiento", "Contraste de intensidad", "Deporte con fondo claro", "Jersey textil", "Cronómetro", "Línea de meta"],
     relacion: ["la energía del movimiento es la metáfora: la palabra es el sprint", "el texto se lee sobre el campo: acción y mensaje", "símbolo y texto comparten la intensidad del deporte", "todo es movimiento, nada es estático"]
   },
-  "Neón punk": {
-    "arquitectura": [
-      "cartel nocturno con titular condensado cortado por diagonal de luz",
-      "emblema angular sobre campo negro y acento neón",
-      "flyer urbano de capas desplazadas",
-      "sello asimétrico con vacío negro dominante"
-    ],
-    "composicion": [
-      "tipografía condensada contra forma angular",
-      "símbolo recortado por franja luminosa",
-      "capas desplazadas con dirección de lectura",
-      "masa negra y acento eléctrico"
-    ],
-    "textoPrincipal": [
-      "titular corto en mayúsculas condensadas",
-      "palabra como bloque duro con cortes geométricos"
-    ],
-    "textoApoyo": [
-      "apoyo pequeño en una línea técnica",
-      "segunda frase en etiqueta estrecha"
-    ],
-    "textoTerciario": [
-      "microdato solo si es real y legible"
-    ],
-    "tecnica": [
-      "serigrafía de alto contraste",
-      "tinta plana neón sobre negro",
-      "stencil de bordes duros",
-      "desregistro cromático controlado"
-    ],
-    "relacion": [
-      "texto como golpe visual y símbolo como ancla",
-      "luz de acento separa planos sin sustituir la forma"
-    ]
-  },
-  "Cómic grunge": {
-    "arquitectura": [
-      "viñeta rota con titular fuera del marco",
-      "portada fotocopiada con foco central",
-      "panel diagonal con símbolo dominante",
-      "fanzine con recortes y márgenes irregulares"
-    ],
-    "composicion": [
-      "trama de puntos interrumpida por silueta clara",
-      "papel rasgado como marco funcional",
-      "acción congelada en diagonal",
-      "dos masas de tinta y un punto de impacto"
-    ],
-    "textoPrincipal": [
-      "titular grueso, corto y legible",
-      "palabra de impacto integrada al ritmo de viñeta"
-    ],
-    "textoApoyo": [
-      "subtítulo en caja editorial limpia",
-      "frase secundaria en bloque estrecho"
-    ],
-    "textoTerciario": [
-      "número de edición solo si forma parte del concepto"
-    ],
-    "tecnica": [
-      "halftone roto controlado",
-      "fotocopia de alto contraste",
-      "tinta negra con trama gruesa",
-      "collage de papel impreso"
-    ],
-    "relacion": [
-      "textura enmarca el símbolo sin taparlo",
-      "texto acompaña la acción, no decora"
-    ]
-  },
-  "Noir gráfico": {
-    "arquitectura": [
-      "composición vertical de sombra y luz",
-      "cartel monocromo con corte de luz",
-      "encuadre reducido a silueta y vacío",
-      "placa tipográfica austera"
-    ],
-    "composicion": [
-      "silueta contra campo vacío",
-      "masas negras con reserva blanca",
-      "diagonal de luz hacia el mensaje",
-      "figura parcial con espacio tipográfico"
-    ],
-    "textoPrincipal": [
-      "serif o sans condensada en blanco",
-      "titular sobrio con espacio entre letras"
-    ],
-    "textoApoyo": [
-      "apoyo breve y alineado",
-      "segunda línea solo si mejora lectura"
-    ],
-    "textoTerciario": [
-      "sin microtexto decorativo ni datos no confirmados"
-    ],
-    "tecnica": [
-      "duotono negro y blanco",
-      "grabado de sombra dura",
-      "reserva de tinta",
-      "trama monocroma fina"
-    ],
-    "relacion": [
-      "vacío dirige al símbolo y titular",
-      "sombra construye tensión sin inventar objetos"
-    ]
-  },
-  "Superflat": {
-    "arquitectura": [
-      "campos planos con contornos limpios",
-      "figura frontal y bloque cromático",
-      "retícula de dos o tres planos",
-      "sello compacto de color uniforme"
-    ],
-    "composicion": [
-      "figura con contorno constante",
-      "superposición plana sin sombras realistas",
-      "formas simples con jerarquía de escala",
-      "color sólido y espacio negativo"
-    ],
-    "textoPrincipal": [
-      "sans geométrica de peso medio",
-      "titular breve alineado con planos"
-    ],
-    "textoApoyo": [
-      "apoyo en banda plana secundaria",
-      "segunda línea con aire"
-    ],
-    "textoTerciario": [
-      "sin numeración ornamental ni microtexto"
-    ],
-    "tecnica": [
-      "tinta plana vectorial",
-      "contorno uniforme",
-      "separación de planos de color",
-      "serigrafía sólida"
-    ],
-    "relacion": [
-      "texto comparte retícula sin tapar contorno",
-      "cada plano cromático tiene función"
-    ]
-  },
-  "Neoexpresionismo": {
-    "arquitectura": [
-      "gesto pictórico con zona tipográfica estable",
-      "composición asimétrica de pincelada y símbolo",
-      "masa gestual y vacío opuesto",
-      "campo pictórico fragmentado"
-    ],
-    "composicion": [
-      "pincelada amplia hacia el símbolo",
-      "trazos gestuales que no ocultan la palabra",
-      "mancha orgánica y tipografía seca",
-      "fragmentación expresiva con foco"
-    ],
-    "textoPrincipal": [
-      "titular robusto y directo",
-      "palabra con forma irregular controlada"
-    ],
-    "textoApoyo": [
-      "sans limpia que equilibra energía",
-      "segunda línea corta y separada"
-    ],
-    "textoTerciario": [
-      "sin firmas inventadas"
-    ],
-    "tecnica": [
-      "pincelada acrílica gestual",
-      "tinta expresiva",
-      "raspado pictórico",
-      "monotipo de capas"
-    ],
-    "relacion": [
-      "gesto amplifica emoción sin deformar símbolo",
-      "tipografía estabiliza la composición"
-    ]
-  },
-  "Cartoon moderno": {
-    "arquitectura": [
-      "figura expresiva con titular en banda flexible",
-      "personaje y dos bloques de apoyo",
-      "silueta compacta con fondo simple",
-      "escena mínima con foco único"
-    ],
-    "composicion": [
-      "formas redondeadas y contorno limpio",
-      "pose legible a tamaño de camiseta",
-      "exageración selectiva",
-      "figura y fondo separados"
-    ],
-    "textoPrincipal": [
-      "display redondeada de peso medio-alto",
-      "titular breve de terminales suaves"
-    ],
-    "textoApoyo": [
-      "sans simple sin efectos",
-      "frase secundaria equilibrada"
-    ],
-    "textoTerciario": [
-      "sin etiquetas sin función narrativa"
-    ],
-    "tecnica": [
-      "vector cartoon limpio",
-      "relleno plano",
-      "línea variable controlada",
-      "serigrafía limitada"
-    ],
-    "relacion": [
-      "personaje comunica y texto remata",
-      "contorno separa formas para impresión"
-    ]
-  },
-  "Constructivismo": {
-    "arquitectura": [
-      "retícula diagonal de bloques tipográficos",
-      "cartel modular de planos superpuestos",
-      "círculo, barra y triángulo en eje",
-      "dos campos asimétricos con titular"
-    ],
-    "composicion": [
-      "diagonales con dirección",
-      "geometría como estructura",
-      "texto alineado a retícula",
-      "contraste de escala"
-    ],
-    "textoPrincipal": [
-      "sans geométrica en caja alta",
-      "titular integrado a bloques"
-    ],
-    "textoApoyo": [
-      "mono técnica o sans funcional",
-      "segunda línea alineada"
-    ],
-    "textoTerciario": [
-      "numeración solo si el concepto lo justifica"
-    ],
-    "tecnica": [
-      "tinta plana geométrica",
-      "serigrafía de dos o tres colores",
-      "collage constructivo",
-      "reserva por bloques"
-    ],
-    "relacion": [
-      "tipografía forma parte de estructura",
-      "diagonales conducen al símbolo"
-    ]
-  },
-  "Caricatura": {
-    "arquitectura": [
-      "retrato caricaturizado con margen amplio",
-      "figura exagerada y titular de respuesta",
-      "busto con sello tipográfico corto",
-      "escena mínima de gesto reconocible"
-    ],
-    "composicion": [
-      "exagerar rasgo pertinente sin perder identidad",
-      "silueta y expresión legibles",
-      "gesto corporal refuerza mensaje",
-      "figura expresiva y tipo estable"
-    ],
-    "textoPrincipal": [
-      "display contundente con humor controlado",
-      "titular corto que complementa gesto"
-    ],
-    "textoApoyo": [
-      "sans legible en una línea",
-      "remate breve"
-    ],
-    "textoTerciario": [
-      "sin nombres ni citas inventadas"
-    ],
-    "tecnica": [
-      "tinta con línea variable",
-      "vector expresivo",
-      "sombreado de masas",
-      "color plano"
-    ],
-    "relacion": [
-      "gesto lleva el chiste y texto aporta giro",
-      "exageración limitada a rasgos pertinentes"
-    ]
-  },
-  "Art déco": {
-    "arquitectura": [
-      "simetría vertical con abanico geométrico",
-      "marco escalonado con emblema y banda",
-      "líneas paralelas y formas radiantes",
-      "placa ornamental con márgenes"
-    ],
-    "composicion": [
-      "geometría escalonada",
-      "líneas radiales hacia el foco",
-      "ornamento con función jerárquica",
-      "masas oscuras y acento metálico"
-    ],
-    "textoPrincipal": [
-      "serif elegante o sans geométrica",
-      "mayúsculas con espaciado deliberado"
-    ],
-    "textoApoyo": [
-      "serif limpia de menor tamaño",
-      "segunda línea centrada"
-    ],
-    "textoTerciario": [
-      "sin fechas de época inventadas"
-    ],
-    "tecnica": [
-      "serigrafía plana",
-      "línea geométrica dorada sin degradado",
-      "grabado ornamental",
-      "reserva en planos oscuros"
-    ],
-    "relacion": [
-      "marco ordena símbolo y titular",
-      "ornamento refuerza eje sin competir"
-    ]
-  },
-  "Bauhaus": {
-    "arquitectura": [
-      "retícula de círculos, barras y cuadrados",
-      "composición modular de tres tamaños",
-      "símbolo geométrico y texto en campos",
-      "cartel informativo de bloques"
-    ],
-    "composicion": [
-      "formas básicas proporcionales",
-      "alineación a retícula",
-      "paleta primaria controlada",
-      "asimetría equilibrada"
-    ],
-    "textoPrincipal": [
-      "sans funcional sin ornamento",
-      "titular corto alineado"
-    ],
-    "textoApoyo": [
-      "mono o sans de lectura",
-      "segunda línea en módulo"
-    ],
-    "textoTerciario": [
-      "dato funcional real o se omite"
-    ],
-    "tecnica": [
-      "vector geométrico plano",
-      "serigrafía primaria",
-      "construcción modular",
-      "contorno preciso"
-    ],
-    "relacion": [
-      "texto y forma como sistema funcional",
-      "cada geometría tiene función"
-    ]
-  },
-  "Line art minimalista": {
-    "arquitectura": [
-      "trazo continuo con margen vacío",
-      "símbolo lineal aislado y titular discreto",
-      "composición vertical de línea y vacío",
-      "marco abierto de un contorno"
-    ],
-    "composicion": [
-      "línea continua imprimible",
-      "forma única sin sombreado",
-      "vacío dominante",
-      "trazo que no cruza lectura"
-    ],
-    "textoPrincipal": [
-      "sans regular con pocas palabras",
-      "titular pequeño pero legible"
-    ],
-    "textoApoyo": [
-      "apoyo opcional en una línea",
-      "segunda frase solo si aporta"
-    ],
-    "textoTerciario": [
-      "sin microtexto ni adornos"
-    ],
-    "tecnica": [
-      "monoline constante",
-      "línea vectorial continua",
-      "tinta única sin sombreado",
-      "contorno abierto limpio"
-    ],
-    "relacion": [
-      "trazo conecta mensaje y símbolo",
-      "espacio vacío es parte activa"
-    ]
-  },
-  "Pop art": {
-    "arquitectura": [
-      "repetición modular con palabra de impacto",
-      "viñeta frontal con bloques y trama",
-      "cuatro campos con variación controlada",
-      "símbolo con ráfagas laterales"
-    ],
-    "composicion": [
-      "repetición de escala",
-      "Ben-Day en zonas amplias",
-      "color saturado con lectura",
-      "contorno negro y planos"
-    ],
-    "textoPrincipal": [
-      "display bold de alto impacto",
-      "onomatopeya solo si nace del concepto"
-    ],
-    "textoApoyo": [
-      "banda sólida de contraste",
-      "segunda línea breve"
-    ],
-    "textoTerciario": [
-      "sin precios ni datos ficticios"
-    ],
-    "tecnica": [
-      "Ben-Day controlado",
-      "serigrafía plana",
-      "registro cromático intencional",
-      "contorno negro"
-    ],
-    "relacion": [
-      "repetición aumenta impacto sin sustituir símbolo",
-      "titular es golpe verbal"
-    ]
-  },
-  "Pintura al óleo": {
-    "arquitectura": [
-      "foco de luz y margen tipográfico",
-      "símbolo aislado sobre pincelada amplia",
-      "masa central con texto inferior",
-      "campo oscuro y reserva clara"
-    ],
-    "composicion": [
-      "pincelada visible",
-      "claroscuro sin perder silueta",
-      "textura en áreas amplias",
-      "foco iluminado y fondo profundo"
-    ],
-    "textoPrincipal": [
-      "serif clásica o sans sobria",
-      "titular claro sin textura"
-    ],
-    "textoApoyo": [
-      "serif breve de cuerpo menor",
-      "segunda línea contrastada"
-    ],
-    "textoTerciario": [
-      "sin firma ni procedencia inventada"
-    ],
-    "tecnica": [
-      "pincelada de óleo digital",
-      "claroscuro controlado",
-      "impasto en masas",
-      "textura de lienzo"
-    ],
-    "relacion": [
-      "pintura construye atmósfera y texto mantiene lectura",
-      "textura no invade contornos"
-    ]
-  },
-  "Cartoon retro": {
-    "arquitectura": [
-      "mascota con contorno grueso y rótulo curvo",
-      "placa vintage con personaje frontal",
-      "insignia de animación y fondo simple",
-      "figura con banda inferior"
-    ],
-    "composicion": [
-      "formas redondeadas clásicas",
-      "contorno grueso y relleno plano",
-      "pose clara y silueta",
-      "paleta cálida limitada"
-    ],
-    "textoPrincipal": [
-      "lettering grueso y redondeado",
-      "titular arqueado solo si mejora lectura"
-    ],
-    "textoApoyo": [
-      "sans o slab sencilla",
-      "remate corto en banda"
-    ],
-    "textoTerciario": [
-      "sin marcas ni fechas ficticias"
-    ],
-    "tecnica": [
-      "cel animation plana",
-      "tinta de contorno grueso",
-      "serigrafía limitada",
-      "sombreado por bloques"
-    ],
-    "relacion": [
-      "figura genera simpatía y texto define mensaje",
-      "rótulo sigue silueta sin deformarse"
-    ]
-  },
-  "Flat geométrico": {
-    "arquitectura": [
-      "bloques de color con foco central",
-      "dos planos y símbolo compacto",
-      "retícula modular y texto lateral",
-      "emblema plano con márgenes"
-    ],
-    "composicion": [
-      "vector sin volumen simulado",
-      "paleta reducida",
-      "superposición de dos o tres figuras",
-      "asimetría con espacio negativo"
-    ],
-    "textoPrincipal": [
-      "sans geométrica sin sombra",
-      "titular corto alineado"
-    ],
-    "textoApoyo": [
-      "sans funcional pequeña",
-      "segunda línea separada por espacio"
-    ],
-    "textoTerciario": [
-      "sin microtexto como textura"
-    ],
-    "tecnica": [
-      "vector flat sólido",
-      "separación limpia de planos",
-      "contorno constante",
-      "serigrafía plana"
-    ],
-    "relacion": [
-      "formas construyen símbolo, no fondo genérico",
-      "texto se integra por alineación y escala"
-    ]
-  },
-  "Doodle a dos colores": {
-    "arquitectura": [
-      "hoja de apuntes con doodles organizados",
-      "símbolo central con notas cortas",
-      "margen de cuaderno con gestos repetidos",
-      "campo abierto con trazo y dos acentos"
-    ],
-    "composicion": [
-      "garabatos funcionales del concepto",
-      "dos tintas con jerarquía",
-      "línea irregular controlada",
-      "repetición manual sin saturación"
-    ],
-    "textoPrincipal": [
-      "manuscrita legible de trazo firme",
-      "titular corto con gesto manual"
-    ],
-    "textoApoyo": [
-      "apoyo manuscrito de menor peso",
-      "nota secundaria solo si aporta"
-    ],
-    "textoTerciario": [
-      "sin anotaciones ficticias ilegibles"
-    ],
-    "tecnica": [
-      "doodle de tinta a dos colores",
-      "brush pen irregular",
-      "serigrafía de dos tintas",
-      "marcador plano"
-    ],
-    "relacion": [
-      "garabatos acompañan sin reemplazar símbolo",
-      "trazo conecta texto y motivo"
-    ]
-  },
-  "Línea a dos tintas": {
-    "arquitectura": [
-      "dos líneas cromáticas definen símbolo y texto",
-      "foco lineal con banda tipográfica",
-      "marco abierto de dos trazos",
-      "contorno doble con texto alineado"
-    ],
-    "composicion": [
-      "dos tintas separadas y limpias",
-      "contornos paralelos sin cruces",
-      "grosor principal y secundario",
-      "espacio negativo entre trazos"
-    ],
-    "textoPrincipal": [
-      "sans ligera o serif limpia",
-      "titular corto en una línea"
-    ],
-    "textoApoyo": [
-      "sans pequeña de contraste suficiente",
-      "segunda línea opcional"
-    ],
-    "textoTerciario": [
-      "omitir detalles que no sobreviven a escala"
-    ],
-    "tecnica": [
-      "line art a dos tintas",
-      "serigrafía de dos colores",
-      "contorno doble calibrado",
-      "reserva blanca"
-    ],
-    "relacion": [
-      "dos tintas diferencian estructura y énfasis",
-      "línea principal conserva lectura"
-    ]
-  },
-  "Línea art de una tinta": {
-    "arquitectura": [
-      "símbolo de línea continua y texto independiente",
-      "trazo único centrado con margen",
-      "marco lineal abierto",
-      "emblema simple y palabra secundaria"
-    ],
-    "composicion": [
-      "una tinta sin degradados ni sombras",
-      "trazo continuo imprimible",
-      "formas abiertas y reconocibles",
-      "vacío alrededor del contorno"
-    ],
-    "textoPrincipal": [
-      "sans humanista en una línea",
-      "serif sencilla de cuerpo medio"
-    ],
-    "textoApoyo": [
-      "apoyo opcional de alto contraste",
-      "segunda frase solo si se exige"
-    ],
-    "textoTerciario": [
-      "sin microtexto ni líneas decorativas"
-    ],
-    "tecnica": [
-      "line art de una tinta",
-      "monoline vectorial",
-      "contorno continuo calibrado",
-      "tinta negra con reserva"
-    ],
-    "relacion": [
-      "línea une símbolo y mensaje sin adornos",
-      "texto separado del trazo esencial"
-    ]
-  },
-  "Blanco y negro": {
-    "arquitectura": [
-      "bloque monocromo de alto contraste",
-      "silueta blanca sobre masa negra y titular opuesto",
-      "dos campos tipográfico y simbólico",
-      "emblema de tinta única con vacío"
-    ],
-    "composicion": [
-      "negro, blanco y reserva",
-      "silueta sin depender del color",
-      "trama solo en zonas amplias",
-      "jerarquía por valor, escala y vacío"
-    ],
-    "textoPrincipal": [
-      "grotesca black o serif de alto contraste",
-      "titular sólido sin efectos"
-    ],
-    "textoApoyo": [
-      "cuerpo menor con contraste claro",
-      "segunda línea sin grises débiles"
-    ],
-    "textoTerciario": [
-      "sin grises ni microtexto de baja lectura"
-    ],
-    "tecnica": [
-      "serigrafía monocroma",
-      "grabado blanco y negro",
-      "reserva de tinta",
-      "halftone grueso de una tinta"
-    ],
-    "relacion": [
-      "contraste define mensaje y silueta",
-      "ausencia de color no reduce jerarquía"
-    ]
-  }
-  "Neón punk": Object.assign({}, STYLE_POOLS["Retro 80s Neon"], {
-    arquitectura: STYLE_POOLS["Retro 80s Neon"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Retro 80s Neon"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Retro 80s Neon"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Retro 80s Neon"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Retro 80s Neon"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Retro 80s Neon"].tecnica.slice(),
-    relacion: STYLE_POOLS["Retro 80s Neon"].relacion.slice()
-  }),
-  "Cómic grunge": Object.assign({}, STYLE_POOLS["Grunge / DIY"], {
-    arquitectura: STYLE_POOLS["Grunge / DIY"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Grunge / DIY"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Grunge / DIY"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Grunge / DIY"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Grunge / DIY"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Grunge / DIY"].tecnica.slice(),
-    relacion: STYLE_POOLS["Grunge / DIY"].relacion.slice()
-  }),
-  "Noir gráfico": Object.assign({}, STYLE_POOLS["Photomontage / Dada"], {
-    arquitectura: STYLE_POOLS["Photomontage / Dada"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Photomontage / Dada"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Photomontage / Dada"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Photomontage / Dada"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Photomontage / Dada"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Photomontage / Dada"].tecnica.slice(),
-    relacion: STYLE_POOLS["Photomontage / Dada"].relacion.slice()
-  }),
-  "Superflat": Object.assign({}, STYLE_POOLS["Vector Flat / Plano vectorial"], {
-    arquitectura: STYLE_POOLS["Vector Flat / Plano vectorial"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Vector Flat / Plano vectorial"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Vector Flat / Plano vectorial"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Vector Flat / Plano vectorial"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Vector Flat / Plano vectorial"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Vector Flat / Plano vectorial"].tecnica.slice(),
-    relacion: STYLE_POOLS["Vector Flat / Plano vectorial"].relacion.slice()
-  }),
-  "Neoexpresionismo": Object.assign({}, STYLE_POOLS["Hand-Drawn"], {
-    arquitectura: STYLE_POOLS["Hand-Drawn"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Hand-Drawn"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Hand-Drawn"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Hand-Drawn"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Hand-Drawn"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Hand-Drawn"].tecnica.slice(),
-    relacion: STYLE_POOLS["Hand-Drawn"].relacion.slice()
-  }),
-  "Cartoon moderno": Object.assign({}, STYLE_POOLS["Kids Storybook"], {
-    arquitectura: STYLE_POOLS["Kids Storybook"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Kids Storybook"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Kids Storybook"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Kids Storybook"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Kids Storybook"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Kids Storybook"].tecnica.slice(),
-    relacion: STYLE_POOLS["Kids Storybook"].relacion.slice()
-  }),
-  "Constructivismo": Object.assign({}, STYLE_POOLS["Brutalist"], {
-    arquitectura: STYLE_POOLS["Brutalist"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Brutalist"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Brutalist"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Brutalist"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Brutalist"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Brutalist"].tecnica.slice(),
-    relacion: STYLE_POOLS["Brutalist"].relacion.slice()
-  }),
-  "Caricatura": Object.assign({}, STYLE_POOLS["Kids Storybook"], {
-    arquitectura: STYLE_POOLS["Kids Storybook"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Kids Storybook"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Kids Storybook"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Kids Storybook"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Kids Storybook"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Kids Storybook"].tecnica.slice(),
-    relacion: STYLE_POOLS["Kids Storybook"].relacion.slice()
-  }),
-  "Art déco": Object.assign({}, STYLE_POOLS["Gótico Ornamental"], {
-    arquitectura: STYLE_POOLS["Gótico Ornamental"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Gótico Ornamental"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Gótico Ornamental"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Gótico Ornamental"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Gótico Ornamental"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Gótico Ornamental"].tecnica.slice(),
-    relacion: STYLE_POOLS["Gótico Ornamental"].relacion.slice()
-  }),
-  "Bauhaus": Object.assign({}, STYLE_POOLS["Brutalist"], {
-    arquitectura: STYLE_POOLS["Brutalist"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Brutalist"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Brutalist"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Brutalist"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Brutalist"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Brutalist"].tecnica.slice(),
-    relacion: STYLE_POOLS["Brutalist"].relacion.slice()
-  }),
-  "Line art minimalista": Object.assign({}, STYLE_POOLS["Minimal Modern"], {
-    arquitectura: STYLE_POOLS["Minimal Modern"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Minimal Modern"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Minimal Modern"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Minimal Modern"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Minimal Modern"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Minimal Modern"].tecnica.slice(),
-    relacion: STYLE_POOLS["Minimal Modern"].relacion.slice()
-  }),
-  "Pop art": Object.assign({}, STYLE_POOLS["Cómic / Halftone"], {
-    arquitectura: STYLE_POOLS["Cómic / Halftone"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Cómic / Halftone"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Cómic / Halftone"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Cómic / Halftone"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Cómic / Halftone"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Cómic / Halftone"].tecnica.slice(),
-    relacion: STYLE_POOLS["Cómic / Halftone"].relacion.slice()
-  }),
-  "Pintura al óleo": Object.assign({}, STYLE_POOLS["Acuarela Suelta"], {
-    arquitectura: STYLE_POOLS["Acuarela Suelta"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Acuarela Suelta"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Acuarela Suelta"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Acuarela Suelta"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Acuarela Suelta"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Acuarela Suelta"].tecnica.slice(),
-    relacion: STYLE_POOLS["Acuarela Suelta"].relacion.slice()
-  }),
-  "Cartoon retro": Object.assign({}, STYLE_POOLS["Kids Storybook"], {
-    arquitectura: STYLE_POOLS["Kids Storybook"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Kids Storybook"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Kids Storybook"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Kids Storybook"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Kids Storybook"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Kids Storybook"].tecnica.slice(),
-    relacion: STYLE_POOLS["Kids Storybook"].relacion.slice()
-  }),
-  "Flat geométrico": Object.assign({}, STYLE_POOLS["Vector Flat / Plano vectorial"], {
-    arquitectura: STYLE_POOLS["Vector Flat / Plano vectorial"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Vector Flat / Plano vectorial"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Vector Flat / Plano vectorial"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Vector Flat / Plano vectorial"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Vector Flat / Plano vectorial"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Vector Flat / Plano vectorial"].tecnica.slice(),
-    relacion: STYLE_POOLS["Vector Flat / Plano vectorial"].relacion.slice()
-  }),
-  "Doodle a dos colores": Object.assign({}, STYLE_POOLS["Hand-Drawn"], {
-    arquitectura: STYLE_POOLS["Hand-Drawn"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Hand-Drawn"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Hand-Drawn"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Hand-Drawn"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Hand-Drawn"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Hand-Drawn"].tecnica.slice(),
-    relacion: STYLE_POOLS["Hand-Drawn"].relacion.slice()
-  }),
-  "Línea a dos tintas": Object.assign({}, STYLE_POOLS["Grabado / Linóleo"], {
-    arquitectura: STYLE_POOLS["Grabado / Linóleo"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Grabado / Linóleo"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Grabado / Linóleo"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Grabado / Linóleo"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Grabado / Linóleo"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Grabado / Linóleo"].tecnica.slice(),
-    relacion: STYLE_POOLS["Grabado / Linóleo"].relacion.slice()
-  }),
-  "Línea art de una tinta": Object.assign({}, STYLE_POOLS["Grabado / Linóleo"], {
-    arquitectura: STYLE_POOLS["Grabado / Linóleo"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Grabado / Linóleo"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Grabado / Linóleo"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Grabado / Linóleo"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Grabado / Linóleo"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Grabado / Linóleo"].tecnica.slice(),
-    relacion: STYLE_POOLS["Grabado / Linóleo"].relacion.slice()
-  }),
-  "Blanco y negro": Object.assign({}, STYLE_POOLS["Dark Tattoo"], {
-    arquitectura: STYLE_POOLS["Dark Tattoo"].arquitectura.slice(),
-    composicion: STYLE_POOLS["Dark Tattoo"].composicion.slice(),
-    textoPrincipal: STYLE_POOLS["Dark Tattoo"].textoPrincipal.slice(),
-    textoApoyo: STYLE_POOLS["Dark Tattoo"].textoApoyo.slice(),
-    textoTerciario: STYLE_POOLS["Dark Tattoo"].textoTerciario.slice(),
-    tecnica: STYLE_POOLS["Dark Tattoo"].tecnica.slice(),
-    relacion: STYLE_POOLS["Dark Tattoo"].relacion.slice()
-  }),
-
+  
 };
 
 const STYLE_COLOR_PREF = {
@@ -1967,121 +1131,7 @@ const STYLE_COLOR_PREF = {
   "Glitter Zone / Zona glitter": ["neón / cyber", "retro vibrante", "dorado / premium"],
   "Glow Zone / Zona fosforescente": ["noche / contraste", "neón / cyber", "mínimo frío"],
   "Deportiva / Sports": ["noche / contraste", "neón / cyber", "tierra cálida"],
-  "Neón punk": [
-    "neón / cyber",
-    "noche / contraste",
-    "flúor / risografía"
-  ],
-  "Cómic grunge": [
-    "noche / contraste",
-    "retro vibrante",
-    "papel / suave"
-  ],
-  "Noir gráfico": [
-    "noche / contraste",
-    "mínimo frío",
-    "industrial"
-  ],
-  "Superflat": [
-    "retro vibrante",
-    "pastel ácido / vapor",
-    "mínimo frío"
-  ],
-  "Neoexpresionismo": [
-    "tierra cálida",
-    "noche / contraste",
-    "flúor / risografía"
-  ],
-  "Cartoon moderno": [
-    "retro vibrante",
-    "pastel ácido / vapor",
-    "papel / suave"
-  ],
-  "Constructivismo": [
-    "noche / contraste",
-    "industrial",
-    "retro vibrante"
-  ],
-  "Caricatura": [
-    "retro vibrante",
-    "tierra cálida",
-    "pastel ácido / vapor"
-  ],
-  "Art déco": [
-    "dorado / premium",
-    "noche / contraste",
-    "mínimo frío"
-  ],
-  "Bauhaus": [
-    "retro vibrante",
-    "mínimo frío",
-    "industrial"
-  ],
-  "Line art minimalista": [
-    "mínimo frío",
-    "papel / suave",
-    "noche / contraste"
-  ],
-  "Pop art": [
-    "retro vibrante",
-    "flúor / risografía",
-    "noche / contraste"
-  ],
-  "Pintura al óleo": [
-    "tierra cálida",
-    "dorado / premium",
-    "noche / contraste"
-  ],
-  "Cartoon retro": [
-    "retro vibrante",
-    "tierra cálida",
-    "papel / suave"
-  ],
-  "Flat geométrico": [
-    "mínimo frío",
-    "retro vibrante",
-    "industrial"
-  ],
-  "Doodle a dos colores": [
-    "papel / suave",
-    "retro vibrante",
-    "tierra cálida"
-  ],
-  "Línea a dos tintas": [
-    "mínimo frío",
-    "flúor / risografía",
-    "noche / contraste"
-  ],
-  "Línea art de una tinta": [
-    "mínimo frío",
-    "papel / suave",
-    "noche / contraste"
-  ],
-  "Blanco y negro": [
-    "noche / contraste",
-    "mínimo frío",
-    "industrial"
-  ]
-  "Neón punk": STYLE_COLOR_PREF["Retro 80s Neon"].slice(),
-  "Cómic grunge": STYLE_COLOR_PREF["Grunge / DIY"].slice(),
-  "Noir gráfico": STYLE_COLOR_PREF["Photomontage / Dada"].slice(),
-  "Superflat": STYLE_COLOR_PREF["Vector Flat / Plano vectorial"].slice(),
-  "Neoexpresionismo": STYLE_COLOR_PREF["Hand-Drawn"].slice(),
-  "Cartoon moderno": STYLE_COLOR_PREF["Kids Storybook"].slice(),
-  "Constructivismo": STYLE_COLOR_PREF["Brutalist"].slice(),
-  "Caricatura": STYLE_COLOR_PREF["Kids Storybook"].slice(),
-  "Art déco": STYLE_COLOR_PREF["Gótico Ornamental"].slice(),
-  "Bauhaus": STYLE_COLOR_PREF["Brutalist"].slice(),
-  "Line art minimalista": STYLE_COLOR_PREF["Minimal Modern"].slice(),
-  "Pop art": STYLE_COLOR_PREF["Cómic / Halftone"].slice(),
-  "Pintura al óleo": STYLE_COLOR_PREF["Acuarela Suelta"].slice(),
-  "Cartoon retro": STYLE_COLOR_PREF["Kids Storybook"].slice(),
-  "Flat geométrico": STYLE_COLOR_PREF["Vector Flat / Plano vectorial"].slice(),
-  "Doodle a dos colores": STYLE_COLOR_PREF["Hand-Drawn"].slice(),
-  "Línea a dos tintas": STYLE_COLOR_PREF["Grabado / Linóleo"].slice(),
-  "Línea art de una tinta": STYLE_COLOR_PREF["Grabado / Linóleo"].slice(),
-  "Blanco y negro": STYLE_COLOR_PREF["Dark Tattoo"].slice(),
-
+  
 };
 
 const STYLE_TIPO_PREF = {
@@ -2137,141 +1187,221 @@ const STYLE_TIPO_PREF = {
   "Glitter Zone / Zona glitter": ["Rounded amable", "Display caligráfica expresiva", "Script de pluma", "Grotesca black condensada"],
   "Glow Zone / Zona fosforescente": ["Grotesca black condensada", "Mono técnica", "Sans humanista limpia", "Rounded amable"],
   "Deportiva / Sports": ["Rounded amable", "Custom modular geométrica", "Script de pluma", "Grotesca black condensada"],
-  "Neón punk": [
-    "Grotesca black condensada",
-    "Stencil de plantilla",
-    "Mono técnica",
-    "Custom modular geométrica"
-  ],
-  "Cómic grunge": [
-    "Grotesca black condensada",
-    "Stencil de plantilla",
-    "Display caligráfica expresiva",
-    "Rounded amable"
-  ],
-  "Noir gráfico": [
-    "Serif clásica titulada",
-    "Sans humanista limpia",
-    "Mono técnica",
-    "Grotesca black condensada"
-  ],
-  "Superflat": [
-    "Sans humanista limpia",
-    "Geométrica deconstructivista",
-    "Rounded amable",
-    "Custom modular geométrica"
-  ],
-  "Neoexpresionismo": [
-    "Lettering brush gestual",
-    "Display caligráfica expresiva",
-    "Grotesca black condensada",
-    "Sans humanista limpia"
-  ],
-  "Cartoon moderno": [
-    "Rounded amable",
-    "Sans humanista limpia",
-    "Display caligráfica expresiva",
-    "Grotesca black condensada"
-  ],
-  "Constructivismo": [
-    "Custom modular geométrica",
-    "Grotesca black condensada",
-    "Mono técnica",
-    "Sans humanista limpia"
-  ],
-  "Caricatura": [
-    "Rounded amable",
-    "Display caligráfica expresiva",
-    "Grotesca black condensada",
-    "Script de pluma"
-  ],
-  "Art déco": [
-    "Serif moderna alto contraste",
-    "Serif clásica titulada",
-    "Sans humanista limpia",
-    "Itálica solemne"
-  ],
-  "Bauhaus": [
-    "Sans humanista limpia",
-    "Geométrica deconstructivista",
-    "Mono técnica",
-    "Custom modular geométrica"
-  ],
-  "Line art minimalista": [
-    "Sans humanista limpia",
-    "Serif moderna alto contraste",
-    "Mono técnica",
-    "Itálica solemne"
-  ],
-  "Pop art": [
-    "Grotesca black condensada",
-    "Rounded amable",
-    "Display caligráfica expresiva",
-    "Stencil de plantilla"
-  ],
-  "Pintura al óleo": [
-    "Serif clásica titulada",
-    "Itálica solemne",
-    "Serif moderna alto contraste",
-    "Sans humanista limpia"
-  ],
-  "Cartoon retro": [
-    "Rounded amable",
-    "Slab pesada de oficio",
-    "Display caligráfica expresiva",
-    "Grotesca black condensada"
-  ],
-  "Flat geométrico": [
-    "Sans humanista limpia",
-    "Geométrica deconstructivista",
-    "Custom modular geométrica",
-    "Mono técnica"
-  ],
-  "Doodle a dos colores": [
-    "Manuscrita de cuaderno",
-    "Lettering brush gestual",
-    "Rounded amable",
-    "Sans humanista limpia"
-  ],
-  "Línea a dos tintas": [
-    "Sans humanista limpia",
-    "Serif moderna alto contraste",
-    "Mono técnica",
-    "Rounded amable"
-  ],
-  "Línea art de una tinta": [
-    "Sans humanista limpia",
-    "Serif clásica titulada",
-    "Manuscrita de cuaderno",
-    "Mono técnica"
-  ],
-  "Blanco y negro": [
-    "Grotesca black condensada",
-    "Serif clásica titulada",
-    "Sans humanista limpia",
-    "Mono técnica"
-  ]
-  "Neón punk": STYLE_TIPO_PREF["Retro 80s Neon"].slice(),
-  "Cómic grunge": STYLE_TIPO_PREF["Grunge / DIY"].slice(),
-  "Noir gráfico": STYLE_TIPO_PREF["Photomontage / Dada"].slice(),
-  "Superflat": STYLE_TIPO_PREF["Vector Flat / Plano vectorial"].slice(),
-  "Neoexpresionismo": STYLE_TIPO_PREF["Hand-Drawn"].slice(),
-  "Cartoon moderno": STYLE_TIPO_PREF["Kids Storybook"].slice(),
-  "Constructivismo": STYLE_TIPO_PREF["Brutalist"].slice(),
-  "Caricatura": STYLE_TIPO_PREF["Kids Storybook"].slice(),
-  "Art déco": STYLE_TIPO_PREF["Gótico Ornamental"].slice(),
-  "Bauhaus": STYLE_TIPO_PREF["Brutalist"].slice(),
-  "Line art minimalista": STYLE_TIPO_PREF["Minimal Modern"].slice(),
-  "Pop art": STYLE_TIPO_PREF["Cómic / Halftone"].slice(),
-  "Pintura al óleo": STYLE_TIPO_PREF["Acuarela Suelta"].slice(),
-  "Cartoon retro": STYLE_TIPO_PREF["Kids Storybook"].slice(),
-  "Flat geométrico": STYLE_TIPO_PREF["Vector Flat / Plano vectorial"].slice(),
-  "Doodle a dos colores": STYLE_TIPO_PREF["Hand-Drawn"].slice(),
-  "Línea a dos tintas": STYLE_TIPO_PREF["Grabado / Linóleo"].slice(),
-  "Línea art de una tinta": STYLE_TIPO_PREF["Grabado / Linóleo"].slice(),
-  "Blanco y negro": STYLE_TIPO_PREF["Dark Tattoo"].slice(),
-
+  
 };
+
+/* Metadata derivada para los 19 lenguajes visuales añadidos.
+   Se asigna después de inicializar los catálogos para evitar referencias
+   a const en su propia zona temporal muerta. Cada estilo recibe arrays propios. */
+  STYLE_POOLS["Neón punk"] = Object.assign({}, STYLE_POOLS["Retro 80s Neon"], {
+    arquitectura: STYLE_POOLS["Retro 80s Neon"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Retro 80s Neon"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Retro 80s Neon"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Retro 80s Neon"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Retro 80s Neon"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Retro 80s Neon"].tecnica.slice(),
+    relacion: STYLE_POOLS["Retro 80s Neon"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Neón punk"] = STYLE_COLOR_PREF["Retro 80s Neon"].slice();
+  STYLE_TIPO_PREF["Neón punk"] = STYLE_TIPO_PREF["Retro 80s Neon"].slice();
+  STYLE_POOLS["Cómic grunge"] = Object.assign({}, STYLE_POOLS["Grunge / DIY"], {
+    arquitectura: STYLE_POOLS["Grunge / DIY"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Grunge / DIY"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Grunge / DIY"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Grunge / DIY"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Grunge / DIY"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Grunge / DIY"].tecnica.slice(),
+    relacion: STYLE_POOLS["Grunge / DIY"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Cómic grunge"] = STYLE_COLOR_PREF["Grunge / DIY"].slice();
+  STYLE_TIPO_PREF["Cómic grunge"] = STYLE_TIPO_PREF["Grunge / DIY"].slice();
+  STYLE_POOLS["Noir gráfico"] = Object.assign({}, STYLE_POOLS["Photomontage / Dada"], {
+    arquitectura: STYLE_POOLS["Photomontage / Dada"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Photomontage / Dada"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Photomontage / Dada"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Photomontage / Dada"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Photomontage / Dada"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Photomontage / Dada"].tecnica.slice(),
+    relacion: STYLE_POOLS["Photomontage / Dada"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Noir gráfico"] = STYLE_COLOR_PREF["Photomontage / Dada"].slice();
+  STYLE_TIPO_PREF["Noir gráfico"] = STYLE_TIPO_PREF["Photomontage / Dada"].slice();
+  STYLE_POOLS["Superflat"] = Object.assign({}, STYLE_POOLS["Vector Flat / Plano vectorial"], {
+    arquitectura: STYLE_POOLS["Vector Flat / Plano vectorial"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Vector Flat / Plano vectorial"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Vector Flat / Plano vectorial"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Vector Flat / Plano vectorial"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Vector Flat / Plano vectorial"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Vector Flat / Plano vectorial"].tecnica.slice(),
+    relacion: STYLE_POOLS["Vector Flat / Plano vectorial"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Superflat"] = STYLE_COLOR_PREF["Vector Flat / Plano vectorial"].slice();
+  STYLE_TIPO_PREF["Superflat"] = STYLE_TIPO_PREF["Vector Flat / Plano vectorial"].slice();
+  STYLE_POOLS["Neoexpresionismo"] = Object.assign({}, STYLE_POOLS["Hand-Drawn"], {
+    arquitectura: STYLE_POOLS["Hand-Drawn"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Hand-Drawn"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Hand-Drawn"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Hand-Drawn"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Hand-Drawn"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Hand-Drawn"].tecnica.slice(),
+    relacion: STYLE_POOLS["Hand-Drawn"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Neoexpresionismo"] = STYLE_COLOR_PREF["Hand-Drawn"].slice();
+  STYLE_TIPO_PREF["Neoexpresionismo"] = STYLE_TIPO_PREF["Hand-Drawn"].slice();
+  STYLE_POOLS["Cartoon moderno"] = Object.assign({}, STYLE_POOLS["Kids Storybook"], {
+    arquitectura: STYLE_POOLS["Kids Storybook"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Kids Storybook"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Kids Storybook"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Kids Storybook"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Kids Storybook"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Kids Storybook"].tecnica.slice(),
+    relacion: STYLE_POOLS["Kids Storybook"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Cartoon moderno"] = STYLE_COLOR_PREF["Kids Storybook"].slice();
+  STYLE_TIPO_PREF["Cartoon moderno"] = STYLE_TIPO_PREF["Kids Storybook"].slice();
+  STYLE_POOLS["Constructivismo"] = Object.assign({}, STYLE_POOLS["Brutalist"], {
+    arquitectura: STYLE_POOLS["Brutalist"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Brutalist"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Brutalist"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Brutalist"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Brutalist"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Brutalist"].tecnica.slice(),
+    relacion: STYLE_POOLS["Brutalist"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Constructivismo"] = STYLE_COLOR_PREF["Brutalist"].slice();
+  STYLE_TIPO_PREF["Constructivismo"] = STYLE_TIPO_PREF["Brutalist"].slice();
+  STYLE_POOLS["Caricatura"] = Object.assign({}, STYLE_POOLS["Kids Storybook"], {
+    arquitectura: STYLE_POOLS["Kids Storybook"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Kids Storybook"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Kids Storybook"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Kids Storybook"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Kids Storybook"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Kids Storybook"].tecnica.slice(),
+    relacion: STYLE_POOLS["Kids Storybook"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Caricatura"] = STYLE_COLOR_PREF["Kids Storybook"].slice();
+  STYLE_TIPO_PREF["Caricatura"] = STYLE_TIPO_PREF["Kids Storybook"].slice();
+  STYLE_POOLS["Art déco"] = Object.assign({}, STYLE_POOLS["Gótico Ornamental"], {
+    arquitectura: STYLE_POOLS["Gótico Ornamental"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Gótico Ornamental"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Gótico Ornamental"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Gótico Ornamental"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Gótico Ornamental"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Gótico Ornamental"].tecnica.slice(),
+    relacion: STYLE_POOLS["Gótico Ornamental"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Art déco"] = STYLE_COLOR_PREF["Gótico Ornamental"].slice();
+  STYLE_TIPO_PREF["Art déco"] = STYLE_TIPO_PREF["Gótico Ornamental"].slice();
+  STYLE_POOLS["Bauhaus"] = Object.assign({}, STYLE_POOLS["Brutalist"], {
+    arquitectura: STYLE_POOLS["Brutalist"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Brutalist"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Brutalist"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Brutalist"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Brutalist"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Brutalist"].tecnica.slice(),
+    relacion: STYLE_POOLS["Brutalist"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Bauhaus"] = STYLE_COLOR_PREF["Brutalist"].slice();
+  STYLE_TIPO_PREF["Bauhaus"] = STYLE_TIPO_PREF["Brutalist"].slice();
+  STYLE_POOLS["Line art minimalista"] = Object.assign({}, STYLE_POOLS["Minimal Modern"], {
+    arquitectura: STYLE_POOLS["Minimal Modern"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Minimal Modern"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Minimal Modern"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Minimal Modern"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Minimal Modern"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Minimal Modern"].tecnica.slice(),
+    relacion: STYLE_POOLS["Minimal Modern"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Line art minimalista"] = STYLE_COLOR_PREF["Minimal Modern"].slice();
+  STYLE_TIPO_PREF["Line art minimalista"] = STYLE_TIPO_PREF["Minimal Modern"].slice();
+  STYLE_POOLS["Pop art"] = Object.assign({}, STYLE_POOLS["Cómic / Halftone"], {
+    arquitectura: STYLE_POOLS["Cómic / Halftone"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Cómic / Halftone"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Cómic / Halftone"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Cómic / Halftone"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Cómic / Halftone"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Cómic / Halftone"].tecnica.slice(),
+    relacion: STYLE_POOLS["Cómic / Halftone"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Pop art"] = STYLE_COLOR_PREF["Cómic / Halftone"].slice();
+  STYLE_TIPO_PREF["Pop art"] = STYLE_TIPO_PREF["Cómic / Halftone"].slice();
+  STYLE_POOLS["Pintura al óleo"] = Object.assign({}, STYLE_POOLS["Acuarela Suelta"], {
+    arquitectura: STYLE_POOLS["Acuarela Suelta"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Acuarela Suelta"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Acuarela Suelta"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Acuarela Suelta"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Acuarela Suelta"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Acuarela Suelta"].tecnica.slice(),
+    relacion: STYLE_POOLS["Acuarela Suelta"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Pintura al óleo"] = STYLE_COLOR_PREF["Acuarela Suelta"].slice();
+  STYLE_TIPO_PREF["Pintura al óleo"] = STYLE_TIPO_PREF["Acuarela Suelta"].slice();
+  STYLE_POOLS["Cartoon retro"] = Object.assign({}, STYLE_POOLS["Kids Storybook"], {
+    arquitectura: STYLE_POOLS["Kids Storybook"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Kids Storybook"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Kids Storybook"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Kids Storybook"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Kids Storybook"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Kids Storybook"].tecnica.slice(),
+    relacion: STYLE_POOLS["Kids Storybook"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Cartoon retro"] = STYLE_COLOR_PREF["Kids Storybook"].slice();
+  STYLE_TIPO_PREF["Cartoon retro"] = STYLE_TIPO_PREF["Kids Storybook"].slice();
+  STYLE_POOLS["Flat geométrico"] = Object.assign({}, STYLE_POOLS["Vector Flat / Plano vectorial"], {
+    arquitectura: STYLE_POOLS["Vector Flat / Plano vectorial"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Vector Flat / Plano vectorial"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Vector Flat / Plano vectorial"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Vector Flat / Plano vectorial"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Vector Flat / Plano vectorial"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Vector Flat / Plano vectorial"].tecnica.slice(),
+    relacion: STYLE_POOLS["Vector Flat / Plano vectorial"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Flat geométrico"] = STYLE_COLOR_PREF["Vector Flat / Plano vectorial"].slice();
+  STYLE_TIPO_PREF["Flat geométrico"] = STYLE_TIPO_PREF["Vector Flat / Plano vectorial"].slice();
+  STYLE_POOLS["Doodle a dos colores"] = Object.assign({}, STYLE_POOLS["Hand-Drawn"], {
+    arquitectura: STYLE_POOLS["Hand-Drawn"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Hand-Drawn"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Hand-Drawn"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Hand-Drawn"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Hand-Drawn"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Hand-Drawn"].tecnica.slice(),
+    relacion: STYLE_POOLS["Hand-Drawn"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Doodle a dos colores"] = STYLE_COLOR_PREF["Hand-Drawn"].slice();
+  STYLE_TIPO_PREF["Doodle a dos colores"] = STYLE_TIPO_PREF["Hand-Drawn"].slice();
+  STYLE_POOLS["Línea a dos tintas"] = Object.assign({}, STYLE_POOLS["Grabado / Linóleo"], {
+    arquitectura: STYLE_POOLS["Grabado / Linóleo"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Grabado / Linóleo"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Grabado / Linóleo"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Grabado / Linóleo"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Grabado / Linóleo"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Grabado / Linóleo"].tecnica.slice(),
+    relacion: STYLE_POOLS["Grabado / Linóleo"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Línea a dos tintas"] = STYLE_COLOR_PREF["Grabado / Linóleo"].slice();
+  STYLE_TIPO_PREF["Línea a dos tintas"] = STYLE_TIPO_PREF["Grabado / Linóleo"].slice();
+  STYLE_POOLS["Línea art de una tinta"] = Object.assign({}, STYLE_POOLS["Grabado / Linóleo"], {
+    arquitectura: STYLE_POOLS["Grabado / Linóleo"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Grabado / Linóleo"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Grabado / Linóleo"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Grabado / Linóleo"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Grabado / Linóleo"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Grabado / Linóleo"].tecnica.slice(),
+    relacion: STYLE_POOLS["Grabado / Linóleo"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Línea art de una tinta"] = STYLE_COLOR_PREF["Grabado / Linóleo"].slice();
+  STYLE_TIPO_PREF["Línea art de una tinta"] = STYLE_TIPO_PREF["Grabado / Linóleo"].slice();
+  STYLE_POOLS["Blanco y negro"] = Object.assign({}, STYLE_POOLS["Dark Tattoo"], {
+    arquitectura: STYLE_POOLS["Dark Tattoo"].arquitectura.slice(),
+    composicion: STYLE_POOLS["Dark Tattoo"].composicion.slice(),
+    textoPrincipal: STYLE_POOLS["Dark Tattoo"].textoPrincipal.slice(),
+    textoApoyo: STYLE_POOLS["Dark Tattoo"].textoApoyo.slice(),
+    textoTerciario: STYLE_POOLS["Dark Tattoo"].textoTerciario.slice(),
+    tecnica: STYLE_POOLS["Dark Tattoo"].tecnica.slice(),
+    relacion: STYLE_POOLS["Dark Tattoo"].relacion.slice()
+  });
+  STYLE_COLOR_PREF["Blanco y negro"] = STYLE_COLOR_PREF["Dark Tattoo"].slice();
+  STYLE_TIPO_PREF["Blanco y negro"] = STYLE_TIPO_PREF["Dark Tattoo"].slice();
 
 /* Compatibilidad global */
 window.ESTILO_INFO = ESTILO_INFO;
