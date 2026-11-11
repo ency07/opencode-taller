@@ -143,6 +143,24 @@ TERRITORY_IDS.forEach(function (id) {
   ok(filteredTreatments.length > 0 && filteredTreatments.every(function (t) {
     return rec.compatibleTreatments.indexOf(t) !== -1;
   }), id + ': el filtro de tratamientos no respeta el contrato');
+
+  const profileModesByCard = {};
+  ['A', 'B', 'C'].forEach(function (card) {
+    const canonical = { A: 'HEAVY', B: 'SOFT', C: 'MODERN' }[card];
+    profileModesByCard[card] = rec.compatibleTreatments.indexOf(canonical) !== -1
+      ? canonical : _sharedVisualModesForTreatments(rec.compatibleTreatments);
+  });
+  const resolvedModes = resolveTextImageModes({}, {
+    A: 'unisex_nacional', B: 'unisex_nacional', C: 'unisex_nacional'
+  }, profileModesByCard);
+  ok(new Set([resolvedModes.A, resolvedModes.B, resolvedModes.C]).size === 3,
+    id + ': A/B/C deben conservar jerarquías distintas');
+  ['A', 'B', 'C'].forEach(function (card) {
+    const profileValue = profileModesByCard[card];
+    const allowed = Array.isArray(profileValue) ? profileValue : PROFILE_VISUAL_MODES[profileValue];
+    ok(allowed && allowed.indexOf(resolvedModes[card]) !== -1,
+      id + ': jerarquía de ' + card + ' incompatible con tratamientos permitidos');
+  });
 });
 MOTOR_STATE.market = 'global_es';
 MOTOR_STATE.creativeTerritory = 'auto';
