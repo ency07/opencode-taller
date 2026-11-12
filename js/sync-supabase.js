@@ -188,12 +188,24 @@
       }
     }
 
-    // Aplicar localmente
+    // Aplicar localmente (verificando persistencia real)
+    let localWrites = 0;
+    let localFailures = 0;
     Object.keys(merged).forEach(function (k) {
       if (String(k).indexOf('POD2|') === 0) {
-        LS.setItem(k, merged[k]);
+        try {
+          var res = LS.setItem(k, merged[k]);
+          if (res === false) localFailures++;
+          else localWrites++;
+        } catch (e) {
+          localFailures++;
+        }
       }
     });
+
+    if (localFailures > 0) {
+      throw new Error('La copia en nube se guardó, pero ' + localFailures + ' claves no pudieron persistirse en este navegador. Revisa el espacio disponible.');
+    }
 
     status('Sincronización completada. Memoria fusionada.');
     return merged;

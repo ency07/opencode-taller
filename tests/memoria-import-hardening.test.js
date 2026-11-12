@@ -329,6 +329,87 @@ throws(function () { importMemoryJSON(JSON.stringify({ 'POD2|huge': hugePayload 
   'tamaño importación: > 8MB debe rechazarse');
 
 // ============================================================
+// 14. Límite en bytes UTF-8 (no en unidades UTF-16)
+// ============================================================
+clearAllMemory();
+// 'x' repetido 9M veces: 9M unidades UTF-16 = 9 MB bytes → debe rechazarse
+throws(function () { importMemoryJSON(JSON.stringify({ 'POD2|utf8': 'x'.repeat(9 * 1024 * 1024) }), 'overwrite'); },
+  'bytes UTF-8: valor de 9MB debe rechazarse aunque quepa en UTF-16');
+
+// Valor con caracteres multilargos: 3M emojis = 6M unidades UTF-16 = 12 MB bytes
+throws(function () { importMemoryJSON(JSON.stringify({ 'POD2|emoji': '😀'.repeat(3 * 1024 * 1024) }), 'overwrite'); },
+  'bytes UTF-8: emojis que superan 8MB en bytes deben rechazarse');
+
+// ============================================================
+// 15. Profundidad de estructuras anidadas
+// ============================================================
+clearAllMemory();
+function nestedJson(depth) {
+  let s = '{"leaf":true}';
+  for (let i = 0; i < depth; i++) s = '{"n":' + s + '}';
+  return s;
+}
+throws(function () { importMemoryJSON(JSON.stringify({ 'POD2|deep': nestedJson(60) }), 'overwrite'); },
+  'profundidad: JSON con >32 niveles debe rechazarse');
+doesNotThrow(function () { importMemoryJSON(JSON.stringify({ 'POD2|ok': nestedJson(10) }), 'overwrite'); },
+  'profundidad: JSON con ≤32 niveles debe aceptarse');
+
+// ============================================================
+// 16. Sincronización con payload remoto manipulado
+// ============================================================
+const syncSrc = fs.readFileSync(path.join(ROOT, 'js', 'sync-supabase.js'), 'utf8');
+ok(/remotePayload = \{\}/.test(syncSrc) && /typeof remotePayload !== 'object'/.test(syncSrc),
+  'sincronización: payload remoto no-objeto debe normalizarse a {}');
+ok(/localFailures/.test(syncSrc) && /if \(localFailures > 0\)/.test(syncSrc),
+  'sincronización: debe fallar si la persistencia local falla');
+ok(/var res = LS\.setItem\(k, merged\[k\]\)/.test(syncSrc),
+  'sincronización: debe verificar el resultado de LS.setItem');
+
+// Simular el guardado de un payload remoto manipulado a través de mergeMemoryObjects
+clearAllMemory();
+const maliciousRemote = JSON.parse('{"__proto__": {"polluted": true}, "POD2|x": "y"}');
+const merged16 = mergeMemoryObjects({}, maliciousRemote);
+ok(merged16.polluted === undefined, 'sincronización: __proto__ remoto no debe contaminar');
+ok(({}).polluted === undefined, 'sincronización: no debe contaminar prototipo global');
+ok(merged16['POD2|x'] === 'y', 'sincronización: claves legítimas del remoto deben conservarse');
+
+// ============================================================
+// 17. Compatibilidad con claves históricas reales
+// ============================================================
+clearAllMemory();
+const historicalKeys = [
+  'POD2|config|patterns',
+  'POD2|patterns|gospel_es|CAMISETA SOFT',
+  'POD2|locks|gospel_es|CAMISETA SOFT',
+  'POD2|personalBank|gospel_es',
+  'POD2|personalBanks|gospel_es',
+  'POD2|approvedDirections',
+  'POD2|creative|gospel_es|CAMISETA SOFT',
+  'POD2|styleUsage|gospel_es|CAMISETA SOFT',
+  'POD2|templateBank',
+  'POD2|history|gospel_es|CAMISETA SOFT',
+  'POD2|ui|context'
+];
+const historicalPayload = {};
+historicalKeys.forEach(function (k) { historicalPayload[k] = JSON.stringify({ ok: true }); });
+const r17 = importMemoryJSON(JSON.stringify(historicalPayload), 'overwrite');
+ok(r17.restored === historicalKeys.length,
+  'compatibilidad histórica: todas las claves reales deben importarse (obtenido ' + r17.restored + '/' + historicalKeys.length + ')');
+
+// ============================================================
+// 18. Entradas que no son strings
+// ============================================================
+clearAllMemory();
+throws(function () { importMemoryJSON(12345, 'overwrite'); },
+  'entrada no-string: número debe rechazarse');
+throws(function () { importMemoryJSON(null, 'overwrite'); },
+  'entrada no-string: null debe rechazarse');
+throws(function () { importMemoryJSON(undefined, 'overwrite'); },
+  'entrada no-string: undefined debe rechazarse');
+throws(function () { importMemoryJSON({}, 'overwrite'); },
+  'entrada no-string: objeto debe rechazarse');
+
+// ============================================================
 // RESULTADO
 // ============================================================
 const passed = failures.length === 0;

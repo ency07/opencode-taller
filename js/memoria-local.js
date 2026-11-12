@@ -153,11 +153,12 @@
      Lanes, validación y límites defensivos para importación/fusión.
      ============================================================ */
 
-  const MEM_MAX_IMPORT_BYTES = 8 * 1024 * 1024;   // 8 MB por archivo de importación
+  const MEM_MAX_IMPORT_BYTES = 8 * 1024 * 1024;   // 8 MB por archivo de importación (bytes UTF-8)
   const MEM_MAX_KEYS = 2000;                      // máximo de claves en una importación
   const MEM_MAX_KEY_LEN = 200;                    // longitud máxima de una clave
-  const MEM_MAX_VALUE_LEN = 512 * 1024;           // 512 KB por valor individual
+  const MEM_MAX_VALUE_LEN = 512 * 1024;           // 512 KB por valor individual (bytes UTF-8)
   const MEM_MAX_ARRAY_ITEMS = 5000;               // máximo de elementos por array
+  const MEM_MAX_JSON_DEPTH = 32;                  // profundidad máxima de anidación
   const MEM_FORBIDDEN_KEYS = ['__proto__', 'constructor', 'prototype'];
 
   function _safeParseJSON(text) {
@@ -166,6 +167,44 @@
     } catch (e) {
       return { ok: false, error: e };
     }
+  }
+
+  // Longitud real en bytes UTF-8 (text.length cuenta unidades UTF-16, no bytes).
+  function _byteLength(text) {
+    if (typeof TextEncoder !== 'undefined') {
+      try { return new TextEncoder().encode(text).length; } catch (e) { /* fallback */ }
+    }
+    let bytes = 0;
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      if (code < 0x80) bytes += 1;
+      else if (code < 0x800) bytes += 2;
+      else if (code >= 0xD800 && code <= 0xDBFF) { bytes += 4; i++; }
+      else bytes += 3;
+    }
+    return bytes;
+  }
+
+  // Profundidad máxima de anidación en un valor importado
+  function _jsonDepth(value, depth) {
+    if (depth > MEM_MAX_JSON_DEPTH) return depth;
+    if (value && typeof value === 'object') {
+      let max = depth;
+      const keys = Object.keys(value);
+      for (let i = 0; i < keys.length; i++) {
+        const d = _jsonDepth(value[keys[i]], depth + 1);
+        if (d > max) max = d;
+      }
+      return max;
+    }
+    return depth;
+  }
+
+  // Un valor es un string JSON; verifica que su estructura interna no exceda la profundidad
+  function _exceedsDepth(value) {
+    const parsed = _safeParseJSON(value);
+    if (!parsed.ok) return false; // no es JSON interno; los consumidores ya lo manejan
+    return _jsonDepth(parsed.value, 0) > MEM_MAX_JSON_DEPTH;
   }
 
   function _isForbiddenKey(k) {
@@ -188,7 +227,7 @@
   // Validación de valor individual: debe ser string (JSON) y no exceder límite
   function _isValidMemoryValue(v) {
     if (typeof v !== 'string') return false;
-    if (v.length > MEM_MAX_VALUE_LEN) return false;
+    if (_byteLength(v) > MEM_MAX_VALUE_LEN) return false;
     return true;
   }
 
@@ -1111,9 +1150,9 @@
   }
 
   function importPersonalBanksJSON(input) {
-    // Límite de tamaño del archivo de importación
-    if (typeof input === 'string' && input.length > MEM_MAX_IMPORT_BYTES) {
-      throw new Error('Archivo demasiado grande (' + input.length + ' bytes, máximo ' + MEM_MAX_IMPORT_BYTES + ')');
+    // Límite de tamaño del archivo de importación (bytes UTF-8 reales)
+    if (typeof input === 'string' && _byteLength(input) > MEM_MAX_IMPORT_BYTES) {
+      throw new Error('Archivo demasiado grande (' + _byteLength(input) + ' bytes, máximo ' + MEM_MAX_IMPORT_BYTES + ')');
     }
 
     let parsed;
@@ -1274,9 +1313,9 @@
   }
 
   function importMemoryJSON(text, mode) {
-    // Límite de tamaño del archivo de importación
-    if (typeof text === 'string' && text.length > MEM_MAX_IMPORT_BYTES) {
-      throw new Error('Archivo demasiado grande (' + text.length + ' bytes, máximo ' + MEM_MAX_IMPORT_BYTES + ')');
+    // Límite de tamaño del archivo de importación (bytes UTF-8 reales)
+    if (typeof text === 'string' && _byteLength(text) > MEM_MAX_IMPORT_BYTES) {
+      throw new Error('Archivo demasiado grande (' + _byteLength(text) + ' bytes, máximo ' + MEM_MAX_IMPORT_BYTES + ')');
     }
 
     const parsed = _safeParseJSON(text);
@@ -1306,6 +1345,7 @@
         const k = writeKeys[i];
         if (!_isValidMemoryKey(k)) throw new Error('Clave inválida: ' + k);
         if (!_isValidMemoryValue(merged[k])) throw new Error('Valor inválido en ' + k);
+        if (_exceedsDepth(merged[k])) throw new Error('Estructura demasiado profunda en ' + k);
       }
 
       // Escritura atómica: backup previo y restauración en caso de fallo
@@ -1346,6 +1386,7 @@
     for (let i = 0; i < Object.keys(incoming).length; i++) {
       const k = Object.keys(incoming)[i];
       if (!_isValidMemoryValue(incoming[k])) throw new Error('Valor inválido en ' + k);
+      if (_exceedsDepth(incoming[k])) throw new Error('Estructura demasiado profunda en ' + k);
     }
 
     const writeKeys = Object.keys(incoming);
