@@ -149,6 +149,65 @@
   }
 
   /* ============================================================
+     ENDURECIMIENTO DE IMPORTACIÓN (RT-032.1)
+     Lanes, validación y límites defensivos para importación/fusión.
+     ============================================================ */
+
+  const MEM_MAX_IMPORT_BYTES = 8 * 1024 * 1024;   // 8 MB por archivo de importación
+  const MEM_MAX_KEYS = 2000;                      // máximo de claves en una importación
+  const MEM_MAX_KEY_LEN = 200;                    // longitud máxima de una clave
+  const MEM_MAX_VALUE_LEN = 512 * 1024;           // 512 KB por valor individual
+  const MEM_MAX_ARRAY_ITEMS = 5000;               // máximo de elementos por array
+  const MEM_FORBIDDEN_KEYS = ['__proto__', 'constructor', 'prototype'];
+
+  function _safeParseJSON(text) {
+    try {
+      return { ok: true, value: JSON.parse(text) };
+    } catch (e) {
+      return { ok: false, error: e };
+    }
+  }
+
+  function _isForbiddenKey(k) {
+    const s = String(k);
+    return MEM_FORBIDDEN_KEYS.indexOf(s) !== -1 || s === '' || s === 'null';
+  }
+
+  // Valida que la clave respete el formato POD2|<sección>[|sub...]
+  function _isValidMemoryKey(k) {
+    const s = String(k);
+    if (s.indexOf(MEM_PREFIX) !== 0) return false;
+    if (s.length > MEM_MAX_KEY_LEN) return false;
+    if (_isForbiddenKey(s)) return false;
+    // Debe tener al menos una sección después del prefijo
+    const rest = s.slice(MEM_PREFIX.length);
+    if (!rest || rest.indexOf('|') === 0) return false;
+    return true;
+  }
+
+  // Validación de valor individual: debe ser string (JSON) y no exceder límite
+  function _isValidMemoryValue(v) {
+    if (typeof v !== 'string') return false;
+    if (v.length > MEM_MAX_VALUE_LEN) return false;
+    return true;
+  }
+
+  // Cuenta el total de claves y verifica límites de un objeto importado
+  function _checkImportLimits(data) {
+    const keys = Object.keys(data);
+    if (keys.length > MEM_MAX_KEYS) {
+      return { ok: false, error: 'Demasiadas claves (' + keys.length + ', máximo ' + MEM_MAX_KEYS + ')' };
+    }
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      if (k.length > MEM_MAX_KEY_LEN) {
+        return { ok: false, error: 'Clave demasiado larga: ' + k.substring(0, 60) + '…' };
+      }
+    }
+    return { ok: true, keyCount: keys.length };
+  }
+
+  /* ============================================================
      CONFIGURACIÓN DE PATRONES ANTI-REPETICIÓN
      ============================================================ */
 
@@ -937,16 +996,23 @@
      ============================================================ */
 
   function mergeArraysUnique(remoteArr, localArr) {
-    const seen = {};
+    const seen = Object.create(null);
     const out = [];
 
     (remoteArr || [])
       .concat(localArr || [])
       .forEach(function (item) {
-        const key =
-          typeof item === 'string'
-            ? item
-            : JSON.stringify(item);
+        let key;
+        if (typeof item === 'string') {
+          key = item;
+        } else {
+          try {
+            key = JSON.stringify(item);
+          } catch (e) {
+            // Referencia circular o valor no serializable: se omite
+            return;
+          }
+        }
 
         if (!seen[key]) {
           seen[key] = true;
@@ -954,7 +1020,7 @@
         }
       });
 
-    return out;
+    return out.slice(0, MEM_MAX_ARRAY_ITEMS);
   }
 
   function exportMemoryObject() {
@@ -1003,7 +1069,12 @@
   }
 
   function normalizeGeneratedBankOutput(input) {
-    const parsed = typeof input === 'string' ? JSON.parse(input) : input;
+    let parsed;
+    try {
+      parsed = typeof input === 'string' ? JSON.parse(input) : input;
+    } catch (e) {
+      throw new Error('La salida del generador debe ser un JSON válido.');
+    }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('La salida del generador debe ser un objeto JSON.');
     const market = String(parsed.mercado || parsed.market || '').trim();
     const family = String(parsed.familia || parsed.family || '').trim();
@@ -1040,7 +1111,17 @@
   }
 
   function importPersonalBanksJSON(input) {
-    const parsed = typeof input === 'string' ? JSON.parse(input) : input;
+    // Límite de tamaño del archivo de importación
+    if (typeof input === 'string' && input.length > MEM_MAX_IMPORT_BYTES) {
+      throw new Error('Archivo demasiado grande (' + input.length + ' bytes, máximo ' + MEM_MAX_IMPORT_BYTES + ')');
+    }
+
+    let parsed;
+    try {
+      parsed = typeof input === 'string' ? JSON.parse(input) : input;
+    } catch (e) {
+      throw new Error('El archivo debe contener un JSON válido.');
+    }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('El archivo debe contener un objeto JSON.');
     if (parsed.format && (parsed.format !== 'taller-pod-personal-banks' || parsed.schemaVersion !== 1)) {
       throw new Error('Formato o versión de bancos no compatible.');
@@ -1100,10 +1181,20 @@
     return { ok: true, importedKeys: keys.length, summary: summary };
   }
   function mergeMemoryObjects(local, remote) {
-    local = local || {};
-    remote = remote || {};
+    local = (local && typeof local === 'object' && !Array.isArray(local)) ? local : {};
+    remote = (remote && typeof remote === 'object' && !Array.isArray(remote)) ? remote : {};
 
-    const out = Object.assign({}, remote, local);
+    // Construcción segura: se filtran claves prohibidas para evitar
+    // contaminación de prototipo vía __proto__/constructor/prototype.
+    const out = {};
+    const safeKeys = {};
+    Object.keys(remote).concat(Object.keys(local)).forEach(function (k) {
+      if (!_isForbiddenKey(k)) safeKeys[k] = true;
+    });
+    Object.keys(safeKeys).forEach(function (k) {
+      if (Object.prototype.hasOwnProperty.call(local, k)) out[k] = local[k];
+      else if (Object.prototype.hasOwnProperty.call(remote, k)) out[k] = remote[k];
+    });
 
     Object.keys(out).forEach(function (k) {
       if (String(k).indexOf(MEM_PREFIX) !== 0) return;
@@ -1183,34 +1274,99 @@
   }
 
   function importMemoryJSON(text, mode) {
-    const data = JSON.parse(text);
-    mode = mode || 'overwrite';
+    // Límite de tamaño del archivo de importación
+    if (typeof text === 'string' && text.length > MEM_MAX_IMPORT_BYTES) {
+      throw new Error('Archivo demasiado grande (' + text.length + ' bytes, máximo ' + MEM_MAX_IMPORT_BYTES + ')');
+    }
+
+    const parsed = _safeParseJSON(text);
+    if (!parsed.ok) throw new Error('JSON inválido: ' + parsed.error.message);
+
+    const data = parsed.value;
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('El JSON debe ser un objeto.');
+    }
+
+    mode = mode || 'merge';
 
     if (mode === 'merge') {
       const local = exportMemoryObject();
       const merged = mergeMemoryObjects(local, data);
 
-      Object.keys(merged).forEach(function (k) {
-        POD_LS.setItem(k, merged[k]);
+      const writeKeys = Object.keys(merged).filter(function (k) {
+        return String(k).indexOf(MEM_PREFIX) === 0;
       });
 
+      // Verificación de límites sobre los datos entrantes (no sobre la memoria local acumulada)
+      const limitCheck = _checkImportLimits(data);
+      if (!limitCheck.ok) throw new Error(limitCheck.error);
+
+      // Validación de valores antes de escribir
+      for (let i = 0; i < writeKeys.length; i++) {
+        const k = writeKeys[i];
+        if (!_isValidMemoryKey(k)) throw new Error('Clave inválida: ' + k);
+        if (!_isValidMemoryValue(merged[k])) throw new Error('Valor inválido en ' + k);
+      }
+
+      // Escritura atómica: backup previo y restauración en caso de fallo
+      const backup = {};
+      writeKeys.forEach(function (k) { backup[k] = POD_LS.getItem(k); });
+      try {
+        writeKeys.forEach(function (k) {
+          if (POD_LS.setItem(k, merged[k]) !== true) {
+            throw new Error('No se pudo guardar ' + k);
+          }
+        });
+      } catch (e) {
+        writeKeys.forEach(function (k) {
+          if (backup[k] === null || backup[k] === undefined) POD_LS.removeItem(k);
+          else POD_LS.setItem(k, backup[k]);
+        });
+        throw e;
+      }
+
       return {
-        restored: Object.keys(merged).length,
+        restored: writeKeys.length,
         merged: true
       };
     }
 
-    let count = 0;
-
+    // Modo overwrite: validar y escribir con atomicidad
+    const incoming = {};
     Object.keys(data).forEach(function (k) {
-      if (String(k).indexOf(MEM_PREFIX) === 0) {
-        POD_LS.setItem(k, data[k]);
-        count += 1;
-      }
+      if (_isForbiddenKey(k)) throw new Error('Clave prohibida: ' + k);
+      if (String(k).indexOf(MEM_PREFIX) !== 0) return; // ignorar claves ajenas al espacio POD2
+      if (!_isValidMemoryKey(k)) throw new Error('Clave inválida: ' + k);
+      incoming[k] = data[k];
     });
 
+    const limitCheck = _checkImportLimits(incoming);
+    if (!limitCheck.ok) throw new Error(limitCheck.error);
+
+    for (let i = 0; i < Object.keys(incoming).length; i++) {
+      const k = Object.keys(incoming)[i];
+      if (!_isValidMemoryValue(incoming[k])) throw new Error('Valor inválido en ' + k);
+    }
+
+    const writeKeys = Object.keys(incoming);
+    const backup = {};
+    writeKeys.forEach(function (k) { backup[k] = POD_LS.getItem(k); });
+    try {
+      writeKeys.forEach(function (k) {
+        if (POD_LS.setItem(k, incoming[k]) !== true) {
+          throw new Error('No se pudo guardar ' + k);
+        }
+      });
+    } catch (e) {
+      writeKeys.forEach(function (k) {
+        if (backup[k] === null || backup[k] === undefined) POD_LS.removeItem(k);
+        else POD_LS.setItem(k, backup[k]);
+      });
+      throw e;
+    }
+
     return {
-      restored: count,
+      restored: writeKeys.length,
       merged: false
     };
   }

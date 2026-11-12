@@ -142,6 +142,9 @@
     if (q.error) throw q.error;
 
     var remotePayload = (q.data && q.data.payload) || {};
+    if (!remotePayload || typeof remotePayload !== 'object' || Array.isArray(remotePayload)) {
+      remotePayload = {};
+    }
     var localPayload = (typeof exportMemoryObject === 'function')
       ? exportMemoryObject()
       : {};
