@@ -190,12 +190,22 @@
   function drawAlternatives(list, field) {
     var el = $('copyIAAlternativas');
     if (!el) return;
-    if (!list || !list.length) { el.innerHTML = ''; return; }
-    el.innerHTML = list.map(function (f) {
-      return '<button type="button" class="ghost alt-copy" data-fl>' + f.replace(/</g, '&lt;') + '</button>';
-    }).join(' ');
-    Array.prototype.forEach.call(el.querySelectorAll('.alt-copy'), function (b) {
-      b.addEventListener('click', function () { field.value = b.textContent; });
+
+    // La respuesta del proveedor IA es dato no confiable. No interpolarla en
+    // HTML: construir botones y asignar el contenido exclusivamente con textContent.
+    while (el.firstChild) el.removeChild(el.firstChild);
+    if (!Array.isArray(list) || !list.length) return;
+
+    list.forEach(function (value) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ghost alt-copy';
+      button.setAttribute('data-fl', '');
+      button.textContent = String(value == null ? '' : value);
+      button.addEventListener('click', function () {
+        if (field) field.value = button.textContent;
+      });
+      el.appendChild(button);
     });
   }
 
