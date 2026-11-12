@@ -61,6 +61,9 @@ function baseState() {
 function clearAllLocks() {
   _memSetJSON(_memKey(['locks', memLocksMarket(), MOTOR_STATE.product]), {});
 }
+function currentContext() {
+  return { market: MOTOR_STATE.market, region: MOTOR_STATE.region, product: MOTOR_STATE.product };
+}
 function makeLocks() {
   var l = {};
   Object.keys(FIELD_DEPENDENCIES).forEach(function (f) { l[f] = { A: 'Auto', B: 'Auto', C: 'Auto' }; });
@@ -152,7 +155,7 @@ baseState();
 clearAllLocks();
 var prevSet = buildCandidate(resolveAudiences(), null);
 var snapshot = JSON.stringify(prevSet);
-LAST_RESULT = { set: prevSet, score: { fitAudienciaMin: 50 }, passed: true };
+LAST_RESULT = { set: prevSet, score: { fitAudienciaMin: 50 }, passed: true, context: currentContext() };
 setDecisionMode('manual');
 var genLocks = makeLocks();
 genLocks.estilo.A = 'PRESERVE';
@@ -166,7 +169,12 @@ ok(JSON.stringify(prevSet) === overlayPrevSnapshot, '7. el overlay no modifica L
 
 /* generateSet solo escribe LAST_RESULT tras el loop de validación. */
 var genSrc = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
-ok(/LAST_RESULT = \{ set: best, score: bestScore/.test(genSrc), '7. LAST_RESULT se escribe solo tras la validación');
+var genFnStart = genSrc.indexOf('function generateSet()');
+var validationIndex = genSrc.indexOf('const ev = evaluaSetOk(cand);', genFnStart);
+var noBestGuardIndex = genSrc.indexOf('if (!best)', validationIndex);
+var lastResultWriteIndex = genSrc.indexOf('LAST_RESULT = {', validationIndex);
+ok(genFnStart >= 0 && validationIndex > genFnStart && noBestGuardIndex > validationIndex && lastResultWriteIndex > noBestGuardIndex,
+  '7. LAST_RESULT se escribe después del loop de validación y del guard de candidato');
 ok(/if \(!best\)[\s\S]{0,400}?return null;/.test(genSrc), '7. sin candidato válido no se sobrescribe LAST_RESULT');
 
 var gen = generateSet();
@@ -178,7 +186,7 @@ console.log('=== Integración: preservación en generateSet ===');
 baseState();
 clearAllLocks();
 var base = buildCandidate(resolveAudiences(), null);
-LAST_RESULT = { set: base, score: {}, passed: true };
+LAST_RESULT = { set: base, score: {}, passed: true, context: currentContext() };
 setDecisionMode('manual');
 var g2 = makeLocks();
 g2.estilo.A = 'PRESERVE';
@@ -198,7 +206,7 @@ console.log('=== Auto/assisted: sin preservación de derivados ===');
 baseState();
 clearAllLocks();
 var baseAuto = buildCandidate(resolveAudiences(), null);
-LAST_RESULT = { set: baseAuto, score: {}, passed: true };
+LAST_RESULT = { set: baseAuto, score: {}, passed: true, context: currentContext() };
 setDecisionMode('auto');
 var genAuto = generateSet();
 ok(genAuto !== null, 'auto: generateSet produjo un set');
