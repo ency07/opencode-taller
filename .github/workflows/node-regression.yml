@@ -9,6 +9,7 @@ on:
       - integration/taller-pod-consolidation
       - preview/fix3e-structural-diversity
       - fix/redteam-production-hardening
+      - fix/redteam-copy-ia-dom-render
   pull_request:
     branches:
       - main
