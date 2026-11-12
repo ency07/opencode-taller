@@ -141,6 +141,7 @@ function syncContext() {
   MOTOR_STATE.market = marketEl ? marketEl.value : 'global_en';
   MOTOR_STATE.region = regionEl ? regionEl.value : 'global';
   MOTOR_STATE.product = productEl ? productEl.value : 'CAMISETA SOFT';
+  if (LAST_RESULT && !_lastResultMatchesContext(LAST_RESULT)) _showStaleResultContext();
   return { market: MOTOR_STATE.market, region: MOTOR_STATE.region, product: MOTOR_STATE.product };
 }
 
@@ -2795,6 +2796,27 @@ function renderColorAudit() {
   el.innerHTML = html;
 }
 
+function _motorResultContext() {
+  return {
+    market: String(MOTOR_STATE.market || ''),
+    region: String(MOTOR_STATE.region || ''),
+    product: String(MOTOR_STATE.product || '')
+  };
+}
+
+function _lastResultMatchesContext(result) {
+  if (!result || !result.context) return true; // compatibilidad con resultados creados por integraciones antiguas
+  var current = _motorResultContext();
+  return result.context.market === current.market
+    && result.context.region === current.region
+    && result.context.product === current.product;
+}
+
+function _showStaleResultContext() {
+  var statusEl = document.getElementById('status');
+  if (statusEl) statusEl.textContent = 'El mercado, la región o el producto cambió. Genera un conjunto nuevo antes de validar o regenerar una ficha.';
+}
+
 function generateSet() {
   readStateFromDOM();
   MOTOR_STATE.explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? _resolveExplorationBrief() : null;
@@ -2830,7 +2852,7 @@ function generateSet() {
      - LAST_RESULT no se modifica aquí (se valida antes de guardar). */
   var _prevSetForGen = null;
   var _preservation = null;
-  if (_normalizeDecisionMode(MOTOR_STATE.decisionMode) === 'manual' && LAST_RESULT && LAST_RESULT.set) {
+  if (_normalizeDecisionMode(MOTOR_STATE.decisionMode) === 'manual' && LAST_RESULT && LAST_RESULT.set && _lastResultMatchesContext(LAST_RESULT)) {
     _prevSetForGen = LAST_RESULT.set;
     _ACTIVE_GEN_LOCKS = _generationLocks(_effectiveLocks(_prevSetForGen), _prevSetForGen);
     /* FIX 3D Fase 3b: preservación de derivados sobre la ficha anterior. */
@@ -2901,8 +2923,8 @@ _preservation = {
   const usedObjs = K.filter(function (k) { return best[k].jerarquiaVisual !== 'SOLO_TEXTO'; }).map(function (k) { return best[k].objeto; });
   _addUsedObjects(historyKey, usedObjs);
 
-  const prevColorAuditSet = (LAST_RESULT && LAST_RESULT.set) ? LAST_RESULT.set : null;
-  LAST_RESULT = { set: best, score: bestScore, passed: passed, explorationBrief: MOTOR_STATE.explorationBrief, objectConflicts: (best && best.objectConflicts) || [] };
+  const prevColorAuditSet = (LAST_RESULT && LAST_RESULT.set && _lastResultMatchesContext(LAST_RESULT)) ? LAST_RESULT.set : null;
+  LAST_RESULT = { set: best, score: bestScore, passed: passed, explorationBrief: MOTOR_STATE.explorationBrief, objectConflicts: (best && best.objectConflicts) || [], context: _motorResultContext() };
   try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
   try { window.V = best; } catch (e) {} // Puente para el revisor IA (ia-revisor.js lee window.V con fichas A/B/C).
   try {
@@ -3342,6 +3364,7 @@ function _generationLocks(effectiveLocks, prevSet) {
 
 function formatPrompt(result) {
   if (!result || !result.set) return '';
+  if (!_lastResultMatchesContext(result)) return '';
   const set = result.set;
   const seriesAnchor = String(set.seriesAnchor || '').trim();
   const dense = MOTOR_STATE.fmtDense;
@@ -3952,6 +3975,11 @@ function rerollSingle(keyLetter) {
     }
 
     readStateFromDOM();
+    if (!_lastResultMatchesContext(LAST_RESULT)) {
+      var staleContextStatus = document.getElementById('status');
+      if (staleContextStatus) staleContextStatus.textContent = 'El mercado, la región o el producto cambió. Genera un nuevo conjunto antes de regenerar una ficha.';
+      return;
+    }
     MOTOR_STATE._rerollNonce = (Number(MOTOR_STATE._rerollNonce) || 0) + 1;
     var auds = resolveAudiences();
     var others = K.filter(function (x) { return x !== keyLetter; });
@@ -4384,6 +4412,10 @@ function validarSetActual() {
   if (!LAST_RESULT || !LAST_RESULT.set) {
     if (statusEl) statusEl.innerHTML = '<span class="warn">No hay diseños. Primero crea los 3 diseños.</span>';
     return { ok: false, detalle: ['sin diseños'] };
+  }
+  if (!_lastResultMatchesContext(LAST_RESULT)) {
+    _showStaleResultContext();
+    return { ok: false, detalle: ['contexto distinto: genera un conjunto nuevo'] };
   }
   const ev = evaluaSetOk(LAST_RESULT.set);
   LAST_RESULT.score = ev.score;

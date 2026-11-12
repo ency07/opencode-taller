@@ -31,7 +31,7 @@ global.document = {
   createElement: function () { return { className: '', innerHTML: '', appendChild: function () {}, addEventListener: function () {} }; }
 };
 const JS = path.join(ROOT, 'js');
-['data-mercados.js','data-audiencias.js','data-bancos.js','data-estilos.js','dominios.js','data-productos.js','data-territorios.js','memoria-local.js','motor-nucleo.js'].forEach(function (f) {
+['data-mercados.js','data-audiencias.js','data-bancos.js','data-estilos.js','dominios.js','data-productos.js','data-territorios.js','memoria-local.js','diversidad-saturacion.js','motor-nucleo.js'].forEach(function (f) {
   vm.runInThisContext(fs.readFileSync(path.join(JS, f), 'utf8'), { filename: f });
 });
 
@@ -190,6 +190,13 @@ ok(gen2 !== null, 'integración: generateSet produjo un set en manual');
 if (gen2 && gen2.set) {
   ok(gen2.set.A.estilo === base.A.estilo, 'integración: A.estilo preservado por generateSet');
   ok(gen2.set.A.tratamiento === base.A.tratamiento, 'integración: A.tratamiento preservado por generateSet');
+  var diversityAxes = ['estilo','layout','tipografia','formaSimbolo','tratamiento','integracionTexto','distribucionTexto','familiaColor','tecnica','jerarquiaVisual','densidad','negativeSpace'];
+  diversityAxes.forEach(function (field) {
+    var values = K.map(function (k) {
+      return field === 'tratamiento' ? _treatmentKey(gen2.set[k][field]) : gen2.set[k][field];
+    });
+    ok(new Set(values).size === 3, 'integración: preservación manual mantiene diversidad en ' + field + ' (' + values.join(' / ') + ')');
+  });
 }
 
 /* ---------- Auto/assisted no preservan derivados ---------- */

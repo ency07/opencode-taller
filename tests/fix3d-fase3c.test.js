@@ -211,6 +211,49 @@ contextoAjeno.productBias = { layout: ['patron-repetido'], trat: ['INEXISTENTE']
 var fitsAjenos = _calculateFits(ctxSet.A, contextoAjeno);
 ok(fitsAjenos.fitProducto <= ctxSet.A.fitProducto, 'ctx. un contexto ajeno no infla el fitProducto (' + fitsAjenos.fitProducto + ' <= ' + ctxSet.A.fitProducto + ')');
 
+/* ---------- Contexto de LAST_RESULT: cambiar de mercado invalida el reroll ---------- */
+console.log('');
+console.log('=== LAST_RESULT: aislamiento de mercado ===');
+baseState();
+DOM_VALUES.market = 'gospel_es';
+DOM_VALUES.region = 'global';
+DOM_VALUES.product = 'CAMISETA SOFT';
+DOM_VALUES.subniche = 'gospel_es';
+DOM_VALUES.workflowMode = 'explore';
+DOM_VALUES.decisionMode = 'assisted';
+clearAllLocks();
+clearPatterns();
+LAST_RESULT = null;
+setDecisionMode('assisted');
+var gospelContextResult = generateSet();
+ok(!!gospelContextResult && gospelContextResult.context.market === 'gospel_es', 'contexto. generateSet registra el mercado de la matriz');
+if (gospelContextResult) {
+  var beforeStaleReroll = JSON.stringify(LAST_RESULT.set);
+  elements.out.value = 'prompt Gospel anterior';
+  DOM_VALUES.market = 'global_en';
+  DOM_VALUES.subniche = 'auto';
+  rerollSingle('A');
+  ok(MOTOR_STATE.market === 'global_en', 'contexto. reroll lee el mercado nuevo');
+  ok(JSON.stringify(LAST_RESULT.set) === beforeStaleReroll, 'contexto. reroll no mezcla la matriz Gospel con Global EN');
+  ok(elements.out.value === 'prompt Gospel anterior', 'contexto. el prompt previo permanece disponible para copiar');
+  ok(/cambió/.test(elements.status.textContent || ''), 'contexto. el usuario recibe aviso de que debe generar un conjunto nuevo');
+  var staleValidation = validarSetActual();
+  ok(staleValidation.ok === false && /contexto distinto/.test(staleValidation.detalle.join(' ')), 'contexto. validar no evalúa una matriz vieja en el mercado nuevo');
+  ok(formatPrompt(LAST_RESULT) === '', 'contexto. formatPrompt no redacta usando directivas de otro mercado');
+
+  DOM_VALUES.decisionMode = 'manual';
+  setDecisionMode('manual');
+  var originalBuildCandidate = buildCandidate;
+  var stalePreservationArg = 'not-called';
+  buildCandidate = function (auds, identity, preservation) {
+    if (stalePreservationArg === 'not-called') stalePreservationArg = preservation;
+    return originalBuildCandidate(auds, identity, preservation);
+  };
+  try { generateSet(); } finally { buildCandidate = originalBuildCandidate; }
+  ok(stalePreservationArg === null, 'contexto. generateSet manual no preserva LAST_RESULT de otro mercado');
+  ok(LAST_RESULT.context.market === 'global_en', 'contexto. la matriz nueva queda asociada al mercado nuevo');
+}
+
 console.log('');
 console.log((failures.length ? 'FAIL' : 'PASS') + '  fix3d-fase3c  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.slice(0, 20).forEach(function (f) { console.log('  X ' + f); });
