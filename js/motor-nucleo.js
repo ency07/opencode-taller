@@ -37,6 +37,35 @@ const _CONTACT_TREATMENT_ORDER = { A: 'HEAVY', B: 'SOFT', C: 'MODERN' };
 /* Catálogo de territorios creativos (Fase 1 — datos; integración motor en Fase 4). */
 const _CREATIVE_TERRITORIES = typeof POD_CREATIVE_TERRITORIES !== 'undefined' ? POD_CREATIVE_TERRITORIES : {};
 
+/* Pool de respaldo para estilos sin técnicas propias o con pool vacío.
+   Mantiene el motor operativo sin depender de que data-tecnicas.js esté cargado. */
+const _ILLUSTRATION_TECHNIQUES_FALLBACK = [
+  'grabado a buril con tramas',
+  'manchado acuoso',
+  'caligráfico de un solo trazo',
+  'stencil urbano con bordes duros',
+  'halftone de puntos y contornos gruesos',
+  'acuarela suelta con reserva de papel',
+  'tinta lavada oriental (sumi-e)',
+  'boceto de cuaderno imperfecto',
+  'grabado en linóleo de alto contraste',
+  'talla en madera con marca de gubia',
+  'collage de recortes superpuestos',
+  'papercraft con capas y sombra',
+  'airbrush con degradados suaves',
+  'blueprint técnico sobre azul',
+  'fotomontaje Dada con un acento de color',
+  'pixel art con retícula visible',
+  'risograph de dos tintas desregistradas',
+  'tatuaje old school con línea gruesa',
+  'foil stamp metálico con relieve',
+  'puff print con tinta expandida',
+  'barroco ornamental con talla dorada',
+  'vaporwave con pasteles ácidos',
+  'photomontage con fotografía B/N recortada',
+  'Kids storybook con formas amables'
+];
+
 /* --- Helpers de memoria (de memoria-local.js) --- */
 const _memGetJSON = typeof getJSON === 'function' ? getJSON : function () { return null; };
 const _memSetJSON = typeof setJSON === 'function' ? setJSON : function () { return false; };
@@ -2322,7 +2351,10 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
       }
     }
 
-    const tecPool = _tecnicaSinObjetos(sp.tecnica || ['técnica mixta']);
+    const styleTechniquePool = Array.isArray(sp.tecnica) && sp.tecnica.length
+      ? sp.tecnica
+      : _ILLUSTRATION_TECHNIQUES_FALLBACK;
+    const tecPool = _tecnicaSinObjetos(styleTechniquePool);
     // Preferir la técnica del estilo; ampliar al catálogo global cuando el
     // pool contextual se agota para no repetir dentro de A/B/C.
     const allStyleTechniques = Object.keys(typeof STYLE_POOLS !== 'undefined' ? STYLE_POOLS : {}).reduce(function (all, styleKey) {
