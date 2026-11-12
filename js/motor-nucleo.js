@@ -256,9 +256,12 @@ function _audiencePoolIsMarketFallback(region, market, subniche) {
     if (!marketPool.length) return false;
     const allowed = new Set(subPool);
     const compatible = marketPool.filter(function (aud) { return allowed.has(aud); });
-    // Sin coincidencia el motor usa el pool del mercado entero; sin filtro
-    // propio (subPool ⊇ mercado) tampoco se estrecha nada.
-    if (!compatible.length) return true;
+    // En modo multiaudiencia hacen falta tres perfiles distintos. Si el
+    // subnicho deja menos, el fallback correcto es el mercado activo completo.
+    const required = (typeof MOTOR_STATE !== 'undefined' && MOTOR_STATE
+      && MOTOR_STATE.audienceMulti === 'si' && typeof K !== 'undefined') ? K.length : 1;
+    if (compatible.length < required) return true;
+    // Sin filtro propio (subPool ⊇ mercado) tampoco se estrecha nada.
     return compatible.length === marketPool.length;
   } catch (e) { return false; }
 }
@@ -281,8 +284,11 @@ function getCurrentAudiencePool() {
     const subPool = getAudiencesForSubniche(subniche, region, market) || [];
     const allowed = new Set(subPool);
     const compatible = pool.filter(function (aud) { return allowed.has(aud); });
+    // En "Explorar 3 audiencias", un filtro que deja 1–2 perfiles no puede
+    // cumplir el contrato de diversidad; ampliar solo al mercado activo.
+    const needsDistinctAudiences = MOTOR_STATE.audienceMulti === 'si' && compatible.length < K.length;
     // Nunca abrir la lista a perfiles de otros mercados como recuperación silenciosa.
-    pool = compatible.length ? compatible : pool;
+    pool = compatible.length && !needsDistinctAudiences ? compatible : pool;
   }
   MOTOR_STATE._audPoolFallback = (typeof _audiencePoolIsMarketFallback === 'function')
     ? _audiencePoolIsMarketFallback(region, market, subniche)
