@@ -68,8 +68,8 @@ ok(_audiencePoolIsMarketFallback('todas', 'colombia', 'subnicho_sin_perfiles_tes
 ok(_audiencePoolIsMarketFallback('todas', 'colombia', 'humor_costeno') === false,
   'subnicho que sí estrecha el catálogo (humor costeño) → no hay fallback');
 
-ok(_audiencePoolIsMarketFallback('todas', 'colombia', 'skate_culture') === true,
-  'subnicho cuyos perfiles no pertenecen al mercado activo → el motor cae al mercado y se marca');
+ok(_audiencePoolIsMarketFallback('todas', 'colombia', 'skate_culture') === false,
+  'skate_culture se clasifica como youth y sí tiene perfiles jóvenes compatibles con Colombia');
 
 MOTOR_STATE.market = 'colombia';
 MOTOR_STATE.region = 'todas';
