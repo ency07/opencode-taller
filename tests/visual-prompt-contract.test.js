@@ -76,7 +76,7 @@ ok(/\(modeLocks\.jerarquia \|\| \{\}\)\[k\] === 'Auto'/.test(motor), 'Auto debe 
  
 // La jerarquía seleccionada manda sobre escala/peso; la arquitectura decide ubicación.
 ok(/si existe mensaje proporcionado, conservarlo literalmente y usarlo como único copy principal; no exigir tres niveles/i.test(motor), 'el prompt general no debe exigir tres niveles que contradigan un mensaje único');
-ok(motor.includes('JERARQUÍA: aplica exactamente la jerarquía indicada en cada ficha') && motor.includes('TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible') && motor.includes('OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («\' + v.objeto + \'») ocupa 70–80%'), 'el contrato debe cuantificar la jerarquía y mantenerla prioritaria');
+ok(motor.includes('JERARQUÍA: aplica exactamente la jerarquía indicada en cada ficha') && motor.includes('TEXTO_DOMINANTE: el copy literal es la primera lectura') && motor.includes('El COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible') && motor.includes('OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («\' + v.objeto + \'») ocupa 70–80%'), 'el contrato debe cuantificar la jerarquía y mantenerla prioritaria');
 ok(/SOLO_TEXTO: solo copy literal; 100% tipografía/.test(motor) && /ÚNICOS elementos permitidos: letras del copy literal/.test(motor), 'SOLO_TEXTO debe prohibir imágenes desde el contrato y la ficha');
 ok(/La jerarquía fija tamaño, área y peso; el layout solo ubicación/.test(motor), 'la jerarquía debe prevalecer sobre el layout');
 ok(/diseño tipográfico puro en /.test(motor) && /No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes/.test(motor), 'SOLO_TEXTO conserva una dirección tipográfica expresiva sin permitir ilustraciones ni ornamentos independientes');
@@ -86,7 +86,7 @@ ok(/las letras como forma visual principal mediante escala, ritmo, composición/
 // OBJETO_DOMINANTE, BALANCEADO o SOLO_TEXTO.
 ok(/const hierarchyDirective = \{/.test(motor) && /o \+= 'JERARQUÍA: ' \+ hierarchyDirective/.test(motor), 'cada ficha debe emitir su bloque compacto de jerarquía');
 ok(!/JERARQUÍA OBLIGATORIA:/.test(motor) && !/ORDEN VISUAL: texto primero/.test(motor) && !/ORDEN VISUAL: árbol y persona primero/.test(motor), 'no deben sobrevivir bloques de jerarquía duplicados');
-ok(motor.includes('el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista'), 'TEXTO_DOMINANTE debe fijar el texto en 70–80% del área total');
+ok(motor.includes('El COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible') && motor.includes('el copy literal es la primera lectura'), 'TEXTO_DOMINANTE debe fijar el texto en 70–80% del área total');
 ok(motor.includes('Texto y símbolo forman una sola composición integrada, no dos bloques separados') && motor.includes('El símbolo aporta como máximo 20–30% del peso visual'), 'TEXTO_DOMINANTE debe mantener toda la escena subordinada al texto');
 ok(motor.includes('La jerarquía fija área y escala; la arquitectura solo cambia la ubicación.'), 'la arquitectura solo puede cambiar ubicación, no proporción');
 ok(motor.includes('Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.'), 'una arquitectura inferior o lateral no puede hacer que una escena grande supere el copy en TEXTO_DOMINANTE');
@@ -107,9 +107,9 @@ ok(!/JERARQUÍA OBLIGATORIA:/.test(motor), 'no debe sobrevivir el bloque duplica
 ok(/if \(v\.jerarquiaVisual === 'BALANCEADO'\) \{[\s\S]{0,180}COMPOSICIÓN:/.test(motor), 'los layouts originales solo deben imprimirse para BALANCEADO');
 ok(/if \(v\.jerarquiaVisual === 'BALANCEADO'\) \{[\s\S]{0,180}COMPOSICIÓN:/.test(motor), 'el layout seleccionado solo se añade si no contradice jerarquía estricta');
 const promptBuilder = motor.slice(motor.indexOf('function formatPrompt('), motor.indexOf('/* --- Renderizado de fichas en el DOM --- */'));
-ok(/if \(v\.jerarquiaVisual === 'TEXTO_DOMINANTE'\) \{[\s\S]{0,500}INTEGRACIÓN TEXTO-SÍMBOLO: integra el objeto descrito en el concepto/.test(promptBuilder), 'TEXTO_DOMINANTE debe construir integración a partir del objeto real del concepto');
-ok(promptBuilder.includes("' + v.objeto + '") && promptBuilder.includes('usando su forma física y acción reales') && promptBuilder.includes('sin imponer metáforas genéricas ni partes que el objeto no posee'), 'TEXTO_DOMINANTE no debe imponer metáforas de integración incompatibles con el objeto');
-ok(promptBuilder.includes('El texto exacto ocupa 70–80% del área y es la primera lectura') && promptBuilder.includes('el símbolo ocupa como máximo 20–30%') && promptBuilder.includes('nunca aparece como ilustración separada'), 'la integración debe conservar la proporción y subordinación del símbolo');
+ok(/if \(v\.jerarquiaVisual === 'TEXTO_DOMINANTE'\) \{[\s\S]{0,700}INTEGRACIÓN TEXTO-SÍMBOLO: si el concepto nombra un objeto físico/.test(promptBuilder), 'TEXTO_DOMINANTE debe construir integración a partir del objeto real del concepto');
+ok(promptBuilder.includes('Si el elemento autorizado es físico, intégralo con su forma y acción reales') && promptBuilder.includes('si el concepto es abstracto, no lo conviertas en objeto'), 'TEXTO_DOMINANTE no debe imponer metáforas de integración incompatibles con el objeto');
+ok(promptBuilder.includes('El texto exacto ocupa 70–80% del área y es la primera lectura') && promptBuilder.includes('el símbolo o recurso abstracto ocupa como máximo 20–30%') && promptBuilder.includes('no lo materialices ni fuerces una interacción física'), 'la integración debe conservar la proporción y subordinación del símbolo');
 ok(!/\\\\n/.test(promptBuilder), 'formatPrompt no debe emitir secuencias literales \\n en el prompt');
 ok(!/DIRECCIÓN ARTÍSTICA:[^\n]*COMPOSICIÓN TEXTUAL/.test(motor), 'no debe quedar una referencia a una sección inexistente');
 ok(/DIFERENCIA DURA: layout, tipografía, tratamiento/.test(motor), 'se conserva el contrato de diversidad A/B/C');
@@ -126,7 +126,7 @@ ok(compositionBankSource.includes('TEXTO ARRIBA') && compositionBankSource.inclu
 /* TEXTO_DOMINANTE: proporción e integración con el objeto autorizado deben prevalecer sobre la arquitectura. */
 const textDominantDirective = motor.slice(motor.indexOf("TEXTO_DOMINANTE: el copy literal es la primera lectura"), motor.indexOf("OBJETO_DOMINANTE:", motor.indexOf("TEXTO_DOMINANTE: el copy literal es la primera lectura")));
 ok(textDominantDirective.includes("ocupa visualmente 70–80%") && textDominantDirective.includes("objeto autorizado queda subordinado en 20–30%"), "TEXTO_DOMINANTE debe imponer proporciones visibles de texto y símbolo");
-ok(textDominantDirective.includes("interactuar físicamente con las letras") && textDominantDirective.includes("objeto real"), "TEXTO_DOMINANTE debe integrar el objeto autorizado de forma plausible");
+ok(textDominantDirective.includes('Si el elemento autorizado es físico, intégralo con su forma y acción reales') && textDominantDirective.includes('si el concepto es abstracto, no lo conviertas en objeto'), "TEXTO_DOMINANTE debe integrar el objeto autorizado de forma plausible");
 ok(textDominantDirective.includes("sin regresar al esquema automático ilustración arriba/texto abajo"), "TEXTO_DOMINANTE debe prohibir la composición genérica de ilustración arriba y texto abajo");
 ok(textDominantDirective.includes("conserva todas las palabras exactas y legibles"), "TEXTO_DOMINANTE debe conservar el copy literal legible");
 
