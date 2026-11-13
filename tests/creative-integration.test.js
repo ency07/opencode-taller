@@ -66,7 +66,7 @@ assert.ok(browser.window.PODCreativeCatalogs.sharedInfra);
 /* Tarea 2 (Stage 1 closure): el catalogo de territorios separa ejes y usa ids de catalogo. */
 const territories = vm.runInContext('POD_CREATIVE_TERRITORIES', browser);
 const styleIds = browser.window.ESTILOS_LIST || [];
-assert.equal(Object.keys(territories).length, 10, 'el catalogo debe declarar los diez territorios');
+assert.equal(Object.keys(territories).length, 19, 'el catalogo debe declarar los diecinueve territorios activos');
 Object.keys(territories).forEach(function (territoryId) {
   const t = territories[territoryId];
   assert.ok(Array.isArray(t.compatibleTreatments), 'el territorio ' + territoryId + ' requiere compatibleTreatments');
