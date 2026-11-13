@@ -3593,7 +3593,7 @@ function formatPrompt(result) {
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
     const exploreMessage = String(MOTOR_STATE.message || '').trim();
     const exploreCopy = exploreMessage || sharedExploreCopy || ((isGospelES || isSecular) ? 'SIN COPY AUTORIZADO: no generar texto' : 'propón copy breve');
-    o += 'CONCEPTO: ' + (conceptAnchor || (isGospelES ? 'CONCEPTO NO PROPORCIONADO: no inventar concepto ni motivo' : 'propón una idea concreta dentro de la familia seleccionada')) + ' | MENSAJE / COPY: ' + exploreCopy + '\n';
+    o += 'CONCEPTO: ' + (conceptAnchor || ((isGospelES || isSecular) ? 'CONCEPTO NO PROPORCIONADO: no inventar concepto ni motivo' : 'propón una idea concreta dentro de la familia seleccionada')) + ' | MENSAJE EXACTO: ' + exploreCopy + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
     o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. La relación del motivo con la idea debe poder explicarse; usa metáforas visuales, no una traducción palabra por palabra. Si el banco no ofrece un motivo compatible, deriva una propuesta desde concepto y mensaje y señala la incertidumbre. ';
     o += 'Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
