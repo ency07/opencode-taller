@@ -3757,13 +3757,18 @@ function formatPrompt(result) {
     o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + _audienceDisplay(v.audiencia) + '\n';
     o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
     o += 'BLOQUEO DE ESTILO ' + N[i] + ': «' + v.estilo + '» inmutable en esta ficha; prohibido generar en otro estilo, fusionar o mezclar el vocabulario de otro.\n';
-    const pesoExigido = {
+    const missingGospelCopy = isGospelES && !isVar && !isPatron && !typedMessage
+      && !(isExplore ? sharedExploreCopy : sharedDerivedCopy)
+      && v.jerarquiaVisual !== 'SOLO_OBJETO';
+    const pesoExigido = missingGospelCopy
+      ? 'NO APLICA: falta el copy autorizado; esta ficha no puede producirse como arte definitivo'
+      : ({
       SOLO_TEXTO: 'texto 100% · símbolo 0% — el arte completo son las letras del copy literal',
       TEXTO_DOMINANTE: 'texto 70–80% del área · símbolo 20–30% — el copy manda a primera vista y el objeto es apoyo',
       OBJETO_DOMINANTE: 'símbolo 70–80% del área · texto 20–30% — el objeto manda a primera vista y el texto es apoyo',
       BALANCEADO: 'texto 45–55% del área · símbolo 45–55% — mitad y mitad; ninguno de los dos es un adorno secundario',
       SOLO_OBJETO: 'símbolo 100% del área · texto 0% — el arte completo es el objeto autorizado; CERO letras de cualquier tipo'
-    }[v.jerarquiaVisual] || '';
+    }[v.jerarquiaVisual] || '');
     o += 'PESO VISUAL EXIGIDO — ' + pesoExigido + '. Es una medición verificable a primera vista, no una sugerencia: si el elemento que manda no ocupa su franja, reescala el arte y entrega la versión corregida.\n';
     const audPerfil = (typeof AUD_PROFILES !== 'undefined' && AUD_PROFILES[v.audiencia]) || {};
     const perfilMockup = audPerfil.edad === 'infantil'
@@ -3820,13 +3825,15 @@ function formatPrompt(result) {
             ? 'SIN COPY AUTORIZADO: no generar letras, cifras, palabras ni microtexto; no inventar una frase. Tipografía: ' + v.tipografia
             : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + sharedExploreCopy + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia))
         : v.textoPrincipal + ' / ' + v.textoApoyo + ' / ' + v.textoTerciario + ' · ' + v.tipografia);
-    const hierarchyDirective = {
+    const hierarchyDirective = missingGospelCopy
+      ? 'FICHA INCOMPLETA: la jerarquía seleccionada requiere texto, pero no hay mensaje ni copy automático autorizado. No generes letras ni sustituyas el texto; no presentes esta ficha como diseño terminado. Solicita un mensaje o habilita el copy automático.'
+      : ({
       SOLO_TEXTO: 'SOLO_TEXTO: solo copy literal; 100% tipografía y cero imágenes, objetos o adornos independientes. ÚNICOS elementos permitidos: letras del copy literal. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.',
       TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista. Texto y símbolo forman una sola composición integrada, no dos bloques separados. El símbolo aporta como máximo 20–30% del peso visual. El objeto descrito en esta ficha («' + v.objeto + '») debe interactuar físicamente con las letras de forma plausible. Elige una integración coherente con el objeto real. conserva todas las palabras exactas y legibles, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
       OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte; copy 20–30%. No lo sustituyas por árboles, personas u otros objetos no indicados. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel.',
       SOLO_OBJETO: 'SOLO_OBJETO: el objeto autorizado («' + v.objeto + '») ocupa el 100% visual de la ficha y NO HAY TEXTO en absoluto: ni letras, ni cifras, ni tipografía decorativa ni accidental. Diferéncialo de OBJETO_DOMINANTE (allí el copy ocupa 20–30%; aquí ninguna letra existe). ADMITE elementos secundarios visuales no textuales del estilo asignado (ornamentos, marcos, filetes, texturas, recursos gráficos de taller) siempre que no introduzcan texto y respeten el contrato de elementos del concepto.',
       BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva; evita dos bloques desconectados. La arquitectura define colocación/relación, nunca cambia la proporción.'
-    }[v.jerarquiaVisual] || '';
+    }[v.jerarquiaVisual] || '');
     o += 'JERARQUÍA: ' + hierarchyDirective + '\n';
     o += 'LAYOUT (ubicación): ' + v.layout + '. El layout rige dónde se ubica cada elemento y dónde respira el vacío; no cambia tamaño, área ni jerarquía.\n';
     if (v.jerarquiaVisual === 'BALANCEADO') {
@@ -3844,8 +3851,10 @@ function formatPrompt(result) {
       o += 'TEXTO SUBORDINADO: el copy ocupa como máximo 20–30% en la zona que le asigne el layout; prohibido lettering gigante que compita con el símbolo. Si al mirar el arte el texto domina, encogerlo hasta que el objeto autorizado mande a primera vista.\n';
     }
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
-      o += _soloTextCompositionDirective(v.distribucionTexto) + '\n';
-      o += 'DIRECCIÓN: diseño tipográfico puro en ' + v.estilo + '. SOLO_TEXTO NO SIGNIFICA SIMPLE. Usa las letras como forma visual principal mediante escala, ritmo, composición; mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes. Solo letras del mensaje exacto; ' + v.tratamiento + '. Sin persona, árbol, objeto, icono, ilustración, marco, cinta, estrella, llama, floritura, textura figurativa ni fondo escénico.\n';
+      if (!missingGospelCopy) o += _soloTextCompositionDirective(v.distribucionTexto) + '\n';
+      o += missingGospelCopy
+        ? 'DIRECCIÓN: FICHA INCOMPLETA. No producir arte tipográfico sin un mensaje autorizado; no inventar ni completar el copy.\n'
+        : 'DIRECCIÓN: diseño tipográfico puro en ' + v.estilo + '. SOLO_TEXTO NO SIGNIFICA SIMPLE. Usa las letras como forma visual principal mediante escala, ritmo, composición; mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes. Solo letras del mensaje exacto; ' + v.tratamiento + '. Sin persona, árbol, objeto, icono, ilustración, marco, cinta, estrella, llama, floritura, textura figurativa ni fondo escénico.\n';
       o += 'TEXTO: ' + textLine + '\n';
     } else {
       o += 'ARTE: ' + v.formaSimbolo + '; ' + v.tecnica + '; ' + v.tratamiento + ' · estilo «' + v.estilo + '» (acabado). Ejecuta el estilo dentro de la jerarquía y el esqueleto estructural indicados; si el estilo contradice el esqueleto, reduce el acabado, no la estructura. No inventes una estructura textual distinta.\n';
