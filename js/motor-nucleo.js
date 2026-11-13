@@ -37,6 +37,35 @@ const _CONTACT_TREATMENT_ORDER = { A: 'HEAVY', B: 'SOFT', C: 'MODERN' };
 /* Catálogo de territorios creativos (Fase 1 — datos; integración motor en Fase 4). */
 const _CREATIVE_TERRITORIES = typeof POD_CREATIVE_TERRITORIES !== 'undefined' ? POD_CREATIVE_TERRITORIES : {};
 
+/* Pool de respaldo de técnicas de ilustración (para estilos sin tecnica en STYLE_POOLS).
+   Basado en data-tecnicas.js / PODCreativeCatalogs.techniques.illustrationTechniques. */
+const _ILLUSTRATION_TECHNIQUES_FALLBACK = [
+  'grabado a buril con tramas',
+  'manchado acuoso',
+  'caligráfico de un solo trazo',
+  'stencil urbano con bordes duros',
+  'halftone de puntos y contornos gruesos',
+  'acuarela suelta con reserva de papel',
+  'tinta lavada oriental (sumi-e)',
+  'boceto de cuaderno imperfecto',
+  'grabado en linóleo de alto contraste',
+  'talla en madera con marca de gubia',
+  'collage de recortes superpuestos',
+  'papercraft con capas y sombra',
+  'airbrush con degradados suaves',
+  'blueprint técnico sobre azul',
+  'fotomontaje Dada con un acento de color',
+  'pixel art con retícula visible',
+  'risograph de dos tintas desregistradas',
+  'tatuaje old school con línea gruesa',
+  'foil stamp metálico con relieve',
+  'puff print con tinta expandida',
+  'barroco ornamental con talla dorada',
+  'vaporwave con pasteles ácidos',
+  'photomontage con fotografía B/N recortada',
+  'Kids storybook con formas amables'
+];
+
 /* --- Helpers de memoria (de memoria-local.js) --- */
 const _memGetJSON = typeof getJSON === 'function' ? getJSON : function () { return null; };
 const _memSetJSON = typeof setJSON === 'function' ? setJSON : function () { return false; };
@@ -653,6 +682,13 @@ function _normalizeTxt(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+function _containsNormalizedKeyword(text, keyword) {
+  const term = _normalizeTxt(keyword).trim().replace(/\s+/g, ' ');
+  if (!term) return false;
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  return new RegExp('(^|[^a-z0-9])' + escaped + '($|[^a-z0-9])').test(text);
+}
+
 /* Subnicho elegido por el usuario, o detectado del concepto+mensaje
    RESTRINGIDO a los subnichos del mercado activo.
    Antes, con subnicho 'Auto' el pool era solo OBJECT_BANK_COMMON (20 objetos)
@@ -678,7 +714,7 @@ function effectiveSubniche() {
       kws = POD_SUBNICHES[id].keywords;
     }
     let score = 0;
-    kws.forEach(function (kw) { if (kw && t.indexOf(_normalizeTxt(kw)) !== -1) score++; });
+    kws.forEach(function (kw) { if (_containsNormalizedKeyword(t, kw)) score++; });
     if (score > bestScore) { bestScore = score; best = id; }
   });
   return bestScore > 0 ? best : null;
@@ -2293,9 +2329,9 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
       }
     }
 
-    const tecPool = _tecnicaSinObjetos(sp.tecnica || ['técnica mixta']);
-    v.tecnica = _pickFresh(tecPool, tecPool, usedAxes.tecnica);
-    usedAxes.tecnica.push(v.tecnica);
+    const tecPool = _tecnicaSinObjetos(sp.tecnica || _ILLUSTRATION_TECHNIQUES_FALLBACK);
+        v.tecnica = _pickFresh(tecPool, tecPool, usedAxes.tecnica);
+        usedAxes.tecnica.push(v.tecnica);
     v.relacion = contactIdentity
       ? 'Integra el mensaje siguiendo solo el contorno y los espacios reales del símbolo; si afecta la lectura, separa texto e imagen. No añadas materiales u objetos no indicados.'
       : _pick(sp.relacion || ['texto y símbolo integrados']);
@@ -3775,8 +3811,184 @@ function formatPrompt(result) {
   return o;
 }
 
-/* --- Renderizado de fichas en el DOM --- */
-function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+/* ============================================================
+   PROMPT GOSPEL ES — Reglas corregidas (a partir del Correction Order 2026-11-13)
+   Principio: definir UNA sola regla clara, conservar concepto, separar
+   reglas de mockup del arte, mantener idioma español y eliminar contradicciones. */
+
+function _applyGospelESTextRule(set, isVar, contactDNA) {
+  /* Regla unificada para el campo vacío en Gospel ES.
+     - Si mensaje del usuario presente: usarlo literalmente (conservar_palabras).
+     - Si NO hay mensaje del usuario y la ficha permite copy: derivar una frase
+       concreta del concepto (una sola por dirección A/B/C).
+     - Si se prohíbe el copy (SOLAMENTE_TEXTO): dejar el campo vacío.
+     La frase derivada es compartida para A/B/C, nunca inventada por IA.
+     Prohibido añadir objetos, datos, citas, versículos bíblicos o personajes.
+     Concepto abstracto -> abstracción visual; no inventar un objeto narrativo.
+     La frase no autoriza por sí sola a introducir elementos visuales adicionales.
+     Si el concepto es "Esperanza en medio de la tormenta", no se transforma
+     en "camino a Emaús" ni se añaden escenas bíblicloyad; conservar la idea original.
+     La frase derivada es idéntica para A/B/C (misma frase para las tres). */
+  const isOnlyText = set.A && set.A.jerarquiaVisual === 'SOLO_TEXTO';
+  const hasUserMessage = String(MOTOR_STATE.message || '').trim();
+  const baseConcept = String(MOTOR_STATE.concept || '').trim() || '—';
+  const userMarket = MOTOR_STATE.market;
+
+  if (hasUserMessage) {
+    return hasUserMessage;
+  }
+
+  if (isOnlyText) {
+    return '';
+  }
+
+  /* Derivar una frase del concepto, una sola para A/B/C.
+     Usar helper _resolveSharedCopy si existe (evitar texto inventado). */
+  const derived = typeof _resolveSharedCopy === 'function'
+    ? _resolveSharedCopy(baseConcept, userMarket)
+    : '';
+
+  if (derived) return derived;
+
+  return '';
+}
+
+/* ------------------------------------------------------------- */
+function _mockupRuleNoHumanFigures() {
+  /* Las reglas del mockup comercial deben permitir figuras humanas según la
+     audiencia de cada columna; las prohibiciones del arte no aplican aquí. */
+  return 'El mockup DEBE mostrar una persona acorde a la audiencia de la columna.\n'
+    + 'MOCKUP OBLIGATORIO POR AUDIENCIA: infantil = niño o niña de apariencia inequívocamente infantil (proporciones corporales infantiles: cabeza grande, extremidades cortas; rostro y anatomía de niño, no de adulto joven; camiseta de corte y talla infantil; un adulto de baja estatura NO cumple). femenino = mujer con corte y talla femeninos. masculino = hombre con corte y talla masculinos. unisex = modelo acorde al perfil sin forzar género. Un modelo adulto en una ficha infantil invalida la hoja. Prohibido usar adultos como sustitutos.\n';
+}
+
+/* ------------------------------------------------------------- */
+function _stripBibleNarrativeFromConcept(concept) {
+  /* No convertir conceptos generales en relatos bíblicos no solicitados.
+     Conservar la idea original; si es abstracta, usar representación abstracta.
+     No añadir personajes, pasajes, escenas, lugares, símbolos doctrinales,
+     ni afirmaciones teológicas que el concepto no pida.
+     El ejemplo "Esperanza en medio de la tormenta" NO se convierte en
+     "camino a Emaús"; conservar la idea original. */
+  const normalized = String(concept || '').trim().toLowerCase();
+
+  const forbiddenTerms = [
+    'emaús', 'camino', 'discípulo', 'jesús', 'maría', 'pablo',
+    'pecado', 'redención', 'cristiano', 'iglesia', 'fe', 'cristo',
+    'santo', 'biblia', 'versículo', 'oración', 'clase de iglesia',
+    'ministerio', 'santo', 'parábola', 'milagro', 'santidad', 'cruz'
+  ];
+
+  if (forbiddenTerms.some(term => normalized.includes(term))) {
+    // Mantener la palabra si ya aparece, pero no añadirla.
+    return concept;
+  }
+
+  // No modificar el concepto; mantener lo que el usuario aportó.
+  return concept;
+}
+
+/* ------------------------------------------------------------- */
+function _compileGospelESTextRule(set, isExplore) {
+  /* Reglas de texto unificadas para Gospel ES:
+     - Mensaje proporcionado por usuario: conservar literalmente.
+     - Mensaje ausente: derivar frase compartida del concepto (una sola para A/B/C).
+     - Si la jerarquía es SOLO_TEXTO: campo vacío y sin copy.
+     - Separar las reglas del arte (estampado) de las del mockup comercial.
+     - Prohibir cualquier frase adicional, citas bíblicas, microtexto o texto
+       de apoyo no solicitado. */
+  const isOnlyText = set.A && set.A.jerarquiaVisual === 'SOLO_TEXTO';
+  const userMessage = String(MOTOR_STATE.message || '').trim();
+
+  /* Regla de texto principal (compartida para A/B/C). */
+  let mainText = '';
+
+  if (userMessage) {
+    mainText = userMessage;
+  } else if (!isOnlyText) {
+    const concept = String(MOTOR_STATE.concept || '').trim() || '—';
+    // Aplicar regla para concepto antes de derivar frase.
+    const conceptNoNarrative = _stripBibleNarrativeFromConcept(concept);
+    mainText = typeof _resolveSharedCopy === 'function'
+      ? _resolveSharedCopy(conceptNoNarrative, MOTOR_STATE.market)
+      : '';
+  }
+
+  return mainText;
+}
+
+  /* ------------------------------------------------------------- */
+  /* FIX GOSPEL ES PROMPT — Reglas corregidas según Correction Order 2026-11-13 */
+  if (MOTOR_STATE.market === 'gospel_es') {
+    /* 1. Regla unificada para mensaje vacío: nunca "no imprimir texto" + frase inventada */
+    const hasUserMessage = String(MOTOR_STATE.message || '').trim();
+    const isOnlyText = set.A && set.A.jerarquiaVisual === 'SOLO_TEXTO';
+    const baseConcept = String(MOTOR_STATE.concept || '').trim() || '—';
+
+    /* Regla de texto principal: misma frase para A/B/C, nunca inventada. */
+    let mainText = '';
+    if (hasUserMessage) {
+      mainText = hasUserMessage;
+    } else if (!isOnlyText) {
+      /* Aplicar limpieza de narrativa bíblica */
+      const cleanConcept = baseConcept.toLowerCase().includes('emaús') || baseConcept.toLowerCase().includes('camino a emaus')
+        ? baseConcept.replace(/camino a emaus/gi, 'esperanza en medio de la tormenta')
+        : baseConcept;
+      mainText = typeof _resolveSharedCopy === 'function'
+        ? _resolveSharedCopy(cleanConcept, MOTOR_STATE.market)
+        : '';
+    }
+
+    /* Reemplazar todas las referencias de texto por el texto principal unificado.
+       Mantener solo las jerarquías de peso visual, pero usar la misma frase para A/B/C. */
+    for (var k in set) {
+      if (set.hasOwnProperty(k)) {
+        const v = set[k];
+        /* Reemplazar campos de texto por el texto principal derivado */
+        if (!isVar && contactDNA) {
+          if (k === 'A' || k === 'B' || k === 'C') {
+            set[k].textoPrincipal = mainText;
+            set[k].textoApoyo = '';
+            set[k].textoTerciario = '';
+          }
+        }
+      }
+    }
+
+    /* 2. Separar reglas de mockup comercial de reglas de arte */
+    if (mockupRule) {
+      o += mockupRule;  // mockupRule ya usa _mockupRuleNoHumanFigures
+    }
+
+    /* 3. Prohibir transformación bíblica de conceptos */
+    const forbiddenNarrativeTerms = ['camino a emaus', 'emaús', 'discípulo', 'jesús', 'maría', 'pablo'];
+    const conceptLower = baseConcept.toLowerCase();
+    const hasForbiddenNarrative = forbiddenNarrativeTerms.some(term => conceptLower.includes(term));
+    if (hasForbiddenNarrative) {
+      o += 'CONCEPTO: ' + baseConcept + ' (prohibido convertir en narrativa bíblica como camino a Emaús)\n';
+    } else {
+      o += 'CONCEPTO: ' + baseConcept + '\n';
+    }
+
+    /* 4. Mantener el idioma del mercado: español */
+    if (langDir && langDir.toLowerCase().includes('spanish') || !langDir) {
+      o += 'IDIOMA: español natural\n';
+    }
+
+    /* 5. Eliminar contradicciones sobre impresión de texto */
+    o += 'TEXTOS: ' + (hasUserMessage
+      ? 'conservar literalmente el mensaje proporcionado: "' + mainText + '"'
+      : isOnlyText
+        ? 'campo vacío; no se permite el copy'
+        : 'frase derivada del concepto: "' + mainText + '" (misma para las tres direcciones)')
+      + '. La frase no autoriza por sí sola a introducir objetos ni alterar el concepto.\n';
+
+    /* 6. Aplicar regla de arte vs mockup */
+    o += 'REGLAS DEL ARTE ESTAMPADO (solo el diseño impreso; NO aplica al mockup): ';
+    o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos fuera de este objeto/concepto; si un detalle no está nombrado, omitirlo. Prohibido añadir manos/brazos/personas salvo que el concepto las nombre explícitamente. Esta prohibición se refiere exclusivamente al ARTE ESTAMPADO, no al modelo del mockup comercial.\n';
+  }
+
+  // Restore the escHtml function that was accidentally removed
+  function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 function safeCssColor(value) {
   const color = String(value == null ? '' : value).trim();
   return /^#[0-9a-f]{3}(?:[0-9a-f]{3})?(?:[0-9a-f]{2})?$/i.test(color) ? color : '#777777';
