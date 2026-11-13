@@ -187,7 +187,18 @@ check(prompt.includes('COPY: no autorizado. No generar texto ni placeholders.'),
 check(!prompt.includes('COPY CANÓNICO ÚNICO «'),
   'no debe existir copy canónico si no hay concepto');
 
-/* 6. Separación real de instrucciones de estampado y mockup comercial. */
+/* 6. SOLO_OBJETO no requiere copy y conserva su regla de cero letras. */
+prompt = buildPrompt({
+  concept: 'Esperanza en medio de la tormenta',
+  allowAutoCopy: false,
+  hierarchies: ['SOLO_OBJETO', 'SOLO_OBJETO', 'SOLO_OBJETO']
+});
+check(prompt.includes('TEXTO: NINGUNO (jerarquía SOLO_OBJETO)'),
+  'SOLO_OBJETO debe permanecer sin texto cuando el copy automático está desactivado');
+check(!prompt.includes('FICHA INCOMPLETA: la jerarquía seleccionada requiere texto'),
+  'SOLO_OBJETO no debe marcarse incompleto por falta de copy');
+
+/* 7. Separación real de instrucciones de estampado y mockup comercial. */
 prompt = buildPrompt({ concept: 'Esperanza en medio de la tormenta', allowAutoCopy: true });
 const artIndex = prompt.indexOf('REGLAS DEL ARTE ESTAMPADO');
 const mockupIndex = prompt.indexOf('REGLAS DEL MOCKUP COMERCIAL');
@@ -198,7 +209,7 @@ check(prompt.includes('Esta prohibición se refiere exclusivamente al ARTE ESTAM
 check(prompt.includes('MOCKUP OBLIGATORIO POR AUDIENCIA'),
   'el mockup debe conservar las reglas de representación por audiencia');
 
-/* 7. El helper de copy debe distinguir los cuatro estados. */
+/* 8. El helper de copy debe distinguir los cuatro estados. */
 let resolved = _resolveGospelESCopy('Mensaje literal', 'Concepto', true);
 check(resolved.text === 'Mensaje literal' && resolved.source === 'user',
   'el helper debe priorizar el mensaje del usuario');
