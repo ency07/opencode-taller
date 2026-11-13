@@ -3754,12 +3754,12 @@ function formatPrompt(result) {
 
   K.forEach(function (k, i) {
     const v = set[k];
-    o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + _audienceDisplay(v.audiencia) + '\n';
-    o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
-    o += 'BLOQUEO DE ESTILO ' + N[i] + ': «' + v.estilo + '» inmutable en esta ficha; prohibido generar en otro estilo, fusionar o mezclar el vocabulario de otro.\n';
     const missingGospelCopy = isGospelES && !isVar && !isPatron && !typedMessage
       && !(isExplore ? sharedExploreCopy : sharedDerivedCopy)
       && v.jerarquiaVisual !== 'SOLO_OBJETO';
+    o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + _audienceDisplay(v.audiencia) + '\n';
+    o += 'RECAP ' + N[i] + ': jerarquía=' + v.jerarquiaVisual + ' · estilo=' + v.estilo + ' · objeto=«' + v.objeto + '»; respetar exactamente esta asignación, no intercambiar fichas ni reasignar jerarquías entre A/B/C.\n';
+    o += 'BLOQUEO DE ESTILO ' + N[i] + ': «' + v.estilo + '» inmutable en esta ficha; prohibido generar en otro estilo, fusionar o mezclar el vocabulario de otro.\n';
     const pesoExigido = missingGospelCopy
       ? 'NO APLICA: falta el copy autorizado; esta ficha no puede producirse como arte definitivo'
       : ({
@@ -3798,11 +3798,15 @@ function formatPrompt(result) {
     o += 'TÉCNICA GLOBAL: todo el arte de esta ficha — símbolo, letras, fondo y detalles — se ejecuta con la técnica del estilo «' + v.estilo + '»' + (styleIsLettering ? '; aquí el lettering SÍ es el estilo activo.' : '. Prohibido dibujar el copy como graffiti, lettering streetwear, lettering retro o cualquier lenguaje de letras ajeno al estilo activo: las letras también llevan la técnica del estilo.') + '\n';
     o += 'PRIORIDAD DE IDENTIDAD — FIJOS: jerarquía (' + v.jerarquiaVisual + '), tratamiento (' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + '), estilo («' + v.estilo + '», acabado). La audiencia modifica CÓMO se ejecutan (formas, colores, textura, acabado) sin cambiar QUÉ son. ADAPTABLES: paleta, textura, detalles, formas y acabado según la audiencia de la ficha. Orden: jerarquía > tratamiento > estilo > audiencia > paleta; el efecto del estilo (3D, neón, textura) nunca por encima del esqueleto.\n';
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
-      o += 'OBJETO: NINGUNO (composición tipográfica pura).' + (seriesAnchor
-        ? ' Identidad conceptual de la serie: «' + seriesAnchor + '». Esta ficha NO dibuja ese ancla: la expresa solo con tipografía, pero comunica el MISMO concepto que las demás fichas.'
-        : ' El concepto solo inspira el copy; no se representa como escena.') + '\n';
-      o += 'CONTROL ABSOLUTO: no dibujar personas, árboles, símbolos, iconos, siluetas, ilustraciones, fondos narrativos, marcos, cintas, flores, estrellas, rayos, texturas figurativas ni adornos. ÚNICOS elementos permitidos: letras del copy literal y recursos tipográficos integrados en las letras.\n';
-      o += 'SIN EXCEPCIONES: aunque el concepto nombre un objeto concreto (fogata, animal, vehículo, paisaje), está prohibido dibujarlo: ni grande ni pequeño, ni como fondo ni integrado entre letras. El objeto solo existe como palabras del copy literal.\n';
+      if (missingGospelCopy) {
+        o += 'OBJETO: NINGUNO. FICHA INCOMPLETA: SOLO_TEXTO requiere un mensaje autorizado; no generar un arte vacío ni inventar copy.\n';
+      } else {
+        o += 'OBJETO: NINGUNO (composición tipográfica pura).' + (seriesAnchor
+          ? ' Identidad conceptual de la serie: «' + seriesAnchor + '». Esta ficha NO dibuja ese ancla: la expresa solo con tipografía, pero comunica el MISMO concepto que las demás fichas.'
+          : ' El concepto solo inspira el copy; no se representa como escena.') + '\n';
+        o += 'CONTROL ABSOLUTO: no dibujar personas, árboles, símbolos, iconos, siluetas, ilustraciones, fondos narrativos, marcos, cintas, flores, estrellas, rayos, texturas figurativas ni adornos. ÚNICOS elementos permitidos: letras del copy literal y recursos tipográficos integrados en las letras.\n';
+        o += 'SIN EXCEPCIONES: aunque el concepto nombre un objeto concreto (fogata, animal, vehículo, paisaje), está prohibido dibujarlo: ni grande ni pequeño, ni como fondo ni integrado entre letras. El objeto solo existe como palabras del copy literal.\n';
+      }
     } else {
       o += 'OBJETO: ' + v.objeto + '\n';
       if (!_figurasUnicas) o += _figureDirective(v.objeto) + '\n';
