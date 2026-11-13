@@ -3550,7 +3550,7 @@ function formatPrompt(result) {
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
     const exploreMessage = String(MOTOR_STATE.message || '').trim();
     const exploreCopy = exploreMessage || sharedExploreCopy || (isGospelES ? 'SIN COPY AUTORIZADO: no generar texto' : 'propón copy breve');
-    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE / COPY: ' + exploreCopy + '\n';
+    o += 'CONCEPTO: ' + (conceptAnchor || (isGospelES ? 'CONCEPTO NO PROPORCIONADO: no inventar concepto ni motivo' : 'propón una idea concreta dentro de la familia seleccionada')) + ' | MENSAJE / COPY: ' + exploreCopy + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
     o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. La relación del motivo con la idea debe poder explicarse; usa metáforas visuales, no una traducción palabra por palabra. Si el banco no ofrece un motivo compatible, deriva una propuesta desde concepto y mensaje y señala la incertidumbre. ';
     o += 'Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
@@ -3691,7 +3691,7 @@ function formatPrompt(result) {
   if (isGospelES) {
     o += 'DOCTRINA: enfoque cristocéntrico y trinitario (Padre, Hijo y Espíritu Santo), con fidelidad bíblica. Evitar prosperidad mágica, decretos, esoterismo, horóscopo y afirmaciones doctrinales no solicitadas. La identidad Gospel orienta el sentido, no obliga a insertar símbolos, personajes, escenas, lugares, pasajes, cruces, coronas ni citas. Representa el concepto que el usuario escribió; incorpora referencias bíblicas explícitas solo cuando el usuario las solicita o forman parte literal de su mensaje.\n';
   } else if (MOTOR_STATE.market === 'gospel_en') {
-    o += 'DOCTRINA: Trinitarian and Christ-centered. Avoid prosperity magic, decrees, angels as the central subject, saints as mediators, esotericism, horoscopes and energy claims. Keep the requested concept primary; do not force biblical scenes, characters, places, symbols or quotations unless requested.\n';
+    o += 'DOCTRINA: Trinitario (Padre, Hijo, Espiritu Santo) y cristocentrico. Cruz y resurreccion al centro. PROHIBIDO prosperidad magica, decretos, angeles como centro, santos mediadores, esoterismo, horoscopo, energia. Sin region: universal. OBLIGATORIA (Regla de los 3 segundos / Identidad Cristiana Inmediata): cada diseno debe ser reconocible como cristiano en 3 segundos o menos, sin usar cliches literales; usar obligatoriamente una de las tres vias: 1) Lexico teorico pesado (Gracia, Redencion, Shalom, Trono, Rescate), 2) Subversion de tropos seculares (frases tipicas del streetwear con verdad biblica), o 3) Anclaje visual sutil pero intencional (Alfa/Omega en tipografia, corona de espinas geometrica). Esta identidad aplica al mercado gospel_en.\n';
   }
   if (MOTOR_STATE.market === 'colombia') {
     o += 'SANDBOX: solo bancos Colombia de la region ' + MOTOR_STATE.region + '. Prohibidos objetos, simbolos y frases gospel o globales en ingles. Cocina regional separada.\n';
@@ -3810,7 +3810,9 @@ function formatPrompt(result) {
     const textLine = contactDNA
       ? (contactMainText
         ? 'MENSAJE PRINCIPAL literal: «' + contactMainText + '»' + (contactSupportText ? ' · APOYO literal: «' + contactSupportText + '»' : '') + ' · sin texto terciario · ' + v.tipografia
-        : 'COPY LITERAL (derivado del concepto): «' + sharedDerivedCopy + '»; usarlo exacto en las tres direcciones; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia)
+        : (isGospelES && !sharedDerivedCopy
+          ? 'SIN COPY AUTORIZADO: no generar letras, cifras, palabras ni microtexto; no inventar una frase · ' + v.tipografia
+          : 'COPY LITERAL (derivado del concepto): «' + sharedDerivedCopy + '»; usarlo exacto en las tres direcciones; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia))
       : (isExplore
         ? (String(MOTOR_STATE.message || '').trim()
           ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
