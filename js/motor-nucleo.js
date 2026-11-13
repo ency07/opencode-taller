@@ -675,16 +675,16 @@ function _secularPaletteFamilies(identity) {
   const t = _normalizeTxt(identity || '');
   if (!t) return [];
   const groups = [
-    { re: /neon|cyber|fluor|fluorescen/, families: ['neón / cyber', 'flúor / risografía', 'pastel ácido / vapor'] },
-    { re: /earth|tierra|calid|terracota|ocre|arena|olive|oliva|warm/, families: ['tierra cálida', 'bosque / sage', 'retro vibrante'] },
-    { re: /blue|azul|cian|cyan|turquesa|cold|frio/, families: ['mínimo frío', 'neón / cyber', 'flúor / risografía'] },
-    { re: /green|verde|sage|salvia|forest|bosque/, families: ['bosque / sage', 'industrial', 'neón / cyber'] },
-    { re: /red|rojo|crimson|burgundy|vino|escarlata/, families: ['noche / contraste', 'tinta / ritual', 'retro vibrante'] },
-    { re: /purple|violet|violeta|morado|pink|rosa|magenta|lila/, families: ['pastel ácido / vapor', 'retro vibrante', 'neón / cyber'] },
-    { re: /black|negro|white|blanco|monochrome|monocromo|dark|oscuro/, families: ['noche / contraste', 'tinta / ritual', 'industrial'] },
-    { re: /gold|oro|dorado|premium|metallic|metalico/, families: ['dorado / premium', 'noche / contraste', 'papel / suave'] },
-    { re: /gray|grey|gris|silver|plata|concrete|concreto/, families: ['mínimo frío', 'industrial', 'papel / suave'] },
-    { re: /pastel|soft|suave|lavanda/, families: ['papel / suave', 'pastel ácido / vapor', 'bosque / sage'] }
+    { re: /\b(?:neon|cyber|fluor|fluorescen)\b/, families: ['neón / cyber', 'flúor / risografía', 'pastel ácido / vapor'] },
+    { re: /\b(?:earth|tierra|calida?|calidez|terracota|ocre|arena|olive|oliva|warm)\b/, families: ['tierra cálida', 'bosque / sage', 'retro vibrante'] },
+    { re: /\b(?:blue|azul|cian|cyan|turquesa|cold|frio)\b/, families: ['mínimo frío', 'neón / cyber', 'flúor / risografía'] },
+    { re: /\b(?:green|verde|sage|salvia|forest|bosque)\b/, families: ['bosque / sage', 'industrial', 'neón / cyber'] },
+    { re: /\b(?:red|rojo|crimson|burgundy|vino|escarlata)\b/, families: ['noche / contraste', 'tinta / ritual', 'retro vibrante'] },
+    { re: /\b(?:purple|violet|violeta|morado|pink|rosa|magenta|lila)\b/, families: ['pastel ácido / vapor', 'retro vibrante', 'neón / cyber'] },
+    { re: /\b(?:black|negro|white|blanco|monochrome|monocromo|dark|oscuro)\b/, families: ['noche / contraste', 'tinta / ritual', 'industrial'] },
+    { re: /\b(?:gold|oro|dorado|premium|metallic|metalico)\b/, families: ['dorado / premium', 'noche / contraste', 'papel / suave'] },
+    { re: /\b(?:gray|grey|gris|silver|plata|concrete|concreto)\b/, families: ['mínimo frío', 'industrial', 'papel / suave'] },
+    { re: /\b(?:pastel|soft|suave|lavanda)\b/, families: ['papel / suave', 'pastel ácido / vapor', 'bosque / sage'] }
   ];
   const available = Object.keys(_COLOR_FAMILIES || {});
   const out = [];
