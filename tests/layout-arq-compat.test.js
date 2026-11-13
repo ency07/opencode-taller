@@ -116,7 +116,8 @@ ok(count(out, 'ARQUITECTURA DOMINANTE') === 1, 'D: ARQUITECTURA DOMINANTE izada,
 ok(count(out, 'La jerarquía fija tamaño, área y peso; el layout solo ubicación.') === 1, 'D: la regla de precedencia jerárquica se emite una vez');
 ok(out.indexOf('INTERPRETACIÓN DEL CONCEPTO:') !== -1, 'P3: interpretación literal del concepto ambiguo');
 ok(out.indexOf('lectura más literal de sus palabras') !== -1, 'P3: elige la lectura más literal');
-ok(out.indexOf('conserva el área de la jerarquía y une texto y objeto por solapamiento simple') !== -1, 'P2: integración no viable degrada a solapamiento simple');
+ok(out.indexOf('DISTRIBUCIÓN ADAPTADA:') !== -1, 'P2: la integración adapta la arquitectura al layout sin alterar la jerarquía');
+ok(_compatibleCompositionDirective('TEXTO_DOMINANTE', '').indexOf('texto y símbolo en zonas diferenciadas con asimetría controlada') !== -1, 'P2: fallback de arquitectura conserva una relación compositiva segura');
 ok(out.indexOf('entrega por prioridad:') !== -1 && out.indexOf('mejor un parcial limpio que columnas incompletas') !== -1, 'P4: orden de degradación de la hoja');
 
 /* --- 6) P5 en fuente (MODERN) --- */
