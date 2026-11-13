@@ -668,6 +668,42 @@ function dominioEfectivo() {
 }
 
 function isGospelMarket() { return MOTOR_STATE.market === 'gospel_es' || MOTOR_STATE.market === 'gospel_en'; }
+function isSecularMarket() { return !isGospelMarket(); }
+
+/* La identidad cromática declarada limita las familias elegibles del mercado secular. */
+function _secularPaletteFamilies(identity) {
+  const t = _normalizeTxt(identity || '');
+  if (!t) return [];
+  const groups = [
+    { re: /neon|cyber|fluor|fluorescen/, families: ['neón / cyber', 'flúor / risografía', 'pastel ácido / vapor'] },
+    { re: /earth|tierra|calid|terracota|ocre|arena|olive|oliva|warm/, families: ['tierra cálida', 'bosque / sage', 'retro vibrante'] },
+    { re: /blue|azul|cian|cyan|turquesa|cold|frio/, families: ['mínimo frío', 'neón / cyber', 'flúor / risografía'] },
+    { re: /green|verde|sage|salvia|forest|bosque/, families: ['bosque / sage', 'industrial', 'neón / cyber'] },
+    { re: /red|rojo|crimson|burgundy|vino|escarlata/, families: ['noche / contraste', 'tinta / ritual', 'retro vibrante'] },
+    { re: /purple|violet|violeta|morado|pink|rosa|magenta|lila/, families: ['pastel ácido / vapor', 'retro vibrante', 'neón / cyber'] },
+    { re: /black|negro|white|blanco|monochrome|monocromo|dark|oscuro/, families: ['noche / contraste', 'tinta / ritual', 'industrial'] },
+    { re: /gold|oro|dorado|premium|metallic|metalico/, families: ['dorado / premium', 'noche / contraste', 'papel / suave'] },
+    { re: /gray|grey|gris|silver|plata|concrete|concreto/, families: ['mínimo frío', 'industrial', 'papel / suave'] },
+    { re: /pastel|soft|suave|lavanda/, families: ['papel / suave', 'pastel ácido / vapor', 'bosque / sage'] }
+  ];
+  const available = Object.keys(_COLOR_FAMILIES || {});
+  const out = [];
+  groups.forEach(function (g) {
+    if (g.re.test(t)) g.families.forEach(function (f) {
+      if (available.indexOf(f) !== -1 && out.indexOf(f) === -1) out.push(f);
+    });
+  });
+  return out;
+}
+
+function _resolveSecularCopy(message, concept) {
+  const explicit = String(message || '').trim().replace(/\s+/g, ' ');
+  if (explicit) return explicit;
+  const anchor = String(concept || '').trim().replace(/\s+/g, ' ');
+  if (!anchor || anchor === '—') return '';
+  return anchor.charAt(0).toLocaleUpperCase() + anchor.slice(1);
+}
+
 function isColombiaMarket() { return MOTOR_STATE.market === 'colombia'; }
 function isGlobalMarket() { return MOTOR_STATE.market === 'global_en' || MOTOR_STATE.market === 'global_es' || MOTOR_STATE.market === 'anglo'; }
 
@@ -2150,6 +2186,10 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
   // conservar_palabras la mantiene literal; mismo_mensaje la reescribe sin cambiar
   // significado; nuevo_texto crea otra desde el concepto (no la conserva).
   const typedMessage = String(MOTOR_STATE.message || '').trim();
+  const secularVisualIdentity = isSecularMarket() ? _resolveVisualIdentity() : null;
+  const secularPaletteFamilies = secularVisualIdentity
+    ? _secularPaletteFamilies(secularVisualIdentity.primary + ' ' + secularVisualIdentity.secondary)
+    : [];
 
   const set = {};
   const textCompositionByKey = _assignTextCompositions();
@@ -2433,7 +2473,9 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
       v.familiaColor = '(paleta de la imagen)';
       v._esquema = null;
     } else {
-      const colorPref = _STYLE_COLOR_PREF[styleBase] || Object.keys(_COLOR_FAMILIES);
+      const colorPref = secularPaletteFamilies.length
+        ? secularPaletteFamilies
+        : (_STYLE_COLOR_PREF[styleBase] || Object.keys(_COLOR_FAMILIES));
       const preferredModes = (_AUD_PROFILES[v.audiencia] || {}).modoCol || [];
       const modePool = _COLOR_MODES.filter(function (m) { return preferredModes.indexOf(m) !== -1; });
       // RT-03: reintentar combinaciones hasta que fondo/dominante/acento/tinta
@@ -3423,6 +3465,7 @@ function formatPrompt(result) {
   const dense = MOTOR_STATE.fmtDense;
   const isVar = MOTOR_STATE.workflowMode === 'variation';
   const isGospelES = MOTOR_STATE.market === 'gospel_es';
+  const isSecular = isSecularMarket();
 
   // Directivas de idioma y cultura
   let langDir = '';
@@ -3479,7 +3522,7 @@ function formatPrompt(result) {
     ? _resolveGospelESCopy(MOTOR_STATE.message, promptConcept, MOTOR_STATE.allowAutoCopy !== false)
     : null;
   const sharedDerivedCopy = !typedMessage
-    ? (isGospelES ? gospelESCopy.text : _resolveSharedCopy(promptConcept, MOTOR_STATE.market))
+    ? (isGospelES ? gospelESCopy.text : (isSecular ? _resolveSecularCopy('', promptConcept) : _resolveSharedCopy(promptConcept, MOTOR_STATE.market)))
     : '';
   /* En explore sin mensaje, el motor fija UNA frase literal compartida para
      A/B/C (no delega inventarla a la IA de imagen, que no puede coordinarla). */
@@ -3549,7 +3592,7 @@ function formatPrompt(result) {
     o += '/EXPLORACIÓN — 3 DIRECCIONES DEL MISMO CONCEPTO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
     const exploreMessage = String(MOTOR_STATE.message || '').trim();
-    const exploreCopy = exploreMessage || sharedExploreCopy || (isGospelES ? 'SIN COPY AUTORIZADO: no generar texto' : 'propón copy breve');
+    const exploreCopy = exploreMessage || sharedExploreCopy || ((isGospelES || isSecular) ? 'SIN COPY AUTORIZADO: no generar texto' : 'propón copy breve');
     o += 'CONCEPTO: ' + (conceptAnchor || (isGospelES ? 'CONCEPTO NO PROPORCIONADO: no inventar concepto ni motivo' : 'propón una idea concreta dentro de la familia seleccionada')) + ' | MENSAJE / COPY: ' + exploreCopy + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
     o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. La relación del motivo con la idea debe poder explicarse; usa metáforas visuales, no una traducción palabra por palabra. Si el banco no ofrece un motivo compatible, deriva una propuesta desde concepto y mensaje y señala la incertidumbre. ';
@@ -3649,6 +3692,11 @@ function formatPrompt(result) {
           : 'COPY: no autorizado. No generar texto ni placeholders.\n');
     }
     o += 'La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
+  } else if (isSecular) {
+    o += sharedDerivedCopy
+      ? 'COPY CANÓNICO SECULAR: «' + sharedDerivedCopy + '». Usar exactamente esta frase en A/B/C; no inventar versiones, apoyos, sellos, citas, cifras ni microtexto.\n'
+      : 'COPY: no hay mensaje ni concepto autorizado para derivarlo. No generar letras, frases, cifras, sellos ni microtexto.\n';
+    o += 'La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
   } else {
     o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto. La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
   }
@@ -3712,6 +3760,10 @@ function formatPrompt(result) {
       o += sharedDerivedCopy
         ? 'TEXTOS: COPY CANÓNICO ÚNICO «' + sharedDerivedCopy + '». Usar exactamente esta misma frase en A/B/C, sin reescribir, traducir ni añadir apoyos. SOLO_TEXTO usa el copy como arte tipográfico; SOLO_OBJETO no imprime ninguna letra.\n'
         : 'TEXTOS: no hay mensaje ni copy automático autorizado (o falta concepto). No generar letras, cifras, citas, versículos, apoyos, sellos ni microtexto. Si una ficha exige texto, dejarla sin texto y señalarla como incompleta; nunca inventar una frase.\n';
+    } else if (isSecular) {
+      o += sharedDerivedCopy
+        ? 'TEXTOS: COPY CANÓNICO ÚNICO «' + sharedDerivedCopy + '». Usar literalmente la misma frase en A/B/C donde la jerarquía admita texto. No reescribir, traducir ni añadir apoyos. SOLO_OBJETO no imprime letras.\n'
+        : 'TEXTOS: no hay mensaje ni concepto para derivar copy. No generar letras, cifras, sellos ni microtexto. Las fichas que requieran texto quedan incompletas.\n';
     } else {
       o += 'TEXTOS: no se proporcionó mensaje, pero NO se ha prohibido el copy. Propón para cada dirección una frase comercial original, concreta y nativa en el idioma del mercado; escribe el texto exacto final, no instrucciones ni placeholders. La jerarquía visual manda: TEXTO_DOMINANTE = frase protagonista; BALANCEADO = texto y símbolo equilibrados; OBJETO_DOMINANTE = símbolo protagonista y frase breve secundaria; SOLO_OBJETO = cero letras (sin copy). No inventes fechas, cifras, nombres propios ni afirmaciones factuales. Omite texto de apoyo si no aporta valor.\n';
     }
@@ -3739,6 +3791,16 @@ function formatPrompt(result) {
   else if (MOTOR_STATE.visualIdentity) {
     o += 'IDENTIDAD VISUAL DEL USUARIO: ' + MOTOR_STATE.visualIdentity + '.\n';
   }
+  if (isSecular) {
+    const vi = _resolveVisualIdentity();
+    if (vi.primary) {
+      o += 'IDENTIDAD VISUAL — REGLA DE AUTORIDAD: «' + vi.primary + '». Es una restricción creativa obligatoria, no una sugerencia. Conserva sus rasgos reconocibles en las tres direcciones; no la sustituyas por códigos genéricos del estilo, la audiencia o el territorio.\n';
+      const paletteFamilies = _secularPaletteFamilies(vi.primary + ' ' + vi.secondary);
+      if (paletteFamilies.length) o += 'PALETA VINCULADA A IDENTIDAD: usa únicamente familias cromáticas compatibles con esta identidad: ' + paletteFamilies.join(' · ') + '. No introduzcas una familia ajena por preferencia del estilo o audiencia.\n';
+      o += 'COHERENCIA DE IDENTIDAD: estilo, tratamiento y audiencia pueden adaptar la ejecución, pero no cambiar la identidad visual ni su lenguaje cromático. Si falta un dato cromático explícito, conserva la dirección de color descrita; no inventes una paleta opuesta.\n';
+    }
+    o += 'FIDELIDAD DEL CONCEPTO: representa el concepto indicado sin convertir una idea abstracta en una escena literal. No añadas personajes, objetos, lugares, narrativas ni símbolos no solicitados. Si el concepto es abstracto, exprésalo con tipografía, geometría, ritmo, contraste o metáfora derivada directamente de sus palabras.\n';
+  }
   o += 'REGLAS DEL ARTE ESTAMPADO (solo el diseño impreso en la prenda; NO aplica al mockup comercial): ';
   o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos. Esta prohibición se refiere exclusivamente al ARTE ESTAMPADO, no al modelo del mockup comercial. ';
   o += 'INTERPRETACIÓN DEL CONCEPTO: si el concepto es ambiguo o metafórico, elige la lectura más literal de sus palabras; una parte del cuerpo nombrada se dibuja solo si es imprescindible y de forma parcial/estilizada; no inventes personas, rostros ni escenas no narradas. ';
@@ -3754,7 +3816,7 @@ function formatPrompt(result) {
 
   K.forEach(function (k, i) {
     const v = set[k];
-    const missingGospelCopy = isGospelES && !isVar && !isPatron && !typedMessage
+    const missingGospelCopy = (isGospelES || isSecular) && !isVar && !isPatron && !typedMessage
       && !(isExplore ? sharedExploreCopy : sharedDerivedCopy)
       && v.jerarquiaVisual !== 'SOLO_OBJETO';
     o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + _audienceDisplay(v.audiencia) + '\n';
@@ -3819,13 +3881,13 @@ function formatPrompt(result) {
     const textLine = contactDNA
       ? (contactMainText
         ? 'MENSAJE PRINCIPAL literal: «' + contactMainText + '»' + (contactSupportText ? ' · APOYO literal: «' + contactSupportText + '»' : '') + ' · sin texto terciario · ' + v.tipografia
-        : (isGospelES && !sharedDerivedCopy
+        : ((isGospelES || isSecular) && !sharedDerivedCopy
           ? 'SIN COPY AUTORIZADO: no generar letras, cifras, palabras ni microtexto; no inventar una frase · ' + v.tipografia
           : 'COPY LITERAL (derivado del concepto): «' + sharedDerivedCopy + '»; usarlo exacto en las tres direcciones; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia))
       : (isExplore
         ? (String(MOTOR_STATE.message || '').trim()
           ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
-          : (isGospelES && !sharedExploreCopy
+          : ((isGospelES || isSecular) && !sharedExploreCopy
             ? 'SIN COPY AUTORIZADO: no generar letras, cifras, palabras ni microtexto; no inventar una frase. Tipografía: ' + v.tipografia
             : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + sharedExploreCopy + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia))
         : v.textoPrincipal + ' / ' + v.textoApoyo + ' / ' + v.textoTerciario + ' · ' + v.tipografia);
@@ -3833,7 +3895,7 @@ function formatPrompt(result) {
       ? 'FICHA INCOMPLETA: la jerarquía seleccionada requiere texto, pero no hay mensaje ni copy automático autorizado. No generes letras ni sustituyas el texto; no presentes esta ficha como diseño terminado. Solicita un mensaje o habilita el copy automático.'
       : ({
       SOLO_TEXTO: 'SOLO_TEXTO: solo copy literal; 100% tipografía y cero imágenes, objetos o adornos independientes. ÚNICOS elementos permitidos: letras del copy literal. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.',
-      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible, debe ser la primera lectura y dominar a primera vista. Texto y símbolo forman una sola composición integrada, no dos bloques separados. El símbolo aporta como máximo 20–30% del peso visual. El objeto descrito en esta ficha («' + v.objeto + '») debe interactuar físicamente con las letras de forma plausible. Elige una integración coherente con el objeto real. conserva todas las palabras exactas y legibles, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
+      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. El COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible. Texto y símbolo forman una sola composición integrada, no dos bloques separados. Si el elemento autorizado es físico, intégralo con su forma y acción reales; si el concepto es abstracto, no lo conviertas en objeto: usa geometría, ritmo, contraformas o integración tipográfica derivada directamente del concepto. El símbolo aporta como máximo 20–30% del peso visual. Conserva todas las palabras exactas y legibles, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
       OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte; copy 20–30%. No lo sustituyas por árboles, personas u otros objetos no indicados. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel.',
       SOLO_OBJETO: 'SOLO_OBJETO: el objeto autorizado («' + v.objeto + '») ocupa el 100% visual de la ficha y NO HAY TEXTO en absoluto: ni letras, ni cifras, ni tipografía decorativa ni accidental. Diferéncialo de OBJETO_DOMINANTE (allí el copy ocupa 20–30%; aquí ninguna letra existe). ADMITE elementos secundarios visuales no textuales del estilo asignado (ornamentos, marcos, filetes, texturas, recursos gráficos de taller) siempre que no introduzcan texto y respeten el contrato de elementos del concepto.',
       BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva; evita dos bloques desconectados. La arquitectura define colocación/relación, nunca cambia la proporción.'
@@ -3849,7 +3911,7 @@ function formatPrompt(result) {
       o += _compatibleCompositionDirective(v.jerarquiaVisual, v.distribucionTexto) + '\n';
     }
     if (!missingGospelCopy && v.jerarquiaVisual === 'TEXTO_DOMINANTE') {
-      o += 'INTEGRACIÓN TEXTO-SÍMBOLO: integra el objeto descrito en el concepto ("' + v.objeto + '") en el lettering usando su forma física y acción reales; elige una unión visual clara y natural, sin imponer metáforas genéricas ni partes que el objeto no posee. El texto exacto ocupa 70–80% del área y es la primera lectura; el símbolo ocupa como máximo 20–30%, queda integrado y nunca aparece como ilustración separada. La arquitectura cambia ubicación, no proporción. Si la integración elegida no es viable con la forma real del objeto, conserva el área de la jerarquía y une texto y objeto por solapamiento simple; no bloquees la lectura.\n';
+      o += 'INTEGRACIÓN TEXTO-SÍMBOLO: si el concepto nombra un objeto físico, integra ese objeto con su forma real y sin inventar partes. Si el concepto es abstracto, no lo materialices ni fuerces una interacción física: construye la unión con geometría, contraformas, ritmo, escala o composición tipográfica. El texto exacto ocupa 70–80% del área y es la primera lectura; el símbolo o recurso abstracto ocupa como máximo 20–30%. La arquitectura cambia ubicación, no proporción.\n';
     }
     if (!missingGospelCopy && v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
       o += 'TEXTO SUBORDINADO: el copy ocupa como máximo 20–30% en la zona que le asigne el layout; prohibido lettering gigante que compita con el símbolo. Si al mirar el arte el texto domina, encogerlo hasta que el objeto autorizado mande a primera vista.\n';
@@ -4400,6 +4462,20 @@ function arbitroSelectores(promptText, result) {
   add('Diferencia A/B/C', 'Ejes duros sin repetir',
     repetidos.length === 0, repetidos.length ? 'repetidos: ' + repetidos.join(', ') : '');
 
+  // Identidad visual secular: presencia literal y compatibilidad cromática.
+  if (isSecularMarket()) {
+    const vi = _resolveVisualIdentity();
+    if (vi.primary) {
+      add('Identidad', 'Identidad visual del usuario', _arbHas(text, vi.primary), 'la identidad visual declarada no llegó al prompt');
+      const allowedFamilies = _secularPaletteFamilies(vi.primary + ' ' + vi.secondary);
+      if (allowedFamilies.length) {
+        const incompatible = K.filter(function (k) { return allowedFamilies.indexOf(set[k].familiaColor) === -1; });
+        add('Color', 'Paleta compatible con identidad visual', incompatible.length === 0,
+          incompatible.length ? 'familias fuera de identidad: ' + incompatible.map(function (k) { return k + '=' + set[k].familiaColor; }).join(', ') : '');
+      }
+    }
+  }
+
   // Paleta: cuatro HEX distintos por ficha.
   const paletaMal = K.filter(function (k) {
     const e = set[k]._esquema;
@@ -4465,12 +4541,15 @@ function verificarArbitro() {
 function _estadoUnificado(result) {
   const ev = (result && result.score) ? result.score : null;
   const info = (typeof arbitroSelectores === 'function') ? arbitroSelectores(null, result) : null;
-  const okArb = !info ? true : !!info.ok;
+  const okArb = info ? !!info.ok : !isSecularMarket();
   const totalArb = info ? (info.total || 0) : 0;
   const fallosArb = info ? (info.fallos || 0) : 0;
   const okScore = !!(result && result.passed);
   const effAud = (ev && typeof ev.fitAudienciaMin === 'number') ? ev.fitAudienciaMin : 0;
   const effProd = (ev && typeof ev.fitProductoMin === 'number') ? ev.fitProductoMin : 0;
+  if (!info && isSecularMarket()) {
+    return { ok: false, okScore: okScore, okArb: false, checks: null, fallos: 1, html: '<span class="warn">Árbitro pendiente: no se pudo verificar el prompt. La imagen tampoco está validada.</span>' };
+  }
   if (!okScore) {
     const umbralMsg = (typeof _mensajeUmbral === 'function') ? _mensajeUmbral(ev) : '';
     return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>' };
@@ -4479,7 +4558,9 @@ function _estadoUnificado(result) {
     const checksOkArb = totalArb - fallosArb;
     return { ok: false, okScore: true, okArb: false, checks: info, fallos: fallosArb, html: '<span class="bad">Árbitro: ' + checksOkArb + '/' + totalArb + ' selectores verificados en el prompt · ' + fallosArb + ' punto(s) a revisar</span>' };
   }
-  return { ok: true, okScore: true, okArb: true, checks: info, fallos: 0, html: '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt · pertinencia efectiva audiencia ' + effAud + '/100 · producto ' + effProd + '/100</span>' };
+  return { ok: true, okScore: true, okArb: true, checks: info, fallos: 0, html: isSecularMarket()
+    ? '<span class="good">Prompt y selectores verificados · audiencia ' + effAud + '/100 · producto ' + effProd + '/100 · imagen pendiente de QA visual</span>'
+    : '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt · pertinencia efectiva audiencia ' + effAud + '/100 · producto ' + effProd + '/100</span>' };
 }
 
 /* --- Función principal: Crear los 3 diseños --- */
