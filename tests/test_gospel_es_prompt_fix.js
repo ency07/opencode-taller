@@ -55,8 +55,8 @@ function configureState(options) {
   MOTOR_STATE.dominio = 'auto';
   MOTOR_STATE.dominioDetectado = 'auto';
   MOTOR_STATE.domImagen = 'Auto';
-  MOTOR_STATE.workflowMode = 'new';
-  MOTOR_STATE.explorationBrief = null;
+  MOTOR_STATE.workflowMode = opts.workflowMode || 'new';
+  MOTOR_STATE.explorationBrief = opts.explorationBrief || null;
   MOTOR_STATE.groupMode = 'distintos';
   MOTOR_STATE.objectMode = 'simple';
   MOTOR_STATE.designMode = 'contacto';
@@ -121,7 +121,7 @@ function buildPrompt(options) {
     A: makeCard(0, options && options.hierarchies && options.hierarchies[0]),
     B: makeCard(1, options && options.hierarchies && options.hierarchies[1]),
     C: makeCard(2, options && options.hierarchies && options.hierarchies[2]),
-    seriesAnchor: MOTOR_STATE.concept
+    seriesAnchor: MOTOR_STATE.concept || (MOTOR_STATE.explorationBrief && MOTOR_STATE.explorationBrief.concept) || ''
   };
   return formatPrompt({ set: set, score: 100, passed: true, objectConflicts: [] });
 }
@@ -157,7 +157,19 @@ check(prompt.includes('FIDELIDAD GOSPEL ES:'),
 check(prompt.includes('IDIOMA: español natural actual'),
   'Gospel ES debe forzar español natural');
 
-/* 3. SOLO_TEXTO sigue permitiendo copy; es una jerarquía tipográfica. */
+/* 3. El concepto activo de explorationBrief también ancla el copy compartido. */
+prompt = buildPrompt({
+  concept: '',
+  allowAutoCopy: true,
+  workflowMode: 'explore',
+  explorationBrief: { concept: 'Esperanza en medio de la tormenta', familyLabel: 'Gospel', familyId: null }
+});
+check(prompt.includes('COPY CANÓNICO: «Esperanza en medio de la tormenta»'),
+  'exploración debe derivar el copy del concepto activo del brief');
+check(prompt.includes('COPY LITERAL COMPARTIDO A/B/C'),
+  'exploración debe fijar la misma frase en las tres direcciones');
+
+/* 4. SOLO_TEXTO sigue permitiendo copy; es una jerarquía tipográfica. */
 prompt = buildPrompt({
   concept: 'Esperanza en medio de la tormenta',
   allowAutoCopy: true,
@@ -168,7 +180,7 @@ check(prompt.includes('SOLO_TEXTO usa el copy como arte tipográfico'),
 check(prompt.includes('TEXTO: COPY LITERAL (derivado del concepto): «Esperanza en medio de la tormenta»'),
   'SOLO_TEXTO debe usar la frase canónica');
 
-/* 4. Sin mensaje y con copy automático desactivado: no inventar texto. */
+/* 5. Sin mensaje y con copy automático desactivado: no inventar texto. */
 prompt = buildPrompt({
   concept: 'Esperanza en medio de la tormenta',
   allowAutoCopy: false
@@ -180,14 +192,14 @@ check(prompt.includes('FICHA INCOMPLETA: la jerarquía seleccionada requiere tex
 check(!prompt.includes('COPY LITERAL (derivado del concepto): «Esperanza en medio de la tormenta»'),
   'no debe quedar copy derivado cuando está desactivado');
 
-/* 5. Sin mensaje y sin concepto: no recurrir a copy genérico de banco. */
+/* 6. Sin mensaje y sin concepto: no recurrir a copy genérico de banco. */
 prompt = buildPrompt({ concept: '', allowAutoCopy: true });
 check(prompt.includes('COPY: no autorizado. No generar texto ni placeholders.'),
   'sin concepto no debe aparecer una frase genérica automática');
 check(!prompt.includes('COPY CANÓNICO ÚNICO «'),
   'no debe existir copy canónico si no hay concepto');
 
-/* 6. SOLO_OBJETO no requiere copy y conserva su regla de cero letras. */
+/* 7. SOLO_OBJETO no requiere copy y conserva su regla de cero letras. */
 prompt = buildPrompt({
   concept: 'Esperanza en medio de la tormenta',
   allowAutoCopy: false,
@@ -198,7 +210,7 @@ check(prompt.includes('TEXTO: NINGUNO (jerarquía SOLO_OBJETO)'),
 check(!prompt.includes('FICHA INCOMPLETA: la jerarquía seleccionada requiere texto'),
   'SOLO_OBJETO no debe marcarse incompleto por falta de copy');
 
-/* 7. Separación real de instrucciones de estampado y mockup comercial. */
+/* 8. Separación real de instrucciones de estampado y mockup comercial. */
 prompt = buildPrompt({ concept: 'Esperanza en medio de la tormenta', allowAutoCopy: true });
 const artIndex = prompt.indexOf('REGLAS DEL ARTE ESTAMPADO');
 const mockupIndex = prompt.indexOf('REGLAS DEL MOCKUP COMERCIAL');
@@ -210,7 +222,7 @@ check(prompt.slice(artIndex, artIndex + 1200).includes('Esta prohibición se ref
 check(prompt.slice(mockupIndex).includes('MOCKUP OBLIGATORIO POR AUDIENCIA'),
   'el mockup debe conservar las reglas de representación por audiencia');
 
-/* 8. El helper de copy debe distinguir los cuatro estados. */
+/* 9. El helper de copy debe distinguir los cuatro estados. */
 let resolved = _resolveGospelESCopy('Mensaje literal', 'Concepto', true);
 check(resolved.text === 'Mensaje literal' && resolved.source === 'user',
   'el helper debe priorizar el mensaje del usuario');
