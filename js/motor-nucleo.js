@@ -129,6 +129,7 @@ let MOTOR_STATE = {
   serie: '',
   concept: '',
   message: '',
+  allowAutoCopy: true, // Gospel ES: copy derivado del concepto, salvo desactivación explícita.
   support: '',
   audienceSet: 'Auto',
   audienceMulti: 'no',
@@ -3073,6 +3074,22 @@ function _resolveSharedCopy(conceptText, market) {
   return _pickSharedExploreCopy(text, market);
 }
 
+/* Copy Gospel ES: mensaje explícito > copy derivado del concepto > vacío.
+   No inventa una escena bíblica ni usa un banco genérico cuando falta concepto.
+   SOLO_TEXTO permite copy (es una jerarquía tipográfica); SOLO_OBJETO lo excluye
+   en la instrucción particular de cada ficha. */
+function _resolveGospelESCopy(message, concept, allowAutoCopy) {
+  const explicit = String(message || '').trim();
+  if (explicit) return { text: explicit, source: 'user', allowed: true };
+  if (allowAutoCopy === false) return { text: '', source: 'disabled', allowed: false };
+  const anchor = String(concept || '').trim();
+  if (!anchor || anchor === '—') return { text: '', source: 'missing-concept', allowed: false };
+  const derived = _resolveSharedCopy(anchor, 'gospel_es');
+  return derived
+    ? { text: derived, source: 'concept', allowed: true }
+    : { text: '', source: 'missing-concept', allowed: false };
+}
+
 /* --- Formateo de prompt --- */
 /* Bloque de contraste estructural A/B/C (punto 1: evitar que las 3 columnas
    converjan en la misma imagen). Lista los ejes asignados a cada ficha y
@@ -3405,11 +3422,15 @@ function formatPrompt(result) {
   const seriesAnchor = String(set.seriesAnchor || '').trim();
   const dense = MOTOR_STATE.fmtDense;
   const isVar = MOTOR_STATE.workflowMode === 'variation';
+  const isGospelES = MOTOR_STATE.market === 'gospel_es';
 
   // Directivas de idioma y cultura
   let langDir = '';
   if (typeof getLanguageDirective === 'function') {
     langDir = getLanguageDirective(MOTOR_STATE.market, MOTOR_STATE.language);
+  }
+  if (isGospelES) {
+    langDir = 'español natural actual: ortografía y acentuación correctas, sintaxis idiomática y vocabulario claro; no traducir literalmente del inglés ni introducir regionalismos no solicitados.';
   }
   let cultDir = '';
   if (typeof getCulturalDirective === 'function') {
@@ -3452,10 +3473,13 @@ function formatPrompt(result) {
   const contactFunction = contactDNA && set.A ? String(set.A.funcionSimbolica || '').trim() : '';
   const contactMainText = String(MOTOR_STATE.message || '').trim().replace(/\s+/g, ' ');
   const contactSupportText = String(MOTOR_STATE.support || '').trim().replace(/\s+/g, ' ');
-  /* Copy compartido derivado (mensaje > concepto literal > banco): una sola
-     frase para A/B/C; el banco solo cubre el vacío total, nunca un concepto. */
-  const sharedDerivedCopy = !String(MOTOR_STATE.message || '').trim()
-    ? _resolveSharedCopy(promptConcept, MOTOR_STATE.market)
+  /* Copy compartido. Gospel ES no recurre a frases de banco cuando falta
+     concepto: solo deriva una frase del concepto explícito y la fija una vez. */
+  const gospelESCopy = isGospelES
+    ? _resolveGospelESCopy(MOTOR_STATE.message, MOTOR_STATE.concept, MOTOR_STATE.allowAutoCopy !== false)
+    : null;
+  const sharedDerivedCopy = !typedMessage
+    ? (isGospelES ? gospelESCopy.text : _resolveSharedCopy(promptConcept, MOTOR_STATE.market))
     : '';
   /* En explore sin mensaje, el motor fija UNA frase literal compartida para
      A/B/C (no delega inventarla a la IA de imagen, que no puede coordinarla). */
@@ -3524,7 +3548,9 @@ function formatPrompt(result) {
     const conceptAnchor = String(brief.concept || '').trim();
     o += '/EXPLORACIÓN — 3 DIRECCIONES DEL MISMO CONCEPTO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
-    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE EXACTO: ' + (String(MOTOR_STATE.message || '').trim() || sharedExploreCopy || 'propón copy breve') + '\n';
+    const exploreMessage = String(MOTOR_STATE.message || '').trim();
+    const exploreCopy = exploreMessage || sharedExploreCopy || (isGospelES ? 'SIN COPY AUTORIZADO: no generar texto' : 'propón copy breve');
+    o += 'CONCEPTO: ' + (conceptAnchor || 'propón una idea concreta dentro de la familia seleccionada') + ' | MENSAJE / COPY: ' + exploreCopy + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
     o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. La relación del motivo con la idea debe poder explicarse; usa metáforas visuales, no una traducción palabra por palabra. Si el banco no ofrece un motivo compatible, deriva una propuesta desde concepto y mensaje y señala la incertidumbre. ';
     o += 'Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
@@ -3606,7 +3632,26 @@ function formatPrompt(result) {
     }
     o += 'VARIACIÓN VISUAL REAL: crea una nueva solución gráfica basada en la referencia, no una copia ni una limpieza de la misma. Cambia obligatoriamente composición, silueta global, encuadre, distribución de masas y jerarquía tipográfica. Conserva solo los elementos que exigen los selectores. No basta recolorear, cambiar textura, añadir borde ni aplicar filtro. No inventes objetos, texto, datos o símbolos fuera de las reglas anteriores.\n';
   }
-  o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto. La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
+  if (isGospelES) {
+    if (isVar) {
+      o += 'COPY: en variación, el selector TEXTOS es la única autoridad: conservar, reformular, crear o eliminar texto exactamente según la opción elegida; ninguna regla general puede contradecirlo.\n';
+    } else if (isPatron) {
+      o += 'COPY: conserva solo el mensaje explícito del usuario; si está vacío, no inventes texto para el patrón.\n';
+    } else if (isExplore) {
+      o += sharedExploreCopy
+        ? 'COPY CANÓNICO: «' + sharedExploreCopy + '». Repetirlo literalmente en A/B/C cuando la jerarquía admita texto; SOLO_OBJETO permanece sin letras.\n'
+        : 'COPY: no hay texto autorizado. No generar letras, frases, citas, versículos ni microtexto.\n';
+    } else if (contactDNA) {
+      o += contactMainText
+        ? 'COPY: conservar literalmente «' + contactMainText + '»; no añadir otro mensaje.\n'
+        : (sharedDerivedCopy
+          ? 'COPY CANÓNICO: «' + sharedDerivedCopy + '». Es la única frase automática y debe ser idéntica en A/B/C donde la jerarquía admita texto.\n'
+          : 'COPY: no autorizado. No generar texto ni placeholders.\n');
+    }
+    o += 'La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
+  } else {
+    o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto. La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
+  }
   o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado. FONDO DEL ARTE: liso, plano o transparente; prohibido añadir cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas, marcos ni escenas de fondo no solicitadas, aunque el estilo los use habitualmente. Si la hoja completa no cabe en una sola imagen, entrega por prioridad: 1) los tres estampados frontales, 2) los mockups por columna, 3) los colores rotulados, 4) detalles de impresión y paleta; mejor un parcial limpio que columnas incompletas o texto deforme.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (result.objectConflicts && result.objectConflicts.length) {
@@ -3643,8 +3688,10 @@ function formatPrompt(result) {
     o += '\n';
     if (isPatron && tplActive.imagen) o += 'REFERENCIA DE PLANTILLA: el archivo guardado en el editor no esta incluido en este texto. Adjuntalo manualmente al chat de la IA de imagen para que pueda usarlo.\n';
   }
-  if (MOTOR_STATE.market === 'gospel_es' || MOTOR_STATE.market === 'gospel_en') {
-    o += 'DOCTRINA: Trinitario (Padre, Hijo, Espiritu Santo) y cristocentrico. Cruz y resurreccion al centro. PROHIBIDO prosperidad magica, decretos, angeles como centro, santos mediadores, esoterismo, horoscopo, energia. Sin region: universal. OBLIGATORIA (Regla de los 3 segundos / Identidad Cristiana Inmediata): cada diseno debe ser reconocible como cristiano en 3 segundos o menos, sin usar cliches literales; usar obligatoriamente una de las tres vias: 1) Lexico teorico pesado (Gracia, Redencion, Shalom, Trono, Rescate), 2) Subversion de tropos seculares (frases tipicas del streetwear con verdad biblica), o 3) Anclaje visual sutil pero intencional (Alfa/Omega en tipografia, corona de espinas geometrica). Esta identidad aplica a los mercados gospel_es y gospel_en.\n';
+  if (isGospelES) {
+    o += 'DOCTRINA: enfoque cristocéntrico y trinitario (Padre, Hijo y Espíritu Santo), con fidelidad bíblica. Evitar prosperidad mágica, decretos, esoterismo, horóscopo y afirmaciones doctrinales no solicitadas. La identidad Gospel orienta el sentido, no obliga a insertar símbolos, personajes, escenas, lugares, pasajes, cruces, coronas ni citas. Representa el concepto que el usuario escribió; incorpora referencias bíblicas explícitas solo cuando el usuario las solicita o forman parte literal de su mensaje.\n';
+  } else if (MOTOR_STATE.market === 'gospel_en') {
+    o += 'DOCTRINA: Trinitarian and Christ-centered. Avoid prosperity magic, decrees, angels as the central subject, saints as mediators, esotericism, horoscopes and energy claims. Keep the requested concept primary; do not force biblical scenes, characters, places, symbols or quotations unless requested.\n';
   }
   if (MOTOR_STATE.market === 'colombia') {
     o += 'SANDBOX: solo bancos Colombia de la region ' + MOTOR_STATE.region + '. Prohibidos objetos, simbolos y frases gospel o globales en ingles. Cocina regional separada.\n';
@@ -3661,6 +3708,10 @@ function formatPrompt(result) {
   } else if (contactDNA) {
     if (contactMainText) {
       o += 'TEXTOS: conserva literalmente el mensaje principal «' + contactMainText + '». Si hay apoyo autorizado, consérvalo literalmente; si no lo hay, no inventes datos, fechas, cifras ni sellos. Legibilidad primero: letras grandes y correctas a escala real de ' + MOTOR_STATE.product + '.\n';
+    } else if (isGospelES) {
+      o += sharedDerivedCopy
+        ? 'TEXTOS: COPY CANÓNICO ÚNICO «' + sharedDerivedCopy + '». Usar exactamente esta misma frase en A/B/C, sin reescribir, traducir ni añadir apoyos. SOLO_TEXTO usa el copy como arte tipográfico; SOLO_OBJETO no imprime ninguna letra.\n'
+        : 'TEXTOS: no hay mensaje ni copy automático autorizado (o falta concepto). No generar letras, cifras, citas, versículos, apoyos, sellos ni microtexto. Si una ficha exige texto, dejarla sin texto y señalarla como incompleta; nunca inventar una frase.\n';
     } else {
       o += 'TEXTOS: no se proporcionó mensaje, pero NO se ha prohibido el copy. Propón para cada dirección una frase comercial original, concreta y nativa en el idioma del mercado; escribe el texto exacto final, no instrucciones ni placeholders. La jerarquía visual manda: TEXTO_DOMINANTE = frase protagonista; BALANCEADO = texto y símbolo equilibrados; OBJETO_DOMINANTE = símbolo protagonista y frase breve secundaria; SOLO_OBJETO = cero letras (sin copy). No inventes fechas, cifras, nombres propios ni afirmaciones factuales. Omite texto de apoyo si no aporta valor.\n';
     }
@@ -3691,6 +3742,7 @@ function formatPrompt(result) {
   o += 'REGLAS DEL ARTE ESTAMPADO (solo el diseño impreso en la prenda; NO aplica al mockup comercial): ';
   o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos o decorativos fuera de este objeto/concepto; si un detalle no está nombrado ni es imprescindible para mostrar la acción, omitirlo. Prohibido añadir manos, brazos, personas, portadores o soportes humanos salvo que el concepto los nombre explícitamente; un verbo como «sostener» no autoriza dibujar manos. Esta prohibición se refiere exclusivamente al ARTE ESTAMPADO, no al modelo del mockup comercial. ';
   o += 'INTERPRETACIÓN DEL CONCEPTO: si el concepto es ambiguo o metafórico, elige la lectura más literal de sus palabras; una parte del cuerpo nombrada se dibuja solo si es imprescindible y de forma parcial/estilizada; no inventes personas, rostros ni escenas no narradas. ';
+  if (isGospelES) o += 'FIDELIDAD GOSPEL ES: no conviertas una idea general o abstracta en un relato bíblico específico. No infieras personajes, pasajes, lugares, milagros, escenas ni objetos narrativos que el usuario no haya pedido. Para conceptos abstractos, usa una solución tipográfica o una metáfora visual abstracta derivada directamente del concepto; conserva el texto original como ancla. ';
   const _figurasPorFicha = K.map(function (k) {
     const v = set[k];
     return (v && v.jerarquiaVisual !== 'SOLO_TEXTO') ? _figureDirective(v.objeto) : '';
@@ -3762,7 +3814,9 @@ function formatPrompt(result) {
       : (isExplore
         ? (String(MOTOR_STATE.message || '').trim()
           ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
-          : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + sharedExploreCopy + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia)
+          : (isGospelES && !sharedExploreCopy
+            ? 'SIN COPY AUTORIZADO: no generar letras, cifras, palabras ni microtexto; no inventar una frase. Tipografía: ' + v.tipografia
+            : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + sharedExploreCopy + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia))
         : v.textoPrincipal + ' / ' + v.textoApoyo + ' / ' + v.textoTerciario + ' · ' + v.tipografia);
     const hierarchyDirective = {
       SOLO_TEXTO: 'SOLO_TEXTO: solo copy literal; 100% tipografía y cero imágenes, objetos o adornos independientes. ÚNICOS elementos permitidos: letras del copy literal. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.',
@@ -3810,182 +3864,6 @@ function formatPrompt(result) {
   try { window._PROMPT_SIG = _promptSignature(); } catch (e) { /* sin DOM real */ }
   return o;
 }
-
-/* ============================================================
-   PROMPT GOSPEL ES — Reglas corregidas (a partir del Correction Order 2026-11-13)
-   Principio: definir UNA sola regla clara, conservar concepto, separar
-   reglas de mockup del arte, mantener idioma español y eliminar contradicciones. */
-
-function _applyGospelESTextRule(set, isVar, contactDNA) {
-  /* Regla unificada para el campo vacío en Gospel ES.
-     - Si mensaje del usuario presente: usarlo literalmente (conservar_palabras).
-     - Si NO hay mensaje del usuario y la ficha permite copy: derivar una frase
-       concreta del concepto (una sola por dirección A/B/C).
-     - Si se prohíbe el copy (SOLAMENTE_TEXTO): dejar el campo vacío.
-     La frase derivada es compartida para A/B/C, nunca inventada por IA.
-     Prohibido añadir objetos, datos, citas, versículos bíblicos o personajes.
-     Concepto abstracto -> abstracción visual; no inventar un objeto narrativo.
-     La frase no autoriza por sí sola a introducir elementos visuales adicionales.
-     Si el concepto es "Esperanza en medio de la tormenta", no se transforma
-     en "camino a Emaús" ni se añaden escenas bíblicloyad; conservar la idea original.
-     La frase derivada es idéntica para A/B/C (misma frase para las tres). */
-  const isOnlyText = set.A && set.A.jerarquiaVisual === 'SOLO_TEXTO';
-  const hasUserMessage = String(MOTOR_STATE.message || '').trim();
-  const baseConcept = String(MOTOR_STATE.concept || '').trim() || '—';
-  const userMarket = MOTOR_STATE.market;
-
-  if (hasUserMessage) {
-    return hasUserMessage;
-  }
-
-  if (isOnlyText) {
-    return '';
-  }
-
-  /* Derivar una frase del concepto, una sola para A/B/C.
-     Usar helper _resolveSharedCopy si existe (evitar texto inventado). */
-  const derived = typeof _resolveSharedCopy === 'function'
-    ? _resolveSharedCopy(baseConcept, userMarket)
-    : '';
-
-  if (derived) return derived;
-
-  return '';
-}
-
-/* ------------------------------------------------------------- */
-function _mockupRuleNoHumanFigures() {
-  /* Las reglas del mockup comercial deben permitir figuras humanas según la
-     audiencia de cada columna; las prohibiciones del arte no aplican aquí. */
-  return 'El mockup DEBE mostrar una persona acorde a la audiencia de la columna.\n'
-    + 'MOCKUP OBLIGATORIO POR AUDIENCIA: infantil = niño o niña de apariencia inequívocamente infantil (proporciones corporales infantiles: cabeza grande, extremidades cortas; rostro y anatomía de niño, no de adulto joven; camiseta de corte y talla infantil; un adulto de baja estatura NO cumple). femenino = mujer con corte y talla femeninos. masculino = hombre con corte y talla masculinos. unisex = modelo acorde al perfil sin forzar género. Un modelo adulto en una ficha infantil invalida la hoja. Prohibido usar adultos como sustitutos.\n';
-}
-
-/* ------------------------------------------------------------- */
-function _stripBibleNarrativeFromConcept(concept) {
-  /* No convertir conceptos generales en relatos bíblicos no solicitados.
-     Conservar la idea original; si es abstracta, usar representación abstracta.
-     No añadir personajes, pasajes, escenas, lugares, símbolos doctrinales,
-     ni afirmaciones teológicas que el concepto no pida.
-     El ejemplo "Esperanza en medio de la tormenta" NO se convierte en
-     "camino a Emaús"; conservar la idea original. */
-  const normalized = String(concept || '').trim().toLowerCase();
-
-  const forbiddenTerms = [
-    'emaús', 'camino', 'discípulo', 'jesús', 'maría', 'pablo',
-    'pecado', 'redención', 'cristiano', 'iglesia', 'fe', 'cristo',
-    'santo', 'biblia', 'versículo', 'oración', 'clase de iglesia',
-    'ministerio', 'santo', 'parábola', 'milagro', 'santidad', 'cruz'
-  ];
-
-  if (forbiddenTerms.some(term => normalized.includes(term))) {
-    // Mantener la palabra si ya aparece, pero no añadirla.
-    return concept;
-  }
-
-  // No modificar el concepto; mantener lo que el usuario aportó.
-  return concept;
-}
-
-/* ------------------------------------------------------------- */
-function _compileGospelESTextRule(set, isExplore) {
-  /* Reglas de texto unificadas para Gospel ES:
-     - Mensaje proporcionado por usuario: conservar literalmente.
-     - Mensaje ausente: derivar frase compartida del concepto (una sola para A/B/C).
-     - Si la jerarquía es SOLO_TEXTO: campo vacío y sin copy.
-     - Separar las reglas del arte (estampado) de las del mockup comercial.
-     - Prohibir cualquier frase adicional, citas bíblicas, microtexto o texto
-       de apoyo no solicitado. */
-  const isOnlyText = set.A && set.A.jerarquiaVisual === 'SOLO_TEXTO';
-  const userMessage = String(MOTOR_STATE.message || '').trim();
-
-  /* Regla de texto principal (compartida para A/B/C). */
-  let mainText = '';
-
-  if (userMessage) {
-    mainText = userMessage;
-  } else if (!isOnlyText) {
-    const concept = String(MOTOR_STATE.concept || '').trim() || '—';
-    // Aplicar regla para concepto antes de derivar frase.
-    const conceptNoNarrative = _stripBibleNarrativeFromConcept(concept);
-    mainText = typeof _resolveSharedCopy === 'function'
-      ? _resolveSharedCopy(conceptNoNarrative, MOTOR_STATE.market)
-      : '';
-  }
-
-  return mainText;
-}
-
-  /* ------------------------------------------------------------- */
-  /* FIX GOSPEL ES PROMPT — Reglas corregidas según Correction Order 2026-11-13 */
-  if (MOTOR_STATE.market === 'gospel_es') {
-    /* 1. Regla unificada para mensaje vacío: nunca "no imprimir texto" + frase inventada */
-    const hasUserMessage = String(MOTOR_STATE.message || '').trim();
-    const isOnlyText = set.A && set.A.jerarquiaVisual === 'SOLO_TEXTO';
-    const baseConcept = String(MOTOR_STATE.concept || '').trim() || '—';
-
-    /* Regla de texto principal: misma frase para A/B/C, nunca inventada. */
-    let mainText = '';
-    if (hasUserMessage) {
-      mainText = hasUserMessage;
-    } else if (!isOnlyText) {
-      /* Aplicar limpieza de narrativa bíblica */
-      const cleanConcept = baseConcept.toLowerCase().includes('emaús') || baseConcept.toLowerCase().includes('camino a emaus')
-        ? baseConcept.replace(/camino a emaus/gi, 'esperanza en medio de la tormenta')
-        : baseConcept;
-      mainText = typeof _resolveSharedCopy === 'function'
-        ? _resolveSharedCopy(cleanConcept, MOTOR_STATE.market)
-        : '';
-    }
-
-    /* Reemplazar todas las referencias de texto por el texto principal unificado.
-       Mantener solo las jerarquías de peso visual, pero usar la misma frase para A/B/C. */
-    for (var k in set) {
-      if (set.hasOwnProperty(k)) {
-        const v = set[k];
-        /* Reemplazar campos de texto por el texto principal derivado */
-        if (!isVar && contactDNA) {
-          if (k === 'A' || k === 'B' || k === 'C') {
-            set[k].textoPrincipal = mainText;
-            set[k].textoApoyo = '';
-            set[k].textoTerciario = '';
-          }
-        }
-      }
-    }
-
-    /* 2. Separar reglas de mockup comercial de reglas de arte */
-    if (mockupRule) {
-      o += mockupRule;  // mockupRule ya usa _mockupRuleNoHumanFigures
-    }
-
-    /* 3. Prohibir transformación bíblica de conceptos */
-    const forbiddenNarrativeTerms = ['camino a emaus', 'emaús', 'discípulo', 'jesús', 'maría', 'pablo'];
-    const conceptLower = baseConcept.toLowerCase();
-    const hasForbiddenNarrative = forbiddenNarrativeTerms.some(term => conceptLower.includes(term));
-    if (hasForbiddenNarrative) {
-      o += 'CONCEPTO: ' + baseConcept + ' (prohibido convertir en narrativa bíblica como camino a Emaús)\n';
-    } else {
-      o += 'CONCEPTO: ' + baseConcept + '\n';
-    }
-
-    /* 4. Mantener el idioma del mercado: español */
-    if (langDir && langDir.toLowerCase().includes('spanish') || !langDir) {
-      o += 'IDIOMA: español natural\n';
-    }
-
-    /* 5. Eliminar contradicciones sobre impresión de texto */
-    o += 'TEXTOS: ' + (hasUserMessage
-      ? 'conservar literalmente el mensaje proporcionado: "' + mainText + '"'
-      : isOnlyText
-        ? 'campo vacío; no se permite el copy'
-        : 'frase derivada del concepto: "' + mainText + '" (misma para las tres direcciones)')
-      + '. La frase no autoriza por sí sola a introducir objetos ni alterar el concepto.\n';
-
-    /* 6. Aplicar regla de arte vs mockup */
-    o += 'REGLAS DEL ARTE ESTAMPADO (solo el diseño impreso; NO aplica al mockup): ';
-    o += 'CONTROL DE ELEMENTOS: no añadir elementos narrativos fuera de este objeto/concepto; si un detalle no está nombrado, omitirlo. Prohibido añadir manos/brazos/personas salvo que el concepto las nombre explícitamente. Esta prohibición se refiere exclusivamente al ARTE ESTAMPADO, no al modelo del mockup comercial.\n';
-  }
 
   // Restore the escHtml function that was accidentally removed
   function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
