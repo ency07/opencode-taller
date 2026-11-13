@@ -84,7 +84,7 @@ ok(/SOLO_TEXTO NO SIGNIFICA SIMPLE/.test(motor), 'SOLO_TEXTO debe ser tipográfi
 ok(/las letras como forma visual principal mediante escala, ritmo, composición/.test(motor), 'el arte tipográfico debe usar recursos compositivos expresivos sin añadir ilustraciones');
 // Esto evita que una composición textual aleatoria contradiga TEXTO_DOMINANTE,
 // OBJETO_DOMINANTE, BALANCEADO o SOLO_TEXTO.
-ok(/const hierarchyDirective = missingGospelCopy[\s\S]{0,500}JERARQUÍA: ' \+ hierarchyDirective/.test(motor), 'cada ficha debe emitir su bloque compacto de jerarquía');
+ok(/const hierarchyDirective = missingGospelCopy[\s\S]*?o \+= 'JERARQUÍA: ' \+ hierarchyDirective/.test(motor), 'cada ficha debe emitir su bloque compacto de jerarquía');
 ok(!/JERARQUÍA OBLIGATORIA:/.test(motor) && !/ORDEN VISUAL: texto primero/.test(motor) && !/ORDEN VISUAL: árbol y persona primero/.test(motor), 'no deben sobrevivir bloques de jerarquía duplicados');
 ok(motor.includes('El COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible') && motor.includes('el copy literal es la primera lectura'), 'TEXTO_DOMINANTE debe fijar el texto en 70–80% del área total');
 ok(motor.includes('Texto y símbolo forman una sola composición integrada, no dos bloques separados') && motor.includes('El símbolo aporta como máximo 20–30% del peso visual'), 'TEXTO_DOMINANTE debe mantener toda la escena subordinada al texto');
@@ -105,9 +105,9 @@ ok(motor.includes("TEXTO_DOMINANTE: 'TEXTO_DOMINANTE:") && motor.includes("OBJET
 ok(!/ORDEN VISUAL:/.test(motor), 'no deben existir bloques secundarios redundantes de orden visual');
 ok(!/JERARQUÍA OBLIGATORIA:/.test(motor), 'no debe sobrevivir el bloque duplicado de jerarquía obligatoria');
 ok(/if \(!missingGospelCopy && v\.jerarquiaVisual === 'BALANCEADO'\) \{[\s\S]{0,220}COMPOSICIÓN BALANCEADA:/.test(motor), 'los layouts originales solo deben imprimirse para BALANCEADO cuando hay copy autorizado');
-ok(/if \(!missingGospelCopy && v\.jerarquiaVisual === 'BALANCEADO'\) \{[\s\S]{0,260}COMPOSICIÓN BALANCEADA:[\s\S]{0,240}INTEGRACIÓN DE LA FICHA:/.test(motor), 'el layout seleccionado solo se añade si no contradice jerarquía estricta y existe copy autorizado');
+ok(/if \(!missingGospelCopy && v\.jerarquiaVisual === 'BALANCEADO'\) \{[\s\S]{0,900}COMPOSICIÓN BALANCEADA:[\s\S]{0,500}INTEGRACIÓN DE LA FICHA:/.test(motor), 'el layout seleccionado solo se añade si no contradice jerarquía estricta y existe copy autorizado');
 const promptBuilder = motor.slice(motor.indexOf('function formatPrompt('), motor.indexOf('/* --- Renderizado de fichas en el DOM --- */'));
-ok(/if \(v\.jerarquiaVisual === 'TEXTO_DOMINANTE'\) \{[\s\S]{0,700}INTEGRACIÓN TEXTO-SÍMBOLO: si el concepto nombra un objeto físico/.test(promptBuilder), 'TEXTO_DOMINANTE debe construir integración a partir del objeto real del concepto');
+ok(/if \(!missingGospelCopy && v\.jerarquiaVisual === 'TEXTO_DOMINANTE'\) \{[\s\S]{0,700}INTEGRACIÓN TEXTO-SÍMBOLO: si el concepto nombra un objeto físico/.test(promptBuilder), 'TEXTO_DOMINANTE debe construir integración a partir del objeto real del concepto');
 ok(promptBuilder.includes('Si el elemento autorizado es físico, intégralo con su forma y acción reales') && promptBuilder.includes('si el concepto es abstracto, no lo conviertas en objeto'), 'TEXTO_DOMINANTE no debe imponer metáforas de integración incompatibles con el objeto');
 ok(promptBuilder.includes('El texto exacto ocupa 70–80% del área y es la primera lectura') && promptBuilder.includes('el símbolo o recurso abstracto ocupa como máximo 20–30%') && promptBuilder.includes('no lo materialices ni fuerces una interacción física'), 'la integración debe conservar la proporción y subordinación del símbolo');
 ok(!/\\\\n/.test(promptBuilder), 'formatPrompt no debe emitir secuencias literales \\n en el prompt');
@@ -128,7 +128,7 @@ const textDominantDirective = motor.slice(motor.indexOf("TEXTO_DOMINANTE: el cop
 ok(textDominantDirective.includes("ocupa visualmente 70–80%") && textDominantDirective.includes("objeto autorizado queda subordinado en 20–30%"), "TEXTO_DOMINANTE debe imponer proporciones visibles de texto y símbolo");
 ok(textDominantDirective.includes('Si el elemento autorizado es físico, intégralo con su forma y acción reales') && textDominantDirective.includes('si el concepto es abstracto, no lo conviertas en objeto'), "TEXTO_DOMINANTE debe integrar el objeto autorizado de forma plausible");
 ok(textDominantDirective.includes("sin regresar al esquema automático ilustración arriba/texto abajo"), "TEXTO_DOMINANTE debe prohibir la composición genérica de ilustración arriba y texto abajo");
-ok(textDominantDirective.includes("conserva todas las palabras exactas y legibles"), "TEXTO_DOMINANTE debe conservar el copy literal legible");
+ok(textDominantDirective.includes("Conserva todas las palabras exactas y legibles"), "TEXTO_DOMINANTE debe conservar el copy literal legible");
 
 /* La arquitectura debe llegar a las jerarquías estrictas como ubicación adaptada,
    nunca como una orden que cambie proporciones o añada objetos. */
@@ -136,8 +136,8 @@ ok(motor.includes('function _compatibleCompositionDirective(hierarchy, architect
 ok(motor.includes("return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; convierte ubicación y módulos en una sola silueta tipográfica-simbólica integrada"), 'TEXTO_DOMINANTE debe conservar la proporción al adaptar la ubicación');
 ok(motor.includes("return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; el símbolo autorizado conserva 70–80% del área"), 'OBJETO_DOMINANTE debe conservar la proporción al adaptar la ubicación');
 ok(motor.includes('sin añadir cinta ni objeto físico') && motor.includes('No añadas cintas, marcos, bandas, emblemas ni objetos'), 'la arquitectura debe traducirse a ubicación y no exigir objetos decorativos');
-ok(motor.includes("else if (v.jerarquiaVisual === 'TEXTO_DOMINANTE' || v.jerarquiaVisual === 'OBJETO_DOMINANTE')") && motor.includes('_compatibleCompositionDirective(v.jerarquiaVisual, v.distribucionTexto)'), 'solo TEXTO_DOMINANTE y OBJETO_DOMINANTE deben recibir la arquitectura adaptada');
-ok(motor.includes("if (v.jerarquiaVisual === 'BALANCEADO')") && motor.includes("'COMPOSICIÓN BALANCEADA: arquitectura dominante = LAYOUT (' + v.layout"), 'BALANCEADO debe conservar su composición con proporciones estrictas');
+ok(motor.includes("else if (!missingGospelCopy && (v.jerarquiaVisual === 'TEXTO_DOMINANTE' || v.jerarquiaVisual === 'OBJETO_DOMINANTE'))") && motor.includes('_compatibleCompositionDirective(v.jerarquiaVisual, v.distribucionTexto)'), 'solo TEXTO_DOMINANTE y OBJETO_DOMINANTE deben recibir la arquitectura adaptada');
+ok(motor.includes("if (!missingGospelCopy && v.jerarquiaVisual === 'BALANCEADO')") && motor.includes("'COMPOSICIÓN BALANCEADA: arquitectura dominante = LAYOUT (' + v.layout"), 'BALANCEADO debe conservar su composición con proporciones estrictas');
 ok(motor.includes("texto y símbolo tienen igual importancia y ocupan cada uno 45–55%") && motor.includes("ninguno puede quedar como adorno secundario"), 'BALANCEADO debe fijar dos protagonistas visuales con peso equivalente');
 ok(motor.includes("'). El bloque tipográfico (' + v.distribucionTexto + ') se ejecuta DENTRO de esa ubicación") && motor.includes("si sugiere una posición distinta, prevalece el LAYOUT"), 'BALANCEADO debe adaptar layout y arquitectura sin alterar la proporción');
 ok(motor.includes("evita dos bloques desconectados") && motor.includes("unidad compositiva"), 'BALANCEADO debe integrar texto y símbolo en una unidad compositiva');
