@@ -1,8 +1,8 @@
-/* FIX 3B — promptDirective en los 10 territorios + compatibilidad con
+/* FIX 3B — promptDirective en los 10 territorios Gospel + compatibilidad con
    _resolveTerritoryDirective().
 
    Verifica:
-   - Los 10 territorios declaran promptDirective (instrucción concreta).
+   - Los 10 territorios Gospel declaran promptDirective (instrucción concreta); el catálogo puede contener territorios adicionales.
    - La directriz aparece en la directiva resuelta por el motor.
    - 'auto' no inyecta directriz.
    - La directriz no duplica la descripción.
@@ -40,7 +40,7 @@ const TERR_IDS = [
 
 /* ---------- 1. Los 10 territorios existen y declaran promptDirective ---------- */
 const TERR = (typeof POD_CREATIVE_TERRITORIES !== 'undefined') ? POD_CREATIVE_TERRITORIES : {};
-ok(Object.keys(TERR).length === 10, 'el catálogo debe tener 10 territorios (dio ' + Object.keys(TERR).length + ')');
+ok(Object.keys(TERR).length >= TERR_IDS.length, 'el catálogo debe contener los 10 territorios Gospel requeridos y puede incluir otros (dio ' + Object.keys(TERR).length + ')');
 
 TERR_IDS.forEach(function (id) {
   const rec = TERR[id];
