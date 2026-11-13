@@ -3836,18 +3836,18 @@ function formatPrompt(result) {
     }[v.jerarquiaVisual] || '');
     o += 'JERARQUÍA: ' + hierarchyDirective + '\n';
     o += 'LAYOUT (ubicación): ' + v.layout + '. El layout rige dónde se ubica cada elemento y dónde respira el vacío; no cambia tamaño, área ni jerarquía.\n';
-    if (v.jerarquiaVisual === 'BALANCEADO') {
+    if (!missingGospelCopy && v.jerarquiaVisual === 'BALANCEADO') {
       // COMPOSICIÓN: el layout manda la ubicación; la arquitectura textual se adapta
       o += 'COMPOSICIÓN BALANCEADA: arquitectura dominante = LAYOUT (' + v.layout + '). El bloque tipográfico (' + v.distribucionTexto + ') se ejecuta DENTRO de esa ubicación; si sugiere una posición distinta, prevalece el LAYOUT. La arquitectura nunca cambia la proporción.\n';
       o += 'INTEGRACIÓN DE LA FICHA: ' + v.integracionTexto + '\n';
     }
-    else if (v.jerarquiaVisual === 'TEXTO_DOMINANTE' || v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
+    else if (!missingGospelCopy && (v.jerarquiaVisual === 'TEXTO_DOMINANTE' || v.jerarquiaVisual === 'OBJETO_DOMINANTE')) {
       o += _compatibleCompositionDirective(v.jerarquiaVisual, v.distribucionTexto) + '\n';
     }
-    if (v.jerarquiaVisual === 'TEXTO_DOMINANTE') {
+    if (!missingGospelCopy && v.jerarquiaVisual === 'TEXTO_DOMINANTE') {
       o += 'INTEGRACIÓN TEXTO-SÍMBOLO: integra el objeto descrito en el concepto ("' + v.objeto + '") en el lettering usando su forma física y acción reales; elige una unión visual clara y natural, sin imponer metáforas genéricas ni partes que el objeto no posee. El texto exacto ocupa 70–80% del área y es la primera lectura; el símbolo ocupa como máximo 20–30%, queda integrado y nunca aparece como ilustración separada. La arquitectura cambia ubicación, no proporción. Si la integración elegida no es viable con la forma real del objeto, conserva el área de la jerarquía y une texto y objeto por solapamiento simple; no bloquees la lectura.\n';
     }
-    if (v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
+    if (!missingGospelCopy && v.jerarquiaVisual === 'OBJETO_DOMINANTE') {
       o += 'TEXTO SUBORDINADO: el copy ocupa como máximo 20–30% en la zona que le asigne el layout; prohibido lettering gigante que compita con el símbolo. Si al mirar el arte el texto domina, encogerlo hasta que el objeto autorizado mande a primera vista.\n';
     }
     if (v.jerarquiaVisual === 'SOLO_TEXTO') {
