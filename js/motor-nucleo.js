@@ -3476,7 +3476,7 @@ function formatPrompt(result) {
   /* Copy compartido. Gospel ES no recurre a frases de banco cuando falta
      concepto: solo deriva una frase del concepto explícito y la fija una vez. */
   const gospelESCopy = isGospelES
-    ? _resolveGospelESCopy(MOTOR_STATE.message, MOTOR_STATE.concept, MOTOR_STATE.allowAutoCopy !== false)
+    ? _resolveGospelESCopy(MOTOR_STATE.message, promptConcept, MOTOR_STATE.allowAutoCopy !== false)
     : null;
   const sharedDerivedCopy = !typedMessage
     ? (isGospelES ? gospelESCopy.text : _resolveSharedCopy(promptConcept, MOTOR_STATE.market))
