@@ -83,7 +83,7 @@ ok(out.indexOf('No agrupar ni omitir vistas') === -1, 'Fix3: sobrevive el imposi
 
 /* Fix 4: sin duplicados */
 ok(count(out, 'JERARQUÍA: aplica exactamente la jerarquía indicada en cada ficha') === 1, 'Fix4: JERARQUÍA general duplicada');
-ok(count(out, 'TEXTO_DOMINANTE: el COPY TIPOGRÁFICO ocupa') === 1, 'Fix4: directiva TEXTO triplicada');
+ok(count(out, 'TEXTO_DOMINANTE: el copy literal es la primera lectura') === 1, 'Fix4: directiva TEXTO emitida una sola vez en la ficha correspondiente');
 ok(count(out, 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha') === 1, 'Fix4: directiva OBJETO triplicada');
 
 /* Fix 5: recap fija el mapeo ficha→jerarquía */
@@ -143,14 +143,15 @@ const outContact = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO
 ok(outContact.indexOf('COPY PROPUESTO: escribir frase') === -1, 'contacto sin mensaje: no debe delegar inventar');
 ok(count(outContact, '«Cruz y roca firme»') >= 3, 'contacto sin mensaje: literal derivado en las 3 fichas');
 
-/* Vacío total: el banco solo cubre la ausencia de concepto y brief */
+/* Vacío total en mercado secular: no inventar copy si no hay concepto ni mensaje. */
 MOTOR_STATE.workflowMode = 'explore';
 MOTOR_STATE.message = '';
 MOTOR_STATE.concept = '';
 MOTOR_STATE.explorationBrief = { concept: '', familyId: null, familyLabel: 'x' };
 const outVacio = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') } });
 const litsVacio = outVacio.match(/COPY LITERAL COMPARTIDO A\/B\/C \(propuesto por el motor\): «([^»]+)»/g) || [];
-ok(litsVacio.length === 3 && new Set(litsVacio).size === 1, 'vacío total: el banco da literal idéntico como último recurso');
+ok(litsVacio.length === 0, 'vacío total secular: no debe inventar un literal de banco');
+ok(outVacio.indexOf('SIN COPY AUTORIZADO') !== -1, 'vacío total secular: el prompt debe bloquear texto no autorizado');
 
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  prompt-fixes  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
