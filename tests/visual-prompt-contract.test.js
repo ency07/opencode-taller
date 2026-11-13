@@ -25,7 +25,7 @@ ok(promptBuilderIndex >= 0 && motor.indexOf('_soloTextCompositionDirective(v.dis
 ok(/if \(v\.jerarquiaVisual === 'SOLO_TEXTO'\) \{[\s\S]{0,260}composición tipográfica pura[\s\S]{0,600}\} else if \(contactIdentity\)/.test(motor), 'SOLO_TEXTO debe prevalecer sobre la identidad de símbolo bloqueada en el set');
 ok(/const hasSoloText = K\.some\([\s\S]{0,180}el símbolo se conserva solo en las tarjetas cuya jerarquía admite objeto/.test(motor), 'el ADN global no debe contradecir SOLO_TEXTO cuando coexiste con otras jerarquías');
 ok(/if \(contactDNA && v\.jerarquiaVisual !== 'SOLO_TEXTO'\) o \+= 'FUNCIÓN CONSTANTE/.test(motor), 'SOLO_TEXTO no debe recibir instrucciones funcionales de un símbolo');
-const assignBody = motor.slice(motor.indexOf('function _assignTextCompositions()'), motor.indexOf('function buildCandidate('));
+const assignBody = motor.slice(motor.indexOf('function _assignTextCompositions()'), motor.indexOf('/* P1 (desconexión prompt):', motor.indexOf('function _assignTextCompositions()')));
 ok(assignBody.includes('_TEXT_COMPOSITION_BANK.slice()') && assignBody.includes('_pickWeighted(remaining, weights)') && assignBody.indexOf('jerarquiaVisual') === -1 && assignBody.indexOf('.tratamiento') === -1, 'la asignación de arquitecturas debe seguir siendo aleatoria (ponderada) e independiente de la jerarquía');
 ok((motor.match(/const _TEXT_COMPOSITION_BANK = \[/g) || []).length === 1 && (motor.slice(motor.indexOf('const _TEXT_COMPOSITION_BANK = ['), motor.indexOf('function _soloTextCompositionDirective')).match(/^  '/gm) || []).length === 20, 'el banco conserva las 20 arquitecturas sin fijarlas a una tarjeta');
 
@@ -84,7 +84,7 @@ ok(/SOLO_TEXTO NO SIGNIFICA SIMPLE/.test(motor), 'SOLO_TEXTO debe ser tipográfi
 ok(/las letras como forma visual principal mediante escala, ritmo, composición/.test(motor), 'el arte tipográfico debe usar recursos compositivos expresivos sin añadir ilustraciones');
 // Esto evita que una composición textual aleatoria contradiga TEXTO_DOMINANTE,
 // OBJETO_DOMINANTE, BALANCEADO o SOLO_TEXTO.
-ok(/const hierarchyDirective = \{/.test(motor) && /o \+= 'JERARQUÍA: ' \+ hierarchyDirective/.test(motor), 'cada ficha debe emitir su bloque compacto de jerarquía');
+ok(/const hierarchyDirective = missingGospelCopy[\s\S]{0,500}JERARQUÍA: ' \+ hierarchyDirective/.test(motor), 'cada ficha debe emitir su bloque compacto de jerarquía');
 ok(!/JERARQUÍA OBLIGATORIA:/.test(motor) && !/ORDEN VISUAL: texto primero/.test(motor) && !/ORDEN VISUAL: árbol y persona primero/.test(motor), 'no deben sobrevivir bloques de jerarquía duplicados');
 ok(motor.includes('El COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible') && motor.includes('el copy literal es la primera lectura'), 'TEXTO_DOMINANTE debe fijar el texto en 70–80% del área total');
 ok(motor.includes('Texto y símbolo forman una sola composición integrada, no dos bloques separados') && motor.includes('El símbolo aporta como máximo 20–30% del peso visual'), 'TEXTO_DOMINANTE debe mantener toda la escena subordinada al texto');
@@ -104,8 +104,8 @@ ok(motor.includes("TEXTO_DOMINANTE: 'TEXTO_DOMINANTE:") && motor.includes("OBJET
 
 ok(!/ORDEN VISUAL:/.test(motor), 'no deben existir bloques secundarios redundantes de orden visual');
 ok(!/JERARQUÍA OBLIGATORIA:/.test(motor), 'no debe sobrevivir el bloque duplicado de jerarquía obligatoria');
-ok(/if \(v\.jerarquiaVisual === 'BALANCEADO'\) \{[\s\S]{0,180}COMPOSICIÓN:/.test(motor), 'los layouts originales solo deben imprimirse para BALANCEADO');
-ok(/if \(v\.jerarquiaVisual === 'BALANCEADO'\) \{[\s\S]{0,180}COMPOSICIÓN:/.test(motor), 'el layout seleccionado solo se añade si no contradice jerarquía estricta');
+ok(/if \(!missingGospelCopy && v\.jerarquiaVisual === 'BALANCEADO'\) \{[\s\S]{0,220}COMPOSICIÓN BALANCEADA:/.test(motor), 'los layouts originales solo deben imprimirse para BALANCEADO cuando hay copy autorizado');
+ok(/if \(!missingGospelCopy && v\.jerarquiaVisual === 'BALANCEADO'\) \{[\s\S]{0,260}COMPOSICIÓN BALANCEADA:[\s\S]{0,240}INTEGRACIÓN DE LA FICHA:/.test(motor), 'el layout seleccionado solo se añade si no contradice jerarquía estricta y existe copy autorizado');
 const promptBuilder = motor.slice(motor.indexOf('function formatPrompt('), motor.indexOf('/* --- Renderizado de fichas en el DOM --- */'));
 ok(/if \(v\.jerarquiaVisual === 'TEXTO_DOMINANTE'\) \{[\s\S]{0,700}INTEGRACIÓN TEXTO-SÍMBOLO: si el concepto nombra un objeto físico/.test(promptBuilder), 'TEXTO_DOMINANTE debe construir integración a partir del objeto real del concepto');
 ok(promptBuilder.includes('Si el elemento autorizado es físico, intégralo con su forma y acción reales') && promptBuilder.includes('si el concepto es abstracto, no lo conviertas en objeto'), 'TEXTO_DOMINANTE no debe imponer metáforas de integración incompatibles con el objeto');
