@@ -1024,6 +1024,19 @@ const AUD_STYLE_PREF = {
   gospel_family_faith: ["Folk Popular", "Kids Storybook", "Hand-Drawn", "Vitral / Mosaico", "Acuarela Suelta", "Bohemian", "Bordado / Puntada", "Collage Cut-Paper"]
 };
 
+
+/* Ampliación de preferencias para los 19 estilos visuales nuevos. */
+AUD_STYLE_PREF.coste_joven_m = (AUD_STYLE_PREF.coste_joven_m || []).concat(["Neón punk","Cómic grunge","Pop art"]);
+AUD_STYLE_PREF.global_young_en = (AUD_STYLE_PREF.global_young_en || []).concat(["Neón punk","Neoexpresionismo","Pop art"]);
+AUD_STYLE_PREF.global_adult_en = (AUD_STYLE_PREF.global_adult_en || []).concat(["Noir gráfico","Constructivismo","Art déco","Bauhaus","Línea art de una tinta","Blanco y negro"]);
+AUD_STYLE_PREF.global_adulto_es = (AUD_STYLE_PREF.global_adulto_es || []).concat(["Noir gráfico","Art déco","Pintura al óleo","Línea art de una tinta","Blanco y negro"]);
+AUD_STYLE_PREF.global_family_en = (AUD_STYLE_PREF.global_family_en || []).concat(["Superflat","Cartoon moderno","Cartoon retro"]);
+AUD_STYLE_PREF.global_familia_es = (AUD_STYLE_PREF.global_familia_es || []).concat(["Line art minimalista","Línea a dos tintas"]);
+AUD_STYLE_PREF.infantil_col = (AUD_STYLE_PREF.infantil_col || []).concat(["Caricatura","Cartoon moderno","Cartoon retro","Doodle a dos colores"]);
+AUD_STYLE_PREF.coste_joven_f = (AUD_STYLE_PREF.coste_joven_f || []).concat(["Doodle a dos colores","Pop art"]);
+AUD_STYLE_PREF.andino_adulto_m = (AUD_STYLE_PREF.andino_adulto_m || []).concat(["Pintura al óleo","Constructivismo"]);
+AUD_STYLE_PREF.unisex_nacional = (AUD_STYLE_PREF.unisex_nacional || []).concat(["Flat geométrico","Bauhaus"]);
+
 const AUD_LAYOUT_PREF = {
   coste_joven_m: [
     "Diagonal descendente",

@@ -1187,6 +1187,58 @@ const STYLE_TIPO_PREF = {
   "Deportiva / Sports": ["Rounded amable", "Custom modular geométrica", "Script de pluma", "Grotesca black condensada"]
 };
 
+
+/* Metadatos completos para los estilos visuales incorporados al catálogo.
+   Mantiene cada estilo seleccionable y con dirección, color y tipografía propios. */
+const _NEW_STYLE_META = {"Neón punk":{"c":["neón / cyber","noche / contraste","industrial"],"t":["Grotesca black condensada","Stencil de plantilla","Mono técnica","Custom modular geométrica"]},"Cómic grunge":{"c":["noche / contraste","retro vibrante","tinta / ritual"],"t":["Grotesca black condensada","Slab pesada de oficio","Stencil de plantilla","Custom modular geométrica"]},"Noir gráfico":{"c":["noche / contraste","mínimo frío","tinta / ritual"],"t":["Serif moderna alto contraste","Mono técnica","Grotesca black condensada","Sans humanista limpia"]},"Superflat":{"c":["retro vibrante","mínimo frío","papel / suave"],"t":["Sans humanista limpia","Rounded amable","Custom modular geométrica","Grotesca black condensada"]},"Neoexpresionismo":{"c":["retro vibrante","tierra cálida","tinta / ritual"],"t":["Display caligráfica expresiva","Manuscrita de cuaderno","Slab pesada de oficio","Sans humanista limpia"]},"Cartoon moderno":{"c":["retro vibrante","papel / suave","neón / cyber"],"t":["Rounded amable","Sans humanista limpia","Grotesca black condensada","Custom modular geométrica"]},"Constructivismo":{"c":["industrial","noche / contraste","retro vibrante"],"t":["Grotesca black condensada","Mono técnica","Custom modular geométrica","Stencil de plantilla"]},"Caricatura":{"c":["retro vibrante","papel / suave","tierra cálida"],"t":["Rounded amable","Grotesca black condensada","Manuscrita de cuaderno","Slab pesada de oficio"]},"Art déco":{"c":["dorado / premium","noche / contraste","mínimo frío"],"t":["Serif clásica titulada","Serif moderna alto contraste","Grotesca black condensada","Itálica solemne"]},"Bauhaus":{"c":["retro vibrante","mínimo frío","industrial"],"t":["Sans humanista limpia","Custom modular geométrica","Mono técnica","Grotesca black condensada"]},"Line art minimalista":{"c":["mínimo frío","papel / suave","tinta / ritual"],"t":["Sans humanista limpia","Mono técnica","Serif moderna alto contraste","Itálica solemne"]},"Pop art":{"c":["retro vibrante","neón / cyber","noche / contraste"],"t":["Grotesca black condensada","Rounded amable","Slab pesada de oficio","Custom modular geométrica"]},"Pintura al óleo":{"c":["tierra cálida","dorado / premium","tinta / ritual"],"t":["Serif clásica titulada","Serif moderna alto contraste","Display caligráfica expresiva","Itálica solemne"]},"Cartoon retro":{"c":["retro vibrante","tierra cálida","papel / suave"],"t":["Rounded amable","Slab pesada de oficio","Grotesca black condensada","Script de pluma"]},"Flat geométrico":{"c":["mínimo frío","retro vibrante","noche / contraste"],"t":["Custom modular geométrica","Sans humanista limpia","Grotesca black condensada","Mono técnica"]},"Doodle a dos colores":{"c":["retro vibrante","papel / suave","neón / cyber"],"t":["Manuscrita de cuaderno","Rounded amable","Sans humanista limpia","Custom modular geométrica"]},"Línea a dos tintas":{"c":["mínimo frío","papel / suave","retro vibrante"],"t":["Sans humanista limpia","Mono técnica","Serif moderna alto contraste","Custom modular geométrica"]},"Línea art de una tinta":{"c":["tinta / ritual","mínimo frío","papel / suave"],"t":["Sans humanista limpia","Mono técnica","Serif moderna alto contraste","Manuscrita de cuaderno"]},"Blanco y negro":{"c":["noche / contraste","tinta / ritual","mínimo frío"],"t":["Grotesca black condensada","Serif clásica titulada","Mono técnica","Sans humanista limpia"]}};
+Object.keys(_NEW_STYLE_META).forEach(function (style) {
+  const meta = _NEW_STYLE_META[style];
+  if (!STYLE_POOLS[style]) {
+    const descriptor = ESTILO_INFO[style] || style;
+    STYLE_POOLS[style] = {
+      arquitectura: [
+        'composición de ' + style + ' con foco único y jerarquía clara',
+        'panel de ' + style + ' con eje asimétrico y espacio negativo',
+        'emblema de ' + style + ' con silueta compacta y lectura frontal',
+        'retícula de ' + style + ' con bloques visuales de distinto peso'
+      ],
+      composicion: [
+        'contraste de masas según el lenguaje ' + style,
+        'estructura modular con un punto focal dominante',
+        'asimetría controlada y vacío activo',
+        'superposición selectiva con lectura clara'
+      ],
+      textoPrincipal: [
+        'título interpretado con recursos propios de ' + style,
+        'palabra clave integrada en la estructura visual de ' + style,
+        'copy en bloque con ritmo característico de ' + style,
+        'lettering construido con la lógica formal de ' + style
+      ],
+      textoApoyo: [
+        'segundo nivel en franja independiente, ancho y legible',
+        'frase de apoyo alineada con el eje principal y sin microtexto',
+        'texto secundario con contraste suficiente y espacio propio',
+        'línea de fundamento subordinada sin perder legibilidad'
+      ],
+      textoTerciario: [
+        'dato editorial breve en una zona secundaria legible',
+        'firma textual solo si fue solicitada, con tamaño de lectura',
+        'tercer nivel separado del foco y sin competir',
+        'referencia de serie en tipografía clara y contenida'
+      ],
+      tecnica: [descriptor, style + ' con contornos definidos', style + ' con contraste controlado', style + ' aplicado con jerarquía tipográfica'],
+      relacion: [
+        'el símbolo y el copy comparten la lógica visual de ' + style,
+        'el texto refuerza el foco sin competir con el símbolo',
+        'la estructura visual conduce la lectura hacia el mensaje',
+        'la técnica de ' + style + ' sirve al concepto, no lo sustituye'
+      ]
+    };
+  }
+  if (!STYLE_COLOR_PREF[style]) STYLE_COLOR_PREF[style] = meta.c;
+  if (!STYLE_TIPO_PREF[style]) STYLE_TIPO_PREF[style] = meta.t;
+});
+
 /* Compatibilidad global */
 window.ESTILO_INFO = ESTILO_INFO;
 window.ESTILOS_LIST = ESTILOS_LIST;
