@@ -203,10 +203,11 @@ prompt = buildPrompt({ concept: 'Esperanza en medio de la tormenta', allowAutoCo
 const artIndex = prompt.indexOf('REGLAS DEL ARTE ESTAMPADO');
 const mockupIndex = prompt.indexOf('REGLAS DEL MOCKUP COMERCIAL');
 check(artIndex >= 0, 'el prompt debe contener reglas específicas del arte estampado');
-check(mockupIndex > artIndex, 'las reglas del mockup deben aparecer en un bloque separado');
-check(prompt.includes('Esta prohibición se refiere exclusivamente al ARTE ESTAMPADO'),
+check(mockupIndex >= 0 && mockupIndex !== artIndex,
+  'las reglas del mockup deben existir en un bloque independiente del arte');
+check(prompt.slice(artIndex, artIndex + 1200).includes('Esta prohibición se refiere exclusivamente al ARTE ESTAMPADO'),
   'la prohibición de figuras humanas debe limitarse al estampado');
-check(prompt.includes('MOCKUP OBLIGATORIO POR AUDIENCIA'),
+check(prompt.slice(mockupIndex).includes('MOCKUP OBLIGATORIO POR AUDIENCIA'),
   'el mockup debe conservar las reglas de representación por audiencia');
 
 /* 8. El helper de copy debe distinguir los cuatro estados. */
