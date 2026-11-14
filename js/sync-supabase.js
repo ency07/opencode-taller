@@ -124,6 +124,16 @@
     }
   }
 
+  /* Timestamp estrictamente posterior al de la lectura. PostgREST compara
+     updated_at como token CAS; Date.now() puede repetir el mismo milisegundo
+     y dejar que dos escrituras concurrentes coincidan con el mismo token. */
+  function nextSyncTimestamp(previous, nowMs) {
+    var now = Number.isFinite(nowMs) ? nowMs : Date.now();
+    var previousMs = Date.parse(previous);
+    if (Number.isFinite(previousMs)) now = Math.max(now, previousMs + 1);
+    return new Date(now).toISOString();
+  }
+
   /* --- Sincronización y fusión --- */
   async function mergeAndSync(onStatus) {
     var status = onStatus || function () { };
@@ -158,7 +168,7 @@
     var nextRow = {
       user_id: user.id,
       payload: merged,
-      updated_at: new Date().toISOString()
+      updated_at: nextSyncTimestamp(q.data && q.data.updated_at)
     };
     var up;
 
