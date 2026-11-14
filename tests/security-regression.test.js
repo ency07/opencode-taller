@@ -13,6 +13,7 @@ const reviewer = fs.readFileSync(path.join(ROOT, 'js/ia-revisor.js'), 'utf8');
 const client = fs.readFileSync(path.join(ROOT, 'js/ia-client.js'), 'utf8');
 const copy = fs.readFileSync(path.join(ROOT, 'js/copy-ia.js'), 'utf8');
 const bankTool = fs.readFileSync(path.join(ROOT, 'herramienta-bancos.html'), 'utf8');
+const promptBuilder = fs.readFileSync(path.join(ROOT, 'constructor-prompt.html'), 'utf8');
 
 ok(/function tell\(msg\)[\s\S]*?statusEl\.textContent/.test(analysis), 'analysis status must render plain text');
 ok(!/function tell\(msg\)[\s\S]*?statusEl\.innerHTML\s*=\s*msg/.test(analysis), 'analysis tell must not insert arbitrary message as HTML');
@@ -33,6 +34,10 @@ ok(/ui\.region\.innerHTML[\s\S]*?escHtml\(r\.id\)[\s\S]*?escHtml\(r\.label/.test
 ok(/ui\.familia\.innerHTML[\s\S]*?escHtml\(f\.id\)[\s\S]*?escHtml\(f\.nombre\)/.test(bankTool), 'family options must escape values and labels');
 ok(/ui\.audiencia\.innerHTML[\s\S]*?escHtml\(id\)[\s\S]*?escHtml\(audLabel\(id\)\)/.test(bankTool), 'audience options must escape values and labels');
 ok(/ui\.chips\.innerHTML[\s\S]*?escHtml\(t\)/.test(bankTool), 'market/family chips must escape dynamic text');
+ok(/const mercado = escapeHtml\(h && h\.mercado\)/.test(promptBuilder), 'prompt history market must be escaped before HTML rendering');
+ok(/const fecha = escapeHtml\(h && h\.fecha\)/.test(promptBuilder), 'prompt history date must be escaped before HTML rendering');
+ok(/const safeId = Number\.isSafeInteger\(Number\(h && h\.id\)\)/.test(promptBuilder), 'persisted history IDs must be validated before inline action arguments');
+ok(/const prompt = escapeHtml\(String\(h && h\.prompt \|\| ''\)\.substring\(0, 400\)\)/.test(promptBuilder), 'persisted prompt previews must be escaped after string normalization');
 ok(!analysis.includes('AIzaSyTESTCONNECTIVITY'), 'preflight must not contain a fake API key');
 ok(!/generativelanguage\.googleapis\.com\/v1beta\/models\/[^'\n]*\?key=/.test(analysis), 'Gemini requests should not append API key to URL');
 ok(client.includes('x-goog-api-key') && !analysis.includes('x-goog-api-key'),
