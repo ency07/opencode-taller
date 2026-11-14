@@ -225,7 +225,7 @@ ok(gospelEnBankDomains.PERSON.objetos.includes("shepherd carrying a lamb across 
 ok(gospelEnBankDomains.PERSON.objetos.includes("teacher speaking to listeners gathered around an open scroll"),'PERSON incluye imagen coherente: teacher speaking to listeners gathered around an open scroll');
 ok(gospelEnBankDomains.PERSON.objetos.includes("two friends speaking beside a quiet road"),'PERSON incluye imagen coherente: two friends speaking beside a quiet road');
 (gospelEnBankDomains.PLACE.objetos).forEach(function(item){ ok(typeof item==='string' && item.trim().length>0,'PLACE contiene entradas no vacías'); });
-ok(gospelEnBankDomains.PLACE.objetos.includes("rocky mountain path marked by travelers' footprints"),'PLACE incluye imagen coherente: rocky mountain path marked by travelers' footprints');
+ok(gospelEnBankDomains.PLACE.objetos.includes("rocky mountain path marked by travelers footprints"),'PLACE incluye imagen coherente: rocky mountain path marked by travelers footprints');
 ok(gospelEnBankDomains.PLACE.objetos.includes("Jordan River flowing between green banks"),'PLACE incluye imagen coherente: Jordan River flowing between green banks');
 ok(gospelEnBankDomains.PLACE.objetos.includes("quiet garden with an ancient stone path"),'PLACE incluye imagen coherente: quiet garden with an ancient stone path');
 ok(gospelEnBankDomains.PLACE.objetos.includes("humble house with an open doorway"),'PLACE incluye imagen coherente: humble house with an open doorway');
