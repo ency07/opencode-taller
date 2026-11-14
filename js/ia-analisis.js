@@ -454,10 +454,19 @@
 
   /* Legacy helper: no se aceptan claves persistidas en localStorage. */
   function getGeminiSlot() {
+    // Las claves solo se obtienen del revisor, que las mantiene en memoria.
+    return null;
+  }
+
+  /* Las claves solo se obtienen del revisor, que las mantiene en memoria.
+     Si el revisor no está cargado, visión queda deshabilitada. */
+  function getVisionSlots() {
     try {
-      // Sin el revisor no existe almacén de claves: no leer secretos de Web Storage.
-      return [];
-    } catch (e) {}
+      if (typeof window.getAISlots === 'function') {
+        const slots = window.getAISlots();
+        if (Array.isArray(slots)) return slots.filter(function (s) { return s && s.key && s.model; });
+      }
+    } catch (e) { /* sin claves disponibles */ }
     return [];
   }
 
