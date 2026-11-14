@@ -767,12 +767,40 @@
      BANCO DE DIRECCIONES APROBADAS
      ============================================================ */
 
+  function _approvedDirectionsState() {
+    const raw = getJSON(memKey(['approvedDirections']), []);
+    // Compatibilidad con el formato histórico (array) y el formato replicable.
+    if (Array.isArray(raw)) return { items: raw, deleted: {} };
+    if (raw && typeof raw === 'object' && Array.isArray(raw.items)) {
+      return {
+        items: raw.items,
+        deleted: raw.deleted && typeof raw.deleted === 'object' && !Array.isArray(raw.deleted) ? raw.deleted : {}
+      };
+    }
+    return { items: [], deleted: {} };
+  }
+
   function loadApprovedDirections() {
-    return getJSON(memKey(['approvedDirections']), []) || [];
+    const state = _approvedDirectionsState();
+    return state.items.filter(function (item) {
+      return !item || !item.id || !state.deleted[item.id];
+    }).slice(-300);
   }
 
   function saveApprovedDirections(list) {
-    return setJSON(memKey(['approvedDirections']), (list || []).slice(-300));
+    const state = _approvedDirectionsState();
+    const items = (Array.isArray(list) ? list : []).slice(-300);
+    const activeIds = {};
+    items.forEach(function (item) {
+      if (item && item.id) activeIds[item.id] = true;
+    });
+    // Un guardado normal no elimina tombstones; solo una recreación explícita
+    // del mismo ID puede cancelar su marcador.
+    Object.keys(activeIds).forEach(function (id) { delete state.deleted[id]; });
+    return setJSON(memKey(['approvedDirections']), {
+      items: items,
+      deleted: state.deleted
+    });
   }
 
   function addApprovedDirection(record) {
@@ -808,10 +836,17 @@
   }
 
   function removeApprovedDirection(id) {
-    const list = loadApprovedDirections().filter(function (x) {
-      return x.id !== id;
+    const state = _approvedDirectionsState();
+    const target = String(id || '');
+    const list = state.items.filter(function (x) {
+      return !x || x.id !== target;
     });
-    saveApprovedDirections(list);
+    if (target) state.deleted[target] = new Date().toISOString();
+    state.items = list;
+    setJSON(memKey(['approvedDirections']), {
+      items: list.slice(-300),
+      deleted: state.deleted
+    });
     return list;
   }
 
@@ -1374,7 +1409,15 @@
           keys.forEach(function (id) { merged[id] = mergeArraysUnique(b[id], a[id]); });
           out[k] = JSON.stringify(merged);
         } else if (k.indexOf('|approvedDirections|') > -1) {
-          out[k] = JSON.stringify(mergeArraysUnique(b, a).slice(-300));
+          // Acepta arrays legacy y wrappers nuevos. Tombstones por ID prevalecen
+          // sobre copias antiguas de cualquier dispositivo.
+          const aa = Array.isArray(a) ? a : (a && Array.isArray(a.items) ? a.items : []);
+          const bb = Array.isArray(b) ? b : (b && Array.isArray(b.items) ? b.items : []);
+          const deleted = Object.assign({}, (b && !Array.isArray(b) && b.deleted) || {}, (a && !Array.isArray(a) && a.deleted) || {});
+          const items = mergeArraysUnique(bb, aa).filter(function (item) {
+            return !item || !item.id || !deleted[item.id];
+          }).slice(-300);
+          out[k] = JSON.stringify({ items: items, deleted: deleted });
         } else if (k.indexOf('|patterns|') > -1) {
           out[k] = JSON.stringify((b || []).concat(a || []).slice(-80));
         } else if (k.indexOf('|creative|') > -1) {
