@@ -24,15 +24,16 @@ inferir Secular por descarte:
 | `diaspora_col` | Secular | Explícito / compatibilidad |
 | `custom` | Sin clasificar | Bloqueado hasta asignación explícita |
 | ID vacío/desconocido | Sin clasificar | Bloqueado hasta asignación explícita |
+| `christian` (alias heredado, no UI) | Secular | Compatibilidad con integraciones/pruebas anteriores |
 
 La clasificación Secular de los siete mercados comerciales reproduce el
 comportamiento que ya tenían en `motor-nucleo.js`; ahora se declara en una
 allowlist y no mediante `!isGospelMarket()`.
 
 No se asigna un motor por idioma, subnicho, producto, texto del concepto ni
-presencia/ausencia de `theologicalBasis`. El mercado `christian`, usado en
-pruebas antiguas pero ausente de `POD_MARKETS`, queda sin clasificar; no es un
-alias implícito de Gospel ni de Secular.
+presencia/ausencia de `theologicalBasis`. El ID `christian`, ausente del selector `POD_MARKETS`, se conserva como alias
+Secular heredado para integraciones y pruebas anteriores. No se muestra como
+opción de mercado UI ni se interpreta como Gospel.
 
 ## 3. Contrato de resolución
 
