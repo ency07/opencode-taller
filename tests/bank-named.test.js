@@ -21,14 +21,14 @@ function ok(cond, msg) { checks++; if (!cond) failures.push(msg); }
 global.window = global;
 // Entorno de navegador determinista: este test valida persistencia, por lo que
 // debe proporcionar un localStorage funcional en vez de activar el fallback volátil.
-const storage = Object.create(null);
-global.localStorage = {
-  getItem: function (key) { return Object.prototype.hasOwnProperty.call(storage, key) ? storage[key] : null; },
-  setItem: function (key, value) { storage[key] = String(value); },
-  removeItem: function (key) { delete storage[key]; },
-  key: function (index) { return Object.keys(storage)[index] || null; },
-  get length() { return Object.keys(storage).length; }
-};
+global.localStorage = {};
+Object.defineProperties(global.localStorage, {
+  getItem: { value: function (key) { return Object.prototype.hasOwnProperty.call(global.localStorage, key) ? global.localStorage[key] : null; } },
+  setItem: { value: function (key, value) { global.localStorage[key] = String(value); } },
+  removeItem: { value: function (key) { delete global.localStorage[key]; } },
+  key: { value: function (index) { return Object.keys(global.localStorage)[index] || null; } },
+  length: { get: function () { return Object.keys(global.localStorage).length; } }
+});
 global.document = { getElementById: function () { return null; }, querySelectorAll: function () { return []; } };
 
 const memSrc = fs.readFileSync(path.join(JS, 'memoria-local.js'), 'utf8');
