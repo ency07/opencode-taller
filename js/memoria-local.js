@@ -1412,6 +1412,7 @@
     };
     const lc = validClear(localClear) ? localClear : null;
     const rc = validClear(remoteClear) ? remoteClear : null;
+    const globalResolvedKeys = {};
     if (lc || rc) {
       const latestClear = !lc ? rc : (!rc ? lc : (Date.parse(lc.deletedAt) >= Date.parse(rc.deletedAt) ? lc : rc));
       const preserved = {};
@@ -1430,18 +1431,25 @@
       Object.keys(out).forEach(function (key) {
         if (String(key).indexOf(MEM_PREFIX) !== 0 || key === GLOBAL_MEMORY_CLEAR_KEY) return;
         const clearEpoch = Date.parse(latestClear.deletedAt) || 0;
-        const localWrite = lc && (Date.parse((lc.preservedKeys || {})[key] || '') || 0) > clearEpoch;
-        const remoteWrite = rc && (Date.parse((rc.preservedKeys || {})[key] || '') || 0) > clearEpoch;
-        if (localWrite && !remoteWrite && Object.prototype.hasOwnProperty.call(local, key)) out[key] = local[key];
-        else if (remoteWrite && !localWrite && Object.prototype.hasOwnProperty.call(remote, key)) out[key] = remote[key];
-        else if (!localWrite && !remoteWrite) {
+        const localWrite = !!(lc && (Date.parse((lc.preservedKeys || {})[key] || '') || 0) > clearEpoch);
+        const remoteWrite = !!(rc && (Date.parse((rc.preservedKeys || {})[key] || '') || 0) > clearEpoch);
+        globalResolvedKeys[key] = true;
+        if (localWrite && !remoteWrite) {
+          out[key] = Object.prototype.hasOwnProperty.call(local, key)
+            ? local[key]
+            : JSON.stringify({ __podDeleted: true, deletedAt: latestClear.deletedAt });
+        } else if (remoteWrite && !localWrite) {
+          out[key] = Object.prototype.hasOwnProperty.call(remote, key)
+            ? remote[key]
+            : JSON.stringify({ __podDeleted: true, deletedAt: latestClear.deletedAt });
+        } else if (!localWrite && !remoteWrite) {
           out[key] = JSON.stringify({ __podDeleted: true, deletedAt: latestClear.deletedAt });
         }
       });
     }
 
     Object.keys(out).forEach(function (k) {
-      if (String(k).indexOf(MEM_PREFIX) !== 0 || k === GLOBAL_MEMORY_CLEAR_KEY) return;
+      if (String(k).indexOf(MEM_PREFIX) !== 0 || k === GLOBAL_MEMORY_CLEAR_KEY || globalResolvedKeys[k]) return;
 
       try {
         const a = local[k] ? JSON.parse(local[k]) : null;
