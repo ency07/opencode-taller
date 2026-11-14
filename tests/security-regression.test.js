@@ -17,9 +17,11 @@ ok(/function tell\(msg\)[\s\S]*?statusEl\.textContent/.test(analysis), 'analysis
 ok(!/function tell\(msg\)[\s\S]*?statusEl\.innerHTML\s*=\s*msg/.test(analysis), 'analysis tell must not insert arbitrary message as HTML');
 ok(/function renderBankPreview\(payload\)[\s\S]*?el\.replaceChildren\(\)/.test(analysis), 'bank preview must build a fresh DOM tree');
 ok(/function renderBankPreview\(payload\)[\s\S]*?\.textContent\s*=\s*String\(value\)/.test(analysis), 'untrusted bank fields must be rendered as plain text');
-ok(!/function renderBankPreview\(payload\)[\s\S]*?innerHTML\s*=/.test(analysis), 'bank preview must not inject imported JSON as HTML');
+const bankPreviewFn = (analysis.match(/function renderBankPreview\(payload\) \{[\s\S]*?\n  \}/) || [''])[0];
+ok(!/innerHTML\s*=/.test(bankPreviewFn), 'bank preview must not inject imported JSON as HTML');
 ok(/function proponerBanco\(tipo\)[\s\S]*?badge\.textContent\s*=/.test(analysis), 'bank proposal errors must be rendered as plain text');
-ok(!/function proponerBanco\(tipo\)[\s\S]*?innerHTML\s*=/.test(analysis), 'bank proposal must not inject dynamic error text as HTML');
+const bankProposalFn = (analysis.match(/function proponerBanco\(tipo\) \{[\s\S]*?\n  \}/) || [''])[0];
+ok(!/innerHTML\s*=/.test(bankProposalFn), 'bank proposal must not inject dynamic error text as HTML');
 ok(/function drawAlternatives\(list, field\)[\s\S]*?button\.textContent\s*=\s*phrase/.test(copy), 'AI copy alternatives must be rendered as text nodes');
 ok(!/function drawAlternatives\(list, field\)[\s\S]*?innerHTML\s*=/.test(copy), 'AI copy alternatives must not inject model output as HTML');
 ok(!analysis.includes('AIzaSyTESTCONNECTIVITY'), 'preflight must not contain a fake API key');
