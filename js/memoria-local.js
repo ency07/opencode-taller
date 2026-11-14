@@ -1429,8 +1429,9 @@
       });
       Object.keys(out).forEach(function (key) {
         if (String(key).indexOf(MEM_PREFIX) !== 0 || key === GLOBAL_MEMORY_CLEAR_KEY) return;
-        const localWrite = lc && (Date.parse((lc.preservedKeys || {})[key] || '') || 0) > Date.parse(lc.deletedAt);
-        const remoteWrite = rc && (Date.parse((rc.preservedKeys || {})[key] || '') || 0) > Date.parse(rc.deletedAt);
+        const clearEpoch = Date.parse(latestClear.deletedAt) || 0;
+        const localWrite = lc && (Date.parse((lc.preservedKeys || {})[key] || '') || 0) > clearEpoch;
+        const remoteWrite = rc && (Date.parse((rc.preservedKeys || {})[key] || '') || 0) > clearEpoch;
         if (localWrite && !remoteWrite && Object.prototype.hasOwnProperty.call(local, key)) out[key] = local[key];
         else if (remoteWrite && !localWrite && Object.prototype.hasOwnProperty.call(remote, key)) out[key] = remote[key];
         else if (!localWrite && !remoteWrite) {
@@ -1711,15 +1712,16 @@
     const keys = listMemoryKeys().filter(function (key) { return key !== GLOBAL_MEMORY_CLEAR_KEY; });
     // Tombstone each locally known key so existing readers see empty/default data.
     // The global marker additionally suppresses stale keys that exist only in cloud.
+    let failures = 0;
     keys.forEach(function (key) {
-      POD_LS.setItem(key, JSON.stringify({ __podDeleted: true, deletedAt: deletedAt }));
+      if (POD_LS.setItem(key, JSON.stringify({ __podDeleted: true, deletedAt: deletedAt })) !== true) failures++;
     });
-    POD_LS.setItem(GLOBAL_MEMORY_CLEAR_KEY, JSON.stringify({
+    if (POD_LS.setItem(GLOBAL_MEMORY_CLEAR_KEY, JSON.stringify({
       __podGlobalClear: true,
       deletedAt: deletedAt,
       preservedKeys: {}
-    }));
-    return { clearedKeys: keys.length, persisted: true };
+    })) !== true) failures++;
+    return { clearedKeys: keys.length, persisted: failures === 0, failures: failures };
   }
 
   /* ============================================================
