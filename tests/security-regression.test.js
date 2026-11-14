@@ -14,6 +14,11 @@ const client = fs.readFileSync(path.join(ROOT, 'js/ia-client.js'), 'utf8');
 
 ok(/function tell\(msg\)[\s\S]*?statusEl\.textContent/.test(analysis), 'analysis status must render plain text');
 ok(!/function tell\(msg\)[\s\S]*?statusEl\.innerHTML\s*=\s*msg/.test(analysis), 'analysis tell must not insert arbitrary message as HTML');
+ok(/function renderBankPreview\(payload\)[\s\S]*?el\.replaceChildren\(\)/.test(analysis), 'bank preview must build a fresh DOM tree');
+ok(/function renderBankPreview\(payload\)[\s\S]*?\.textContent\s*=\s*String\(value\)/.test(analysis), 'untrusted bank fields must be rendered as plain text');
+ok(!/function renderBankPreview\(payload\)[\s\S]*?innerHTML\s*=/.test(analysis), 'bank preview must not inject imported JSON as HTML');
+ok(/function proponerBanco\(tipo\)[\s\S]*?badge\.textContent\s*=/.test(analysis), 'bank proposal errors must be rendered as plain text');
+ok(!/function proponerBanco\(tipo\)[\s\S]*?innerHTML\s*=/.test(analysis), 'bank proposal must not inject dynamic error text as HTML');
 ok(!analysis.includes('AIzaSyTESTCONNECTIVITY'), 'preflight must not contain a fake API key');
 ok(!/generativelanguage\.googleapis\.com\/v1beta\/models\/[^'\n]*\?key=/.test(analysis), 'Gemini requests should not append API key to URL');
 ok(client.includes('x-goog-api-key') && !analysis.includes('x-goog-api-key'),
