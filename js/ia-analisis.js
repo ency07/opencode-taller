@@ -151,7 +151,7 @@
     if (!audSel) return;
     const prev = audSel.value;
 
-    let html = '<option value="Auto">Auto — según ' + marketId + ' + ' + effRegion + '</option>';
+    let html = '<option value="Auto">Auto — según ' + _escapeOptionText(marketId) + ' + ' + _escapeOptionText(effRegion) + '</option>';
 
     // Fuente única por mercado (corrige spain/latam mostrando costeños = H3)
     let audiences = typeof getAudiencesForMarketRegion === 'function'
