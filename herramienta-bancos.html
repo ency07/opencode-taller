@@ -105,10 +105,14 @@
   var $ = function (id) { return document.getElementById(id); };
   // Todo dato dinámico que llegue a un sink HTML debe codificarse como texto.
   function escHtml(value) {
-    return String(value == null ? '' : value).replace(/[&<>\"']/g, function (ch) {
-      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' })[ch];
-    });
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
+
   var ui = {
     mercado: $('mercado'), grupo: $('grupo'), region: $('region'), familia: $('familia'),
     audiencia: $('audiencia'), tipo: $('tipo'), cantidad: $('cantidad'), matiz: $('matiz'),
