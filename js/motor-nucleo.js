@@ -4618,7 +4618,7 @@ function _estadoUnificado(result) {
   }
   if (!okScore) {
     const umbralMsg = (typeof _mensajeUmbral === 'function') ? _mensajeUmbral(ev) : '';
-    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Listo con advertencia: ' + (umbralMsg || 'revisa el control de calidad') + '</span>' };
+    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Listo con advertencia: ' + escHtml(umbralMsg || 'revisa el control de calidad') + '</span>' };
   }
   if (!okArb) {
     const checksOkArb = totalArb - fallosArb;
@@ -4687,7 +4687,7 @@ function validarSetActual() {
       }
       statusEl.innerHTML = '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla · audiencia efectiva ' + (ev.score.fitAudienciaMin || 0) + '/100 · producto ' + (ev.score.fitProductoMin || 0) + '/100</span>';
     } else {
-      statusEl.innerHTML = '<span class="warn">Validación con fallos: ' + ev.detalle.join(' · ') + '</span>';
+      statusEl.innerHTML = '<span class="warn">Validación con fallos: ' + escHtml(ev.detalle.join(' · ')) + '</span>';
       return { ok: false, detalle: ev.detalle };
     }
   }
