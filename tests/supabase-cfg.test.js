@@ -42,3 +42,11 @@ const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  supabase-cfg  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.forEach(function (f) { console.log('  ✗ ' + f); });
 process.exit(passed ? 0 : 1);
+
+const sql = fs.readFileSync(path.join(ROOT, 'supabase-sync.sql'), 'utf8');
+ok(/alter table public\\.pod_project_sync enable row level security/i.test(sql), 'RLS no se habilita');
+ok(/from pg_policies[\\s\\S]*?drop policy if exists %I on public\\.pod_project_sync/i.test(sql), 'no limpia políticas heredadas de la tabla');
+ok(/revoke all on table public\\.pod_project_sync from public, anon, authenticated/i.test(sql), 'no revoca permisos previos de PUBLIC/anon/authenticated');
+ok(/grant select, insert, update on table public\\.pod_project_sync to authenticated/i.test(sql), 'no concede el conjunto mínimo de permisos');
+ok(/using \\(\\(select auth\\.uid\\(\\)\\) = user_id\\)/i.test(sql), 'SELECT/UPDATE no restringe por auth.uid');
+ok(/with check \\(\\(select auth\\.uid\\(\\)\\) = user_id\\)/i.test(sql), 'INSERT/UPDATE no valida auth.uid');
