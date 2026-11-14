@@ -68,10 +68,12 @@ ok((analysis.match(/(?:IAClient|IC)\.chat\(/g) || []).length >= 3,
   'vision calls and connection test must go through the shared client');
 ok(/function tellStatus\(msg\)[\s\S]*?st\.textContent\s*=\s*String\(msg/.test(reviewer), 'reviewer status must render plain text');
 ok(!/function tellStatus\(msg\)[\s\S]*?st\.innerHTML\s*=/.test(reviewer), 'reviewer status must not use message as HTML');
-ok(/SESSION_KEYS_KEY\s*=/.test(reviewer) && /window\.sessionStorage\.setItem\(SESSION_KEYS_KEY/.test(reviewer), 'API keys must be saved to sessionStorage');
+ok(/var volatileKeys = \['', '', ''\]/.test(reviewer) && /function writeVolatileKeys\(slots\)/.test(reviewer), 'API keys must remain in volatile memory only');
 ok(/LS\.setItem\(SLOTS_KEY, JSON\.stringify\(arr\.map\(function \(s\) \{ return Object\.assign\(\{\}, s, \{ key: '' \}\); \}\)\)\)/.test(reviewer), 'persistent provider settings must blank the key field');
 ok(/hasPersistedKeys/.test(reviewer) && /key: ''/.test(reviewer), 'legacy persisted keys must be scrubbed on read');
-ok(/NO las protege frente a XSS/.test(reviewer), 'UI must disclose that sessionStorage does not protect keys from XSS');
+ok(/NO las protege frente a XSS/.test(reviewer), 'UI must disclose that in-memory keys do not protect against XSS');
+ok(!/sessionStorage\.setItem\(['"]pod2_ai_session_keys/.test(reviewer), 'API keys must never be written to sessionStorage');
+ok(/removeItem\('pod2_ai_session_keys'\)/.test(reviewer), 'legacy session-stored API keys must be purged');
 ok(/backend\/proxy/.test(reviewer), 'UI must direct shared server secrets to a backend proxy');
 
 
@@ -84,7 +86,7 @@ ok(editor.includes('escHtml(t.nombre)') && editor.includes('escHtml(b.name)'), '
 ok(/Array\.isArray\(b\.objects\) \? b\.objects\.length : 0/.test(editor) && /Array\.isArray\(b\.phrases\) \? b\.phrases\.length : 0/.test(editor), 'persisted bank counts must be type-checked before HTML rendering');
 ok(/markets\[id\]\.label/.test(editor) && /escHtml\(markets\[id\]\.label\)/.test(editor) && /escHtml\(id\).*escHtml\(label\)/s.test(editor), 'market and seasonal subniche options must escape values and labels');
 ok(/changeLink\.textContent = 'Cambiar'/.test(analysis) && /option\.textContent = String\(b\.name/.test(analysis), 'analysis UI must render template and bank names as text');
-ok(/const sessionKeys = JSON\.parse\(sessionRaw \|\| 'null'\)/.test(analysis), 'vision fallback should use only session-scoped API keys');
+ok(/Sin el revisor no existe almacén de claves/.test(analysis), 'vision fallback must not read API keys from Web Storage');
 ok(!/fetch\(ep\(s\.provider, s\.model\) \+ '\?key=/.test(reviewer), 'reviewer Gemini requests must not put API keys in URLs');
 ok(/using \(\(select auth\.uid\(\)\) = user_id\)/.test(sql), 'Supabase read policy must restrict rows to authenticated owner');
 ok(/with check \(\(select auth\.uid\(\)\) = user_id\)/.test(sql), 'Supabase insert/update policy must enforce authenticated owner');
@@ -98,8 +100,8 @@ ok(/\.eq\('updated_at', q\.data\.updated_at\)/.test(sync) && /if \(!up\.data\)/.
 ok(/\.from\('pod_project_sync'\)\.insert\(nextRow\)/.test(sync) && /up\.error\.code === '23505'/.test(sync), 'first-sync race must fail safely when another device creates the row first');
 
 
-ok(/function getGeminiSlot\(\)[\s\S]*?window\.sessionStorage[\s\S]*?sessionKeys\[index\]/.test(analysis), 'legacy Gemini helper must use session-scoped keys');
-ok(!/return slots\.find\(function \(s\) \{[\s\S]*?s\.key/.test(analysis), 'legacy Gemini helper must not return persisted keys');
+ok(/function getGeminiSlot\(\)[\s\S]*?return null/.test(analysis), 'legacy Gemini helper must not retrieve keys from Web Storage');
+ok(!/sessionStorage/.test(analysis), 'vision module must not read API keys from sessionStorage');
 ok(/_escapeOptionText\(r\.id\)/.test(analysis) && /_escapeOptionText\(r\.label\)/.test(analysis), 'region option values and labels must be escaped');
 ok(/function _subnicheOptions\(ids\)[\s\S]*?_escapeOptionText\(id\)[\s\S]*?_escapeOptionText\(label\)/.test(analysis), 'subniche option values and labels must be escaped');
 ok(/_escapeOptionText\(a\)/.test(analysis) && /_escapeOptionText\(label\)/.test(analysis), 'audience option values and labels must be escaped');
