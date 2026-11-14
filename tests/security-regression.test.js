@@ -39,6 +39,7 @@ ok(/ui\.familia\.innerHTML[\s\S]*?escHtml\(f\.id\)[\s\S]*?escHtml\(f\.nombre\)/.
 ok(/ui\.audiencia\.innerHTML[\s\S]*?escHtml\(id\)[\s\S]*?escHtml\(audLabel\(id\)\)/.test(bankTool), 'audience options must escape values and labels');
 ok(/ui\.chips\.innerHTML[\s\S]*?escHtml\(t\)/.test(bankTool), 'market/family chips must escape dynamic text');
 ok(/const mercado = escapeHtml\(h && h\.mercado\)/.test(promptBuilder), 'prompt history market must be escaped before HTML rendering');
+ok(/value="\$\{escapeHtml\(key\)\}"/.test(promptBuilder) && /<strong>\$\{escapeHtml\(m\.label\)\}<\/strong>/.test(promptBuilder) && /<small>\$\{escapeHtml\(m\.desc\)\}<\/small>/.test(promptBuilder), 'prompt market selector must escape values, labels and descriptions');
 ok(/const fecha = escapeHtml\(h && h\.fecha\)/.test(promptBuilder), 'prompt history date must be escaped before HTML rendering');
 ok(/const safeId = Number\.isSafeInteger\(Number\(h && h\.id\)\)/.test(promptBuilder), 'persisted history IDs must be validated before inline action arguments');
 ok(/const prompt = escapeHtml\(String\(h && h\.prompt \|\| ''\)\.substring\(0, 400\)\)/.test(promptBuilder), 'persisted prompt previews must be escaped after string normalization');
