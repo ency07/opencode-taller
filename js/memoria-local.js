@@ -1451,15 +1451,7 @@
                 deleted: deleted
               };
             } else {
-              const localDeleted = (a && a[PERSONAL_BANK_DELETED_KEY]) || {};
-              const remoteDeleted = (b && b[PERSONAL_BANK_DELETED_KEY]) || {};
-              const deletedEntries = Object.assign({}, remoteDeleted, localDeleted);
-              const mergedEntries = mergeArraysUnique(bv, av);
-              merged[id] = mergedEntries;
-              // Metadata se aplica una sola vez al objeto banco, no a cada array.
-              if (id === PROPOSED_BANK_KEY) {
-                // La cola de propuestas ya tiene su propio formato y tombstones.
-              }
+              merged[id] = mergeArraysUnique(bv, av);
             }
           });
           const localDeleted = (a && a[PERSONAL_BANK_DELETED_KEY]) || {};
