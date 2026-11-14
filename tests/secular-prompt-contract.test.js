@@ -104,6 +104,13 @@ const gospelEnEmptyPrompt=formatPrompt({set:gospelEnEmptySet});
 ok(gospelEnEmptyPrompt.includes('SIN COPY AUTORIZADO: no generar texto'),'Gospel EN sin concepto no pide copy nuevo a la IA');
 ok(gospelEnEmptyPrompt.includes('CONCEPTO NO PROPORCIONADO'),'Gospel EN no inventa concepto');
 ok(!gospelEnEmptyPrompt.includes('propón copy breve'),'Gospel EN no cae al fallback comercial');
+/* El catálogo de un mercado Gospel nunca debe caer silenciosamente en el otro. */
+const savedGospelEnDomains=window.GOSPEL_DOMINIOS_EN;
+window.GOSPEL_DOMINIOS_EN=undefined;
+ok(Object.keys(getDominiosGospel('gospel_en')).length===0,'Gospel EN sin catálogo no hereda dominios Gospel ES');
+window.GOSPEL_DOMINIOS_EN=savedGospelEnDomains;
+ok(getDominiosGospel('gospel_en')===savedGospelEnDomains,'Gospel EN recupera exclusivamente su catálogo');
+ok(getDominiosGospel('unknown_market') && Object.keys(getDominiosGospel('unknown_market')).length===0,'mercado desconocido no recibe catálogo Gospel ES');
 console.log((failures.length?'FAIL':'PASS')+' secular-prompt-contract ('+checks+' assertions, '+failures.length+' failures)');
 failures.forEach(x=>console.error(' - '+x));
 process.exit(failures.length?1:0);
