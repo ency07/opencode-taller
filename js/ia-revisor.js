@@ -419,7 +419,7 @@
     panel.innerHTML =
       '<div style="font-weight:700;margin-bottom:4px">Revisor con IA (opcional)</div>' +
       '<div class="hint" style="margin:0 0 6px">La IA revisa la ficha escrita antes de generar; no ve ni califica la imagen final. Prioridad 1 es el modelo principal; los demás son respaldo si el proveedor falla.</div>' +
-      '<div class="hint" style="margin:0 0 8px;padding:8px;border:1px solid rgba(148,163,184,.35);border-radius:8px;background:rgba(91,141,239,.06)"><b>Importante:</b> las claves API se guardan solo en esta pestaña (sessionStorage) por seguridad. Después de pegar una clave, pulsa <b>Guardar</b> o no se conservará. Al abrir una pestaña nueva tendrás que volver a introducirlas. El proveedor y el modelo sí se recuerdan (localStorage).</div>' +
+      '<div class="hint" style="margin:0 0 8px;padding:8px;border:1px solid rgba(148,163,184,.35);border-radius:8px;background:rgba(91,141,239,.06)"><b>Seguridad:</b> las claves se guardan en sessionStorage de esta pestaña, no en localStorage. Esto reduce su persistencia, pero NO las protege frente a XSS ni frente a scripts que se ejecuten en esta página. Usa claves propias con permisos y cuotas limitados; nunca pegues aquí una clave maestra del servidor. Para proteger secretos compartidos se necesita un backend/proxy. Pulsa <b>Guardar</b> después de introducirlas.</div>' +
       '<div id="aiSlots">' + sl.map(slotHTML).join('') + '</div>' +
       '<div style="font-weight:700;margin:10px 0 4px">Visión — analizar imagen</div>' +
       '<div class="hint" style="margin:0 0 6px">OpenRouter :free con visión (NANO-OMNI free, 50 req/día, sin consumir créditos). Gemini directo: serie 3.x para proyectos nuevos. Groq no tiene visión free.</div>' +
