@@ -80,6 +80,26 @@ ok(gospelEnPrompt.includes('DOCTRINA: Trinitario'),'Gospel EN conserva su contra
 ok(!gospelEnPrompt.includes('PALETA VINCULADA A IDENTIDAD'),'Gospel EN no recibe el filtro cromático secular');
 ok(!gospelEnPrompt.includes('FIDELIDAD DEL CONCEPTO:'),'Gospel EN no recibe las reglas de concepto seculares');
 ok(!gospelEnPrompt.includes('COPY CANÓNICO SECULAR'),'Gospel EN no recibe el contrato de copy secular');
+
+/* Copy Gospel EN: nunca usa fallback genérico si falta autorización. */
+let enCopy=_resolveGospelENCopy('Christ is my hope','Grace in the storm',true);
+ok(enCopy.text==='Christ is my hope' && enCopy.source==='user','Gospel EN prioriza el mensaje explícito');
+enCopy=_resolveGospelENCopy('','Grace in the storm',true);
+ok(enCopy.text==='Grace in the storm' && enCopy.source==='concept','Gospel EN deriva solo del concepto autorizado');
+enCopy=_resolveGospelENCopy('','—',true);
+ok(enCopy.text==='' && enCopy.source==='missing-concept','Gospel EN no usa banco genérico sin concepto');
+enCopy=_resolveGospelENCopy('','Grace in the storm',false);
+ok(enCopy.text==='' && enCopy.source==='disabled','Gospel EN respeta la desactivación del copy automático');
+
+/* El prompt EN sin concepto ni mensaje debe bloquear el texto inventado. */
+MOTOR_STATE.market='gospel_en'; MOTOR_STATE.visualIdentity='';
+MOTOR_STATE.workflowMode='explore'; MOTOR_STATE.concept=''; MOTOR_STATE.message='';
+MOTOR_STATE.allowAutoCopy=true; MOTOR_STATE.explorationBrief=null;
+const gospelEnEmptySet=buildCandidate(resolveAudiences(),null);
+const gospelEnEmptyPrompt=formatPrompt({set:gospelEnEmptySet});
+ok(gospelEnEmptyPrompt.includes('SIN COPY AUTORIZADO: no generar texto'),'Gospel EN sin concepto no pide copy nuevo a la IA');
+ok(gospelEnEmptyPrompt.includes('CONCEPTO NO PROPORCIONADO'),'Gospel EN no inventa concepto');
+ok(!gospelEnEmptyPrompt.includes('propón copy breve'),'Gospel EN no cae al fallback comercial');
 console.log((failures.length?'FAIL':'PASS')+' secular-prompt-contract ('+checks+' assertions, '+failures.length+' failures)');
 failures.forEach(x=>console.error(' - '+x));
 process.exit(failures.length?1:0);
