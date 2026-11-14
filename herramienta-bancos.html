@@ -103,6 +103,12 @@
 
   var OK_DATA = typeof POD_SUBNICHES !== 'undefined' && typeof POD_MARKETS !== 'undefined';
   var $ = function (id) { return document.getElementById(id); };
+  // Todo dato dinámico que llegue a un sink HTML debe codificarse como texto.
+  function escHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>\"']/g, function (ch) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' })[ch];
+    });
+  }
   var ui = {
     mercado: $('mercado'), grupo: $('grupo'), region: $('region'), familia: $('familia'),
     audiencia: $('audiencia'), tipo: $('tipo'), cantidad: $('cantidad'), matiz: $('matiz'),
@@ -157,7 +163,7 @@
 
   function fillMercado() {
     ui.mercado.innerHTML = MARKETS.map(function (m) {
-      return '<option value="' + m + '">' + POD_MARKETS[m].label + '</option>';
+      return '<option value="' + escHtml(m) + '">' + escHtml(POD_MARKETS[m].label) + '</option>';
     }).join('');
     fillGrupo();
   }
@@ -165,8 +171,8 @@
   function marketInfo() {
     var m = ui.mercado.value;
     var mk = POD_MARKETS[m] || {};
-    ui.mktInfo.innerHTML = '<b>' + mk.label + '</b><br>' + (mk.description || '') +
-      '<br>Idioma: <b>' + (mk.language || '') + '</b> · Cultura: <b>' + (mk.culture || '') + '</b> · Legal: <b>' + (mk.legal || '') + '</b>';
+    ui.mktInfo.innerHTML = '<b>' + escHtml(mk.label) + '</b><br>' + escHtml(mk.description || '') +
+      '<br>Idioma: <b>' + escHtml(mk.language || '') + '</b> · Cultura: <b>' + escHtml(mk.culture || '') + '</b> · Legal: <b>' + escHtml(mk.legal || '') + '</b>';
     var g = isGospel(m);
     ui.wrapGrupo.style.display = g ? 'none' : '';
     ui.wrapRegion.style.display = g ? 'none' : '';
@@ -182,7 +188,7 @@
         return s && s.grupo === id && sid !== 'gospel_es' && sid !== 'gospel_en';
       });
     });
-    ui.grupo.innerHTML = allowed.map(function (id) { return '<option value="' + id + '">' + GROUPS[id] + '</option>'; }).join('');
+    ui.grupo.innerHTML = allowed.map(function (id) { return '<option value="' + escHtml(id) + '">' + escHtml(GROUPS[id]) + '</option>'; }).join('');
     fillRegion();
   }
 
@@ -191,7 +197,7 @@
     if (isGospel(m)) { ui.region.innerHTML = ''; fillFamilia(); return; }
     var list = (typeof POD_MARKET_REGIONS !== 'undefined' && POD_MARKET_REGIONS[m]) ? POD_MARKET_REGIONS[m] : [{ id: 'global', label: 'Global' }];
     ui.region.innerHTML = list.map(function (r) {
-      return '<option value="' + r.id + '">' + (r.label || regionLabel(r.id)) + '</option>';
+      return '<option value="' + escHtml(r.id) + '">' + escHtml(r.label || regionLabel(r.id)) + '</option>';
     }).join('');
     fillFamilia();
   }
@@ -225,7 +231,7 @@
 
   function fillFamilia() {
     var list = familyList();
-    ui.familia.innerHTML = list.map(function (f) { return '<option value="' + f.id + '">' + f.nombre + '</option>'; }).join('');
+    ui.familia.innerHTML = list.map(function (f) { return '<option value="' + escHtml(f.id) + '">' + escHtml(f.nombre) + '</option>'; }).join('');
     fillAudiencia();
   }
 
@@ -238,7 +244,7 @@
     }
     pool = pool.filter(function (id) { return !(typeof AUD_PROFILES !== 'undefined') || !!AUD_PROFILES[id]; });
     ui.audiencia.innerHTML = ['<option value="">Sin audiencia específica</option>'].concat(pool.map(function (id) {
-      return '<option value="' + id + '">' + audLabel(id) + '</option>';
+      return '<option value="' + escHtml(id) + '">' + escHtml(audLabel(id)) + '</option>';
     })).join('');
     render();
   }
@@ -433,7 +439,7 @@
       isGospel(ui.mercado.value) ? 'dominio: ' + ui.familia.value : 'región: ' + regionLabel(ui.region.value),
       'familia: ' + meta.nombre,
       'en banco: ' + existingItems().length
-    ].map(function (t) { return '<span class="chip">' + String(t).replace(/</g, '&lt;') + '</span>'; }).join('');
+    ].map(function (t) { return '<span class="chip">' + escHtml(t) + '</span>'; }).join('');
   }
 
   ui.mercado.addEventListener('change', fillGrupo);
