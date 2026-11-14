@@ -22,8 +22,10 @@ const cliente = fs.readFileSync(path.join(ROOT, 'js', 'ia-client.js'), 'utf8');
 
 const m = revisor.match(/var SLOTS_KEY = '([^']+)'/);
 ok(m && m[1] === 'pod2_ai_slots', 'SLOTS_KEY inesperada en ia-revisor.js');
-ok(analisis.indexOf("getItem('pod2_ai_slots')") !== -1,
-  'ia-analisis.js no lee pod2_ai_slots (la visión no vería las claves del panel)');
+ok(/window\.getAISlots\(\)/.test(analisis),
+  'ia-analisis.js debe obtener slots desde el revisor en memoria');
+ok(!/getItem\(['\"]pod2_ai_slots['\"]\)/.test(analisis),
+  'ia-analisis.js no debe leer claves persistidas en pod2_ai_slots');
 
 function codeWithoutComments(src) {
   return src
