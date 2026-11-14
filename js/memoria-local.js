@@ -439,19 +439,35 @@
   const COMMON_BANK_KEY = 'comun';
 
   const PERSONAL_BANK_DELETED_KEY = '__podDeletedEntries';
+  const PERSONAL_BANK_UPDATED_KEY = '__podEntryUpdatedAt';
 
   function _personalBankDeleted(bank) {
     const value = bank && bank[PERSONAL_BANK_DELETED_KEY];
     return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   }
 
+  function _personalBankUpdated(bank) {
+    const value = bank && bank[PERSONAL_BANK_UPDATED_KEY];
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  }
+
+  function _personalBankEntryIsDeleted(key, deleted, updated) {
+    const deletedAt = Date.parse(deleted[key] || '') || 0;
+    const updatedAt = Date.parse(updated[key] || '') || 0;
+    return deletedAt >= updatedAt && deletedAt > 0;
+  }
+
   function loadPersonalBank(market) {
     const raw = getJSON(memKey(['personalBank', market]), {}) || {};
     if (raw && raw.__podDeleted === true) return {};
     const deleted = _personalBankDeleted(raw);
+    const updated = _personalBankUpdated(raw);
     const bank = Object.assign({}, raw);
     delete bank[PERSONAL_BANK_DELETED_KEY];
-    Object.keys(deleted).forEach(function (key) { delete bank[key]; });
+    delete bank[PERSONAL_BANK_UPDATED_KEY];
+    Object.keys(deleted).forEach(function (key) {
+      if (_personalBankEntryIsDeleted(key, deleted, updated)) delete bank[key];
+    });
     return bank;
   }
 
@@ -459,10 +475,13 @@
     const key = memKey(['personalBank', market]);
     const current = getJSON(key, {}) || {};
     const deleted = _personalBankDeleted(current);
+    const updated = _personalBankUpdated(current);
     const next = Object.assign({}, bank || {});
-    // Writes are explicit recreation of keys present in the new bank.
-    Object.keys(next).forEach(function (entryKey) { delete deleted[entryKey]; });
+    const now = new Date().toISOString();
+    // A later explicit write can recreate a previously deleted subniche.
+    Object.keys(next).forEach(function (entryKey) { updated[entryKey] = now; });
     next[PERSONAL_BANK_DELETED_KEY] = deleted;
+    next[PERSONAL_BANK_UPDATED_KEY] = updated;
     return setJSON(key, next);
   }
 
@@ -610,12 +629,14 @@
     if (subniche) {
       const bank = loadPersonalBank(market);
       const deleted = _personalBankDeleted(raw);
+      const updated = _personalBankUpdated(raw);
       // El contexto legacy comprende objetos, conceptos y frases.
       [subniche, '__concept__' + subniche, '__phrase__' + subniche].forEach(function (entryKey) {
         delete bank[entryKey];
         deleted[entryKey] = new Date().toISOString();
       });
       bank[PERSONAL_BANK_DELETED_KEY] = deleted;
+      bank[PERSONAL_BANK_UPDATED_KEY] = updated;
       return setJSON(key, bank);
     }
     // Un borrado de mercado debe ser visible durante sync; no basta con
@@ -1457,8 +1478,24 @@
           const localDeleted = (a && a[PERSONAL_BANK_DELETED_KEY]) || {};
           const remoteDeleted = (b && b[PERSONAL_BANK_DELETED_KEY]) || {};
           const deletedEntries = Object.assign({}, remoteDeleted, localDeleted);
-          Object.keys(deletedEntries).forEach(function (entryKey) { delete merged[entryKey]; });
+          Object.keys(remoteDeleted).forEach(function (entryKey) {
+            const remoteTime = Date.parse(remoteDeleted[entryKey] || '') || 0;
+            const localTime = Date.parse(localDeleted[entryKey] || '') || 0;
+            if (localTime > remoteTime) deletedEntries[entryKey] = localDeleted[entryKey];
+          });
+          const localUpdated = (a && a[PERSONAL_BANK_UPDATED_KEY]) || {};
+          const remoteUpdated = (b && b[PERSONAL_BANK_UPDATED_KEY]) || {};
+          const updatedEntries = Object.assign({}, remoteUpdated, localUpdated);
+          Object.keys(remoteUpdated).forEach(function (entryKey) {
+            const remoteTime = Date.parse(remoteUpdated[entryKey] || '') || 0;
+            const localTime = Date.parse(localUpdated[entryKey] || '') || 0;
+            if (localTime > remoteTime) updatedEntries[entryKey] = localUpdated[entryKey];
+          });
+          Object.keys(deletedEntries).forEach(function (entryKey) {
+            if (_personalBankEntryIsDeleted(entryKey, deletedEntries, updatedEntries)) delete merged[entryKey];
+          });
           merged[PERSONAL_BANK_DELETED_KEY] = deletedEntries;
+          merged[PERSONAL_BANK_UPDATED_KEY] = updatedEntries;
           out[k] = JSON.stringify(merged);
         } else if (k.indexOf('|approvedDirections|') > -1) {
           // Acepta arrays legacy y wrappers nuevos. Tombstones por ID prevalecen
