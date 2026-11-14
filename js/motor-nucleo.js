@@ -3177,6 +3177,19 @@ function _resolveGospelESCopy(message, concept, allowAutoCopy) {
     : { text: '', source: 'missing-concept', allowed: false };
 }
 
+/* Gospel EN: mensaje explícito > concepto literal > vacío. Nunca usa bancos genéricos. */
+function _resolveGospelENCopy(message, concept, allowAutoCopy) {
+  const explicit = String(message || '').trim();
+  if (explicit) return { text: explicit, source: 'user', allowed: true };
+  if (allowAutoCopy === false) return { text: '', source: 'disabled', allowed: false };
+  const anchor = String(concept || '').trim();
+  if (!anchor || anchor === '—') return { text: '', source: 'missing-concept', allowed: false };
+  const derived = _resolveSharedCopy(anchor, 'gospel_en');
+  return derived
+    ? { text: derived, source: 'concept', allowed: true }
+    : { text: '', source: 'missing-concept', allowed: false };
+}
+
 /* --- Formateo de prompt --- */
 /* Bloque de contraste estructural A/B/C (punto 1: evitar que las 3 columnas
    converjan en la misma imagen). Lista los ejes asignados a cada ficha y
@@ -3511,6 +3524,8 @@ function formatPrompt(result) {
   const dense = MOTOR_STATE.fmtDense;
   const isVar = MOTOR_STATE.workflowMode === 'variation';
   const isGospelES = MOTOR_STATE.market === 'gospel_es';
+  const isGospelEN = MOTOR_STATE.market === 'gospel_en';
+  const isGospel = isGospelES || isGospelEN;
   const isSecular = isSecularMarket();
 
   // Directivas de idioma y cultura
@@ -3567,8 +3582,11 @@ function formatPrompt(result) {
   const gospelESCopy = isGospelES
     ? _resolveGospelESCopy(MOTOR_STATE.message, promptConcept, MOTOR_STATE.allowAutoCopy !== false)
     : null;
+  const gospelENCopy = isGospelEN
+    ? _resolveGospelENCopy(MOTOR_STATE.message, promptConcept, MOTOR_STATE.allowAutoCopy !== false)
+    : null;
   const sharedDerivedCopy = !typedMessage
-    ? (isGospelES ? gospelESCopy.text : (isSecular ? _resolveSecularCopy('', promptConcept) : _resolveSharedCopy(promptConcept, MOTOR_STATE.market)))
+    ? (isGospelES ? gospelESCopy.text : (isGospelEN ? gospelENCopy.text : (isSecular ? _resolveSecularCopy('', promptConcept) : _resolveSharedCopy(promptConcept, MOTOR_STATE.market))))
     : '';
   /* En explore sin mensaje, el motor fija UNA frase literal compartida para
      A/B/C (no delega inventarla a la IA de imagen, que no puede coordinarla). */
@@ -3638,8 +3656,8 @@ function formatPrompt(result) {
     o += '/EXPLORACIÓN — 3 DIRECCIONES DEL MISMO CONCEPTO\n';
     o += 'MERCADO: ' + MOTOR_STATE.market + ' | PRODUCTO: ' + MOTOR_STATE.product + '\n';
     const exploreMessage = String(MOTOR_STATE.message || '').trim();
-    const exploreCopy = exploreMessage || sharedExploreCopy || ((isGospelES || isSecular) ? 'SIN COPY AUTORIZADO: no generar texto' : 'propón copy breve');
-    o += 'CONCEPTO: ' + (conceptAnchor || ((isGospelES || isSecular) ? 'CONCEPTO NO PROPORCIONADO: no inventar concepto ni motivo' : 'propón una idea concreta dentro de la familia seleccionada')) + ' | MENSAJE EXACTO: ' + exploreCopy + '\n';
+    const exploreCopy = exploreMessage || sharedExploreCopy || ((isGospel || isSecular) ? 'SIN COPY AUTORIZADO: no generar texto' : 'propón copy breve');
+    o += 'CONCEPTO: ' + (conceptAnchor || ((isGospel || isSecular) ? 'CONCEPTO NO PROPORCIONADO: no inventar concepto ni motivo' : 'propón una idea concreta dentro de la familia seleccionada')) + ' | MENSAJE EXACTO: ' + exploreCopy + '\n';
     o += 'FAMILIA: ' + familyLabel + '. Si es orientativa, no la conviertas en tema; manda el concepto.\n';
     o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje. La relación del motivo con la idea debe poder explicarse; usa metáforas visuales, no una traducción palabra por palabra. Si el banco no ofrece un motivo compatible, deriva una propuesta desde concepto y mensaje y señala la incertidumbre. ';
     o += 'Elementos autorizados: solo los nombrados en el concepto y los imprescindibles para representarlos; no añadas sol, flores, aves, montañas, marcos ornamentales ni motivos secundarios si no se solicitan. HEAVY: masas/contraste; SOFT: aire/formas abiertas; MODERN: geometría/síntesis. A/B/C deben cambiar de verdad encuadre, silueta global, distribución de masas, estructura tipográfica y relación texto-imagen; no basta recolorear ni cambiar técnica. Respeta el estilo seleccionado.\n\n';
@@ -3721,7 +3739,7 @@ function formatPrompt(result) {
     }
     o += 'VARIACIÓN VISUAL REAL: crea una nueva solución gráfica basada en la referencia, no una copia ni una limpieza de la misma. Cambia obligatoriamente composición, silueta global, encuadre, distribución de masas y jerarquía tipográfica. Conserva solo los elementos que exigen los selectores. No basta recolorear, cambiar textura, añadir borde ni aplicar filtro. No inventes objetos, texto, datos o símbolos fuera de las reglas anteriores.\n';
   }
-  if (isGospelES) {
+  if (isGospel) {
     if (isVar) {
       o += 'COPY: en variación, el selector TEXTOS es la única autoridad: conservar, reformular, crear o eliminar texto exactamente según la opción elegida; ninguna regla general puede contradecirlo.\n';
     } else if (isPatron) {
@@ -3802,7 +3820,7 @@ function formatPrompt(result) {
   } else if (contactDNA) {
     if (contactMainText) {
       o += 'TEXTOS: conserva literalmente el mensaje principal «' + contactMainText + '». Si hay apoyo autorizado, consérvalo literalmente; si no lo hay, no inventes datos, fechas, cifras ni sellos. Legibilidad primero: letras grandes y correctas a escala real de ' + MOTOR_STATE.product + '.\n';
-    } else if (isGospelES) {
+    } else if (isGospel) {
       o += sharedDerivedCopy
         ? 'TEXTOS: COPY CANÓNICO ÚNICO «' + sharedDerivedCopy + '». Usar exactamente esta misma frase en A/B/C, sin reescribir, traducir ni añadir apoyos. SOLO_TEXTO usa el copy como arte tipográfico; SOLO_OBJETO no imprime ninguna letra.\n'
         : 'TEXTOS: no hay mensaje ni copy automático autorizado (o falta concepto). No generar letras, cifras, citas, versículos, apoyos, sellos ni microtexto. Si una ficha exige texto, dejarla sin texto y señalarla como incompleta; nunca inventar una frase.\n';
@@ -3862,7 +3880,7 @@ function formatPrompt(result) {
 
   K.forEach(function (k, i) {
     const v = set[k];
-    const missingGospelCopy = (isGospelES || isSecular) && !isVar && !isPatron && !typedMessage
+    const missingGospelCopy = (isGospel || isSecular) && !isVar && !isPatron && !typedMessage
       && !(isExplore ? sharedExploreCopy : sharedDerivedCopy)
       && v.jerarquiaVisual !== 'SOLO_OBJETO';
     o += '### ' + N[i] + ' · ' + v.estilo + ' · ' + _audienceDisplay(v.audiencia) + '\n';
@@ -3927,13 +3945,13 @@ function formatPrompt(result) {
     const textLine = contactDNA
       ? (contactMainText
         ? 'MENSAJE PRINCIPAL literal: «' + contactMainText + '»' + (contactSupportText ? ' · APOYO literal: «' + contactSupportText + '»' : '') + ' · sin texto terciario · ' + v.tipografia
-        : ((isGospelES || isSecular) && !sharedDerivedCopy
+        : ((isGospel || isSecular) && !sharedDerivedCopy
           ? 'SIN COPY AUTORIZADO: no generar letras, cifras, palabras ni microtexto; no inventar una frase · ' + v.tipografia
           : 'COPY LITERAL (derivado del concepto): «' + sharedDerivedCopy + '»; usarlo exacto en las tres direcciones; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia))
       : (isExplore
         ? (String(MOTOR_STATE.message || '').trim()
           ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
-          : ((isGospelES || isSecular) && !sharedExploreCopy
+          : ((isGospel || isSecular) && !sharedExploreCopy
             ? 'SIN COPY AUTORIZADO: no generar letras, cifras, palabras ni microtexto; no inventar una frase. Tipografía: ' + v.tipografia
             : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + sharedExploreCopy + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia))
         : v.textoPrincipal + ' / ' + v.textoApoyo + ' / ' + v.textoTerciario + ' · ' + v.tipografia);
