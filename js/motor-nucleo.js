@@ -4717,8 +4717,8 @@ async function copiarPrompt() {
     const lastScore = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && LAST_RESULT.score) ? LAST_RESULT.score : null;
     aviso = _mensajeUmbral(lastScore) || '';
   } catch (e) {}
-  const avisoHtml = (aviso ? ' <span class="warn">Aviso: ' + aviso + '</span>' : '')
-    + (avisoObsoleto ? ' <span class="warn">' + avisoObsoleto + '</span>' : '');
+  const avisoHtml = (aviso ? ' <span class="warn">Aviso: ' + escHtml(aviso) + '</span>' : '')
+    + (avisoObsoleto ? ' <span class="warn">' + escHtml(avisoObsoleto) + '</span>' : '');
   try {
     await navigator.clipboard.writeText(outEl.value);
     if (statusEl) statusEl.innerHTML = '<span class="good">Prompt copiado. Pégalo en tu IA de imagen.</span>' + avisoHtml;
