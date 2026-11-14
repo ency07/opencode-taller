@@ -1406,7 +1406,22 @@
         } else if (k.indexOf('|personalBank|') > -1) {
           const merged = {};
           const keys = Object.keys(b).concat(Object.keys(a));
-          keys.forEach(function (id) { merged[id] = mergeArraysUnique(b[id], a[id]); });
+          keys.forEach(function (id) {
+            const av = a[id], bv = b[id];
+            if (id === PROPOSED_BANK_KEY) {
+              const aa = Array.isArray(av) ? av : (av && Array.isArray(av.items) ? av.items : []);
+              const bb = Array.isArray(bv) ? bv : (bv && Array.isArray(bv.items) ? bv.items : []);
+              const deleted = Object.assign({}, (bv && !Array.isArray(bv) && bv.deleted) || {}, (av && !Array.isArray(av) && av.deleted) || {});
+              merged[id] = {
+                items: mergeArraysUnique(bb, aa).filter(function (item) {
+                  return !item || !item.id || !deleted[item.id];
+                }),
+                deleted: deleted
+              };
+            } else {
+              merged[id] = mergeArraysUnique(bv, av);
+            }
+          });
           out[k] = JSON.stringify(merged);
         } else if (k.indexOf('|approvedDirections|') > -1) {
           // Acepta arrays legacy y wrappers nuevos. Tombstones por ID prevalecen
@@ -1716,15 +1731,46 @@
 
   const PROPOSED_BANK_KEY = "__propuestas_banco_global__";
 
-  function getPropuestasBanco() {
+  function _estadoPropuestasBanco() {
     const bank = loadPersonalBank("global");
-    const list = Array.isArray(bank[PROPOSED_BANK_KEY]) ? bank[PROPOSED_BANK_KEY] : [];
-    return list;
+    const raw = bank[PROPOSED_BANK_KEY];
+    if (Array.isArray(raw)) return { items: raw, deleted: {} }; // formato legacy
+    if (raw && typeof raw === "object" && Array.isArray(raw.items)) {
+      return {
+        items: raw.items,
+        deleted: raw.deleted && typeof raw.deleted === "object" && !Array.isArray(raw.deleted) ? raw.deleted : {}
+      };
+    }
+    return { items: [], deleted: {} };
+  }
+
+  function getPropuestasBanco() {
+    const state = _estadoPropuestasBanco();
+    return state.items.filter(function (item) {
+      return !item || !item.id || !state.deleted[item.id];
+    });
   }
 
   function guardarPropuestasBanco(list) {
     const bank = loadPersonalBank("global");
-    bank[PROPOSED_BANK_KEY] = (list || []).slice();
+    const state = _estadoPropuestasBanco();
+    const items = (Array.isArray(list) ? list : []).slice();
+    // Solo una propuesta reinsertada explícitamente con el mismo ID cancela
+    // su tombstone; guardar el resto de la cola no revive descartadas.
+    items.forEach(function (item) {
+      if (item && item.id) delete state.deleted[item.id];
+    });
+    bank[PROPOSED_BANK_KEY] = { items: items, deleted: state.deleted };
+    return savePersonalBank("global", bank);
+  }
+
+  function _eliminarPropuestaBanco(id, remaining) {
+    const bank = loadPersonalBank("global");
+    const state = _estadoPropuestasBanco();
+    const target = String(id || "");
+    if (target) state.deleted[target] = new Date().toISOString();
+    state.items = Array.isArray(remaining) ? remaining : state.items.filter(function (p) { return !p || p.id !== target; });
+    bank[PROPOSED_BANK_KEY] = { items: state.items, deleted: state.deleted };
     return savePersonalBank("global", bank);
   }
 
@@ -1751,8 +1797,8 @@
   }
 
   function descartarPropuestaBanco(id) {
-    const list = getPropuestasBanco().filter(function (p) { return p.id !== id; });
-    guardarPropuestasBanco(list);
+    const list = getPropuestasBanco().filter(function (p) { return !p || p.id !== id; });
+    _eliminarPropuestaBanco(id, list);
     return { ok: true, restantes: list.length };
   }
 
@@ -1766,8 +1812,8 @@
     } else if (item.tipo === "frase" || item.tipo === "objeto") {
       res = addPersonalObjects(item.mercado, item.subniche, [item.texto]);
     }
-    const restantes = list.filter(function (p) { return p.id !== id; });
-    guardarPropuestasBanco(restantes);
+    const restantes = list.filter(function (p) { return !p || p.id !== id; });
+    _eliminarPropuestaBanco(id, restantes);
     return { ok: true, aceptada: true, res: res, restantes: restantes.length };
   }
 
