@@ -47,6 +47,13 @@ ok(/grant select, insert, update on table public\.pod_project_sync to authentica
 ok(/using \(\(select auth\.uid\(\)\) = user_id\)/i.test(sql), 'SELECT/UPDATE no restringe por auth.uid');
 ok(/with check \(\(select auth\.uid\(\)\) = user_id\)/i.test(sql), 'INSERT/UPDATE no valida auth.uid');
 
+
+const hardening = fs.readFileSync(path.join(ROOT, 'supabase-hardening-handle-new-user.sql'), 'utf8');
+ok(/ALTER FUNCTION public\\.handle_new_user\\(\\)[\\s\\S]*?SET search_path = pg_catalog, public, pg_temp/i.test(hardening), 'handle_new_user no fija search_path seguro y ordenado');
+ok(/REVOKE EXECUTE ON FUNCTION public\\.handle_new_user\\(\\)[\\s\\S]*?FROM PUBLIC, anon, authenticated/i.test(hardening), 'handle_new_user no revoca EXECUTE de roles cliente');
+ok(!/GRANT EXECUTE ON FUNCTION public\\.handle_new_user\\(\\)[\\s\\S]*?TO (PUBLIC|anon|authenticated)/i.test(hardening), 'handle_new_user vuelve a conceder EXECUTE a roles cliente');
+ok(/Do not run this if the function is also intentionally called as an RPC/i.test(hardening), 'falta advertencia sobre uso RPC de handle_new_user');
+
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  supabase-cfg  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.forEach(function (f) { console.log('  ✗ ' + f); });
