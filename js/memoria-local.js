@@ -316,7 +316,8 @@
   }
 
   function loadPatternMemory(market, product) {
-    return getJSON(memKey(['patterns', market, product]), []);
+    const value = getJSON(memKey(['patterns', market, product]), []);
+    return value && value.__podDeleted === true ? [] : (Array.isArray(value) ? value : []);
   }
 
   function savePatternMemory(market, product, memory) {
@@ -370,7 +371,10 @@
   }
 
   function clearPatternMemory(market, product) {
-    removeRaw(memKey(['patterns', market, product]));
+    return setJSON(memKey(['patterns', market, product]), {
+      __podDeleted: true,
+      deletedAt: new Date().toISOString()
+    });
   }
 
   /* ============================================================
@@ -829,11 +833,14 @@
   }
 
   function loadSetHistory(key) {
-    return getJSON(key, {
+    const value = getJSON(key, {
       history: [],
       usedObjects: [],
       prevPicks: null
     });
+    return value && value.__podDeleted === true
+      ? { history: [], usedObjects: [], prevPicks: null }
+      : value;
   }
 
   function saveSetHistory(key, data) {
@@ -861,7 +868,7 @@
   }
 
   function clearSetHistory(key) {
-    removeRaw(key);
+    return setJSON(key, { __podDeleted: true, deletedAt: new Date().toISOString() });
   }
 
   /* ============================================================
@@ -869,10 +876,13 @@
      ============================================================ */
 
   function loadCreativeMemory(market, product) {
-    return getJSON(memKey(['creative', market, product]), {
+    const value = getJSON(memKey(['creative', market, product]), {
       archetypes: [],
       motifs: []
     });
+    return value && value.__podDeleted === true
+      ? { archetypes: [], motifs: [] }
+      : value;
   }
 
   function saveCreativeMemory(market, product, memory) {
@@ -884,7 +894,10 @@
   }
 
   function clearCreativeMemory(market, product) {
-    removeRaw(memKey(['creative', market, product]));
+    return setJSON(memKey(['creative', market, product]), {
+      __podDeleted: true,
+      deletedAt: new Date().toISOString()
+    });
   }
 
   /* ============================================================
@@ -893,7 +906,8 @@
      ============================================================ */
 
   function getStyleUsageCounter(market, product) {
-    return getJSON(memKey(['styleUsage', market || 'global', product || 'all']), {}) || {};
+    const value = getJSON(memKey(['styleUsage', market || 'global', product || 'all']), {}) || {};
+    return value && value.__podDeleted === true ? {} : value;
   }
 
   function recordStyleUse(market, product, style) {
@@ -909,7 +923,10 @@
   }
 
   function clearStyleUsage(market, product) {
-    removeRaw(memKey(['styleUsage', market || 'global', product || 'all']));
+    return setJSON(memKey(['styleUsage', market || 'global', product || 'all']), {
+      __podDeleted: true,
+      deletedAt: new Date().toISOString()
+    });
   }
 
   /* ============================================================
@@ -1283,6 +1300,11 @@
         const a = local[k] ? JSON.parse(local[k]) : null;
         const b = remote[k] ? JSON.parse(remote[k]) : null;
 
+        // Los marcadores de borrado son valores explícitos y replicables.
+        // Se comprueban antes de los retornos por clave ausente para evitar
+        // que un snapshot antiguo restaure datos eliminados.
+        if (a && a.__podDeleted === true) { out[k] = local[k]; return; }
+        if (b && b.__podDeleted === true) { out[k] = remote[k]; return; }
         if (!a && !b) return;
         if (!a) {
           out[k] = remote[k];
