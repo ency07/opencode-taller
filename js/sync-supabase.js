@@ -59,7 +59,7 @@
 
     libPromise = new Promise(function (resolve, reject) {
       var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0';
       s.onload = resolve;
       s.onerror = function () {
         reject(new Error('No se pudo cargar Supabase JS. Comprueba tu conexión.'));
