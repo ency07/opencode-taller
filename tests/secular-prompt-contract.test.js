@@ -212,7 +212,7 @@ ok(gospelEnBankDomains.KINGDOM.objetos.includes("open scroll beside balanced sca
 ok(gospelEnBankDomains.KINGDOM.objetos.includes("royal throne beneath a simple crown"),'KINGDOM incluye imagen coherente: royal throne beneath a simple crown');
 ok(gospelEnBankDomains.KINGDOM.objetos.includes("open palace doorway with a welcoming table beyond"),'KINGDOM incluye imagen coherente: open palace doorway with a welcoming table beyond');
 ok(gospelEnBankDomains.KINGDOM.objetos.includes("wide city square with open gates"),'KINGDOM incluye imagen coherente: wide city square with open gates');
-ok(gospelEnBankDomains.KINGDOM.objetos.includes("crown resting beside a servant's towel"),'KINGDOM incluye imagen coherente: crown resting beside a servant's towel');
+ok(gospelEnBankDomains.KINGDOM.objetos.includes("crown resting beside a servant towel"),'KINGDOM incluye imagen coherente: crown resting beside a servant towel');
 ok(gospelEnBankDomains.KINGDOM.objetos.includes("royal banner held above a gathered crowd"),'KINGDOM incluye imagen coherente: royal banner held above a gathered crowd');
 ok(gospelEnBankDomains.KINGDOM.objetos.includes("wide field with workers gathering the harvest"),'KINGDOM incluye imagen coherente: wide field with workers gathering the harvest');
 (gospelEnBankDomains.PERSON.objetos).forEach(function(item){ ok(typeof item==='string' && item.trim().length>0,'PERSON contiene entradas no vacías'); });
