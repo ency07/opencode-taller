@@ -47,7 +47,8 @@
           }
         }
         mem[k] = String(v);
-        return true;
+        // Fallback is session-only: never report it as durable persistence.
+        return false;
       },
       removeItem: function (k) {
         delete mem[k];
