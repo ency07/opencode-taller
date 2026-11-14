@@ -70,6 +70,16 @@ const gospelPrompt=formatPrompt({set:gospelSet});
 ok(!gospelPrompt.includes('PALETA VINCULADA A IDENTIDAD'),'Gospel no recibe el filtro cromático secular');
 ok(!gospelPrompt.includes('FIDELIDAD DEL CONCEPTO:'),'Gospel no recibe las reglas de concepto seculares');
 ok(!gospelPrompt.includes('COPY CANÓNICO SECULAR'),'Gospel no recibe el contrato de copy secular');
+
+/* Gospel EN también debe conservar su contrato propio y quedar fuera de Secular. */
+MOTOR_STATE.market='gospel_en'; MOTOR_STATE.visualIdentity='Neon black cyan visual identity';
+MOTOR_STATE.workflowMode='explore'; MOTOR_STATE.concept='Grace in the storm'; MOTOR_STATE.message='Christ is my hope';
+const gospelEnSet=buildCandidate(resolveAudiences(),null);
+const gospelEnPrompt=formatPrompt({set:gospelEnSet});
+ok(gospelEnPrompt.includes('DOCTRINA: Trinitario'),'Gospel EN conserva su contrato doctrinal');
+ok(!gospelEnPrompt.includes('PALETA VINCULADA A IDENTIDAD'),'Gospel EN no recibe el filtro cromático secular');
+ok(!gospelEnPrompt.includes('FIDELIDAD DEL CONCEPTO:'),'Gospel EN no recibe las reglas de concepto seculares');
+ok(!gospelEnPrompt.includes('COPY CANÓNICO SECULAR'),'Gospel EN no recibe el contrato de copy secular');
 console.log((failures.length?'FAIL':'PASS')+' secular-prompt-contract ('+checks+' assertions, '+failures.length+' failures)');
 failures.forEach(x=>console.error(' - '+x));
 process.exit(failures.length?1:0);
