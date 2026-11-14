@@ -119,8 +119,8 @@
 
   function setRaw(key, value) {
     const saved = POD_LS.setItem(key, value) === true;
-    if (saved) _recordGlobalMemoryWrite(key);
-    return saved;
+    if (!saved) return false;
+    return _recordGlobalMemoryWrite(key);
   }
 
   function removeRaw(key) {
@@ -151,18 +151,18 @@
   }
 
   function _recordGlobalMemoryWrite(key) {
-    if (!key || key === GLOBAL_MEMORY_CLEAR_KEY || String(key).indexOf(MEM_PREFIX) !== 0) return;
+    if (!key || key === GLOBAL_MEMORY_CLEAR_KEY || String(key).indexOf(MEM_PREFIX) !== 0) return true;
     const marker = _readGlobalMemoryClear();
-    if (!marker) return;
+    if (!marker) return true;
     marker.preservedKeys[key] = new Date().toISOString();
-    POD_LS.setItem(GLOBAL_MEMORY_CLEAR_KEY, JSON.stringify(marker));
+    return POD_LS.setItem(GLOBAL_MEMORY_CLEAR_KEY, JSON.stringify(marker)) === true;
   }
 
   function setJSON(key, value) {
     try {
       const saved = POD_LS.setItem(key, JSON.stringify(value)) === true;
-      if (saved) _recordGlobalMemoryWrite(key);
-      return saved;
+      if (!saved) return false;
+      return _recordGlobalMemoryWrite(key);
     } catch (e) {
       return false;
     }
