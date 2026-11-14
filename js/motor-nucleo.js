@@ -4917,7 +4917,7 @@ window.renderColorAudit = renderColorAudit;
       const markets = Array.isArray(rec.compatibleMarkets) ? rec.compatibleMarkets : [];
       if (markets.length && market && markets.indexOf(market) === -1) return ''; // hide incompatible
       const label = rec.label_es || rec.label || id;
-      return '<option value="' + id + '">' + label + '</option>';
+      return '<option value="' + escHtml(id) + '">' + escHtml(label) + '</option>';
     }).filter(Boolean).join('');
     select.innerHTML = autoOpt + opts;
     // Restore previous if still compatible
@@ -4944,7 +4944,7 @@ window.renderColorAudit = renderColorAudit;
     const previous = methodEl.value || 'auto';
     methodEl.innerHTML = allowed.map(function (id) {
       const label = labels[id] || id;
-      return '<option value="' + id + '">' + label + '</option>';
+      return '<option value="' + escHtml(id) + '">' + escHtml(label) + '</option>';
     }).join('');
     const valid = allowed.indexOf(previous) !== -1;
     methodEl.value = valid ? previous : 'auto';
