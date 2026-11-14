@@ -11,6 +11,7 @@ function ok(cond, msg) { checks++; if (!cond) failures.push(msg); }
 const analysis = fs.readFileSync(path.join(ROOT, 'js/ia-analisis.js'), 'utf8');
 const reviewer = fs.readFileSync(path.join(ROOT, 'js/ia-revisor.js'), 'utf8');
 const client = fs.readFileSync(path.join(ROOT, 'js/ia-client.js'), 'utf8');
+const copy = fs.readFileSync(path.join(ROOT, 'js/copy-ia.js'), 'utf8');
 
 ok(/function tell\(msg\)[\s\S]*?statusEl\.textContent/.test(analysis), 'analysis status must render plain text');
 ok(!/function tell\(msg\)[\s\S]*?statusEl\.innerHTML\s*=\s*msg/.test(analysis), 'analysis tell must not insert arbitrary message as HTML');
@@ -19,6 +20,8 @@ ok(/function renderBankPreview\(payload\)[\s\S]*?\.textContent\s*=\s*String\(val
 ok(!/function renderBankPreview\(payload\)[\s\S]*?innerHTML\s*=/.test(analysis), 'bank preview must not inject imported JSON as HTML');
 ok(/function proponerBanco\(tipo\)[\s\S]*?badge\.textContent\s*=/.test(analysis), 'bank proposal errors must be rendered as plain text');
 ok(!/function proponerBanco\(tipo\)[\s\S]*?innerHTML\s*=/.test(analysis), 'bank proposal must not inject dynamic error text as HTML');
+ok(/function drawAlternatives\(list, field\)[\s\S]*?button\.textContent\s*=\s*phrase/.test(copy), 'AI copy alternatives must be rendered as text nodes');
+ok(!/function drawAlternatives\(list, field\)[\s\S]*?innerHTML\s*=/.test(copy), 'AI copy alternatives must not inject model output as HTML');
 ok(!analysis.includes('AIzaSyTESTCONNECTIVITY'), 'preflight must not contain a fake API key');
 ok(!/generativelanguage\.googleapis\.com\/v1beta\/models\/[^'\n]*\?key=/.test(analysis), 'Gemini requests should not append API key to URL');
 ok(client.includes('x-goog-api-key') && !analysis.includes('x-goog-api-key'),
