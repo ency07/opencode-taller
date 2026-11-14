@@ -469,17 +469,30 @@
      revoke all on table public.pod_project_sync from authenticated;
      grant select, insert, update on table public.pod_project_sync to authenticated;
 
-     drop policy if exists "POD users read own sync" on public.pod_project_sync;
+     -- Elimina cualquier política heredada; RLS combina permissive policies con OR.
+     do $
+     declare existing_policy record;
+     begin
+       for existing_policy in
+         select policyname from pg_policies
+         where schemaname = 'public' and tablename = 'pod_project_sync'
+       loop
+         execute format('drop policy if exists %I on public.pod_project_sync', existing_policy.policyname);
+       end loop;
+     end
+     $;
+
+     revoke all on table public.pod_project_sync from public, anon, authenticated;
+     grant select, insert, update on table public.pod_project_sync to authenticated;
+
      create policy "POD users read own sync"
        on public.pod_project_sync for select to authenticated
        using ((select auth.uid()) = user_id);
 
-     drop policy if exists "POD users create own sync" on public.pod_project_sync;
      create policy "POD users create own sync"
        on public.pod_project_sync for insert to authenticated
        with check ((select auth.uid()) = user_id);
 
-     drop policy if exists "POD users update own sync" on public.pod_project_sync;
      create policy "POD users update own sync"
        on public.pod_project_sync for update to authenticated
        using ((select auth.uid()) = user_id)
