@@ -4,6 +4,15 @@ const path = require('path');
 const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 global.window = global;
+// El test cubre exportación/importación y bancos persistentes: localStorage simulado.
+global.localStorage = {};
+Object.defineProperties(global.localStorage, {
+  getItem: { value: function (key) { return Object.prototype.hasOwnProperty.call(global.localStorage, key) ? global.localStorage[key] : null; } },
+  setItem: { value: function (key, value) { global.localStorage[key] = String(value); } },
+  removeItem: { value: function (key) { delete global.localStorage[key]; } },
+  key: { value: function (index) { return Object.keys(global.localStorage)[index] || null; } },
+  length: { get: function () { return Object.keys(global.localStorage).length; } }
+});
 global.document = { getElementById: function () { return null; }, querySelectorAll: function () { return []; } };
 vm.runInThisContext(fs.readFileSync(path.join(ROOT, 'js', 'memoria-local.js'), 'utf8'), { filename: 'memoria-local.js' });
 let checks = 0;
