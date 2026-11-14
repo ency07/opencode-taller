@@ -10,7 +10,7 @@ function ok(value, message) { checks++; if (!value) failures.push(message); }
 global.window = global;
 global.document = { getElementById: function () { return null; }, querySelectorAll: function () { return []; } };
 const JS = path.join(ROOT, 'js');
-['data-mercados.js','data-audiencias.js','data-bancos.js','data-estilos.js','dominios.js','data-productos.js','data-territorios.js','memoria-local.js','motor-nucleo.js']
+['data-mercados.js','data-audiencias.js','data-bancos.js','banco-gospel-en.js','data-estilos.js','dominios.js','data-productos.js','data-territorios.js','memoria-local.js','motor-nucleo.js']
   .forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(JS, f), 'utf8'), { filename: f }); });
 const secularMarkets = ['global_en','global_es','colombia','anglo','latam','spain','diaspora_col'];
 secularMarkets.forEach(function (market) {
@@ -104,6 +104,14 @@ const gospelEnEmptyPrompt=formatPrompt({set:gospelEnEmptySet});
 ok(gospelEnEmptyPrompt.includes('SIN COPY AUTORIZADO: no generar texto'),'Gospel EN sin concepto no pide copy nuevo a la IA');
 ok(gospelEnEmptyPrompt.includes('CONCEPTO NO PROPORCIONADO'),'Gospel EN no inventa concepto');
 ok(!gospelEnEmptyPrompt.includes('propón copy breve'),'Gospel EN no cae al fallback comercial');
+/* Integridad estructural del banco Gospel EN: 13 dominios, 30 objetos y sin duplicados. */
+const gospelEnBankDomains=window.GOSPEL_DOMINIOS_EN || {};
+ok(Object.keys(gospelEnBankDomains).length===13,'Gospel EN expone 13 dominios');
+Object.keys(gospelEnBankDomains).forEach(function(id){
+ const items=gospelEnBankDomains[id].objetos || [];
+ ok(items.length===30,id+' contiene exactamente 30 objetos');
+ ok(new Set(items.map(function(x){return String(x).trim().toLowerCase();})).size===items.length,id+' no contiene objetos duplicados');
+});
 /* El catálogo de un mercado Gospel nunca debe caer silenciosamente en el otro. */
 const savedGospelEnDomains=window.GOSPEL_DOMINIOS_EN;
 window.GOSPEL_DOMINIOS_EN=undefined;
