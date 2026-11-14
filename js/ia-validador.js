@@ -14,7 +14,7 @@
   function $(id) { return document.getElementById(id); }
 
   function tell(msg) {
-    if (statusEl) statusEl.innerHTML = msg;
+    if (statusEl) statusEl.textContent = String(msg == null ? '' : msg);
   }
 
   function esc(s) {
@@ -296,13 +296,13 @@
   async function validarHoja() {
     var fileInput = $('sheetUpload');
     if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-      tell('<span class="bad">Selecciona la imagen de la hoja generada.</span>');
+      tell('Selecciona la imagen de la hoja generada.');
       return;
     }
     var file = fileInput.files[0];
     var contrato = extraerContrato() || extraerDePrompt($('out') ? $('out').value : '');
     if (!contrato) {
-      tell('<span class="bad">Genera los diseños primero: el validador compara la hoja con el set 01A/01B/01C actual.</span>');
+      tell('Genera los diseños primero: el validador compara la hoja con el set 01A/01B/01C actual.');
       return;
     }
     var estructura = '';
@@ -320,7 +320,7 @@
       try { fileData = await window.PODVision.fileToBase64(file); } catch (e) {}
     }
     if (!fileData) {
-      tell('<span class="bad">No se pudo leer la imagen (formato o tamaño). Usa PNG/JPG/WEBP.</span>');
+      tell('No se pudo leer la imagen (formato o tamaño). Usa PNG/JPG/WEBP.');
       return;
     }
 
@@ -330,16 +330,16 @@
     try {
       resp = await llamadaVision(fileData, prompt);
     } catch (e) {
-      tell('<span class="bad">La IA de visión no respondió: ' + esc(String((e && e.message) || e)) + ' — copiar no se ve afectado.</span>');
+      tell('La IA de visión no respondió: ' + String((e && e.message) || e) + ' — copiar no se ve afectado.');
       return;
     }
     if (resp && resp.error) {
-      tell('<span class="bad">' + esc(resp.error) + ' — configura la barra IA; copiar no se ve afectado.</span>');
+      tell(String(resp.error) + ' — configura la barra IA; copiar no se ve afectado.');
       return;
     }
     var v = parseVerdict(resp);
     if (!v) {
-      tell('<span class="bad">Respuesta no legible de la IA de visión. Copiar no se ve afectado; intenta de nuevo.</span>');
+      tell('Respuesta no legible de la IA de visión. Copiar no se ve afectado; intenta de nuevo.');
       return;
     }
     tell('Lista. El prompt original sigue copiándose igual: estos son solo avisos.');
