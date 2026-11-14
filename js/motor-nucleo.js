@@ -680,7 +680,9 @@ const _MARKET_ENGINE_ROUTING = Object.freeze({
   anglo: 'secular',
   latam: 'secular',
   spain: 'secular',
-  diaspora_col: 'secular'
+  diaspora_col: 'secular',
+  // Alias histórico usado por integraciones/pruebas anteriores; no es opción del selector UI.
+  christian: 'secular'
 });
 
 function resolveEngineForMarket(marketId) {
