@@ -6,22 +6,33 @@ Estado: reglas de enrutamiento especificadas; runtime principal todavía no cone
 
 El motor se elige mediante una clasificación explícita del mercado. No inferir el motor por idioma, subnicho, producto, palabras del concepto ni presencia/ausencia de theologicalBasis.
 
-## 2. Clasificación inicial permitida
+## 2. Clasificación explícita vigente
+
+La clasificación inicial conserva el comportamiento comercial ya existente y evita
+inferir Secular por descarte:
 
 | Mercado UI | Motor | Estado |
 |---|---|---|
-| `gospel_es` | Gospel | Activo en motor existente |
-| `gospel_en` | Gospel | Activo en motor existente |
-| `colombia` | Sin clasificar | Requiere decisión de producto |
-| `global_en` | Sin clasificar | Requiere decisión de producto |
-| `global_es` | Sin clasificar | Requiere decisión de producto |
-| `anglo` | Sin clasificar | Requiere decisión de producto |
-| `latam` | Sin clasificar | Requiere decisión de producto |
-| `spain` | Sin clasificar | Requiere decisión de producto |
-| `diaspora_col` | Sin clasificar | Requiere decisión de producto |
-| `custom` | Sin clasificar | Requiere decisión de producto |
+| `gospel_es` | Gospel | Explícito / protegido |
+| `gospel_en` | Gospel | Explícito / protegido |
+| `global_en` | Secular | Explícito / compatibilidad |
+| `global_es` | Secular | Explícito / compatibilidad |
+| `colombia` | Secular | Explícito / compatibilidad |
+| `anglo` | Secular | Explícito / compatibilidad |
+| `latam` | Secular | Explícito / compatibilidad |
+| `spain` | Secular | Explícito / compatibilidad |
+| `diaspora_col` | Secular | Explícito / compatibilidad |
+| `custom` | Sin clasificar | Bloqueado hasta asignación explícita |
+| ID vacío/desconocido | Sin clasificar | Bloqueado hasta asignación explícita |
 
-No convertir automáticamente todos los mercados no Gospel en Secular: algunos pueden ser religiosos, mixtos o personalizados.
+La clasificación Secular de los siete mercados comerciales reproduce el
+comportamiento que ya tenían en `motor-nucleo.js`; ahora se declara en una
+allowlist y no mediante `!isGospelMarket()`.
+
+No se asigna un motor por idioma, subnicho, producto, texto del concepto ni
+presencia/ausencia de `theologicalBasis`. El mercado `christian`, usado en
+pruebas antiguas pero ausente de `POD_MARKETS`, queda sin clasificar; no es un
+alias implícito de Gospel ni de Secular.
 
 ## 3. Contrato de resolución
 
@@ -31,7 +42,7 @@ La capa de routing deberá devolver uno de estos resultados:
 - `{ status: "resolved", engine: "secular" }`
 - `{ status: "unclassified", market: "<id>" }`
 
-Un mercado no clasificado no se enruta silenciosamente a otro motor. Debe conservar el comportamiento actual o solicitar clasificación explícita, según el flujo de producto.
+Un mercado no clasificado no se enruta silenciosamente a otro motor. La generación, regeneración de fichas y construcción del prompt final se bloquean con un mensaje que solicita seleccionar un mercado configurado.
 
 ## 4. Aislamiento de datos y ejecución
 
@@ -49,7 +60,18 @@ Compartido:
 - solo infraestructura neutral: productos, impresión, exportación/importación y utilidades;
 - no comparte bancos, prompts, QA ni memoria creativa.
 
-## 5. Activación
+## 5. Estado de implementación del router
+
+Implementado en `js/motor-nucleo.js`:
+- `resolveEngineForMarket(marketId)` devuelve `resolved/gospel`,
+  `resolved/secular` o `unclassified`.
+- `isGospelMarket()` y `isSecularMarket()` consultan esa clasificación.
+- `generateSet()` y `rerollSingle()` bloquean mercados no clasificados.
+- `formatPrompt()` no construye prompts para mercados no clasificados.
+- La lista explícita mantiene Gospel ES/EN y los siete mercados comerciales
+  previamente operativos en Secular.
+
+## 6. Activación
 
 Antes de cargar `secular-engine/secular-engine.js` en el runtime principal:
 1. clasificar explícitamente los mercados UI;
