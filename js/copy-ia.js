@@ -190,12 +190,17 @@
   function drawAlternatives(list, field) {
     var el = $('copyIAAlternativas');
     if (!el) return;
-    if (!list || !list.length) { el.innerHTML = ''; return; }
-    el.innerHTML = list.map(function (f) {
-      return '<button type="button" class="ghost alt-copy" data-fl>' + f.replace(/</g, '&lt;') + '</button>';
-    }).join(' ');
-    Array.prototype.forEach.call(el.querySelectorAll('.alt-copy'), function (b) {
-      b.addEventListener('click', function () { field.value = b.textContent; });
+    el.replaceChildren();
+    (Array.isArray(list) ? list : []).filter(esFraseValida).slice(0, 3).forEach(function (phrase) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ghost alt-copy';
+      button.setAttribute('data-fl', '');
+      button.textContent = phrase;
+      button.addEventListener('click', function () {
+        if (field) field.value = button.textContent;
+      });
+      el.appendChild(button);
     });
   }
 
