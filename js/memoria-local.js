@@ -390,6 +390,7 @@
   function loadLocks(market, product) {
     const saved = getJSON(memKey(['locks', market, product]), {});
     const base = defaultLocks();
+    if (saved && saved.__podDeleted === true) return base;
 
     ['estilo', 'audiencia', 'jerarquia', 'layout', 'tratamiento'].forEach(function (field) {
       ['A', 'B', 'C'].forEach(function (card) {
@@ -410,7 +411,8 @@
     /* FIX 3D: guardar solo los valores explícitos del usuario (sin fusionar
        con defaultLocks). Así _rawLocks() distingue un 'Auto' explícito de un
        'Auto' por defecto (no fijado), necesario para el estado PRESERVE. */
-    const locks = getJSON(memKey(['locks', market, product]), {}) || {};
+    const current = getJSON(memKey(['locks', market, product]), {}) || {};
+    const locks = current.__podDeleted === true ? {} : current;
     if (!locks[field]) locks[field] = {};
     locks[field][card] = value;
     const persisted = saveLocks(market, product, locks);
@@ -418,7 +420,12 @@
   }
 
   function clearLocks(market, product) {
-    removeRaw(memKey(['locks', market, product]));
+    // Marcador replicable: una clave ausente no puede distinguirse de una
+    // copia antigua durante merge/sync y permitiría resucitar locks borrados.
+    return setJSON(memKey(['locks', market, product]), {
+      __podDeleted: true,
+      deletedAt: new Date().toISOString()
+    });
   }
 
   /* ============================================================
@@ -1286,7 +1293,11 @@
           return;
         }
 
-        if (k.indexOf('|personalBanks|') > -1) {
+        if (k.indexOf('|locks|') > -1) {
+          // El marcador de borrado prevalece sobre cualquier snapshot antiguo.
+          if (a && a.__podDeleted === true) out[k] = local[k];
+          else if (b && b.__podDeleted === true) out[k] = remote[k];
+        } else if (k.indexOf('|personalBanks|') > -1) {
           const deleted = Object.assign({}, b.deleted || {}, a.deleted || {});
           const merged = {
             banks: {},
