@@ -13,8 +13,28 @@ const JS = path.join(ROOT, 'js');
 ['data-mercados.js','data-audiencias.js','data-bancos.js','data-estilos.js','dominios.js','data-productos.js','data-territorios.js','memoria-local.js','motor-nucleo.js']
   .forEach(function (f) { vm.runInThisContext(fs.readFileSync(path.join(JS, f), 'utf8'), { filename: f }); });
 const secularMarkets = ['global_en','global_es','colombia','anglo','latam','spain','diaspora_col'];
-secularMarkets.forEach(function (market) { MOTOR_STATE.market = market; ok(isSecularMarket(), market + ' debe usar contrato secular'); });
-['gospel_es','gospel_en'].forEach(function (market) { MOTOR_STATE.market = market; ok(!isSecularMarket(), market + ' debe quedar fuera del contrato secular'); });
+secularMarkets.forEach(function (market) {
+  MOTOR_STATE.market = market;
+  const route = resolveEngineForMarket(market);
+  ok(route.status === 'resolved' && route.engine === 'secular', market + ' debe tener ruta secular explícita');
+  ok(isSecularMarket(), market + ' debe conservar el comportamiento secular');
+});
+['gospel_es','gospel_en'].forEach(function (market) {
+  MOTOR_STATE.market = market;
+  const route = resolveEngineForMarket(market);
+  ok(route.status === 'resolved' && route.engine === 'gospel', market + ' debe tener ruta Gospel explícita');
+  ok(isGospelMarket() && !isSecularMarket(), market + ' debe conservar exclusivamente el motor Gospel');
+});
+['custom','christian','unknown_market',''].forEach(function (market) {
+  const route = resolveEngineForMarket(market);
+  ok(route.status === 'unclassified', String(market) + ' debe quedar sin clasificar');
+});
+MOTOR_STATE.market = 'custom';
+ok(!isGospelMarket() && !isSecularMarket(), 'un mercado sin clasificar no debe activar reglas Gospel ni Secular');
+const originalReadStateFromDOM = readStateFromDOM;
+readStateFromDOM = function () { MOTOR_STATE.market = 'custom'; };
+ok(generateSet() === null, 'la generación debe bloquearse para mercados sin clasificar');
+readStateFromDOM = originalReadStateFromDOM;
 MOTOR_STATE.market='global_en'; MOTOR_STATE.region='global'; MOTOR_STATE.product='CAMISETA SOFT';
 MOTOR_STATE.workflowMode='explore'; MOTOR_STATE.designMode='contacto'; MOTOR_STATE.subniche='auto';
 MOTOR_STATE.dominio='auto'; MOTOR_STATE.dominioDetectado='auto'; MOTOR_STATE.audienceSet='Auto'; MOTOR_STATE.audienceMulti='si';
