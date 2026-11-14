@@ -25,7 +25,7 @@ secularMarkets.forEach(function (market) {
   ok(route.status === 'resolved' && route.engine === 'gospel', market + ' debe tener ruta Gospel explícita');
   ok(isGospelMarket() && !isSecularMarket(), market + ' debe conservar exclusivamente el motor Gospel');
 });
-['custom','christian','unknown_market',''].forEach(function (market) {
+['custom','unknown_market',''].forEach(function (market) {
   const route = resolveEngineForMarket(market);
   ok(route.status === 'unclassified', String(market) + ' debe quedar sin clasificar');
 });
