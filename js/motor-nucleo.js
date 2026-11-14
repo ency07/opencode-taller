@@ -953,7 +953,7 @@ function _resolveExplorationBrief() {
       selectedFrom = 'market-compatible-bank';
     }
   }
-  const concept = explicitConcept || (candidates.length ? String(_pick(candidates) || '').trim() : '');
+  const concept = explicitConcept || (MOTOR_STATE.market === 'gospel_en' ? '' : (candidates.length ? String(_pick(candidates) || '').trim() : ''));
   const detectedFamilyLabel = familyId && typeof getSubnicheLabel === 'function'
     ? (getSubnicheLabel(familyId, MOTOR_STATE.market) || familyId)
     : (familyId || 'sin familia confirmada');
