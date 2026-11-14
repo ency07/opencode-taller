@@ -1265,7 +1265,30 @@
         });
       }
     } else {
+      // Los tombstones y metadatos internos forman parte del formato replicable.
+      if (value.__podDeleted === true) return value;
+      [PERSONAL_BANK_DELETED_KEY, PERSONAL_BANK_UPDATED_KEY].forEach(function (metaKey) {
+        const meta = value[metaKey];
+        if (meta !== undefined && (!meta || typeof meta !== 'object' || Array.isArray(meta))) {
+          throw new Error('Metadatos de borrado inválidos en ' + key);
+        }
+        Object.keys(meta || {}).forEach(function (entryKey) {
+          if (typeof meta[entryKey] !== 'string' || !Number.isFinite(Date.parse(meta[entryKey]))) {
+            throw new Error('Marca temporal inválida para ' + entryKey + ' en ' + key);
+          }
+        });
+      });
       Object.keys(value).forEach(function (subniche) {
+        if (subniche === PERSONAL_BANK_DELETED_KEY || subniche === PERSONAL_BANK_UPDATED_KEY) return;
+        if (subniche === PROPOSED_BANK_KEY) {
+          const proposals = value[subniche];
+          if (Array.isArray(proposals)) return; // formato legacy
+          if (!proposals || typeof proposals !== 'object' || !Array.isArray(proposals.items) ||
+              (proposals.deleted !== undefined && (!proposals.deleted || typeof proposals.deleted !== 'object' || Array.isArray(proposals.deleted)))) {
+            throw new Error('Bandeja de propuestas inválida en ' + key);
+          }
+          return;
+        }
         if (!Array.isArray(value[subniche]) || !value[subniche].every(function (x) { return typeof x === 'string'; })) {
           throw new Error('Lista de objetos/frases inválida para ' + subniche + ' en ' + key);
         }
@@ -1375,8 +1398,9 @@
           summary.objects += (value.banks[id].objects || []).length;
           summary.phrases += (value.banks[id].phrases || []).length;
         });
-      } else {
+      } else if (value.__podDeleted !== true) {
         Object.keys(value).forEach(function (subniche) {
+          if (subniche === PERSONAL_BANK_DELETED_KEY || subniche === PERSONAL_BANK_UPDATED_KEY || subniche === PROPOSED_BANK_KEY) return;
           const isPhrase = subniche.indexOf('__phrase__') === 0;
           summary[isPhrase ? 'phrases' : 'objects'] += value[subniche].length;
         });
