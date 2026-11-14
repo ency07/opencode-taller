@@ -65,4 +65,11 @@ assert.ok(persisted.__podDeletedEntries.camiseta, 'subniche deletion marker must
 assert.ok(persisted.__podDeletedEntries.__concept__camiseta, 'concept deletion marker must persist');
 assert.ok(persisted.__podDeletedEntries.__phrase__camiseta, 'phrase deletion marker must persist');
 
-console.log('PASS legacy-personal-bank-sync-tombstone (12 assertions, 0 failures)');
+const marketDelete = JSON.stringify({ __podDeleted: true, deletedAt: '2026-11-14T20:00:00.000Z' });
+merged = context.mergeMemoryObjects({ [key]: marketDelete }, { [key]: stale });
+assert.strictEqual(JSON.parse(merged[key]).__podDeleted, true, 'whole-market deletion must beat stale remote bank');
+context.removePersonalBank('gospel_es');
+assert.strictEqual(context.loadPersonalBank('gospel_es').camiseta, undefined, 'whole-market deletion must load as empty bank');
+assert.strictEqual(JSON.parse(context.getRaw(key)).__podDeleted, true, 'whole-market deletion marker must persist');
+
+console.log('PASS legacy-personal-bank-sync-tombstone (17 assertions, 0 failures)');
