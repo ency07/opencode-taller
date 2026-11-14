@@ -17,6 +17,15 @@ const failures = [];
 function ok(cond, msg) { checks++; if (!cond) failures.push(msg); }
 
 global.window = global;
+// CRUD de templates persistentes: usar un localStorage de navegador en pruebas.
+global.localStorage = {};
+Object.defineProperties(global.localStorage, {
+  getItem: { value: function (key) { return Object.prototype.hasOwnProperty.call(global.localStorage, key) ? global.localStorage[key] : null; } },
+  setItem: { value: function (key, value) { global.localStorage[key] = String(value); } },
+  removeItem: { value: function (key) { delete global.localStorage[key]; } },
+  key: { value: function (index) { return Object.keys(global.localStorage)[index] || null; } },
+  length: { get: function () { return Object.keys(global.localStorage).length; } }
+});
 global.document = { getElementById: function () { return null; }, querySelectorAll: function () { return []; } };
 
 const JS = path.join(ROOT, 'js');
