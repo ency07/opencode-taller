@@ -39,9 +39,6 @@ const changedDuringRequest = {
   'POD2|locks|gospel_es|CAMISETA': JSON.stringify({ estilo: { A: 'Cambio reciente' } }),
   'POD2|personalBanks|gospel_es': JSON.stringify({ banks: { newBank: { name: 'Creado durante sync', objects: [], phrases: [] } }, active: {}, deleted: {} })
 };
-const snapshotBeforeRequest = {
-  'POD2|locks|gospel_es|CAMISETA': JSON.stringify({ estilo: { A: 'Valor antiguo' } })
-};
 const cloudMerged = {
   'POD2|locks|gospel_es|CAMISETA': JSON.stringify({ estilo: { A: 'Valor antiguo' } }),
   'POD2|approvedDirections|gospel_es': JSON.stringify(['dirección nube'])
