@@ -992,7 +992,7 @@ Estas acciones eliminan objetos y frases personales de LocalStorage. No afectan 
           let html = '<option value="">Banco general del subnicho</option>';
           listPersonalBanks(market).forEach(function (b) {
             html += '<option value="nb:' + escHtml(b.id) + '">' + escHtml(b.name) +
-              ' (' + (b.objects.length + b.phrases.length) + ')</option>';
+              ' (' + ((Array.isArray(b.objects) ? b.objects.length : 0) + (Array.isArray(b.phrases) ? b.phrases.length : 0)) + ')</option>';
           });
           tgt.innerHTML = html;
           const still = Array.prototype.some.call(tgt.options, function (o) { return o.value === prev; });
@@ -1013,7 +1013,7 @@ Estas acciones eliminan objetos y frases personales de LocalStorage. No afectan 
             getActivePersonalBank(market, sub) && getActivePersonalBank(market, sub).id === b.id);
           html += '<div style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:var(--r);padding:8px;margin-bottom:8px;">'
             + '<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;">' + escHtml(b.name) + '</div>'
-            + '<div class="hint" style="margin:0;">' + escHtml(b.subniche) + ' · ' + b.objects.length + ' objetos · ' + b.phrases.length + ' frases'
+            + '<div class="hint" style="margin:0;">' + escHtml(b.subniche) + ' · ' + (Array.isArray(b.objects) ? b.objects.length : 0) + ' objetos · ' + (Array.isArray(b.phrases) ? b.phrases.length : 0) + ' frases'
             + (isActive ? ' · <b>ACTIVO</b>' : '') + '</div></div>'
             + '<button class="ghost" data-nb-act="' + escHtml(b.id) + '">' + (isActive ? 'Quitar' : 'Activar') + '</button>'
             + '<button class="ghost" data-nb-clone="' + escHtml(b.id) + '">Clonar</button>'
