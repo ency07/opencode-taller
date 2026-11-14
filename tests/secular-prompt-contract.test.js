@@ -77,6 +77,7 @@ MOTOR_STATE.workflowMode='explore'; MOTOR_STATE.concept='Grace in the storm'; MO
 const gospelEnSet=buildCandidate(resolveAudiences(),null);
 const gospelEnPrompt=formatPrompt({set:gospelEnSet});
 ok(gospelEnPrompt.includes('DOCTRINA: Trinitario'),'Gospel EN conserva su contrato doctrinal');
+ok(gospelEnPrompt.includes('FIDELIDAD DOCTRINAL GOSPEL EN:'),'Gospel EN bloquea inferencias doctrinales y escenas no solicitadas');
 ok(!gospelEnPrompt.includes('PALETA VINCULADA A IDENTIDAD'),'Gospel EN no recibe el filtro cromático secular');
 ok(!gospelEnPrompt.includes('FIDELIDAD DEL CONCEPTO:'),'Gospel EN no recibe las reglas de concepto seculares');
 ok(!gospelEnPrompt.includes('COPY CANÓNICO SECULAR'),'Gospel EN no recibe el contrato de copy secular');
