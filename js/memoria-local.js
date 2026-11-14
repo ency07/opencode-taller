@@ -131,7 +131,11 @@
     try {
       const raw = POD_LS.getItem(key);
       if (!raw) return fallback;
-      return JSON.parse(raw);
+      const value = JSON.parse(raw);
+      // Un tombstone debe comportarse como dato ausente para todos los loaders,
+      // incluidos los que no tienen lógica específica de sincronización.
+      if (value && value.__podDeleted === true) return fallback;
+      return value;
     } catch (e) {
       return fallback;
     }
