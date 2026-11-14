@@ -27,6 +27,7 @@ context.setRaw(localKey, staleLocal);
 const result = context.clearAllMemory();
 assert.ok(result && result.clearedKeys >= 1, 'clearAllMemory must report cleared keys');
 assert.strictEqual(context.loadPersonalBank('gospel_es').camiseta, undefined, 'locally cleared bank must load empty');
+assert.deepStrictEqual(context.getJSON(localKey, { fallback: true }), { fallback: true }, 'generic JSON loaders must treat tombstones as absent');
 
 const localAfterClear = context.exportMemoryObject();
 const merged = context.mergeMemoryObjects(localAfterClear, { [localKey]: staleLocal, [cloudOnlyKey]: staleCloud });
@@ -48,4 +49,4 @@ assert.strictEqual(JSON.parse(postWriteMerge[localKey]).camiseta.join(','), 'dat
 assert.strictEqual(JSON.parse(postWriteMerge[cloudOnlyKey]).__podDeleted, true, 'unrelated stale cloud key must stay deleted');
 assert.ok(JSON.parse(postWriteMerge['POD2|__globalClear']).preservedKeys[localKey], 'post-clear write timestamp must be tracked');
 
-console.log('PASS clear-all-memory-sync-tombstone (10 assertions, 0 failures)');
+console.log('PASS clear-all-memory-sync-tombstone (11 assertions, 0 failures)');
