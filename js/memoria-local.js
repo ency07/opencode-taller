@@ -940,12 +940,18 @@
 
   function _loadTemplateBank() {
     const raw = getJSON(memKey(['templateBank']), null);
-    if (raw && raw.templates && raw.active) return raw;
-    return { templates: {}, active: {} };
+    if (!raw || !raw.templates || !raw.active) return { templates: {}, active: {}, deleted: {} };
+    if (!raw.deleted || typeof raw.deleted !== 'object' || Array.isArray(raw.deleted)) raw.deleted = {};
+    // Tombstones prevent stale snapshots from resurrecting templates deleted elsewhere.
+    Object.keys(raw.deleted).forEach(function (id) { delete raw.templates[id]; });
+    Object.keys(raw.active).forEach(function (product) {
+      if (!raw.templates[raw.active[product]]) delete raw.active[product];
+    });
+    return raw;
   }
 
   function _saveTemplateBank(bank) {
-    return setJSON(memKey(['templateBank']), bank || { templates: {}, active: {} });
+    return setJSON(memKey(['templateBank']), bank || { templates: {}, active: {}, deleted: {} });
   }
 
   function _newTemplateId() {
@@ -982,8 +988,11 @@
       return { ok: false, error: 'imagen muy pesada (máx ~700KB tras reducir); usa una plantilla más liviana' };
     }
     const bank = _loadTemplateBank();
+    bank.deleted = bank.deleted || {};
     const id = d.id && bank.templates[d.id] ? d.id : _newTemplateId();
     const prev = bank.templates[id] || {};
+    // Explicitly saving a template ID again is a recreation, not a stale restore.
+    delete bank.deleted[id];
     bank.templates[id] = {
       id: id,
       nombre: nombre,
@@ -1012,6 +1021,9 @@
     const bank = _loadTemplateBank();
     if (!bank.templates[id]) return { ok: false, error: 'template no existe' };
     delete bank.templates[id];
+    // Replicated tombstone: an older device snapshot must not resurrect this template.
+    bank.deleted = bank.deleted || {};
+    bank.deleted[id] = new Date().toISOString();
     Object.keys(bank.active).forEach(function (p) {
       if (bank.active[p] === id) delete bank.active[p];
     });
@@ -1303,14 +1315,24 @@
           });
           out[k] = JSON.stringify(merged);
         } else if (k.indexOf('|templateBank') > -1) {
-          const merged = { templates: {}, active: Object.assign({}, b.active || {}, a.active || {}) };
+          // Deletion wins over stale snapshots from any device.
+          const deleted = Object.assign({}, b.deleted || {}, a.deleted || {});
+          const merged = {
+            templates: {},
+            active: Object.assign({}, b.active || {}, a.active || {}),
+            deleted: deleted
+          };
           const ids = Object.keys(b.templates || {}).concat(Object.keys(a.templates || {}));
           ids.forEach(function (id) {
+            if (deleted[id]) return;
             const rt = (b.templates || {})[id], lt = (a.templates || {})[id];
             if (!rt || !lt) { merged.templates[id] = lt || rt; return; }
             const remoteTime = Date.parse(rt.updatedAt || '') || 0;
             const localTime = Date.parse(lt.updatedAt || '') || 0;
             merged.templates[id] = Object.assign({}, rt, lt, localTime >= remoteTime ? lt : rt);
+          });
+          Object.keys(merged.active).forEach(function (product) {
+            if (!merged.templates[merged.active[product]]) delete merged.active[product];
           });
           out[k] = JSON.stringify(merged);
         } else if (k.indexOf('|personalBank|') > -1) {
