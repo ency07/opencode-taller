@@ -118,7 +118,9 @@
   }
 
   function setRaw(key, value) {
-    return POD_LS.setItem(key, value) === true;
+    const saved = POD_LS.setItem(key, value) === true;
+    if (saved) _recordGlobalMemoryWrite(key);
+    return saved;
   }
 
   function removeRaw(key) {
@@ -135,9 +137,28 @@
     }
   }
 
+  const GLOBAL_MEMORY_CLEAR_KEY = MEM_PREFIX + '__globalClear';
+
+  function _readGlobalMemoryClear() {
+    const marker = getJSON(GLOBAL_MEMORY_CLEAR_KEY, null);
+    if (!marker || marker.__podGlobalClear !== true || !Number.isFinite(Date.parse(marker.deletedAt || ''))) return null;
+    if (!marker.preservedKeys || typeof marker.preservedKeys !== 'object' || Array.isArray(marker.preservedKeys)) marker.preservedKeys = {};
+    return marker;
+  }
+
+  function _recordGlobalMemoryWrite(key) {
+    if (!key || key === GLOBAL_MEMORY_CLEAR_KEY || String(key).indexOf(MEM_PREFIX) !== 0) return;
+    const marker = _readGlobalMemoryClear();
+    if (!marker) return;
+    marker.preservedKeys[key] = new Date().toISOString();
+    POD_LS.setItem(GLOBAL_MEMORY_CLEAR_KEY, JSON.stringify(marker));
+  }
+
   function setJSON(key, value) {
     try {
-      return POD_LS.setItem(key, JSON.stringify(value)) === true;
+      const saved = POD_LS.setItem(key, JSON.stringify(value)) === true;
+      if (saved) _recordGlobalMemoryWrite(key);
+      return saved;
     } catch (e) {
       return false;
     }
@@ -1381,8 +1402,45 @@
       else if (Object.prototype.hasOwnProperty.call(remote, k)) out[k] = remote[k];
     });
 
+    // Un borrado global actúa como barrera de sincronización: elimina claves
+    // antiguas incluso si solo existen en la nube. Escrituras explícitas
+    // posteriores al borrado se conservan por lado y por clave.
+    const localClear = local[GLOBAL_MEMORY_CLEAR_KEY] ? _safeParseJSON(local[GLOBAL_MEMORY_CLEAR_KEY]).value : null;
+    const remoteClear = remote[GLOBAL_MEMORY_CLEAR_KEY] ? _safeParseJSON(remote[GLOBAL_MEMORY_CLEAR_KEY]).value : null;
+    const validClear = function (marker) {
+      return marker && marker.__podGlobalClear === true && Number.isFinite(Date.parse(marker.deletedAt || ''));
+    };
+    const lc = validClear(localClear) ? localClear : null;
+    const rc = validClear(remoteClear) ? remoteClear : null;
+    if (lc || rc) {
+      const latestClear = !lc ? rc : (!rc ? lc : (Date.parse(lc.deletedAt) >= Date.parse(rc.deletedAt) ? lc : rc));
+      const preserved = {};
+      [lc, rc].forEach(function (marker) {
+        Object.keys((marker && marker.preservedKeys) || {}).forEach(function (key) {
+          const current = Date.parse(preserved[key] || '') || 0;
+          const candidate = Date.parse(marker.preservedKeys[key] || '') || 0;
+          if (candidate > current) preserved[key] = marker.preservedKeys[key];
+        });
+      });
+      out[GLOBAL_MEMORY_CLEAR_KEY] = JSON.stringify({
+        __podGlobalClear: true,
+        deletedAt: latestClear.deletedAt,
+        preservedKeys: preserved
+      });
+      Object.keys(out).forEach(function (key) {
+        if (String(key).indexOf(MEM_PREFIX) !== 0 || key === GLOBAL_MEMORY_CLEAR_KEY) return;
+        const localWrite = lc && (Date.parse((lc.preservedKeys || {})[key] || '') || 0) > Date.parse(lc.deletedAt);
+        const remoteWrite = rc && (Date.parse((rc.preservedKeys || {})[key] || '') || 0) > Date.parse(rc.deletedAt);
+        if (localWrite && !remoteWrite && Object.prototype.hasOwnProperty.call(local, key)) out[key] = local[key];
+        else if (remoteWrite && !localWrite && Object.prototype.hasOwnProperty.call(remote, key)) out[key] = remote[key];
+        else if (!localWrite && !remoteWrite) {
+          out[key] = JSON.stringify({ __podDeleted: true, deletedAt: latestClear.deletedAt });
+        }
+      });
+    }
+
     Object.keys(out).forEach(function (k) {
-      if (String(k).indexOf(MEM_PREFIX) !== 0) return;
+      if (String(k).indexOf(MEM_PREFIX) !== 0 || k === GLOBAL_MEMORY_CLEAR_KEY) return;
 
       try {
         const a = local[k] ? JSON.parse(local[k]) : null;
@@ -1649,9 +1707,19 @@
   }
 
   function clearAllMemory() {
-    listMemoryKeys().forEach(function (k) {
-      POD_LS.removeItem(k);
+    const deletedAt = new Date().toISOString();
+    const keys = listMemoryKeys().filter(function (key) { return key !== GLOBAL_MEMORY_CLEAR_KEY; });
+    // Tombstone each locally known key so existing readers see empty/default data.
+    // The global marker additionally suppresses stale keys that exist only in cloud.
+    keys.forEach(function (key) {
+      POD_LS.setItem(key, JSON.stringify({ __podDeleted: true, deletedAt: deletedAt }));
     });
+    POD_LS.setItem(GLOBAL_MEMORY_CLEAR_KEY, JSON.stringify({
+      __podGlobalClear: true,
+      deletedAt: deletedAt,
+      preservedKeys: {}
+    }));
+    return { clearedKeys: keys.length, persisted: true };
   }
 
   /* ============================================================
