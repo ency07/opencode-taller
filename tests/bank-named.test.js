@@ -92,9 +92,20 @@ ok(getPersonalObjects('global_es', 'navidad_colombia').indexOf('Rosa roja en man
 ok(setActivePersonalBank('global_es', 'dia_madre_padre', null).ok, 'deactivate falló');
 ok(getActivePersonalBank('global_es', 'dia_madre_padre') === null, 'sigue activo tras quitar');
 setActivePersonalBank('global_es', 'dia_madre_padre', rc.id);
+const namedBanksKey = memKey(['personalBanks', 'global_es']);
+const staleCloudSnapshot = {};
+staleCloudSnapshot[namedBanksKey] = getRaw(namedBanksKey);
 ok(deletePersonalBank('global_es', rc.id).ok, 'delete falló');
 ok(getPersonalBank('global_es', rc.id) === null, 'borrado no aplicado');
 ok(getActivePersonalBank('global_es', 'dia_madre_padre') === null, 'borrar no limpió activo');
+
+// La copia remota anterior al borrado no debe resucitar el banco.
+const mergedAfterDelete = mergeMemoryObjects(exportMemoryObject(), staleCloudSnapshot);
+const mergedNamedBanks = JSON.parse(mergedAfterDelete[namedBanksKey]);
+ok(!mergedNamedBanks.banks[rc.id], 'merge resucitó un banco borrado localmente');
+ok(typeof mergedNamedBanks.deleted[rc.id] === 'string', 'el borrado no se conserva como tombstone');
+setRaw(namedBanksKey, mergedAfterDelete[namedBanksKey]);
+ok(getPersonalBank('global_es', rc.id) === null, 'la lectura local resucitó el banco tras aplicar la fusión');
 // Legacy intacto
 const lr = addPersonalObjects('global_es', 'dia_madre_padre', ['Objeto legacy de prueba']);
 ok(lr.added === 1, 'banco legacy roto');
