@@ -455,82 +455,8 @@
   /* Legacy helper: no se aceptan claves persistidas en localStorage. */
   function getGeminiSlot() {
     try {
-      const raw = localStorage.getItem('pod2_ai_slots');
-      const slots = JSON.parse(raw || 'null');
-      const sessionKeys = (typeof window.sessionStorage !== 'undefined')
-        ? JSON.parse(window.sessionStorage.getItem('pod2_ai_session_keys') || 'null')
-        : null;
-      if (!Array.isArray(slots) || !Array.isArray(sessionKeys)) return null;
-      const index = slots.findIndex(function (s) { return s && s.provider === 'Gemini' && s.model; });
-      if (index < 0 || !sessionKeys[index]) return null;
-      return Object.assign({}, slots[index], { key: String(sessionKeys[index]) });
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /* ===== VISIÓN multi-proveedor (verificado oct-2026) =====
-     - OpenRouter :free con visión: NANO-OMNI free (30B multimodal, 50 req/día,
-       sin consumir créditos del usuario) → default del proveedor de visión.
-     - Gemini directo: serie 3.x para proyectos nuevos (gemini-3.5-flash-lite).
-     - Groq: SIN visión free (modelos retirados 2025-04) → no se usa aquí.
-     Prioridad por defecto: OpenRouter :free (cero créditos) → Gemini (serie 3.x). */
-  var VISION_KEY = 'pod2_vision_cfg';
-  /* Mapa de modelos muertos ÚNICO en js/ia-client.js (IAClient.DEAD_MODELS);
-     aquí queda solo el alias para no romper lecturas existentes. */
-  var VISION_DEAD_MODELS = (window.IAClient && window.IAClient.DEAD_MODELS) || {};
-  var VISION_DEFAULTS = {
-    provider: 'auto',
-    geminiModel: 'gemini-3.5-flash-lite',
-    openrouterModel: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
-    timeoutMs: 20000
-  };
-  var VISION_FALLBACK_OR = ['nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', 'google/gemini-2.5-flash'];
-
-  function getVisionConfig() {
-    try {
-      const raw = localStorage.getItem(VISION_KEY);
-      if (!raw) return Object.assign({}, VISION_DEFAULTS);
-      const c = JSON.parse(raw);
-      return {
-        provider: ['auto', 'gemini', 'openrouter'].indexOf(c.provider) !== -1 ? c.provider : 'auto',
-        geminiModel: String(c.geminiModel || VISION_DEFAULTS.geminiModel),
-        openrouterModel: String(c.openrouterModel || VISION_DEFAULTS.openrouterModel),
-        timeoutMs: [15000, 20000, 30000].indexOf(c.timeoutMs) !== -1 ? c.timeoutMs : 20000
-      };
-    } catch (e) { return Object.assign({}, VISION_DEFAULTS); }
-  }
-
-  function migrateVisionModel(m) {
-    if (window.IAClient) return window.IAClient.migrateModel('Gemini', m);
-    return (m && VISION_DEAD_MODELS[m]) ? VISION_DEAD_MODELS[m] : m;
-  }
-
-  /* Lee slots del panel (ia-revisor expone window.getAISlots); fallback a
-     lectura directa para no romper si el revisor no cargó. */
-  function getVisionSlots() {
-    try {
-      if (typeof window.getAISlots === 'function') {
-        const a = window.getAISlots();
-        if (Array.isArray(a)) return a.filter(function (s) { return s && s.key && s.model; });
-      }
-    } catch (e) {}
-    try {
-      // Nunca recuperar claves legacy persistidas en localStorage. Si el revisor
-      // no está cargado, solo aceptamos claves de la sesión de la pestaña actual.
-      const raw = localStorage.getItem('pod2_ai_slots');
-      const arr = JSON.parse(raw || 'null');
-      const sessionRaw = (typeof window.sessionStorage !== 'undefined')
-        ? window.sessionStorage.getItem('pod2_ai_session_keys')
-        : null;
-      const sessionKeys = JSON.parse(sessionRaw || 'null');
-      if (Array.isArray(arr) && Array.isArray(sessionKeys)) {
-        return arr.map(function (s, i) {
-          return s && s.model && sessionKeys[i]
-            ? Object.assign({}, s, { key: String(sessionKeys[i]) })
-            : null;
-        }).filter(function (s) { return s && s.key && s.model; });
-      }
+      // Sin el revisor no existe almacén de claves: no leer secretos de Web Storage.
+      return [];
     } catch (e) {}
     return [];
   }
