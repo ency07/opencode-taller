@@ -1064,23 +1064,71 @@
   function renderBankPreview(payload) {
     var el = $('bankPreview');
     if (!el) return;
+    el.replaceChildren();
+
+    function node(tag, className, value) {
+      var n = document.createElement(tag);
+      if (className) n.className = className;
+      if (value !== undefined && value !== null) n.textContent = String(value);
+      return n;
+    }
+    function listText(value) {
+      return Array.isArray(value) ? value.map(function (item) { return String(item == null ? '' : item); }).join(', ') : '';
+    }
+
     if (!payload || !payload.ok) {
-      el.innerHTML = '<span class="badge">' + ((payload && payload.error) || 'Sin datos para previsualizar. Pega un lote JSON valido.') + '</span>';
+      var errorBadge = node('span', 'badge',
+        payload && payload.error ? payload.error : 'Sin datos para previsualizar. Pega un lote JSON valido.');
+      el.appendChild(errorBadge);
       return;
     }
-    var validos = payload.validos || [];
-    var rechazados = payload.rechazados || [];
-    var html = '<div style="margin-bottom:8px;"><span class="badge">' + validos.length + ' registros validos</span> <span class="badge">' + rechazados.length + ' rechazados</span></div>';
-    if (!validos.length) { html += '<div class="hint">Ningun registro del lote completo paso la validacion.</div>'; el.innerHTML = html; return; }
-    html += '<div style="display:flex; flex-direction: column; gap: 6px; max-height: 220px; overflow: auto;">';
+
+    var validos = Array.isArray(payload.validos) ? payload.validos : [];
+    var rechazados = Array.isArray(payload.rechazados) ? payload.rechazados : [];
+    var summary = node('div');
+    summary.style.marginBottom = '8px';
+    summary.appendChild(node('span', 'badge', validos.length + ' registros validos'));
+    summary.appendChild(document.createTextNode(' '));
+    summary.appendChild(node('span', 'badge', rechazados.length + ' rechazados'));
+    el.appendChild(summary);
+
+    if (!validos.length) {
+      el.appendChild(node('div', 'hint', 'Ningun registro del lote completo paso la validacion.'));
+      return;
+    }
+
+    var list = node('div');
+    list.style.display = 'flex';
+    list.style.flexDirection = 'column';
+    list.style.gap = '6px';
+    list.style.maxHeight = '220px';
+    list.style.overflow = 'auto';
+
     validos.forEach(function (r, i) {
-      html += '<label style="display:flex; gap:8px; align-items: baseline;">';
-      html += '<input type="checkbox" data-fila="' + i + '" value="' + (r.id || '') + '" />';
-      html += '<span><strong>' + (r.id || '') + '</strong> — ' + (r.motivo || '') + ' | ' + (r.idea_comunicada || '') + ' | tensiones: ' + (r.tensiones || []).join(', ') + ' | contextos: ' + (r.contextos || []).join(', ') + ' | riesgo: ' + (r.riesgo_cliche || '') + '</span>';
-      html += '</label>';
+      r = r && typeof r === 'object' ? r : {};
+      var label = node('label');
+      label.style.display = 'flex';
+      label.style.gap = '8px';
+      label.style.alignItems = 'baseline';
+
+      var checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.setAttribute('data-fila', String(i));
+      checkbox.value = String(r.id == null ? '' : r.id);
+      label.appendChild(checkbox);
+
+      var details = node('span');
+      var strong = node('strong', '', r.id);
+      details.appendChild(strong);
+      details.appendChild(document.createTextNode(' — ' + String(r.motivo == null ? '' : r.motivo) +
+        ' | ' + String(r.idea_comunicada == null ? '' : r.idea_comunicada) +
+        ' | tensiones: ' + listText(r.tensiones) +
+        ' | contextos: ' + listText(r.contextos) +
+        ' | riesgo: ' + String(r.riesgo_cliche == null ? '' : r.riesgo_cliche)));
+      label.appendChild(details);
+      list.appendChild(label);
     });
-    html += '</div>';
-    el.innerHTML = html;
+    el.appendChild(list);
   }
 
   function validarTextoBanco(text) {
@@ -1135,7 +1183,14 @@
     var res = window[fn];
     if (typeof res !== 'function') { tell('<span class="bad">Propuesta no disponible.</span>'); return; }
     var out = res(market, subniche);
-    if ($('bankPreview')) $('bankPreview').innerHTML = '<span class="badge">Propuesta: ' + ((out && out.ok === false) ? (out.error || 'sin datos disponibles') : 'lista para revision') + '</span>';
+    if ($('bankPreview')) {
+      var preview = $('bankPreview');
+      preview.replaceChildren();
+      var badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.textContent = 'Propuesta: ' + ((out && out.ok === false) ? (out.error || 'sin datos disponibles') : 'lista para revision');
+      preview.appendChild(badge);
+    }
     if (out && out.ok) { tell('<span class="good">Propuesta generada desde el banco personal. Revisa antes de aceptarla.</span>'); }
   }
 
