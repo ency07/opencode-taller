@@ -34,7 +34,8 @@ ok(!/function tellStatus\(msg\)[\s\S]*?st\.innerHTML\s*=/.test(reviewer), 'revie
 ok(/SESSION_KEYS_KEY\s*=/.test(reviewer) && /window\.sessionStorage\.setItem\(SESSION_KEYS_KEY/.test(reviewer), 'API keys must be saved to sessionStorage');
 ok(/LS\.setItem\(SLOTS_KEY, JSON\.stringify\(arr\.map\(function \(s\) \{ return Object\.assign\(\{\}, s, \{ key: '' \}\); \}\)\)\)/.test(reviewer), 'persistent provider settings must blank the key field');
 ok(/hasPersistedKeys/.test(reviewer) && /key: ''/.test(reviewer), 'legacy persisted keys must be scrubbed on read');
-ok(/Clave API \(solo esta pestaña\)/.test(reviewer), 'UI must disclose session-only key lifetime');
+ok(/NO las protege frente a XSS/.test(reviewer), 'UI must disclose that sessionStorage does not protect keys from XSS');
+ok(/backend\/proxy/.test(reviewer), 'UI must direct shared server secrets to a backend proxy');
 
 
 const editor = fs.readFileSync(path.join(ROOT, 'editor-bancos.html'), 'utf8');
