@@ -27,7 +27,7 @@ assert.deepStrictEqual(JSON.parse(merged[key]).items.map(x => x.id).join(','), '
 assert.ok(JSON.parse(merged[key]).deleted.dir_old, 'local tombstone must survive merge');
 
 merged = context.mergeMemoryObjects({ [key]: stale }, { [key]: deleted });
-assert.deepStrictEqual(JSON.parse(merged[key]).items.map(x => x.id), ['dir_keep'], 'remote tombstone must filter stale local item');
+assert.deepStrictEqual(JSON.parse(merged[key]).items.map(x => x.id).join(','), 'dir_keep', 'remote tombstone must filter stale local item');
 assert.ok(JSON.parse(merged[key]).deleted.dir_old, 'remote tombstone must survive merge');
 
 context.saveApprovedDirections([{ id: 'dir_old', value: 'old' }, { id: 'dir_keep', value: 'keep' }]);
