@@ -4129,7 +4129,7 @@ function renderCards(result) {
 
     const treatmentKey = _treatmentKey(v.tratamiento);
     const treatmentOk = _treatmentSpecComplete(v.tratamiento);
-    html += '<div class="fit-bar" title="Comprueba que la instrucción del tratamiento de esta tarjeta está completa; no revisa la imagen generada."><span class="' + (treatmentOk ? 'good' : 'bad') + '">' + treatmentKey + ': ' + (treatmentOk ? 'instrucción verificada en el prompt' : 'instrucción incompleta') + '</span></div>';
+    html += '<div class="fit-bar" title="Comprueba que la instrucción del tratamiento de esta tarjeta está completa; no revisa la imagen generada."><span class="' + (treatmentOk ? 'good' : 'bad') + '">' + escHtml(treatmentKey) + ': ' + (treatmentOk ? 'instrucción verificada en el prompt' : 'instrucción incompleta') + '</span></div>';
     html += '<div class="fit-bar" title="Compara las reglas del prompt con preferencias configuradas; no revisa la imagen generada ni certifica producción.">Reglas del prompt: audiencia <span class="val">' + (v.fitAudiencia || 0) + '/100</span> · producto <span class="val">' + (v.fitProducto || 0) + '/100</span></div>';
 
     card.innerHTML = html;
