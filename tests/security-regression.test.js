@@ -108,6 +108,8 @@ ok(/_escapeOptionText\(id\)[\s\S]*?_escapeOptionText\(langs\[id\]\)/.test(analys
 ok(!/el\.innerHTML\s*=\s*['"]Template activo:/.test(analysis), 'template hint must not interpolate persistent template data into HTML');
 ok(/\.replace\(/.test(reviewer.match(/function escA\(s\)[\s\S]*?\n  }/)?.[0] || '') && /replace\(\/</.test(reviewer), 'reviewer HTML attribute escaping must include angle brackets');
 
+ok(/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2\.119\.0/.test(sync), 'Supabase browser SDK must use a fixed release instead of a floating major tag');
+
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + ' security-regression (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.forEach(function (f) { console.error(' - ' + f); });
