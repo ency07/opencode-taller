@@ -81,6 +81,7 @@ const sql = fs.readFileSync(path.join(ROOT, 'supabase-sync.sql'), 'utf8');
 ok(/function escHtml\(value\)[\s\S]*?replace\(\/&\/g, '&amp;'\)[\s\S]*?replace\(\/>\/g, '&gt;'\)/.test(editor), 'editor must fully escape bank labels and names');
 ok(/function safeTemplateImage\(value\)[\s\S]*?data:image/.test(editor), 'template image sources must be restricted to supported image data URLs');
 ok(editor.includes('escHtml(t.nombre)') && editor.includes('escHtml(b.name)'), 'template and bank names must be escaped before HTML rendering');
+ok(/Array\.isArray\(b\.objects\) \? b\.objects\.length : 0/.test(editor) && /Array\.isArray\(b\.phrases\) \? b\.phrases\.length : 0/.test(editor), 'persisted bank counts must be type-checked before HTML rendering');
 ok(/markets\[id\]\.label/.test(editor) && /escHtml\(markets\[id\]\.label\)/.test(editor) && /escHtml\(id\).*escHtml\(label\)/s.test(editor), 'market and seasonal subniche options must escape values and labels');
 ok(/changeLink\.textContent = 'Cambiar'/.test(analysis) && /option\.textContent = String\(b\.name/.test(analysis), 'analysis UI must render template and bank names as text');
 ok(/const sessionKeys = JSON\.parse\(sessionRaw \|\| 'null'\)/.test(analysis), 'vision fallback should use only session-scoped API keys');
@@ -102,6 +103,7 @@ ok(!/return slots\.find\(function \(s\) \{[\s\S]*?s\.key/.test(analysis), 'legac
 ok(/_escapeOptionText\(r\.id\)/.test(analysis) && /_escapeOptionText\(r\.label\)/.test(analysis), 'region option values and labels must be escaped');
 ok(/function _subnicheOptions\(ids\)[\s\S]*?_escapeOptionText\(id\)[\s\S]*?_escapeOptionText\(label\)/.test(analysis), 'subniche option values and labels must be escaped');
 ok(/_escapeOptionText\(a\)/.test(analysis) && /_escapeOptionText\(label\)/.test(analysis), 'audience option values and labels must be escaped');
+ok(/Auto — según ' \+ _escapeOptionText\(marketId\) \+ ' \+ ' \+ _escapeOptionText\(effRegion\)/.test(analysis), 'market and region context must be escaped in the automatic audience option');
 ok(/_escapeOptionText\(id\)[\s\S]*?_escapeOptionText\(langs\[id\]\)/.test(analysis), 'language selector values and labels must be escaped');
 ok(!/el\.innerHTML\s*=\s*['"]Template activo:/.test(analysis), 'template hint must not interpolate persistent template data into HTML');
 ok(/\.replace\(/.test(reviewer.match(/function escA\(s\)[\s\S]*?\n  }/)?.[0] || '') && /replace\(\/</.test(reviewer), 'reviewer HTML attribute escaping must include angle brackets');
