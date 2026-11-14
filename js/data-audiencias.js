@@ -1239,11 +1239,17 @@ function audiencePoolOriginSuffix(region, marketId, subniche) {
   return fallback ? " (mercado — sin filtro del subnicho)" : " (del subnicho)";
 }
 
+function _escapeAudienceOptionHTML(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function getAudienceSelectOptions(region, marketId, subniche) {
   const pool = getAudiencesForSubniche(subniche || "auto", region, marketId);
   const suf = audiencePoolOriginSuffix(region, marketId, subniche || "auto");
   const options = pool.map(function (id) {
-    return '<option value="' + id + '">' + getAudienceLabel(id) + suf + '</option>';
+    return '<option value="' + _escapeAudienceOptionHTML(id) + '">' + _escapeAudienceOptionHTML(getAudienceLabel(id) + suf) + '</option>';
   }).join("");
   return '<option value="Auto">Auto — resolver según contexto</option>' + options;
 }
