@@ -23,7 +23,7 @@ const stale = JSON.stringify([{ id: 'dir_old', value: 'stale direction' }, { id:
 const deleted = JSON.stringify({ items: [], deleted: { dir_old: '2026-11-14T20:00:00.000Z' } });
 
 let merged = context.mergeMemoryObjects({ [key]: deleted }, { [key]: stale });
-assert.deepStrictEqual(JSON.parse(merged[key]).items.map(x => x.id), ['dir_keep'], 'local tombstone must filter stale remote item');
+assert.deepStrictEqual(JSON.parse(merged[key]).items.map(x => x.id).join(','), 'dir_keep', 'local tombstone must filter stale remote item');
 assert.ok(JSON.parse(merged[key]).deleted.dir_old, 'local tombstone must survive merge');
 
 merged = context.mergeMemoryObjects({ [key]: stale }, { [key]: deleted });
@@ -32,7 +32,7 @@ assert.ok(JSON.parse(merged[key]).deleted.dir_old, 'remote tombstone must surviv
 
 context.saveApprovedDirections([{ id: 'dir_old', value: 'old' }, { id: 'dir_keep', value: 'keep' }]);
 context.removeApprovedDirection('dir_old');
-assert.deepStrictEqual(context.loadApprovedDirections().map(x => x.id), ['dir_keep'], 'removed direction must disappear from public loader');
+assert.deepStrictEqual(context.loadApprovedDirections().map(x => x.id).join(','), 'dir_keep', 'removed direction must disappear from public loader');
 const stored = JSON.parse(context.getRaw(key));
 assert.ok(stored.deleted.dir_old, 'removeApprovedDirection must persist an ID tombstone');
 
