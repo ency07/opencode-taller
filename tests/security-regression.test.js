@@ -16,6 +16,8 @@ const bankTool = fs.readFileSync(path.join(ROOT, 'herramienta-bancos.html'), 'ut
 const promptBuilder = fs.readFileSync(path.join(ROOT, 'constructor-prompt.html'), 'utf8');
 const validator = fs.readFileSync(path.join(ROOT, 'js/ia-validador.js'), 'utf8');
 const motor = fs.readFileSync(path.join(ROOT, 'js/motor-nucleo.js'), 'utf8');
+const markets = fs.readFileSync(path.join(ROOT, 'js/data-mercados.js'), 'utf8');
+const audiences = fs.readFileSync(path.join(ROOT, 'js/data-audiencias.js'), 'utf8');
 
 ok(/function tell\(msg\)[\s\S]*?statusEl\.textContent/.test(analysis), 'analysis status must render plain text');
 ok(!/function tell\(msg\)[\s\S]*?statusEl\.innerHTML\s*=\s*msg/.test(analysis), 'analysis tell must not insert arbitrary message as HTML');
@@ -46,6 +48,14 @@ ok(/const label = rec\.label_es \|\| rec\.label \|\| id;[\s\S]*?escHtml\(id\)[\s
 ok(/const label = labels\[id\] \|\| id;[\s\S]*?escHtml\(id\)[\s\S]*?escHtml\(label\)/.test(motor), 'print method selector must escape option values and labels');
 ok(/escHtml\(umbralMsg \|\| 'revisa el control de calidad'\)/.test(motor), 'quality warning text must be escaped before HTML rendering');
 ok(/Validación con fallos: ' \+ escHtml\(ev\.detalle\.join\(' · '\)\)/.test(motor), 'validation details must be escaped before HTML rendering');
+ok(/function _escapeOptionHTML\(value\)[\s\S]*?replace\(\/&\/g, '&amp;'\)[\s\S]*?replace\(\/<\/g, '&lt;'\)[\s\S]*?replace\(\/>\/g, '&gt;'\)[\s\S]*?replace\(\/\\\"\/g, '&quot;'\)[\s\S]*?replace\(\/'\/g, '&#39;'\)/.test(markets), 'shared market option escaper must encode all HTML-significant characters');
+ok(/getMarketOptionsHTML\([\s\S]*?_escapeOptionHTML\(id\)[\s\S]*?_escapeOptionHTML\(POD_MARKETS\[id\]\.label\)/.test(markets), 'market options must escape values and labels');
+ok(/getRegionOptionsHTML\([\s\S]*?_escapeOptionHTML\(region\.id\)[\s\S]*?_escapeOptionHTML\(region\.label\)/.test(markets), 'region options must escape values and labels');
+ok(/getLanguageOptionsHTML\([\s\S]*?_escapeOptionHTML\(id\)[\s\S]*?_escapeOptionHTML\(POD_LANGUAGES\[id\]\)/.test(markets), 'language options must escape values and labels');
+ok(/getMarketplaceOptionsHTML\([\s\S]*?_escapeOptionHTML\(id\)[\s\S]*?_escapeOptionHTML\(POD_MARKETPLACES\[id\]\)/.test(markets), 'marketplace options must escape values and labels');
+ok(/getSubnicheOptionsHTML\([\s\S]*?_escapeOptionHTML\(id\)[\s\S]*?_escapeOptionHTML\(label\)/.test(markets), 'subniche options must escape values and labels');
+ok(/function _escapeAudienceOptionHTML\(value\)[\s\S]*?replace\(\/&\/g, '&amp;'\)[\s\S]*?replace\(\/<\/g, '&lt;'\)[\s\S]*?replace\(\/>\/g, '&gt;'\)[\s\S]*?replace\(\/\\\"\/g, '&quot;'\)[\s\S]*?replace\(\/'\/g, '&#39;'\)/.test(audiences), 'audience option escaper must encode all HTML-significant characters');
+ok(/getAudienceSelectOptions\([\s\S]*?_escapeAudienceOptionHTML\(id\)[\s\S]*?_escapeAudienceOptionHTML\(getAudienceLabel\(id\) \+ suf\)/.test(audiences), 'audience options must escape values and labels');
 ok(!analysis.includes('AIzaSyTESTCONNECTIVITY'), 'preflight must not contain a fake API key');
 ok(!/generativelanguage\.googleapis\.com\/v1beta\/models\/[^'\n]*\?key=/.test(analysis), 'Gemini requests should not append API key to URL');
 ok(client.includes('x-goog-api-key') && !analysis.includes('x-goog-api-key'),
