@@ -10,6 +10,16 @@ const ROOT = path.join(__dirname, '..');
 
 // --- Entorno browser mínimo ---
 global.window = global;
+// Estas pruebas ejercitan importación persistente; simular localStorage real
+// evita que el fallback volátil se confunda con almacenamiento durable.
+global.localStorage = {};
+Object.defineProperties(global.localStorage, {
+  getItem: { value: function (key) { return Object.prototype.hasOwnProperty.call(global.localStorage, key) ? global.localStorage[key] : null; } },
+  setItem: { value: function (key, value) { global.localStorage[key] = String(value); } },
+  removeItem: { value: function (key) { delete global.localStorage[key]; } },
+  key: { value: function (index) { return Object.keys(global.localStorage)[index] || null; } },
+  length: { get: function () { return Object.keys(global.localStorage).length; } }
+});
 global.document = {
   getElementById: function () { return null; },
   querySelectorAll: function () { return []; },
