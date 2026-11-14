@@ -112,6 +112,34 @@ Object.keys(gospelEnBankDomains).forEach(function(id){
  ok(items.length===30,id+' contiene exactamente 30 objetos');
  ok(new Set(items.map(function(x){return String(x).trim().toLowerCase();})).size===items.length,id+' no contiene objetos duplicados');
 });
+/* Coherencia visual del dominio LIGHT: evitar contradicciones y metáforas no representables. */
+const gospelLightObjects=(gospelEnBankDomains.LIGHT && gospelEnBankDomains.LIGHT.objetos) || [];
+[
+ 'steady lamp flame beside an open window at night',
+ 'first sunlight touching the edge of a dark horizon',
+ 'glowing ember beneath a thin layer of ash',
+ 'traveler carrying a lit lantern along a dark road',
+ 'soft light spilling through an opened doorway',
+ 'lighthouse beam sweeping across a dark sea',
+ 'torch held high above a stone path',
+ 'single lightning flash illuminating layered storm clouds',
+ 'red ember glowing among dark coals',
+ 'window glowing at the end of a dark street',
+ 'sunbeam falling across an open Bible',
+ 'lantern sheltered behind clear glass in a storm'
+].forEach(function(item){
+ ok(gospelLightObjects.includes(item),'LIGHT contiene imagen visual coherente: '+item);
+});
+[
+ 'light that goes out but does not go out entirely',
+ 'torch that lights without being lit',
+ 'clarity that lights itself while walking',
+ 'light that does not switch on with force',
+ 'light that does not go out with wind'
+].forEach(function(item){
+ ok(!gospelLightObjects.includes(item),'LIGHT excluye contradicción o imagen no representable: '+item);
+});
+
 /* El catálogo de un mercado Gospel nunca debe caer silenciosamente en el otro. */
 const savedGospelEnDomains=window.GOSPEL_DOMINIOS_EN;
 window.GOSPEL_DOMINIOS_EN=undefined;
