@@ -667,8 +667,50 @@ function dominioEfectivo() {
   return MOTOR_STATE.dominioDetectado && MOTOR_STATE.dominioDetectado !== 'auto' ? MOTOR_STATE.dominioDetectado : null;
 }
 
-function isGospelMarket() { return MOTOR_STATE.market === 'gospel_es' || MOTOR_STATE.market === 'gospel_en'; }
-function isSecularMarket() { return !isGospelMarket(); }
+/* Enrutamiento explícito de motores.
+   La clasificación conserva los mercados que ya operaban como Secular y protege
+   Gospel ES/EN. Los mercados personalizados/desconocidos quedan bloqueados:
+   nunca se interpretan como Secular por simple descarte. */
+const _MARKET_ENGINE_ROUTING = Object.freeze({
+  gospel_es: 'gospel',
+  gospel_en: 'gospel',
+  global_en: 'secular',
+  global_es: 'secular',
+  colombia: 'secular',
+  anglo: 'secular',
+  latam: 'secular',
+  spain: 'secular',
+  diaspora_col: 'secular'
+});
+
+function resolveEngineForMarket(marketId) {
+  const market = String(marketId || '').trim();
+  const engine = Object.prototype.hasOwnProperty.call(_MARKET_ENGINE_ROUTING, market)
+    ? _MARKET_ENGINE_ROUTING[market]
+    : null;
+  return engine
+    ? { status: 'resolved', engine: engine, market: market }
+    : { status: 'unclassified', market: market || null };
+}
+
+function _requireResolvedMarketEngine(action) {
+  const resolution = resolveEngineForMarket(MOTOR_STATE.market);
+  if (resolution.status === 'resolved') return true;
+  const message = 'El mercado "' + (resolution.market || 'vacío')
+    + '" no tiene un motor asignado. Selecciona un mercado Gospel o Secular configurado antes de '
+    + (action || 'continuar') + '.';
+  const statusEl = document.getElementById('status');
+  if (statusEl) statusEl.textContent = message;
+  console.warn('[Motor] Operación detenida: ' + message);
+  return false;
+}
+
+function isGospelMarket() {
+  return resolveEngineForMarket(MOTOR_STATE.market).engine === 'gospel';
+}
+function isSecularMarket() {
+  return resolveEngineForMarket(MOTOR_STATE.market).engine === 'secular';
+}
 
 /* La identidad cromática declarada limita las familias elegibles del mercado secular. */
 function _secularPaletteFamilies(identity) {
@@ -2898,6 +2940,7 @@ function _showStaleResultContext() {
 
 function generateSet() {
   readStateFromDOM();
+  if (!_requireResolvedMarketEngine('generar diseños')) return null;
   MOTOR_STATE.explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? _resolveExplorationBrief() : null;
   const audsPerKey = resolveAudiences();
   const fixedIdentity = _isLockedContactSet() ? _resolveContactIdentity(getObjectPool()) : null;
@@ -3460,6 +3503,7 @@ function _generationLocks(effectiveLocks, prevSet) {
 function formatPrompt(result) {
   if (!result || !result.set) return '';
   if (!_lastResultMatchesContext(result)) return '';
+  if (resolveEngineForMarket(MOTOR_STATE.market).status !== 'resolved') return '';
   const set = result.set;
   const seriesAnchor = String(set.seriesAnchor || '').trim();
   const dense = MOTOR_STATE.fmtDense;
@@ -4142,6 +4186,7 @@ function rerollSingle(keyLetter) {
     }
 
     readStateFromDOM();
+    if (!_requireResolvedMarketEngine('regenerar una ficha')) return;
     if (!_lastResultMatchesContext(LAST_RESULT)) {
       var staleContextStatus = document.getElementById('status');
       if (staleContextStatus) staleContextStatus.textContent = 'El mercado, la región o el producto cambió. Genera un nuevo conjunto antes de regenerar una ficha.';
