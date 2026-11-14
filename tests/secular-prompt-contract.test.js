@@ -94,7 +94,10 @@ ok(enCopy.text==='' && enCopy.source==='disabled','Gospel EN respeta la desactiv
 /* El prompt EN sin concepto ni mensaje debe bloquear el texto inventado. */
 MOTOR_STATE.market='gospel_en'; MOTOR_STATE.visualIdentity='';
 MOTOR_STATE.workflowMode='explore'; MOTOR_STATE.concept=''; MOTOR_STATE.message='';
+MOTOR_STATE.subniche='auto'; MOTOR_STATE.dominio='auto'; MOTOR_STATE.dominioDetectado='auto';
 MOTOR_STATE.allowAutoCopy=true; MOTOR_STATE.explorationBrief=null;
+const gospelEnEmptyBrief=_resolveExplorationBrief();
+ok(gospelEnEmptyBrief.concept==='','Gospel EN no toma conceptos automáticos del banco sin autorización');
 const gospelEnEmptySet=buildCandidate(resolveAudiences(),null);
 const gospelEnEmptyPrompt=formatPrompt({set:gospelEnEmptySet});
 ok(gospelEnEmptyPrompt.includes('SIN COPY AUTORIZADO: no generar texto'),'Gospel EN sin concepto no pide copy nuevo a la IA');
