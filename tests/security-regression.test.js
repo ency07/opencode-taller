@@ -101,6 +101,7 @@ ok(/\.from\('pod_project_sync'\)\.insert\(nextRow\)/.test(sync) && /up\.error\.c
 
 
 ok(/function getGeminiSlot\(\)[\s\S]*?return null/.test(analysis), 'legacy Gemini helper must not retrieve keys from Web Storage');
+ok(/function getVisionSlots\(\)[\s\S]*?window\.getAISlots\(\)[\s\S]*?return \[\]/.test(analysis), 'vision slots must be sourced only from the in-memory reviewer');
 ok(!/sessionStorage/.test(analysis), 'vision module must not read API keys from sessionStorage');
 ok(/_escapeOptionText\(r\.id\)/.test(analysis) && /_escapeOptionText\(r\.label\)/.test(analysis), 'region option values and labels must be escaped');
 ok(/function _subnicheOptions\(ids\)[\s\S]*?_escapeOptionText\(id\)[\s\S]*?_escapeOptionText\(label\)/.test(analysis), 'subniche option values and labels must be escaped');
