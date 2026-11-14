@@ -452,6 +452,44 @@
     });
   }
 
+  /* Configuración de visión: solo contiene proveedor/modelo/timeout, nunca claves. */
+  var VISION_KEY = 'pod2_vision_cfg';
+  var VISION_DEAD_MODELS = (window.IAClient && window.IAClient.DEAD_MODELS) || {};
+  var VISION_DEFAULTS = {
+    provider: 'auto',
+    geminiModel: 'gemini-3.5-flash-lite',
+    openrouterModel: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+    timeoutMs: 20000
+  };
+  var VISION_FALLBACK_OR = [
+    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+    'google/gemini-2.5-flash'
+  ];
+
+  function getVisionConfig() {
+    try {
+      var raw = localStorage.getItem(VISION_KEY);
+      if (!raw) return Object.assign({}, VISION_DEFAULTS);
+      var c = JSON.parse(raw);
+      if (!c || typeof c !== 'object' || Array.isArray(c)) return Object.assign({}, VISION_DEFAULTS);
+      return {
+        provider: ['auto', 'gemini', 'openrouter'].indexOf(c.provider) !== -1 ? c.provider : 'auto',
+        geminiModel: String(c.geminiModel || VISION_DEFAULTS.geminiModel),
+        openrouterModel: String(c.openrouterModel || VISION_DEFAULTS.openrouterModel),
+        timeoutMs: [15000, 20000, 30000].indexOf(c.timeoutMs) !== -1 ? c.timeoutMs : VISION_DEFAULTS.timeoutMs
+      };
+    } catch (e) {
+      return Object.assign({}, VISION_DEFAULTS);
+    }
+  }
+
+  function migrateVisionModel(model) {
+    if (window.IAClient && typeof window.IAClient.migrateModel === 'function') {
+      return window.IAClient.migrateModel('Gemini', model);
+    }
+    return model && VISION_DEAD_MODELS[model] ? VISION_DEAD_MODELS[model] : model;
+  }
+
   /* Legacy helper: no se aceptan claves persistidas en localStorage. */
   function getGeminiSlot() {
     // Las claves solo se obtienen del revisor, que las mantiene en memoria.
