@@ -539,10 +539,10 @@ function renderMarkets() {
   const set = state.noGospel ? MARKETS.secular : MARKETS.gospel;
   marketGroup.innerHTML = Object.entries(set).map(([key, m], i) => `
     <label class="radio-item ${i === 0 ? 'selected' : ''}">
-      <input type="radio" name="market" value="${key}" ${i === 0 ? 'checked' : ''}>
+      <input type="radio" name="market" value="${escapeHtml(key)}" ${i === 0 ? 'checked' : ''}>
       <div class="label-text">
-        <strong>${m.label}</strong>
-        <small>${m.desc}</small>
+        <strong>${escapeHtml(m.label)}</strong>
+        <small>${escapeHtml(m.desc)}</small>
       </div>
     </label>
   `).join('') + `
