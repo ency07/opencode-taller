@@ -44,6 +44,8 @@ ok(/function tell\(msg\)[\s\S]*?statusEl\.textContent = String\(msg/.test(valida
 ok(!/function tell\(msg\)[\s\S]*?statusEl\.innerHTML/.test(validator), 'vision validator must not inject error messages as HTML');
 ok(/const label = rec\.label_es \|\| rec\.label \|\| id;[\s\S]*?escHtml\(id\)[\s\S]*?escHtml\(label\)/.test(motor), 'creative territory selector must escape option values and labels');
 ok(/const label = labels\[id\] \|\| id;[\s\S]*?escHtml\(id\)[\s\S]*?escHtml\(label\)/.test(motor), 'print method selector must escape option values and labels');
+ok(/escHtml\(umbralMsg \|\| 'revisa el control de calidad'\)/.test(motor), 'quality warning text must be escaped before HTML rendering');
+ok(/Validación con fallos: ' \+ escHtml\(ev\.detalle\.join\(' · '\)\)/.test(motor), 'validation details must be escaped before HTML rendering');
 ok(!analysis.includes('AIzaSyTESTCONNECTIVITY'), 'preflight must not contain a fake API key');
 ok(!/generativelanguage\.googleapis\.com\/v1beta\/models\/[^'\n]*\?key=/.test(analysis), 'Gemini requests should not append API key to URL');
 ok(client.includes('x-goog-api-key') && !analysis.includes('x-goog-api-key'),
