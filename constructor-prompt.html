@@ -836,23 +836,31 @@ function renderHistorial() {
     historialEl.innerHTML = '<p style="color: var(--text-dim); font-size: 0.9rem;">Aún no has generado ningún prompt.</p>';
     return;
   }
-  historialEl.innerHTML = state.historial.map(h => `
+  historialEl.innerHTML = state.historial.map(h => {
+    // El historial procede de localStorage: tratar todos sus campos como no confiables.
+    const safeId = Number.isSafeInteger(Number(h && h.id)) ? Number(h.id) : -1;
+    const tema = escapeHtml(h && h.tema);
+    const mercado = escapeHtml(h && h.mercado);
+    const fecha = escapeHtml(h && h.fecha);
+    const prompt = escapeHtml(String(h && h.prompt || '').substring(0, 400));
+    return `
     <div class="history-item">
       <div class="meta">
         <div>
-          <span class="badge ${h.noGospel ? 'secular' : 'gospel'}">${h.mercado}${h.noGospel ? ' · SECULAR' : ' · GOSPEL'}</span>
-          <strong style="margin-left: 8px;">${escapeHtml(h.tema)}</strong>
+          <span class="badge ${h && h.noGospel ? 'secular' : 'gospel'}">${mercado}${h && h.noGospel ? ' · SECULAR' : ' · GOSPEL'}</span>
+          <strong style="margin-left: 8px;">${tema}</strong>
         </div>
-        <div>${h.fecha}</div>
+        <div>${fecha}</div>
       </div>
-      <div class="preview">${escapeHtml(h.prompt.substring(0, 400))}...</div>
+      <div class="preview">${prompt}...</div>
       <div class="actions" style="margin-top: 8px;">
-        <button class="small secondary" onclick="cargarHistorial(${h.id})">📂 Cargar</button>
-        <button class="small secondary" onclick="copiarHistorial(${h.id})">📋 Copiar</button>
-        <button class="small danger" onclick="borrarHistorial(${h.id})">🗑️</button>
+        <button class="small secondary" onclick="cargarHistorial(${safeId})">📂 Cargar</button>
+        <button class="small secondary" onclick="copiarHistorial(${safeId})">📋 Copiar</button>
+        <button class="small danger" onclick="borrarHistorial(${safeId})">🗑️</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function escapeHtml(s) {
