@@ -14,7 +14,8 @@
   };
 
   var SLOTS_KEY = 'pod2_ai_slots';
-  var SESSION_KEYS_KEY = 'pod2_ai_session_keys';
+  // Las claves viven solo en memoria JS; nunca se escriben en Web Storage.
+  var volatileKeys = ['', '', ''];
   var AUTO_KEY = 'pod2_ai_auto';
   var APPLY_KEY = 'pod2_ai_apply';
 
@@ -33,23 +34,24 @@
   /* Modelos muertos -> reemplazo vivo: el mapa y las reglas viven en
      js/ia-client.js (window.IAClient.DEAD_MODELS / migrateModel). */
 
-  function readSessionKeys() {
-    try {
-      if (typeof window.sessionStorage === 'undefined') return [];
-      var keys = JSON.parse(window.sessionStorage.getItem(SESSION_KEYS_KEY) || 'null');
-      return Array.isArray(keys) ? keys : [];
-    } catch (e) { return []; }
+  function readVolatileKeys() {
+    return volatileKeys.slice();
   }
 
-  function writeSessionKeys(slots) {
-    if (typeof window.sessionStorage === 'undefined') return false;
-    try {
-      window.sessionStorage.setItem(SESSION_KEYS_KEY, JSON.stringify((slots || []).map(function (s) {
-        return String(s && s.key || '');
-      })));
-      return true;
-    } catch (e) { return false; }
+  function writeVolatileKeys(slots) {
+    volatileKeys = (slots || []).slice(0, 3).map(function (s) {
+      return String(s && s.key || '');
+    });
+    while (volatileKeys.length < 3) volatileKeys.push('');
+    return true;
   }
+
+  // Elimina claves heredadas de versiones anteriores; no se vuelven a leer.
+  try {
+    if (typeof window.sessionStorage !== 'undefined') {
+      window.sessionStorage.removeItem('pod2_ai_session_keys');
+    }
+  } catch (e) { /* almacenamiento bloqueado: no afecta al modo memoria */ }
 
   function migrateSlots(a) {
     var IC = window.IAClient;
@@ -77,9 +79,9 @@
       if (hasPersistedKeys || !raw) {
         try { LS.setItem(SLOTS_KEY, JSON.stringify(nonSecretSlots)); } catch (e) { /* preferencias pueden no persistir */ }
       }
-      var sessionKeys = readSessionKeys();
+      var keys = readVolatileKeys();
       return nonSecretSlots.map(function (slot, i) {
-        return Object.assign({}, slot, { key: String(sessionKeys[i] || '') });
+        return Object.assign({}, slot, { key: String(keys[i] || '') });
       });
     } catch (e) {
       return defSlots();
@@ -310,7 +312,7 @@
       '</div></div>' +
       '<div class="frow"><div><label>Proveedor</label><select data-f="provider">' + pr + '</select></div>' +
       '<div><label>Modelo</label><input data-f="model" value="' + escA(s.model) + '"></div></div>' +
-      '<div class="frow"><div><label>Clave API (solo esta pestaña)</label><input data-f="key" type="password" autocomplete="off" value="' + escA(s.key) + '" placeholder="pegar clave…"></div>' +
+      '<div class="frow"><div><label>Clave API (solo memoria; se pierde al recargar)</label><input data-f="key" type="password" autocomplete="off" value="' + escA(s.key) + '" placeholder="pegar clave…"></div>' +
       '<div><label>Espera</label><select data-f="timeoutMs">' +
       [8000, 10000, 12000, 15000, 20000, 30000].map(function (t) {
         return '<option value="' + t + '"' + (s.timeoutMs === t ? ' selected' : '') + '>' + (t / 1000) + 's</option>';
@@ -419,7 +421,7 @@
     panel.innerHTML =
       '<div style="font-weight:700;margin-bottom:4px">Revisor con IA (opcional)</div>' +
       '<div class="hint" style="margin:0 0 6px">La IA revisa la ficha escrita antes de generar; no ve ni califica la imagen final. Prioridad 1 es el modelo principal; los demás son respaldo si el proveedor falla.</div>' +
-      '<div class="hint" style="margin:0 0 8px;padding:8px;border:1px solid rgba(148,163,184,.35);border-radius:8px;background:rgba(91,141,239,.06)"><b>Seguridad:</b> las claves se guardan en sessionStorage de esta pestaña, no en localStorage. Esto reduce su persistencia, pero NO las protege frente a XSS ni frente a scripts que se ejecuten en esta página. Usa claves propias con permisos y cuotas limitados; nunca pegues aquí una clave maestra del servidor. Para proteger secretos compartidos se necesita un backend/proxy. Pulsa <b>Guardar</b> después de introducirlas.</div>' +
+      '<div class="hint" style="margin:0 0 8px;padding:8px;border:1px solid rgba(148,163,184,.35);border-radius:8px;background:rgba(91,141,239,.06)"><b>Seguridad:</b> las claves solo permanecen en memoria mientras esta página está abierta; no se guardan en localStorage ni sessionStorage y se pierden al recargar. Esto reduce exposición persistente, pero NO las protege frente a XSS ni frente a scripts que se ejecuten en esta página. Usa claves propias con permisos y cuotas limitados; nunca pegues aquí una clave maestra del servidor. Para proteger secretos compartidos se necesita un backend/proxy. Pulsa <b>Guardar</b> después de introducirlas.</div>' +
       '<div id="aiSlots">' + sl.map(slotHTML).join('') + '</div>' +
       '<div style="font-weight:700;margin:10px 0 4px">Visión — analizar imagen</div>' +
       '<div class="hint" style="margin:0 0 6px">OpenRouter :free con visión (NANO-OMNI free, 50 req/día, sin consumir créditos). Gemini directo: serie 3.x para proyectos nuevos. Groq no tiene visión free.</div>' +
@@ -469,8 +471,8 @@
         tellStatus('Aviso: ' + avisos.join(' '), 'warn');
         // No bloqueamos el guardado, pero avisamos. El usuario decide.
       }
-      // Las claves API solo se guardan en sessionStorage; localStorage conserva configuración no secreta.
-      var sessionSaved = writeSessionKeys(arr);
+      // Las claves API solo permanecen en memoria mientras esta página está abierta.
+      var sessionSaved = writeVolatileKeys(arr);
       LS.setItem(SLOTS_KEY, JSON.stringify(arr.map(function (s) { return Object.assign({}, s, { key: '' }); })));
       if (!sessionSaved && arr.some(function (s) { return !!s.key; })) {
         tellStatus('No se pudieron conservar las claves en esta pestaña. Revisa los permisos de almacenamiento del navegador.');
