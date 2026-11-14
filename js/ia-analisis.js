@@ -497,7 +497,7 @@
   }
 
   /* Las claves solo se obtienen del revisor, que las mantiene en memoria.
-     Si el revisor no está cargado, visión queda deshabilitada. */
+     Sin el revisor no existe almacén de claves: nunca leer Web Storage. */
   function getVisionSlots() {
     try {
       if (typeof window.getAISlots === 'function') {
