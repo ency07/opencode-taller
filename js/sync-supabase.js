@@ -134,6 +134,20 @@
     return new Date(now).toISOString();
   }
 
+  /* Re-fusiona la nube confirmada con la memoria local más reciente.
+     La llamada de red anterior puede haber dejado tiempo para que el usuario
+     edite bancos/locks. En el navegador, este bloque síncrono evita una ventana
+     entre la última lectura local y las escrituras de aplicación. */
+  function mergeLocalChangesBeforeApply(cloudMerged, latestLocal) {
+    if (typeof mergeMemoryObjects === 'function') {
+      return mergeMemoryObjects(
+        latestLocal || {},
+        cloudMerged || {}
+      );
+    }
+    return Object.assign({}, cloudMerged || {}, latestLocal || {});
+  }
+
   /* --- Sincronización y fusión --- */
   async function mergeAndSync(onStatus) {
     var status = onStatus || function () { };
@@ -198,13 +212,20 @@
       }
     }
 
+    // La memoria local pudo cambiar mientras esperábamos la respuesta de nube.
+    // Capturarla ahora y fusionarla antes de escribir evita pisar ediciones recientes.
+    var latestLocalPayload = (typeof exportMemoryObject === 'function')
+      ? exportMemoryObject()
+      : {};
+    var localMerged = mergeLocalChangesBeforeApply(merged, latestLocalPayload);
+
     // Aplicar localmente (verificando persistencia real)
     let localWrites = 0;
     let localFailures = 0;
-    Object.keys(merged).forEach(function (k) {
+    Object.keys(localMerged).forEach(function (k) {
       if (String(k).indexOf('POD2|') === 0) {
         try {
-          var res = LS.setItem(k, merged[k]);
+          var res = LS.setItem(k, localMerged[k]);
           if (res === false) localFailures++;
           else localWrites++;
         } catch (e) {
@@ -218,7 +239,7 @@
     }
 
     status('Sincronización completada. Memoria fusionada.');
-    return merged;
+    return localMerged;
   }
 
   /* --- UI: Panel de memoria y nube --- */
