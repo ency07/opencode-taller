@@ -594,9 +594,16 @@
     const raw = getJSON(memKey(['personalBanks', market]), null);
     if (raw && raw.banks && typeof raw.banks === 'object') {
       if (!raw.active || typeof raw.active !== 'object') raw.active = {};
+      if (!raw.deleted || typeof raw.deleted !== 'object' || Array.isArray(raw.deleted)) raw.deleted = {};
+      // Los tombstones prevalecen sobre snapshots antiguos que aún contienen
+      // bancos borrados en otro dispositivo.
+      Object.keys(raw.deleted).forEach(function (id) { delete raw.banks[id]; });
+      Object.keys(raw.active).forEach(function (ctx) {
+        if (!raw.banks[raw.active[ctx]]) delete raw.active[ctx];
+      });
       return raw;
     }
-    return { banks: {}, active: {} };
+    return { banks: {}, active: {}, deleted: {} };
   }
 
   function _saveNamedBanks(market, data) {
@@ -639,14 +646,15 @@
 
   function listPersonalBanks(market) {
     const data = _loadNamedBanks(market);
-    return Object.keys(data.banks).map(function (id) { return data.banks[id]; }).sort(function (a, b) {
+    return Object.keys(data.banks).filter(function (id) { return !data.deleted[id]; }).map(function (id) { return data.banks[id]; }).sort(function (a, b) {
       return String(a.name || '').localeCompare(String(b.name || ''));
     });
   }
 
   function getPersonalBank(market, id) {
     if (!id) return null;
-    return _loadNamedBanks(market).banks[id] || null;
+    const data = _loadNamedBanks(market);
+    return data.deleted[id] ? null : (data.banks[id] || null);
   }
 
   function renamePersonalBank(market, id, name) {
@@ -668,6 +676,9 @@
     const data = _loadNamedBanks(market);
     if (!data.banks[id]) return { ok: false, error: 'el banco no existe' };
     delete data.banks[id];
+    // Tombstone replicable: impide que una copia remota antigua resucite el banco.
+    data.deleted = data.deleted || {};
+    data.deleted[id] = new Date().toISOString();
     Object.keys(data.active).forEach(function (ctx) {
       if (data.active[ctx] === id) delete data.active[ctx];
     });
@@ -1098,6 +1109,16 @@
           }
         });
       });
+      if (value.deleted !== undefined) {
+        if (!value.deleted || typeof value.deleted !== 'object' || Array.isArray(value.deleted)) {
+          throw new Error('Marcas de borrado inválidas en ' + key);
+        }
+        Object.keys(value.deleted).forEach(function (id) {
+          if (typeof value.deleted[id] !== 'string' || !Number.isFinite(Date.parse(value.deleted[id]))) {
+            throw new Error('Marca de borrado inválida para banco ' + id);
+          }
+        });
+      }
     } else {
       Object.keys(value).forEach(function (subniche) {
         if (!Array.isArray(value[subniche]) || !value[subniche].every(function (x) { return typeof x === 'string'; })) {
@@ -1254,9 +1275,16 @@
         }
 
         if (k.indexOf('|personalBanks|') > -1) {
-          const merged = { banks: {}, active: Object.assign({}, b.active || {}, a.active || {}) };
+          const deleted = Object.assign({}, b.deleted || {}, a.deleted || {});
+          const merged = {
+            banks: {},
+            active: Object.assign({}, b.active || {}, a.active || {}),
+            deleted: deleted
+          };
           const ids = Object.keys(b.banks || {}).concat(Object.keys(a.banks || {}));
           ids.forEach(function (id) {
+            // A delete on either device wins over stale copies on the other.
+            if (deleted[id]) return;
             const rb = (b.banks || {})[id], lb = (a.banks || {})[id];
             if (!rb || !lb) { merged.banks[id] = lb || rb; return; }
             const remoteTime = Date.parse(rb.updatedAt || '') || 0;
@@ -1269,6 +1297,9 @@
               phrases: mergeArraysUnique(rb.phrases, lb.phrases),
               updatedAt: latest.updatedAt || lb.updatedAt || rb.updatedAt
             });
+          });
+          Object.keys(merged.active).forEach(function (ctx) {
+            if (!merged.banks[merged.active[ctx]]) delete merged.active[ctx];
           });
           out[k] = JSON.stringify(merged);
         } else if (k.indexOf('|templateBank') > -1) {
