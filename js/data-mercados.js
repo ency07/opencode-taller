@@ -796,6 +796,12 @@ function uniqueArray(arr) {
   return out;
 }
 
+function _escapeOptionHTML(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function getMarket(id) {
   return POD_MARKETS[id] || POD_MARKETS.global_en;
 }
@@ -807,7 +813,7 @@ function getMarketLabel(id) {
 function getMarketOptionsHTML(selectedId) {
   return POD_MARKET_ORDER.map(function (id) {
     const selected = id === selectedId ? " selected" : "";
-    return '<option value="' + id + '"' + selected + '>' + POD_MARKETS[id].label + "</option>";
+    return '<option value="' + _escapeOptionHTML(id) + '"' + selected + '>' + _escapeOptionHTML(POD_MARKETS[id].label) + "</option>";
   }).join("");
 }
 
@@ -820,7 +826,7 @@ function getRegionOptionsHTML(marketId, selectedId) {
 
   return regions.map(function (region) {
     const selected = region.id === selectedId ? " selected" : "";
-    return '<option value="' + region.id + '"' + selected + '>' + region.label + "</option>";
+    return '<option value="' + _escapeOptionHTML(region.id) + '"' + selected + '>' + _escapeOptionHTML(region.label) + "</option>";
   }).join("");
 }
 
@@ -835,14 +841,14 @@ function getLanguageOptionsHTML(marketId) {
 
   return Object.keys(POD_LANGUAGES).map(function (id) {
     const selected = id === defaultLang ? " selected" : "";
-    return '<option value="' + id + '"' + selected + '>' + POD_LANGUAGES[id] + "</option>";
+    return '<option value="' + _escapeOptionHTML(id) + '"' + selected + '>' + _escapeOptionHTML(POD_LANGUAGES[id]) + "</option>";
   }).join("");
 }
 
 function getMarketplaceOptionsHTML(selectedId) {
   return Object.keys(POD_MARKETPLACES).map(function (id) {
     const selected = id === selectedId ? " selected" : "";
-    return '<option value="' + id + '"' + selected + '>' + POD_MARKETPLACES[id] + "</option>";
+    return '<option value="' + _escapeOptionHTML(id) + '"' + selected + '>' + _escapeOptionHTML(POD_MARKETPLACES[id]) + "</option>";
   }).join("");
 }
 
@@ -931,7 +937,7 @@ function getSubnicheOptionsHTML(marketId, group, region, selectedId) {
   const options = ids.map(function (id) {
     const selected = id === selectedId ? " selected" : "";
     const label = getSubnicheLabel(id, marketId);
-    return '<option value="' + id + '"' + selected + '>' + label + "</option>";
+    return '<option value="' + _escapeOptionHTML(id) + '"' + selected + '>' + _escapeOptionHTML(label) + "</option>";
   }).join("");
 
   return '<option value="auto">Auto</option>' + options;
