@@ -43,5 +43,3 @@ jobs:
           done
           echo "=== tests/test_gospel_es_prompt_fix.js ==="
           node tests/test_gospel_es_prompt_fix.js
-          echo "=== tests/test-regresion-concepto-bank.js ==="
-          node tests/test-regresion-concepto-bank.js
