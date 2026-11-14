@@ -438,12 +438,32 @@
 
   const COMMON_BANK_KEY = 'comun';
 
+  const PERSONAL_BANK_DELETED_KEY = '__podDeletedEntries';
+
+  function _personalBankDeleted(bank) {
+    const value = bank && bank[PERSONAL_BANK_DELETED_KEY];
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  }
+
   function loadPersonalBank(market) {
-    return getJSON(memKey(['personalBank', market]), {}) || {};
+    const raw = getJSON(memKey(['personalBank', market]), {}) || {};
+    if (raw && raw.__podDeleted === true) return {};
+    const deleted = _personalBankDeleted(raw);
+    const bank = Object.assign({}, raw);
+    delete bank[PERSONAL_BANK_DELETED_KEY];
+    Object.keys(deleted).forEach(function (key) { delete bank[key]; });
+    return bank;
   }
 
   function savePersonalBank(market, bank) {
-    return setJSON(memKey(['personalBank', market]), bank || {});
+    const key = memKey(['personalBank', market]);
+    const current = getJSON(key, {}) || {};
+    const deleted = _personalBankDeleted(current);
+    const next = Object.assign({}, bank || {});
+    // Writes are explicit recreation of keys present in the new bank.
+    Object.keys(next).forEach(function (entryKey) { delete deleted[entryKey]; });
+    next[PERSONAL_BANK_DELETED_KEY] = deleted;
+    return setJSON(key, next);
   }
 
   function getPersonalPhrases(market, subniche) {
@@ -585,13 +605,25 @@
   }
 
   function removePersonalBank(market, subniche) {
+    const key = memKey(['personalBank', market]);
+    const raw = getJSON(key, {}) || {};
     if (subniche) {
       const bank = loadPersonalBank(market);
-      delete bank[subniche];
-      savePersonalBank(market, bank);
-    } else {
-      removeRaw(memKey(['personalBank', market]));
+      const deleted = _personalBankDeleted(raw);
+      // El contexto legacy comprende objetos, conceptos y frases.
+      [subniche, '__concept__' + subniche, '__phrase__' + subniche].forEach(function (entryKey) {
+        delete bank[entryKey];
+        deleted[entryKey] = new Date().toISOString();
+      });
+      bank[PERSONAL_BANK_DELETED_KEY] = deleted;
+      return setJSON(key, bank);
     }
+    // Un borrado de mercado debe ser visible durante sync; no basta con
+    // eliminar la clave local porque una copia remota la restauraría.
+    return setJSON(key, {
+      __podDeleted: true,
+      deletedAt: new Date().toISOString()
+    });
   }
 
   /* ============================================================
@@ -1419,9 +1451,22 @@
                 deleted: deleted
               };
             } else {
-              merged[id] = mergeArraysUnique(bv, av);
+              const localDeleted = (a && a[PERSONAL_BANK_DELETED_KEY]) || {};
+              const remoteDeleted = (b && b[PERSONAL_BANK_DELETED_KEY]) || {};
+              const deletedEntries = Object.assign({}, remoteDeleted, localDeleted);
+              const mergedEntries = mergeArraysUnique(bv, av);
+              merged[id] = mergedEntries;
+              // Metadata se aplica una sola vez al objeto banco, no a cada array.
+              if (id === PROPOSED_BANK_KEY) {
+                // La cola de propuestas ya tiene su propio formato y tombstones.
+              }
             }
           });
+          const localDeleted = (a && a[PERSONAL_BANK_DELETED_KEY]) || {};
+          const remoteDeleted = (b && b[PERSONAL_BANK_DELETED_KEY]) || {};
+          const deletedEntries = Object.assign({}, remoteDeleted, localDeleted);
+          Object.keys(deletedEntries).forEach(function (entryKey) { delete merged[entryKey]; });
+          merged[PERSONAL_BANK_DELETED_KEY] = deletedEntries;
           out[k] = JSON.stringify(merged);
         } else if (k.indexOf('|approvedDirections|') > -1) {
           // Acepta arrays legacy y wrappers nuevos. Tombstones por ID prevalecen
