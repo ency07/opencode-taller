@@ -4642,15 +4642,14 @@ function _estadoUnificado(result) {
   }
   if (!okScore) {
     const umbralMsg = (typeof _mensajeUmbral === 'function') ? _mensajeUmbral(ev) : '';
-    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Listo con advertencia: ' + escHtml(umbralMsg || 'revisa el control de calidad') + '</span>' };
+    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Validación del set con fallos: ' + escHtml(umbralMsg || 'no supera los controles de calidad') + '</span>' };
   }
   if (!okArb) {
     const checksOkArb = totalArb - fallosArb;
     return { ok: false, okScore: true, okArb: false, checks: info, fallos: fallosArb, html: '<span class="bad">Árbitro: ' + checksOkArb + '/' + totalArb + ' selectores verificados en el prompt · ' + fallosArb + ' punto(s) a revisar</span>' };
   }
-  return { ok: true, okScore: true, okArb: true, checks: info, fallos: 0, html: isSecularMarket()
-    ? '<span class="good">Prompt y selectores verificados · audiencia ' + effAud + '/100 · producto ' + effProd + '/100 · imagen pendiente de QA visual</span>'
-    : '<span class="good">Listo: símbolo constante, tres tratamientos asignados y diferencias revisadas en el prompt · pertinencia efectiva audiencia ' + effAud + '/100 · producto ' + effProd + '/100</span>' };
+  return { ok: true, okScore: true, okArb: true, checks: info, fallos: 0,
+    html: '<span class="good">Prompt y selectores verificados · audiencia ' + effAud + '/100 · producto ' + effProd + '/100 · la aprobación visual de la imagen se registra por separado en Revisión visual</span>' };
 }
 
 /* --- Función principal: Crear los 3 diseños --- */
@@ -4709,7 +4708,7 @@ function validarSetActual() {
         statusEl.innerHTML = verdict.html;
         return { ok: false, detalle: ['árbitro de selectores con fallos: ' + (verdict.fallos || 0)] };
       }
-      statusEl.innerHTML = '<span class="good">Validación OK: diferencia, estilos, jerarquías, pertinencia y patrones en regla · audiencia efectiva ' + (ev.score.fitAudienciaMin || 0) + '/100 · producto ' + (ev.score.fitProductoMin || 0) + '/100</span>';
+      statusEl.innerHTML = verdict.html;
     } else {
       statusEl.innerHTML = '<span class="warn">Validación con fallos: ' + escHtml(ev.detalle.join(' · ')) + '</span>';
       return { ok: false, detalle: ev.detalle };
