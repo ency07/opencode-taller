@@ -9,11 +9,24 @@
 const PRODUCT_BIAS = {
   "CAMISETA SOFT": {
     trat: ["SOFT", "MODERN"],
+    /* Unión de layouts compatibles con los perfiles HEAVY/SOFT/MODERN.
+       El perfil estructural gobierna la arquitectura; el producto no debe
+       penalizar después una composición que el propio generador permite. */
     layout: [
       "Axial centrado",
       "Emblema circular",
       "Columna apilada",
-      "Tarjeta interior"
+      "Tarjeta interior",
+      "Banda horizontal",
+      "Sangrado total",
+      "Arco y cúpula",
+      "Escalinata",
+      "Editorial asimétrica",
+      "Retícula áurea",
+      "Sello descentrado",
+      "Split 2/3-1/3",
+      "Diagonal ascendente",
+      "Diagonal descendente"
     ],
     density: ["Balanced", "Minimal"],
     hierarchy: ["BALANCEADO", "TEXTO_DOMINANTE"],
