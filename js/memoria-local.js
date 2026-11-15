@@ -1595,7 +1595,19 @@
                 deleted: deleted
               };
             } else {
-              merged[id] = mergeArraysUnique(bv, av);
+              const localUpdatedAt = Date.parse(localUpdated[id] || '') || 0;
+              const remoteUpdatedAt = Date.parse(remoteUpdated[id] || '') || 0;
+              const deletionAt = Date.parse(deletedEntries[id] || '') || 0;
+              // If only one side carries a recreation newer than the tombstone,
+              // that explicit snapshot replaces the stale value from the other side.
+              // Union-merging here would resurrect entries deleted on the old device.
+              if (localUpdatedAt > deletionAt && localUpdatedAt > remoteUpdatedAt) {
+                merged[id] = av;
+              } else if (remoteUpdatedAt > deletionAt && remoteUpdatedAt > localUpdatedAt) {
+                merged[id] = bv;
+              } else {
+                merged[id] = mergeArraysUnique(bv, av);
+              }
             }
           });
           merged[PERSONAL_BANK_DELETED_KEY] = deletedEntries;
