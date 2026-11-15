@@ -680,6 +680,21 @@ Object.assign(AUD_PROFILES, {
     tratPref: ["SOFT", "MODERN"],
     formaPref: ["contorno lineal calibrado", "orgánico gestual con pincel"]
   },
+  gospel_joven_adulto: {
+    label: "Cristianos jóvenes y adultos",
+    region: "universal",
+    genero: "unisex",
+    edad: "16-55",
+    perfil: "Jóvenes y adultos cristianos; audiencia intergeneracional adulta sin segmentación por género.",
+    codigos: "fe, identidad en Cristo, palabra, adoración, discipulado, vida cotidiana",
+    rechaza: "estereotipos generacionales, confusión doctrinal, clichés juveniles o adultos impuestos",
+    contexto: "uso personal, comunidad, ministerio, evento o regalo",
+    directiva: "Equilibrar códigos contemporáneos y legibilidad madura; no infantilizar ni imponer una estética juvenil o solemne.",
+    tipoPref: ["Sans humanista limpia", "Serif clásica titulada", "Grotesca black condensada"],
+    modoCol: ["Contraste duro", "Claro editorial", "Bicolor monocromo"],
+    tratPref: ["MODERN", "SOFT", "HEAVY"],
+    formaPref: ["contorno lineal calibrado", "silueta sólida a una tinta"]
+  },
   gospel_comunidad: {
     label: "Comunidad cristiana / unisex",
     region: "universal",
@@ -1160,7 +1175,7 @@ const MARKET_AUDIENCES = {
 function getAudiencesForMarketRegion(marketId, regionId) {
   // Gospel ES/EN comparte un catálogo compacto; solo cambia el idioma/mercado.
   if (marketId === "gospel_es" || marketId === "gospel_en") {
-    return ["gospel_hombre", "gospel_mujer", "gospel_infantil", "gospel_familia", "gospel_pareja", "gospel_comunidad"];
+    return ["gospel_hombre", "gospel_mujer", "gospel_infantil", "gospel_familia", "gospel_pareja", "gospel_joven_adulto", "gospel_comunidad"];
   }
 
   // Diáspora y mercado personalizado admiten ES/EN sin mezclar perfiles regionales.
@@ -1216,7 +1231,7 @@ function getAudiencesForSubniche(subniche, region, marketId) {
   const youth = /skate_culture|gaming_setup|booktok_reader|back_to_school|music_fandom|crypto_web3|ai_tech|streetwear|tattoo_lifestyle|humor_costeno|humor_colombiano|calle_urbano|sonido_ritmo|barranquilla_curramba|musica_ritmo|deporte_barra|resistencia_orgullo|fitness_mental|sarcasm_introvert|hobbies|inspirational_clean|surf_culture|new_year|st_patricks|pride/.test(id);
   const adult = /professions|coffee_culture|motorcycle_biker|retro_nostalgia|outdoors_nature|travel_adventure|plant_parent|crypto_web3|ai_tech|oficios|emprendimiento|artesania|concreto_ciudad|metas_logro|naturaleza_territorio|viaje_ruta|comida_sabor|food_drink|thanksgiving|black_friday|plants|retro|outdoors|travel|profession/.test(id);
   let wanted = null;
-  if (faith) wanted = ["gospel_hombre","gospel_mujer","gospel_infantil","gospel_familia","gospel_pareja","gospel_comunidad","gospel_joven_fe","gospel_adulto_fe","gospel_familia_fe","gospel_youth_faith","gospel_adult_faith","gospel_family_faith"];
+  if (faith) wanted = ["gospel_hombre","gospel_mujer","gospel_infantil","gospel_familia","gospel_pareja","gospel_comunidad","gospel_joven_fe","gospel_adulto_fe","gospel_familia_fe","gospel_joven_adulto","gospel_youth_faith","gospel_adult_faith","gospel_family_faith"];
   else if (kids) wanted = ["infantil_col","global_familia_es","global_family_en","gospel_infantil","gospel_familia","gospel_joven_fe","gospel_youth_faith"];
   else if (family) wanted = ["infantil_col","global_familia_es","global_family_en","gospel_familia","gospel_pareja","gospel_familia_fe","gospel_family_faith","unisex_nacional"];
   else if (couple) wanted = ["coste_joven_m","coste_joven_f","global_joven_es","global_young_en","gospel_pareja","global_familia_es","global_family_en"];
@@ -1261,6 +1276,7 @@ Object.assign(AUD_STYLE_PREF, {
   gospel_infantil: ["Kids Storybook", "Hand-Drawn", "Collage Cut-Paper", "Folk Popular", "Minimal Modern", "Retro 70s"],
   gospel_familia: ["Hand-Drawn", "Minimal Modern", "Folk Popular", "Kids Storybook", "Collage Cut-Paper", "Vintage Desgastado"],
   gospel_pareja: ["Hand-Drawn", "Minimal Modern", "Vintage Desgastado", "Folk Popular", "Retro 70s", "Collage Cut-Paper"],
+  gospel_joven_adulto: ["Minimal Modern", "Hand-Drawn", "Folk Popular", "Vintage Desgastado", "Grabado / Linóleo", "Brutalist"],
   gospel_comunidad: ["Grabado / Linóleo", "Minimal Modern", "Vintage Desgastado", "Brutalist", "Hand-Drawn", "Folk Popular"]
 });
 Object.assign(AUD_HIERARCHY_PREF, {
@@ -1269,6 +1285,7 @@ Object.assign(AUD_HIERARCHY_PREF, {
   gospel_infantil: ["OBJETO_DOMINANTE", "BALANCEADO"],
   gospel_familia: ["BALANCEADO", "OBJETO_DOMINANTE"],
   gospel_pareja: ["BALANCEADO", "TEXTO_DOMINANTE"],
+  gospel_joven_adulto: ["BALANCEADO", "TEXTO_DOMINANTE"],
   gospel_comunidad: ["BALANCEADO", "TEXTO_DOMINANTE"]
 });
 Object.assign(AUD_DENSITY_PREF, {
@@ -1277,6 +1294,7 @@ Object.assign(AUD_DENSITY_PREF, {
   gospel_infantil: ["Minimal", "Balanced"],
   gospel_familia: ["Minimal", "Balanced"],
   gospel_pareja: ["Minimal", "Balanced"],
+  gospel_joven_adulto: ["Balanced", "Minimal"],
   gospel_comunidad: ["Balanced", "Minimal"]
 });
 Object.assign(AUD_LAYOUT_PREF, {
@@ -1285,6 +1303,7 @@ Object.assign(AUD_LAYOUT_PREF, {
   gospel_infantil: ["Tarjeta interior", "Órbita radial", "Axial centrado"],
   gospel_familia: ["Tarjeta interior", "Órbita radial", "Arco y cúpula"],
   gospel_pareja: ["Axial centrado", "Emblema circular", "Tarjeta interior"],
+  gospel_joven_adulto: ["Editorial asimétrica", "Emblema circular", "Tarjeta interior"],
   gospel_comunidad: ["Emblema circular", "Tarjeta interior", "Arco y cúpula"]
 });
 
