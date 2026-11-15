@@ -83,3 +83,20 @@ jobs:
         run: node tests/audiencias-auto.test.js
       - name: Run regional audience isolation regressions
         run: node tests/region-estilos-audiencias.test.js
+
+  rt04-product-fit:
+    name: RT-04 product fit diagnostics
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run product fit and layout regressions
+        run: |
+          node tests/pertinencia-gate.test.js
+          node tests/umbral-qc.test.js
+          node tests/layout-selector.test.js
+          node tests/layout-arq-compat.test.js
