@@ -1680,7 +1680,7 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
 
   const conceptText = sourceConcept;
   if (typeof _isVerseReference === 'function' && _isVerseReference(conceptText)) {
-    return { list: [_motifSceneFromMessage(conceptText, userMessage)], anchor: conceptText, conflict: '' };
+    return { list: [_motifSceneFromMessage(conceptText, '')], anchor: conceptText, conflict: '' };
   }
 
   // Sin relación defendible no se sortea un objeto del banco. Se entrega una
