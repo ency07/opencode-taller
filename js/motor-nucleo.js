@@ -1679,8 +1679,18 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
   if (userObj) return { list: [userObj], anchor: userObj, conflict: '' };
 
   const conceptText = sourceConcept;
+  const messageText = String(userMessage || '').trim();
   if (typeof _isVerseReference === 'function' && _isVerseReference(conceptText)) {
-    return { list: [_motifSceneFromMessage(conceptText, '')], anchor: conceptText, conflict: '' };
+    // Keep the user's literal message as the semantic source for a verse/citation.
+    return { list: [_motifSceneFromMessage(conceptText, messageText)], anchor: conceptText, conflict: '' };
+  }
+
+  // A message that explicitly names a family motif may resolve the symbol,
+  // while the concept remains the series anchor. The message is not a fallback
+  // for unrelated concepts; it must have a defensible family match.
+  const messageCompatible = messageText ? _rankCompatibleMotifs(familyObjs, messageText) : [];
+  if (messageCompatible.length) {
+    return { list: [messageCompatible[0]], anchor: conceptText, conflict: '' };
   }
 
   // Sin relación defendible no se sortea un objeto del banco. Se entrega una
