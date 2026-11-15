@@ -95,7 +95,7 @@ function probe(seed, n) {
   const auds = resolveAudiences();
   const res = {
     n: n, passed: 0, umbral: 0, patrones: 0,
-    audMinBajo: 0, heavyProd: {}, productMinVals: {}
+    audMinBajo: 0, heavyProd: {}, productMinVals: {}, productDiagnostics: {}
   };
   for (let i = 0; i < n; i++) {
     const cand = buildCandidate(auds, null);
@@ -108,12 +108,28 @@ function probe(seed, n) {
     if (ev.score.fitAudienciaMin < UMBRAL_AUDIENCIA_MIN) res.audMinBajo++;
     res.heavyProd[cand.A.fitProducto] = (res.heavyProd[cand.A.fitProducto] || 0) + 1;
     res.productMinVals[ev.score.fitProductoMin] = (res.productMinVals[ev.score.fitProductoMin] || 0) + 1;
+    ['A', 'B', 'C'].forEach(function (key) {
+      const card = cand[key];
+      const bias = getProductBias('CAMISETA SOFT');
+      const failed = [];
+      if (!(bias.layout || []).some(function (x) { return String(card.layout).startsWith(x); })) failed.push('layout');
+      if (!(bias.density || []).includes(card.densidad)) failed.push('densidad');
+      if (!(bias.hierarchy || []).includes(card.jerarquiaVisual)) failed.push('jerarquia');
+      const profile = String(card.perfilEstructural || 'SIN_PERFIL');
+      const bucket = res.productDiagnostics[profile] || (res.productDiagnostics[profile] = { total: 0, scores: {}, failures: {} });
+      bucket.total++;
+      bucket.scores[card.fitProducto] = (bucket.scores[card.fitProducto] || 0) + 1;
+      failed.forEach(function (axis) { bucket.failures[axis] = (bucket.failures[axis] || 0) + 1; });
+    });
   }
   removeRaw(patKey);
   return res;
 }
 
 const runs = [probe(1, 400), probe(7, 400)];
+runs.forEach(function (r, idx) {
+  console.log('RT-04 product fit diagnostics seed ' + (idx + 1) + ': ' + JSON.stringify(r.productDiagnostics));
+});
 
 runs.forEach(function (r, idx) {
   ok(r.passed >= 40, 'seed ' + (idx + 1) + ': el gate debe ser alcanzable (pasan ' + r.passed + '/' + r.n + ', mín 40)');
