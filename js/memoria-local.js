@@ -39,6 +39,13 @@
           try {
             window.localStorage.setItem(k, v);
             delete mem[k];
+            // Central hook: every POD2 write (including callers using POD_LS
+            // directly) is recorded after a global clear. The marker itself is
+            // excluded to prevent recursion.
+            if (String(k).indexOf(MEM_PREFIX) === 0 &&
+                k !== GLOBAL_MEMORY_CLEAR_KEY &&
+                typeof _recordGlobalMemoryWrite === 'function' &&
+                _recordGlobalMemoryWrite(k) !== true) return false;
             return true;
           } catch (e) {
             // storage full or blocked; fallback to session memory (not durable)
@@ -118,9 +125,7 @@
   }
 
   function setRaw(key, value) {
-    const saved = POD_LS.setItem(key, value) === true;
-    if (!saved) return false;
-    return _recordGlobalMemoryWrite(key);
+    return POD_LS.setItem(key, value) === true;
   }
 
   function removeRaw(key) {
@@ -160,9 +165,7 @@
 
   function setJSON(key, value) {
     try {
-      const saved = POD_LS.setItem(key, JSON.stringify(value)) === true;
-      if (!saved) return false;
-      return _recordGlobalMemoryWrite(key);
+      return POD_LS.setItem(key, JSON.stringify(value)) === true;
     } catch (e) {
       return false;
     }
