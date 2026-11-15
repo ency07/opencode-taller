@@ -3364,6 +3364,24 @@ function setVisualIdentity(value) {
   return val;
 }
 
+/* RT-01 — Cambiar de mercado/producto debe cambiar también el contexto de
+   identidad visual. El valor actual se guarda bajo el contexto ANTERIOR antes
+   de sincronizar MOTOR_STATE; luego se carga el valor del contexto DESTINO.
+   Así se evita que el input conserve una identidad de otro mercado/producto. */
+function switchVisualIdentityContext(syncFn) {
+  const input = (typeof document !== 'undefined')
+    ? document.getElementById('visualIdentity') : null;
+  const currentValue = input ? input.value : MOTOR_STATE.visualIdentity;
+  setVisualIdentity(currentValue);
+
+  if (typeof syncFn === 'function') syncFn();
+
+  const nextValue = loadVisualIdentity();
+  MOTOR_STATE.visualIdentity = nextValue;
+  if (input) input.value = nextValue;
+  return nextValue;
+}
+
 /* FIX 3C — Resuelve la identidad visual efectiva del set. Devuelve
    { primary, secondary, integrated } donde:
    - primary: la identidad que gobierna (la del usuario si existe, si no la del territorio).
@@ -4959,7 +4977,9 @@ window.renderColorAudit = renderColorAudit;
 
     if (product && !product.__podPrintMethodBound) {
       product.addEventListener('change', function () {
-        syncContext();
+        // Guardar la identidad en el contexto anterior antes de que syncContext
+        // cambie MOTOR_STATE; después cargar solo la identidad del nuevo producto.
+        switchVisualIdentityContext(syncContext);
         refreshPrintMethodSelector();
       });
       product.__podPrintMethodBound = true;
@@ -4968,7 +4988,9 @@ window.renderColorAudit = renderColorAudit;
 
     if (market && !market.__podAudienceRefreshBound) {
       market.addEventListener('change', function () {
-        syncContext();
+        // El select ya contiene el nuevo mercado, pero MOTOR_STATE aún conserva
+        // el anterior. Persistir primero y luego recargar la identidad del destino.
+        switchVisualIdentityContext(syncContext);
         refreshContextSelectors(true);
       });
       market.__podAudienceRefreshBound = true;
