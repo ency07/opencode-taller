@@ -214,5 +214,6 @@ ok(/MOTOR_STATE\._rerollNonce = rerollNonceBase \+ 1;/.test(motorSrc),
 
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  pertinencia-gate  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
-failures.forEach(function (f) { console.log('  X ' + f); });
-process.exit(passed ? 0 : 1);
+failures.forEach(function (f) { console.error('  X ' + f); });
+// Allow stdout/stderr to flush so CI retains the actual assertion failures.
+process.exitCode = passed ? 0 : 1;
