@@ -66,3 +66,20 @@ jobs:
         run: node tests/test_gospel_es_prompt_fix.js
       - name: Run semantic identity regression
         run: node tests/semantic-identity.test.js
+
+  rt03-audience:
+    name: RT-03 audience regressions
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run audience and product contracts
+        run: node tests/audience-product-contracts.test.js
+      - name: Run audience auto-selection regressions
+        run: node tests/audiencias-auto.test.js
+      - name: Run regional audience isolation regressions
+        run: node tests/region-estilos-audiencias.test.js
