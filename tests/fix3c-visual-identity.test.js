@@ -5,7 +5,7 @@
    3. Sin territorio, la identidad del usuario funciona independientemente.
    4. No se confunde con seriesAnchor, estilo, tratamiento ni composición.
    5. No se sobrescribe una selección explícita del usuario.
-   6. Persistencia y comportamiento al cambiar de territorio.
+   6. Persistencia y aislamiento al cambiar de mercado, producto y territorio.
 
    Ejecutar:  node tests/fix3c-visual-identity.test.js
    Sale con código 1 si falla cualquier aserción. */
@@ -200,9 +200,14 @@ ok(vi8.primary === '', '8. sin identidad y sin territorio, no hay primaria');
 const prompt8 = formatPrompt({ set: buildCandidate(resolveAudiences(), null) });
 ok(prompt8.indexOf('IDENTIDAD VISUAL') === -1, '8. no se inyecta bloque de identidadvisual');
 
-/* ---------- 9. UI: el input existe en index.html ---------- */
+/* ---------- 9. UI: input y handlers de cambio de contexto ---------- */
 const idx = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 ok(idx.indexOf('id="visualIdentity"') !== -1, '9. index.html tiene el input #visualIdentity');
+const motorSource = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
+ok(/market\.addEventListener\('change',[\s\S]*?switchVisualIdentityContext\(syncContext\)/.test(motorSource),
+  '9. el cambio de mercado guarda y recarga la identidad visual');
+ok(/product\.addEventListener\('change',[\s\S]*?switchVisualIdentityContext\(syncContext\)/.test(motorSource),
+  '9. el cambio de producto guarda y recarga la identidad visual');
 
 console.log((failures.length ? 'FAIL' : 'PASS') + '  fix3c-visual-identity  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.slice(0, 15).forEach(function (f) { console.log('  X ' + f); });
