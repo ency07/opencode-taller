@@ -953,7 +953,7 @@ function _resolveExplorationBrief() {
       selectedFrom = 'market-compatible-bank';
     }
   }
-  const concept = explicitConcept || (MOTOR_STATE.market === 'gospel_en' ? '' : (candidates.length ? String(_pick(candidates) || '').trim() : ''));
+  const concept = explicitConcept || (isGospelMarket() ? '' : (candidates.length ? String(_pick(candidates) || '').trim() : ''));
   const detectedFamilyLabel = familyId && typeof getSubnicheLabel === 'function'
     ? (getSubnicheLabel(familyId, MOTOR_STATE.market) || familyId)
     : (familyId || 'sin familia confirmada');
@@ -1666,20 +1666,19 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
   if (inBank) return { list: [inBankHit.label], anchor: inBankHit.label, conflict: '' };
 
   const sourceConcept = String(anchor || userConcept || '').trim();
+  // El mensaje es copy, no una fuente alternativa para inventar el concepto o el motivo.
+  if (!sourceConcept) {
+    return { list: [], anchor: '', conflict: 'Falta el concepto principal. El mensaje no puede sustituirlo ni seleccionar un motivo del banco.' };
+  }
   const compatible = _rankCompatibleMotifs(familyObjs, sourceConcept);
   if (compatible.length) return { list: compatible, anchor: compatible[0], conflict: '' };
 
   const userObj = (typeof _userNamedObject === 'function')
-    ? _userNamedObject((userConcept || '') + ' ' + (userMessage || ''), objectPool)
+    ? _userNamedObject(sourceConcept, objectPool)
     : '';
   if (userObj) return { list: [userObj], anchor: userObj, conflict: '' };
 
-  const messageMotifs = String(userMessage || '').trim()
-    ? _rankCompatibleMotifs(familyObjs, userMessage)
-    : [];
-  if (messageMotifs.length) return { list: messageMotifs, anchor: messageMotifs[0], conflict: '' };
-
-  const conceptText = sourceConcept || String(userMessage || '').trim();
+  const conceptText = sourceConcept;
   if (typeof _isVerseReference === 'function' && _isVerseReference(conceptText)) {
     return { list: [_motifSceneFromMessage(conceptText, userMessage)], anchor: conceptText, conflict: '' };
   }
@@ -3262,7 +3261,7 @@ function _resolveTerritoryDirective(territory) {
   } else if (_vi.primary) {
     push('Identidad visual: ' + _vi.primary + '.');
   }
-  const _conceptAnchor = String((MOTOR_STATE && (MOTOR_STATE.concept || MOTOR_STATE.message)) || '').trim();
+  const _conceptAnchor = String((MOTOR_STATE && MOTOR_STATE.concept) || '').trim();
   if (_conceptAnchor) push('ANCLA CONCEPTO: ' + _conceptAnchor + '. El motivo visual debe derivarse de este concepto y no de una escena genérica ajena al concepto.');
   return parts.join(' ');
 }
@@ -3585,7 +3584,7 @@ function formatPrompt(result) {
   const isPatron = MOTOR_STATE.designMode === 'patron' && !isVar && supportsPattern;
   const tplActive = _activeTemplateSafe();
   const explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? (MOTOR_STATE.explorationBrief || _resolveExplorationBrief()) : null;
-  const promptConcept = String((explorationBrief && explorationBrief.concept) || MOTOR_STATE.concept || '').trim() || String(MOTOR_STATE.message || '').trim() || '—';
+  const promptConcept = String((explorationBrief && explorationBrief.concept) || MOTOR_STATE.concept || '').trim() || '—';
   const promptMessage = String(MOTOR_STATE.message || '').trim() || '—';
   const typedMessage = String(MOTOR_STATE.message || '').trim();
   const isExplore = MOTOR_STATE.workflowMode === 'explore';
