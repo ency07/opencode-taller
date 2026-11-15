@@ -86,7 +86,9 @@ global.__SETBUENO__ = buenSet();
 vm.runInThisContext('LAST_RESULT = { set: global.__SETBUENO__, score: null, passed: false };');
 r = validarSetActual();
 ok(r.ok === true, 'set sano debe validar OK');
-ok(els.status.innerHTML.indexOf('Validación OK') !== -1, 'status debe confirmar validación');
+ok(els.status.innerHTML.indexOf('Prompt y selectores verificados') !== -1, 'status debe limitar el éxito a prompt y selectores');
+ok(els.status.innerHTML.indexOf('aprobación visual de la imagen se registra por separado') !== -1, 'status debe separar explícitamente la aprobación visual');
+ok(els.status.innerHTML.indexOf('Validación OK') === -1 && els.status.innerHTML.indexOf('Listo') === -1, 'status no debe presentar la validación del prompt como aprobación integral');
 ok(vm.runInThisContext('LAST_RESULT.passed === true && !!LAST_RESULT.score;'), 'debe recalcular score/passed');
 /* Contradicción del audit resuelta: si el score pasa pero el Árbitro falla,
    el status NO puede quedar en verde ('Validación OK'). Regresión del punto crítico. */
@@ -103,6 +105,8 @@ ok(els.status.innerHTML.indexOf('Validación OK') === -1, 'status NO debe decir 
 global.arbitroSelectores = realArb;
 const motorSrcForCheck = fs.readFileSync(path.join(ROOT, 'js', 'motor-nucleo.js'), 'utf8');
 ok(/function _estadoUnificado\(/.test(motorSrcForCheck), 'motor expone estado unificado del set (score + arbitro)');
+ok(motorSrcForCheck.includes('la aprobación visual de la imagen se registra por separado en Revisión visual'), 'el estado de éxito no confunde prompt con aprobación visual');
+ok(!motorSrcForCheck.includes('Listo con advertencia:') && !motorSrcForCheck.includes('Listo: símbolo constante'), 'el estado principal no usa Listo para validaciones parciales');
 ok(/statusEl\.innerHTML = verdict\.html/.test(motorSrcForCheck), 'crearLos3Disenos aplica el veredicto unificado al status');
 ok(/function _qaBadgeHtml\(/.test(motorSrcForCheck), 'motor expone badge unificado de QA visual');
 
