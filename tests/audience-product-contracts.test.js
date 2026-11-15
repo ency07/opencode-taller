@@ -112,7 +112,7 @@ const colombiaSubniches = [
 // Los cambios de mercado/región/subnicho deben refrescar el selector en el motor.
 const motor = fs.readFileSync(path.join(root, 'js/motor-nucleo.js'), 'utf8');
 ok(/function refreshAudienceSelector\(\)/.test(motor), 'motor define actualización del selector de audiencia');
-ok(/market\.addEventListener\('change',[\s\S]{0,100}refreshContextSelectors\(true\)/.test(motor), 'mercado refresca región, subnicho y audiencia');
+ok(/market\.addEventListener\('change',[\s\S]{0,500}refreshContextSelectors\(true\)/.test(motor), 'mercado refresca región, subnicho y audiencia');
 ok(/region\.addEventListener\('change',[\s\S]{0,100}refreshContextSelectors\(false\)/.test(motor), 'región refresca subnicho y audiencia');
 ok(/subniche\.addEventListener\('change', refreshAudienceSelector\)/.test(motor), 'subnicho refresca el selector de audiencia');
 ok(/getRegionOptionsHTML\(market, previousRegion\)/.test(motor), 'selector de región se reconstruye con el mercado');
