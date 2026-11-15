@@ -1562,29 +1562,6 @@
         } else if (k.indexOf('|personalBank|') > -1) {
           const merged = {};
           const keys = Object.keys(b).concat(Object.keys(a));
-          keys.forEach(function (id) {
-            const av = a[id], bv = b[id];
-            // Do not merge stale values before resolving their per-entry tombstone.
-            // This makes deletion independent of whether the deleted snapshot is local or remote.
-            if (id !== PERSONAL_BANK_DELETED_KEY && id !== PERSONAL_BANK_UPDATED_KEY &&
-                id !== PROPOSED_BANK_KEY &&
-                _personalBankEntryIsDeleted(id, deletedEntries, updatedEntries)) {
-              return;
-            }
-            if (id === PROPOSED_BANK_KEY) {
-              const aa = Array.isArray(av) ? av : (av && Array.isArray(av.items) ? av.items : []);
-              const bb = Array.isArray(bv) ? bv : (bv && Array.isArray(bv.items) ? bv.items : []);
-              const deleted = Object.assign({}, (bv && !Array.isArray(bv) && bv.deleted) || {}, (av && !Array.isArray(av) && av.deleted) || {});
-              merged[id] = {
-                items: mergeArraysUnique(bb, aa).filter(function (item) {
-                  return !item || !item.id || !deleted[item.id];
-                }),
-                deleted: deleted
-              };
-            } else {
-              merged[id] = mergeArraysUnique(bv, av);
-            }
-          });
           const localDeleted = (a && a[PERSONAL_BANK_DELETED_KEY]) || {};
           const remoteDeleted = (b && b[PERSONAL_BANK_DELETED_KEY]) || {};
           const deletedEntries = Object.assign({}, remoteDeleted, localDeleted);
@@ -1603,11 +1580,22 @@
           });
           keys.forEach(function (id) {
             const av = a[id], bv = b[id];
-            // Resolve tombstones before merging stale values from either device.
-            if (id !== PERSONAL_BANK_DELETED_KEY && id !== PERSONAL_BANK_UPDATED_KEY &&
-                id !== PROPOSED_BANK_KEY &&
-                _personalBankEntryIsDeleted(id, deletedEntries, updatedEntries)) {
-              delete merged[id];
+            if (id === PERSONAL_BANK_DELETED_KEY || id === PERSONAL_BANK_UPDATED_KEY) return;
+            // A deletion marker is resolved before stale values are merged.
+            if (id !== PROPOSED_BANK_KEY &&
+                _personalBankEntryIsDeleted(id, deletedEntries, updatedEntries)) return;
+            if (id === PROPOSED_BANK_KEY) {
+              const aa = Array.isArray(av) ? av : (av && Array.isArray(av.items) ? av.items : []);
+              const bb = Array.isArray(bv) ? bv : (bv && Array.isArray(bv.items) ? bv.items : []);
+              const deleted = Object.assign({}, (bv && !Array.isArray(bv) && bv.deleted) || {}, (av && !Array.isArray(av) && av.deleted) || {});
+              merged[id] = {
+                items: mergeArraysUnique(bb, aa).filter(function (item) {
+                  return !item || !item.id || !deleted[item.id];
+                }),
+                deleted: deleted
+              };
+            } else {
+              merged[id] = mergeArraysUnique(bv, av);
             }
           });
           merged[PERSONAL_BANK_DELETED_KEY] = deletedEntries;
