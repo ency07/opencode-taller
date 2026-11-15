@@ -115,3 +115,16 @@ jobs:
         run: node --check js/motor-nucleo.js
       - name: Run validation and visual QA regressions
         run: node tests/validar-qa.test.js
+
+  rt06-approved-directions-tombstones:
+    name: RT-06 approved directions tombstones
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run approved directions tombstone regression
+        run: node tests/approved-directions-sync-tombstone.test.js
