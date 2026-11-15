@@ -1284,9 +1284,13 @@ function _calculateFits(v, ctx) {
   if (preferredModes.length && _COLOR_MODES.some(function (m) { return preferredModes.indexOf(m) !== -1; })) {
     audChecks.push(!!modeMatch && preferredModes.indexOf(modeMatch[1]) !== -1);
   }
+  // Audience preferences are soft signals, not universal prohibitions.
+  // A non-preferred but otherwise compatible choice is neutral (50), while
+  // matching declared preferences raises the score toward 100. Explicit
+  // incompatibilities will be represented separately by structured rejects.
   var fitAudiencia = audChecks.length
-    ? Math.round(100 * audChecks.filter(Boolean).length / audChecks.length)
-    : 0;
+    ? 50 + Math.round(50 * audChecks.filter(Boolean).length / audChecks.length)
+    : 50;
   console.log('DBG CALC fitAud=' + fitAudiencia + ' nChecks=' + audChecks.length + ' details=' + JSON.stringify(audChecks) + ' audStylePref=' + JSON.stringify(audStylePref) + ' vAud=' + v.audiencia + ' vStyle=' + v.estilo + ' vTipo=' + v.tipografia + ' vForma=' + v.formaSimbolo + ' vTrat=' + v.tratamiento + ' vLayout=' + v.layout + ' vHier=' + v.jerarquiaVisual + ' vDens=' + v.densidad + ' vPaleta=' + String(v.paleta).slice(0,40));
 
   var productBias = c.productBias || {};
