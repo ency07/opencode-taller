@@ -49,4 +49,12 @@ assert.strictEqual(JSON.parse(postWriteMerge[localKey]).camiseta.join(','), 'dat
 assert.strictEqual(JSON.parse(postWriteMerge[cloudOnlyKey]).__podDeleted, true, 'unrelated stale cloud key must stay deleted');
 assert.ok(JSON.parse(postWriteMerge['POD2|__globalClear']).preservedKeys[localKey], 'post-clear write timestamp must be tracked');
 
-console.log('PASS clear-all-memory-sync-tombstone (11 assertions, 0 failures)');
+context.clearAllMemory();
+const imported = JSON.stringify({ [localKey]: JSON.stringify({ camiseta: ['dato importado'] }) });
+context.importMemoryJSON(imported, 'overwrite');
+const importedSnapshot = context.exportMemoryObject();
+const importedMerge = context.mergeMemoryObjects(importedSnapshot, { [localKey]: staleLocal });
+assert.strictEqual(JSON.parse(importedMerge[localKey]).camiseta.join(','), 'dato importado', 'explicit overwrite import after clear must survive sync');
+assert.ok(JSON.parse(importedMerge['POD2|__globalClear']).preservedKeys[localKey], 'successful import must be recorded as post-clear write');
+
+console.log('PASS clear-all-memory-sync-tombstone (13 assertions, 0 failures)');
