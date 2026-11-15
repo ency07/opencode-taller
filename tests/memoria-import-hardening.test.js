@@ -375,8 +375,9 @@ ok(/remotePayload = \{\}/.test(syncSrc) && /typeof remotePayload !== 'object'/.t
   'sincronización: payload remoto no-objeto debe normalizarse a {}');
 ok(/localFailures/.test(syncSrc) && /if \(localFailures > 0\)/.test(syncSrc),
   'sincronización: debe fallar si la persistencia local falla');
-ok(/var res = LS\.setItem\(k, merged\[k\]\)/.test(syncSrc),
-  'sincronización: debe verificar el resultado de LS.setItem');
+ok(/var res = LS\.setItem\(k, localMerged\[k\]\)/.test(syncSrc) &&
+   /if \(res === false\) localFailures\+\+/.test(syncSrc),
+  'sincronización: debe verificar el resultado de LS.setItem al aplicar el payload fusionado');
 
 // Simular el guardado de un payload remoto manipulado a través de mergeMemoryObjects
 clearAllMemory();
