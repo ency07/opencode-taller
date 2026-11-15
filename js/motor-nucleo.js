@@ -1685,7 +1685,7 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
 
   // Sin relación defendible no se sortea un objeto del banco. Se entrega una
   // instrucción de interpretación semántica y se deja constancia del límite.
-  const derived = conceptText ? _motifSceneFromMessage(conceptText, userMessage) : '';
+  const derived = conceptText ? _motifSceneFromMessage(conceptText, '') : '';
   if (!derived) return { list: [], anchor: '', conflict: 'Escribe un concepto o mensaje antes de elegir un motivo.' };
   return {
     list: [derived],
@@ -2316,7 +2316,7 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
             } else if (typeof _isVerseReference === 'function' && _isVerseReference(pConcept)) {
               // Concepto textual (versículo/cita): símbolo del mensaje, sin conflicto.
               patronMotif = (typeof _motifSceneFromMessage === 'function')
-                ? _motifSceneFromMessage(pConcept, pMessage)
+                ? _motifSceneFromMessage(pConcept, '')
                 : pConcept;
             } else {
               patronMotif = _pick(pPool);
