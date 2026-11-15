@@ -124,7 +124,7 @@ function buildPrompt(options) {
     C: makeCard(2, options && options.hierarchies && options.hierarchies[2]),
     seriesAnchor: MOTOR_STATE.concept || (MOTOR_STATE.explorationBrief && MOTOR_STATE.explorationBrief.concept) || ''
   };
-  return formatPrompt({ set: set, score: 100, passed: true, objectConflicts: opts.objectConflicts || [] });
+  return formatPrompt({ set: set, score: 100, passed: true, objectConflicts: (options && options.objectConflicts) || [] });
 }
 
 /* 1. Mensaje explícito: prevalece y se conserva literalmente. */
