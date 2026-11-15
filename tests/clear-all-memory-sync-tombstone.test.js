@@ -8,9 +8,26 @@ const assert = require('assert');
 
 const store = Object.create(null);
 const localStorage = {
-  setItem: (key, value) => { store[key] = String(value); },
-  getItem: key => Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null,
-  removeItem: key => { delete store[key]; }
+  // Browser Storage exposes stored keys as enumerable properties. Mirror that
+  // contract because POD_LS.keys() enumerates window.localStorage.
+  setItem(key, value) {
+    const name = String(key);
+    const serialized = String(value);
+    store[name] = serialized;
+    Object.defineProperty(this, name, {
+      value: serialized,
+      writable: true,
+      configurable: true,
+      enumerable: true
+    });
+  },
+  getItem(key) {
+    return Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null;
+  },
+  removeItem(key) {
+    delete store[key];
+    delete this[key];
+  }
 };
 const document = { readyState: 'loading', addEventListener: function () {}, getElementById: function () { return null; }, createElement: function () { return {}; } };
 const context = { console, localStorage, document, confirm: () => true, alert: function () {}, prompt: () => null };
