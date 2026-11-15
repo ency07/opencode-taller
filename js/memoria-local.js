@@ -508,9 +508,13 @@
     const deleted = _personalBankDeleted(current);
     const updated = _personalBankUpdated(current);
     const next = Object.assign({}, bank || {});
-    const now = new Date().toISOString();
-    // A later explicit write can recreate a previously deleted subniche.
-    Object.keys(next).forEach(function (entryKey) { updated[entryKey] = now; });
+    // An explicit recreation must be strictly newer than its tombstone,
+    // including when save and delete happen within the same millisecond.
+    Object.keys(next).forEach(function (entryKey) {
+      const deletedAt = Date.parse(deleted[entryKey] || '') || 0;
+      const now = Date.now();
+      updated[entryKey] = new Date(now > deletedAt ? now : deletedAt + 1).toISOString();
+    });
     next[PERSONAL_BANK_DELETED_KEY] = deleted;
     next[PERSONAL_BANK_UPDATED_KEY] = updated;
     return setJSON(key, next);
