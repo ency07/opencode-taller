@@ -51,3 +51,18 @@ jobs:
             echo "=== $file ==="
             node "$file"
           done
+
+  rt02-focused:
+    name: RT-02 focused regressions
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run Gospel ES prompt regression
+        run: node tests/test_gospel_es_prompt_fix.js
+      - name: Run semantic identity regression
+        run: node tests/semantic-identity.test.js
