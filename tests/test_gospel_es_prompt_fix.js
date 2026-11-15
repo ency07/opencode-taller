@@ -244,6 +244,16 @@ check(briefWithoutConcept.concept === '',
 check(briefWithoutConcept.message === 'CRISTO ES MI ESPERANZA',
   'el mensaje debe conservarse en su propio campo');
 
+prompt = buildPrompt({
+  concept: '',
+  message: 'CRISTO ES MI ESPERANZA',
+  workflowMode: 'explore'
+});
+check(prompt.includes('CONCEPTO: CONCEPTO NO PROPORCIONADO: no inventar concepto ni motivo'),
+  'la exploración Gospel ES debe declarar que falta concepto aunque exista mensaje');
+check(prompt.includes('MENSAJE EXACTO: CRISTO ES MI ESPERANZA'),
+  'la exploración debe conservar el mensaje exacto en su campo independiente');
+
 /* 12. Sin concepto, el mensaje no puede seleccionar un motivo de banco. */
 const motifPlanWithoutConcept = _planExploreMotifs(
   ['cruz', 'paloma', 'biblia'], ['cruz', 'paloma', 'biblia'], '', '', 'CRISTO ES MI ESPERANZA'
@@ -259,6 +269,10 @@ MOTOR_STATE.creativeTerritory = 'SACRED_EDITORIAL';
 const territoryWithoutConcept = _resolveTerritoryDirective('SACRED_EDITORIAL');
 check(!territoryWithoutConcept.includes('ANCLA CONCEPTO: CRISTO ES MI ESPERANZA'),
   'la directiva territorial no debe convertir el mensaje en ancla de concepto');
+
+const motorSource = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
+check(!/const semanticAnchor = String\(analysis\.concepto \|\| MOTOR_STATE\.concept \|\| MOTOR_STATE\.message/.test(motorSource),
+  'la variación desde imagen no debe usar el mensaje como sustituto del concepto');
 
 /* 14. Con concepto y mensaje distintos, el ancla usa solo el concepto. */
 configureState({
