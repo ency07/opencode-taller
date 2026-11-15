@@ -159,7 +159,10 @@
     if (!key || key === GLOBAL_MEMORY_CLEAR_KEY || String(key).indexOf(MEM_PREFIX) !== 0) return true;
     const marker = _readGlobalMemoryClear();
     if (!marker) return true;
-    marker.preservedKeys[key] = new Date().toISOString();
+    // A write in the same millisecond as clear must still be newer than the clear barrier.
+    const clearEpoch = Date.parse(marker.deletedAt) || 0;
+    const now = Date.now();
+    marker.preservedKeys[key] = new Date(now > clearEpoch ? now : clearEpoch + 1).toISOString();
     return POD_LS.setItem(GLOBAL_MEMORY_CLEAR_KEY, JSON.stringify(marker)) === true;
   }
 
