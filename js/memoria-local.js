@@ -1564,6 +1564,13 @@
           const keys = Object.keys(b).concat(Object.keys(a));
           keys.forEach(function (id) {
             const av = a[id], bv = b[id];
+            // Do not merge stale values before resolving their per-entry tombstone.
+            // This makes deletion independent of whether the deleted snapshot is local or remote.
+            if (id !== PERSONAL_BANK_DELETED_KEY && id !== PERSONAL_BANK_UPDATED_KEY &&
+                id !== PROPOSED_BANK_KEY &&
+                _personalBankEntryIsDeleted(id, deletedEntries, updatedEntries)) {
+              return;
+            }
             if (id === PROPOSED_BANK_KEY) {
               const aa = Array.isArray(av) ? av : (av && Array.isArray(av.items) ? av.items : []);
               const bb = Array.isArray(bv) ? bv : (bv && Array.isArray(bv.items) ? bv.items : []);
@@ -1594,8 +1601,14 @@
             const localTime = Date.parse(localUpdated[entryKey] || '') || 0;
             if (localTime > remoteTime) updatedEntries[entryKey] = localUpdated[entryKey];
           });
-          Object.keys(deletedEntries).forEach(function (entryKey) {
-            if (_personalBankEntryIsDeleted(entryKey, deletedEntries, updatedEntries)) delete merged[entryKey];
+          keys.forEach(function (id) {
+            const av = a[id], bv = b[id];
+            // Resolve tombstones before merging stale values from either device.
+            if (id !== PERSONAL_BANK_DELETED_KEY && id !== PERSONAL_BANK_UPDATED_KEY &&
+                id !== PROPOSED_BANK_KEY &&
+                _personalBankEntryIsDeleted(id, deletedEntries, updatedEntries)) {
+              delete merged[id];
+            }
           });
           merged[PERSONAL_BANK_DELETED_KEY] = deletedEntries;
           merged[PERSONAL_BANK_UPDATED_KEY] = updatedEntries;
