@@ -22,7 +22,11 @@ const failures = [];
 function ok(cond, msg) { checks++; if (!cond) failures.push(msg); }
 
 global.window = global;
-global.document = { getElementById: function () { return null; }, querySelectorAll: function () { return []; } };
+const identityInput = { value: '' };
+global.document = {
+  getElementById: function (id) { return id === 'visualIdentity' ? identityInput : null; },
+  querySelectorAll: function () { return []; }
+};
 
 const JS = path.join(ROOT, 'js');
 ['data-mercados.js', 'data-audiencias.js', 'data-bancos.js', 'data-estilos.js',
@@ -142,7 +146,33 @@ ok(loadVisualIdentity() === '', '6c. la identidad no se cruza entre mercados');
 MOTOR_STATE.market = prevMarket;
 ok(loadVisualIdentity() === USER_VI, '6c. el mercado original conserva su identidad');
 
-// 6d. al cambiar de territorio, la identidad persiste
+// 6d. cambio real de mercado: guardar el valor anterior y cargar el del destino.
+baseState();
+MOTOR_STATE.market = 'global_en';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+identityInput.value = 'Global English identity';
+setVisualIdentity(identityInput.value);
+switchVisualIdentityContext(function () { MOTOR_STATE.market = 'gospel_es'; });
+ok(identityInput.value === '', '6d. al cambiar a Gospel ES, el input no conserva identidad de Global English');
+ok(MOTOR_STATE.visualIdentity === '', '6d. MOTOR_STATE se actualiza con la identidad del mercado destino');
+ok(loadVisualIdentity() === '', '6d. Gospel ES no hereda la identidad de Global English');
+identityInput.value = 'Identidad Gospel';
+setVisualIdentity(identityInput.value);
+switchVisualIdentityContext(function () { MOTOR_STATE.market = 'global_en'; });
+ok(identityInput.value === 'Global English identity', '6d. al volver a Global English, recupera su identidad propia');
+ok(MOTOR_STATE.visualIdentity === 'Global English identity', '6d. MOTOR_STATE recupera la identidad del mercado original');
+
+// 6e. cambio real de producto: las identidades tampoco se cruzan.
+identityInput.value = 'Identidad camiseta';
+setVisualIdentity(identityInput.value);
+switchVisualIdentityContext(function () { MOTOR_STATE.product = 'HOODIE'; });
+ok(identityInput.value === '', '6e. al cambiar de producto, el input carga el contexto nuevo vacío');
+identityInput.value = 'Identidad hoodie';
+setVisualIdentity(identityInput.value);
+switchVisualIdentityContext(function () { MOTOR_STATE.product = 'CAMISETA SOFT'; });
+ok(identityInput.value === 'Identidad camiseta', '6e. al volver al producto, recupera su identidad propia');
+
+// 6f. al cambiar de territorio, la identidad persiste
 setVisualIdentity(USER_VI);
 MOTOR_STATE.creativeTerritory = 'CONTRAST_ART';
 const vi6 = _resolveVisualIdentity();
