@@ -57,4 +57,11 @@ const importedMerge = context.mergeMemoryObjects(importedSnapshot, { [localKey]:
 assert.strictEqual(JSON.parse(importedMerge[localKey]).camiseta.join(','), 'dato importado', 'explicit overwrite import after clear must survive sync');
 assert.ok(JSON.parse(importedMerge['POD2|__globalClear']).preservedKeys[localKey], 'successful import must be recorded as post-clear write');
 
-console.log('PASS clear-all-memory-sync-tombstone (13 assertions, 0 failures)');
+context.clearAllMemory();
+context.POD_LS.setItem(localKey, JSON.stringify({ camiseta: ['escritura directa'] }));
+const directSnapshot = context.exportMemoryObject();
+const directMerge = context.mergeMemoryObjects(directSnapshot, { [localKey]: staleLocal });
+assert.strictEqual(JSON.parse(directMerge[localKey]).camiseta.join(','), 'escritura directa', 'direct POD_LS writes must be tracked after clear');
+assert.ok(JSON.parse(directMerge['POD2|__globalClear']).preservedKeys[localKey], 'direct POD_LS write timestamp must be tracked');
+
+console.log('PASS clear-all-memory-sync-tombstone (15 assertions, 0 failures)');
