@@ -29,7 +29,7 @@ const PRODUCT_BIAS = {
       "Diagonal descendente"
     ],
     density: ["Balanced", "Minimal"],
-    hierarchy: ["BALANCEADO", "TEXTO_DOMINANTE"],
+    hierarchy: ["BALANCEADO", "TEXTO_DOMINANTE", "OBJETO_DOMINANTE"],
     scale: "gráfico de pecho medio FRONTAL por defecto (la espalda solo si la ficha la pide); lectura clara a distancia social; silueta reconocible; cero microtexto; fondo controlado o transparente; detalle medio-bajo viable en tela suave",
     mockup: "camiseta puesta (frontal y tres cuartos)",
     safeMargin: "respetar costuras laterales, cuello y dobladillo inferior"
