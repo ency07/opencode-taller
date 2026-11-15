@@ -116,4 +116,5 @@ ok(/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2\.119\.0/.test(sync), 'Supa
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + ' security-regression (' + checks + ' aserciones, ' + failures.length + ' fallos)');
 failures.forEach(function (f) { console.error(' - ' + f); });
-process.exit(passed ? 0 : 1);
+// Preserve assertion diagnostics in CI logs before Node exits.
+process.exitCode = passed ? 0 : 1;
