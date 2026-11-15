@@ -279,6 +279,9 @@ setRaw('POD2|history|gospel_es|CAMISETA', JSON.stringify({
   updatedAt: '2026-01-01T00:00:00Z'
 }));
 const localPayload = exportMemoryObject();
+// This section tests ordinary history-array merging, not global-clear conflict
+// resolution. Remove the clear barrier created by clearAllMemory() in setup.
+delete localPayload['POD2|__globalClear'];
 const remotePayload = {
   'POD2|history|gospel_es|CAMISETA': JSON.stringify({
     history: ['b', 'c', 'd'],
