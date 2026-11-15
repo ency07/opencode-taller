@@ -1691,7 +1691,9 @@
       const local = exportMemoryObject();
       const merged = mergeMemoryObjects(local, data);
 
-      const writeKeys = Object.keys(merged).filter(function (k) {
+      // Only keys present in the imported file are writes. Rewriting every
+      // local tombstone would inflate the restored count and touch unrelated data.
+      const writeKeys = Object.keys(data).filter(function (k) {
         return String(k).indexOf(MEM_PREFIX) === 0 && k !== GLOBAL_MEMORY_CLEAR_KEY;
       });
       // A manual import in merge mode is an explicit user action. Add incoming
@@ -1699,10 +1701,7 @@
       // local values (including local tombstones) retain merge-mode precedence.
       Object.keys(data).forEach(function (k) {
         if (String(k).indexOf(MEM_PREFIX) !== 0 || k === GLOBAL_MEMORY_CLEAR_KEY) return;
-        if (!Object.prototype.hasOwnProperty.call(local, k)) {
-          merged[k] = data[k];
-          if (writeKeys.indexOf(k) === -1) writeKeys.push(k);
-        }
+        if (!Object.prototype.hasOwnProperty.call(local, k)) merged[k] = data[k];
       });
 
       // Verificación de límites sobre los datos entrantes (no sobre la memoria local acumulada)
