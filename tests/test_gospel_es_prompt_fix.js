@@ -124,7 +124,7 @@ function buildPrompt(options) {
     C: makeCard(2, options && options.hierarchies && options.hierarchies[2]),
     seriesAnchor: MOTOR_STATE.concept || (MOTOR_STATE.explorationBrief && MOTOR_STATE.explorationBrief.concept) || ''
   };
-  return formatPrompt({ set: set, score: 100, passed: true, objectConflicts: [] });
+  return formatPrompt({ set: set, score: 100, passed: true, objectConflicts: opts.objectConflicts || [] });
 }
 
 /* 1. Mensaje explícito: prevalece y se conserva literalmente. */
@@ -253,6 +253,17 @@ check(prompt.includes('CONCEPTO: CONCEPTO NO PROPORCIONADO: no inventar concepto
   'la exploración Gospel ES debe declarar que falta concepto aunque exista mensaje');
 check(prompt.includes('MENSAJE EXACTO: CRISTO ES MI ESPERANZA'),
   'la exploración debe conservar el mensaje exacto en su campo independiente');
+
+prompt = buildPrompt({
+  concept: '',
+  message: 'CRISTO ES MI ESPERANZA',
+  workflowMode: 'explore',
+  objectConflicts: ['Falta el concepto principal. El mensaje no puede sustituirlo ni seleccionar un motivo del banco.']
+});
+check(prompt.includes('AVISO CONCEPTO AUSENTE:'),
+  'el prompt debe marcar explícitamente la ausencia de concepto');
+check(prompt.includes('No selecciones objetos del banco') && prompt.includes('no presentes A/B/C como artes definitivos'),
+  'sin concepto, el prompt debe bloquear la selección de motivos y la producción definitiva');
 
 /* 12. Sin concepto, el mensaje no puede seleccionar un motivo de banco. */
 const motifPlanWithoutConcept = _planExploreMotifs(
