@@ -1603,10 +1603,30 @@
           const aa = Array.isArray(a) ? a : (a && Array.isArray(a.items) ? a.items : []);
           const bb = Array.isArray(b) ? b : (b && Array.isArray(b.items) ? b.items : []);
           const deleted = Object.assign({}, (b && !Array.isArray(b) && b.deleted) || {}, (a && !Array.isArray(a) && a.deleted) || {});
-          const items = mergeArraysUnique(bb, aa).filter(function (item) {
+          // Las direcciones tienen identidad estable por ID: dos snapshots
+          // pueden contener el mismo ID con campos distintos. Deduplicar por
+          // JSON completo las duplicaba y podía mostrar dos copias del mismo
+          // registro. Se conserva el orden remoto y la versión local prevalece.
+          const byId = Object.create(null);
+          const items = [];
+          bb.concat(aa).forEach(function (item) {
+            if (item && item.id) {
+              const id = String(item.id);
+              if (Object.prototype.hasOwnProperty.call(byId, id)) {
+                items[byId[id]] = item;
+              } else {
+                byId[id] = items.length;
+                items.push(item);
+              }
+            } else {
+              const serialized = JSON.stringify(item);
+              if (!items.some(function (existing) { return JSON.stringify(existing) === serialized; })) items.push(item);
+            }
+          });
+          const activeItems = items.filter(function (item) {
             return !item || !item.id || !deleted[item.id];
           }).slice(-300);
-          out[k] = JSON.stringify({ items: items, deleted: deleted });
+          out[k] = JSON.stringify({ items: activeItems, deleted: deleted });
         } else if (k.indexOf('|patterns|') > -1) {
           out[k] = JSON.stringify((b || []).concat(a || []).slice(-80));
         } else if (k.indexOf('|creative|') > -1) {
