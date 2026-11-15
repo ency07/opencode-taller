@@ -41,11 +41,13 @@ jobs:
       - name: Run regression suite
         run: |
           set -e
+          echo "=== RT-02 focused: Gospel ES prompt ==="
+          node tests/test_gospel_es_prompt_fix.js
+          echo "=== RT-01 focused: semantic identity ==="
+          node tests/semantic-identity.test.js
           echo "=== secular-prompt-contract ==="
           node tests/secular-prompt-contract.test.js
           for file in tests/*.test.js; do
             echo "=== $file ==="
             node "$file"
           done
-          echo "=== tests/test_gospel_es_prompt_fix.js ==="
-          node tests/test_gospel_es_prompt_fix.js
