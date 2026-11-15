@@ -161,7 +161,7 @@ products.forEach(function (product) {
 });
 ok(/DISPLATE[\s\S]{0,700}NO usar lógica de camiseta/i.test(productSource), 'Displate debe prohibir la lógica de camiseta');
 ok(/GORRA[\s\S]{0,700}cero escenas completas/i.test(productSource), 'gorra debe priorizar arte compacto y legible');
-ok(/CAMISETA SOFT[\s\S]{0,700}cero microtexto/i.test(productSource), 'camiseta soft debe exigir legibilidad textil y evitar microtexto');
+ok(/"CAMISETA SOFT": \{[\s\S]{0,1800}cero microtexto/i.test(productSource), 'camiseta soft debe exigir legibilidad textil y evitar microtexto');
 ok(/ILUSTRACION PREMIUM APPAREL[\s\S]{0,700}no es póster de pared/i.test(productSource), 'ilustración premium apparel debe seguir siendo textil, no póster');
 if (failures.length) {
   console.error('FAIL (' + failures.length + '/' + checks + ')\n- ' + failures.join('\n- '));
