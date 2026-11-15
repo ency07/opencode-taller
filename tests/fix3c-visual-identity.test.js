@@ -22,7 +22,7 @@ const failures = [];
 function ok(cond, msg) { checks++; if (!cond) failures.push(msg); }
 
 global.window = global;
-const identityInput = { value: '' };
+const identityInput = { value: '', addEventListener: function () {} };
 global.document = {
   getElementById: function (id) { return id === 'visualIdentity' ? identityInput : null; },
   querySelectorAll: function () { return []; }
