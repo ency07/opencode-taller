@@ -274,6 +274,15 @@ check(motifPlanWithoutConcept.list.length === 0,
 check(!!motifPlanWithoutConcept.conflict && motifPlanWithoutConcept.conflict.includes('Falta el concepto principal'),
   'la falta de concepto debe producir un conflicto explícito');
 
+const motifPlanWithSeparateMessage = _planExploreMotifs(
+  ['cruz'], ['cruz'], 'Calendario de papel con una marca de racha',
+  'Calendario de papel con una marca de racha', 'CRUZ'
+);
+check(motifPlanWithSeparateMessage.anchor !== 'cruz',
+  'un mensaje que coincide con un objeto del banco no debe sustituir el motivo derivado del concepto');
+check(String(motifPlanWithSeparateMessage.list[0] || '').includes('Calendario de papel con una marca de racha'),
+  'la derivación del motivo debe conservar el concepto aunque el mensaje nombre otro objeto');
+
 /* 13. El territorio no debe rotular el mensaje como concepto. */
 configureState({ concept: '', message: 'CRISTO ES MI ESPERANZA' });
 MOTOR_STATE.creativeTerritory = 'SACRED_EDITORIAL';
@@ -284,6 +293,9 @@ check(!territoryWithoutConcept.includes('ANCLA CONCEPTO: CRISTO ES MI ESPERANZA'
 const motorSource = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
 check(!/const semanticAnchor = String\(analysis\.concepto \|\| MOTOR_STATE\.concept \|\| MOTOR_STATE\.message/.test(motorSource),
   'la variación desde imagen no debe usar el mensaje como sustituto del concepto');
+check(!motorSource.includes('_motifSceneFromMessage(conceptText, userMessage)') &&
+      !motorSource.includes('_motifSceneFromMessage(pConcept, pMessage)'),
+  'la derivación de motivos no debe mezclar el mensaje con el concepto');
 
 /* 14. Con concepto y mensaje distintos, el ancla usa solo el concepto. */
 configureState({
