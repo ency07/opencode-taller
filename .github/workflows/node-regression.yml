@@ -100,3 +100,18 @@ jobs:
           node tests/umbral-qc.test.js
           node tests/layout-selector.test.js
           node tests/layout-arq-compat.test.js
+
+  rt05-validation-state:
+    name: RT-05 validation state
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check motor syntax
+        run: node --check js/motor-nucleo.js
+      - name: Run validation and visual QA regressions
+        run: node tests/validar-qa.test.js
