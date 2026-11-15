@@ -1699,9 +1699,9 @@
       // local values (including local tombstones) retain merge-mode precedence.
       Object.keys(data).forEach(function (k) {
         if (String(k).indexOf(MEM_PREFIX) !== 0 || k === GLOBAL_MEMORY_CLEAR_KEY) return;
-        if (!Object.prototype.hasOwnProperty.call(local, k) && writeKeys.indexOf(k) === -1) {
+        if (!Object.prototype.hasOwnProperty.call(local, k)) {
           merged[k] = data[k];
-          writeKeys.push(k);
+          if (writeKeys.indexOf(k) === -1) writeKeys.push(k);
         }
       });
 
