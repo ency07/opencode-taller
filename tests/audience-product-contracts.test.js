@@ -10,7 +10,7 @@ let checks = 0;
 const failures = [];
 function ok(condition, message) { checks++; if (!condition) failures.push(message); }
 
-const expectedGospel = ['gospel_hombre','gospel_mujer','gospel_infantil','gospel_familia','gospel_pareja','gospel_comunidad'];
+const expectedGospel = ['gospel_hombre','gospel_mujer','gospel_infantil','gospel_familia','gospel_pareja','gospel_joven_adulto','gospel_comunidad'];
 ['gospel_es','gospel_en'].forEach(function (market) {
   const ids = getAudiencesForMarketRegion(market, 'global');
   ok(JSON.stringify(ids) === JSON.stringify(expectedGospel), market + ' debe exponer el catálogo Gospel canónico compacto');
@@ -22,6 +22,13 @@ const expectedGospel = ['gospel_hombre','gospel_mujer','gospel_infantil','gospel
     ok(!!AUD_LAYOUT_PREF[id] && AUD_LAYOUT_PREF[id].length > 0, market + ': preferencias de composición funcionales para ' + id);
   });
 });
+ok(AUD_PROFILES.gospel_joven_adulto.label === 'Cristianos jóvenes y adultos', 'RT-03: debe existir la audiencia solicitada en el catálogo');
+ok(AUD_PROFILES.gospel_joven_adulto.edad === '16-55' && AUD_PROFILES.gospel_joven_adulto.genero === 'unisex', 'RT-03: perfil joven/adulto debe cubrir ambos grupos sin segmentación de género');
+ok(!!AUD_STYLE_PREF.gospel_joven_adulto && AUD_STYLE_PREF.gospel_joven_adulto.length > 0, 'RT-03: perfil joven/adulto debe tener preferencias de estilo');
+ok(!!AUD_HIERARCHY_PREF.gospel_joven_adulto && AUD_HIERARCHY_PREF.gospel_joven_adulto.length > 0, 'RT-03: perfil joven/adulto debe tener preferencias de jerarquía');
+ok(!!AUD_DENSITY_PREF.gospel_joven_adulto && AUD_DENSITY_PREF.gospel_joven_adulto.length > 0, 'RT-03: perfil joven/adulto debe tener preferencias de densidad');
+ok(!!AUD_LAYOUT_PREF.gospel_joven_adulto && AUD_LAYOUT_PREF.gospel_joven_adulto.length > 0, 'RT-03: perfil joven/adulto debe tener preferencias de composición');
+ok(getAudienceSelectOptions('global', 'gospel_es', 'auto').includes('Cristianos jóvenes y adultos'), 'RT-03: selector Gospel ES debe mostrar la audiencia solicitada');
 ok(getAudiencesForMarketRegion('global_en', 'global').every(function (id) { return id.indexOf('gospel_') !== 0; }), 'Global English no debe mostrar audiencias Gospel');
 ok(getAudiencesForMarketRegion('global_es', 'global').every(function (id) { return id.indexOf('gospel_') !== 0; }), 'Global Español no debe mostrar audiencias Gospel');
 ok(getAudiencesForMarketRegion('colombia', 'todas').every(function (id) { return id.indexOf('gospel_') !== 0 && id.indexOf('global_') !== 0; }), 'Colombia no debe mezclar audiencias Gospel/Global en región todas');
