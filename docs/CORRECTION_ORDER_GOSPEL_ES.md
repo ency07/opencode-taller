@@ -30,6 +30,9 @@ explícito del usuario siempre se conserva.
 ## Fidelidad conceptual y doctrina
 
 - El concepto proporcionado permanece como ancla semántica.
+- Concepto y mensaje son campos independientes: el mensaje solo gobierna el copy y nunca sustituye al concepto ni selecciona por sí solo un motivo del banco.
+- Si falta el concepto, Gospel ES no elige un concepto aleatorio del banco ni produce A/B/C como artes definitivos; debe solicitarse el concepto.
+- En exploración y variación, la selección del motivo se deriva del concepto explícito o del concepto confirmado en el análisis de imagen, no del mensaje.
 - Una idea abstracta no se transforma en un relato bíblico específico.
 - No se infieren personajes, pasajes, lugares, milagros, escenas ni objetos
   narrativos que el usuario no haya solicitado.
