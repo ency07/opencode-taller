@@ -1390,6 +1390,8 @@
       });
       throw e;
     }
+    // Una importación confirmada es una escritura explícita posterior al borrado.
+    writeKeys.forEach(function (key) { _recordGlobalMemoryWrite(key); });
 
     const summary = { markets: [], namedBanks: 0, objects: 0, phrases: 0 };
     Object.keys(merged).filter(_isPersonalBankMemoryKey).forEach(function (key) {
@@ -1678,6 +1680,9 @@
         });
         throw e;
       }
+      // Registrar solo después de completar la transacción; si falla y revierte,
+      // no debe quedar una marca de escritura posterior al borrado global.
+      writeKeys.forEach(function (k) { _recordGlobalMemoryWrite(k); });
 
       return {
         restored: writeKeys.length,
@@ -1719,6 +1724,7 @@
       });
       throw e;
     }
+    writeKeys.forEach(function (k) { _recordGlobalMemoryWrite(k); });
 
     return {
       restored: writeKeys.length,
