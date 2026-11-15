@@ -1692,7 +1692,17 @@
       const merged = mergeMemoryObjects(local, data);
 
       const writeKeys = Object.keys(merged).filter(function (k) {
-        return String(k).indexOf(MEM_PREFIX) === 0;
+        return String(k).indexOf(MEM_PREFIX) === 0 && k !== GLOBAL_MEMORY_CLEAR_KEY;
+      });
+      // A manual import in merge mode is an explicit user action. Add incoming
+      // keys that do not exist locally even when a global-clear marker is present;
+      // local values (including local tombstones) retain merge-mode precedence.
+      Object.keys(data).forEach(function (k) {
+        if (String(k).indexOf(MEM_PREFIX) !== 0 || k === GLOBAL_MEMORY_CLEAR_KEY) return;
+        if (!Object.prototype.hasOwnProperty.call(local, k) && writeKeys.indexOf(k) === -1) {
+          merged[k] = data[k];
+          writeKeys.push(k);
+        }
       });
 
       // Verificación de límites sobre los datos entrantes (no sobre la memoria local acumulada)
