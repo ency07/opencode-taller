@@ -1597,7 +1597,7 @@
           merged[PERSONAL_BANK_DELETED_KEY] = deletedEntries;
           merged[PERSONAL_BANK_UPDATED_KEY] = updatedEntries;
           out[k] = JSON.stringify(merged);
-        } else if (k.indexOf('|approvedDirections|') > -1) {
+        } else if (k === MEM_PREFIX + 'approvedDirections' || k.indexOf('|approvedDirections|') > -1) {
           // Acepta arrays legacy y wrappers nuevos. Tombstones por ID prevalecen
           // sobre copias antiguas de cualquier dispositivo.
           const aa = Array.isArray(a) ? a : (a && Array.isArray(a.items) ? a.items : []);
