@@ -599,9 +599,9 @@ const AUD_PROFILES = {
 };
 
 /* ============================================================
-   GOSPEL — AUDIENCIAS CANÓNICAS SIMPLIFICADAS
+   GOSPEL — AUDIENCIAS CANÓNICAS
    Los perfiles antiguos se conservan por compatibilidad con memorias,
-   preferencias y bancos existentes. La UI nueva usa estos seis IDs.
+   preferencias y bancos existentes. La UI nueva usa estos siete IDs.
    Edad, identidad y dirección artística son dimensiones separadas.
    ============================================================ */
 Object.assign(AUD_PROFILES, {
