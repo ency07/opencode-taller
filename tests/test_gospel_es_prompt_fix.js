@@ -25,6 +25,7 @@ global.document = {
   'data-estilos.js',
   'dominios.js',
   'data-productos.js',
+  'data-territorios.js',
   'memoria-local.js',
   'motor-nucleo.js'
 ].forEach(function (file) {
@@ -221,6 +222,55 @@ check(prompt.slice(artIndex, artIndex + 1200).includes('Esta prohibición se ref
   'la prohibición de figuras humanas debe limitarse al estampado');
 check(prompt.slice(mockupIndex).includes('MOCKUP OBLIGATORIO POR AUDIENCIA'),
   'el mockup debe conservar las reglas de representación por audiencia');
+
+/* 10. Concepto y mensaje son campos semánticamente independientes. */
+prompt = buildPrompt({
+  concept: '',
+  message: 'CRISTO ES MI ESPERANZA',
+  allowAutoCopy: true
+});
+check(prompt.includes('CONCEPTO: — | MENSAJE: CRISTO ES MI ESPERANZA'),
+  'un mensaje explícito no debe rellenar el campo CONCEPTO');
+check(!prompt.includes('ANCLA CONCEPTO: CRISTO ES MI ESPERANZA'),
+  'el mensaje no debe convertirse en ANCLA CONCEPTO');
+check(!prompt.includes('COPY CANÓNICO ÚNICO «CRISTO ES MI ESPERANZA»'),
+  'un mensaje explícito no debe tratarse como copy derivado del concepto');
+
+/* 11. La exploración Gospel no debe elegir un concepto aleatorio del banco. */
+configureState({ concept: '', message: 'CRISTO ES MI ESPERANZA', workflowMode: 'explore' });
+const briefWithoutConcept = _resolveExplorationBrief();
+check(briefWithoutConcept.concept === '',
+  'Gospel ES sin concepto explícito debe mantener concept vacío, no elegir un motivo del banco');
+check(briefWithoutConcept.message === 'CRISTO ES MI ESPERANZA',
+  'el mensaje debe conservarse en su propio campo');
+
+/* 12. Sin concepto, el mensaje no puede seleccionar un motivo de banco. */
+const motifPlanWithoutConcept = _planExploreMotifs(
+  ['cruz', 'paloma', 'biblia'], ['cruz', 'paloma', 'biblia'], '', '', 'CRISTO ES MI ESPERANZA'
+);
+check(motifPlanWithoutConcept.list.length === 0,
+  'sin concepto, el mensaje no debe seleccionar motivos del banco');
+check(!!motifPlanWithoutConcept.conflict && motifPlanWithoutConcept.conflict.includes('Falta el concepto principal'),
+  'la falta de concepto debe producir un conflicto explícito');
+
+/* 13. El territorio no debe rotular el mensaje como concepto. */
+configureState({ concept: '', message: 'CRISTO ES MI ESPERANZA' });
+MOTOR_STATE.creativeTerritory = 'SACRED_EDITORIAL';
+const territoryWithoutConcept = _resolveTerritoryDirective('SACRED_EDITORIAL');
+check(!territoryWithoutConcept.includes('ANCLA CONCEPTO: CRISTO ES MI ESPERANZA'),
+  'la directiva territorial no debe convertir el mensaje en ancla de concepto');
+
+/* 14. Con concepto y mensaje distintos, el ancla usa solo el concepto. */
+configureState({
+  concept: 'Calendario de papel con una marca de racha',
+  message: 'CRISTO ES MI ESPERANZA'
+});
+MOTOR_STATE.creativeTerritory = 'SACRED_EDITORIAL';
+const territoryWithBoth = _resolveTerritoryDirective('SACRED_EDITORIAL');
+check(territoryWithBoth.includes('ANCLA CONCEPTO: Calendario de papel con una marca de racha'),
+  'la directiva debe anclar el concepto explícito');
+check(!territoryWithBoth.includes('ANCLA CONCEPTO: CRISTO ES MI ESPERANZA'),
+  'la directiva no debe reemplazar el concepto por el mensaje');
 
 /* 9. El helper de copy debe distinguir los cuatro estados. */
 let resolved = _resolveGospelESCopy('Mensaje literal', 'Concepto', true);
