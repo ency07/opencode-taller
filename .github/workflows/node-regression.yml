@@ -96,7 +96,7 @@ jobs:
           node-version: 20
       - name: Run product fit and layout regressions
         run: |
-          node tests/pertinencia-gate.test.js
+          node tests/product-fit-soft-tee.test.js
           node tests/umbral-qc.test.js
           node tests/layout-selector.test.js
           node tests/layout-arq-compat.test.js
