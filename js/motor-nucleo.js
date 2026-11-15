@@ -3784,7 +3784,14 @@ function formatPrompt(result) {
   o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado. FONDO DEL ARTE: liso, plano o transparente; prohibido añadir cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas, marcos ni escenas de fondo no solicitadas, aunque el estilo los use habitualmente. Si la hoja completa no cabe en una sola imagen, entrega por prioridad: 1) los tres estampados frontales, 2) los mockups por columna, 3) los colores rotulados, 4) detalles de impresión y paleta; mejor un parcial limpio que columnas incompletas o texto deforme.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
   if (result.objectConflicts && result.objectConflicts.length) {
-    o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
+    const missingConcept = result.objectConflicts.some(function (message) {
+      return /Falta el concepto principal/i.test(String(message || ''));
+    });
+    if (missingConcept) {
+      o += 'AVISO CONCEPTO AUSENTE: ' + result.objectConflicts.join(' ') + ' El motivo visual queda sin resolver. No selecciones objetos del banco, no inventes un símbolo y no presentes A/B/C como artes definitivos hasta que se complete el concepto.\\n';
+    } else {
+      o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\\n';
+    }
   }
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
   if (cultDir) o += 'CULTURA: ' + cultDir + '\n';
