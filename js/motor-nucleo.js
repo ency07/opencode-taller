@@ -2351,7 +2351,7 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
       v.objeto = 'REDIBUJAR EL MISMO SÍMBOLO DE REFERENCIA: ' + refSymbol + '. Mantener identidad reconocible en A/B/C; variar solo la interpretación gráfica, técnica y composición. No sustituir por otro objeto.';
     } else if (isVar) {
       const analysis = MOTOR_STATE.imageAnalysis || {};
-      const semanticAnchor = String(analysis.concepto || MOTOR_STATE.concept || MOTOR_STATE.message || '').trim();
+      const semanticAnchor = String(analysis.concepto || MOTOR_STATE.concept || '').trim();
       // No escoger un objeto al azar solo por compartir nicho.
       v.objeto = _chooseConceptCompatibleObject(objectPool, semanticAnchor) || semanticAnchor || 'proponer un símbolo directamente derivado del concepto y la familia seleccionada';
     } else if (MOTOR_STATE.workflowMode === 'explore') {
