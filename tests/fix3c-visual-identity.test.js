@@ -97,10 +97,13 @@ ok(prompt3.indexOf('IDENTIDAD VISUAL DEL USUARIO') !== -1, '3. el bloque se decl
 baseState();
 MOTOR_STATE.visualIdentity = USER_VI;
 MOTOR_STATE.creativeTerritory = 'SACRED_EDITORIAL';
-const prompt4 = formatPrompt({ set: buildCandidate(resolveAudiences(), null) });
-// seriesAnchor es narrativa, no identidad visual
-ok(prompt4.indexOf('SERIE:') !== -1 || prompt4.indexOf('seriesAnchor') !== -1 || true,
-  '4. seriesAnchor permanece como bloque separado (narrativa)');
+const set4 = buildCandidate(resolveAudiences(), null);
+const prompt4 = formatPrompt({ set: set4 });
+// El ancla de serie debe seguir siendo el concepto narrativo, nunca la identidad visual.
+ok(String(set4.seriesAnchor || '') !== USER_VI,
+  '4. seriesAnchor no debe reutilizar el texto de identidad visual del usuario');
+ok(prompt4.indexOf(USER_VI) !== -1 && prompt4.indexOf('IDENTIDAD VISUAL DEL USUARIO') !== -1,
+  '4. la identidad visual se conserva en su bloque propio');
 // El bloque de identidad visual es distinto del bloque de estilo
 ok(prompt4.indexOf('Identidad visual:') !== -1 && prompt4.indexOf('BLOQUEO DE ESTILO') !== -1,
   '4. identidad visual y estilo son bloques distintos');
