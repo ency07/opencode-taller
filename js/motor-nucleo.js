@@ -1528,6 +1528,13 @@ function _chooseConceptCompatibleObject(objectPool, concept) {
   if (!source) return '';
   const stop = new Set(['que','con','para','desde','hacia','sobre','entre','una','uno','unos','unas','los','las','el','la','de','del','en','por','como','sin','the','and','with','for','from','into','over','under','that','which','holding','sosteniendo','representa','lugares','turisticos','tourist','places','profundo','deep','my','a','an','of','to']);
   const tokens = [...new Set(source.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
+  const ABSTRACT_CONCEPT_TERMS = new Set([
+    'fidelidad', 'faithfulness', 'fe', 'faith', 'gracia', 'grace', 'amor', 'love',
+    'esperanza', 'hope', 'paz', 'peace', 'gozo', 'joy', 'misericordia', 'mercy',
+    'confianza', 'trust', 'perseverancia', 'perseverance', 'promesa', 'promise',
+    'salvacion', 'salvation', 'redencion', 'redemption', 'proposito', 'purpose',
+    'identidad', 'identity', 'bendicion', 'blessing', 'adoracion', 'worship'
+  ]);
   const conceptAxes = _semanticAxesFor(source, _CONCEPT_MOTIF_AXES, 'concept');
   const ranked = (Array.isArray(objectPool) ? objectPool : []).map(function (item) {
     const label = String(item || '').trim();
@@ -1631,13 +1638,7 @@ function _rankCompatibleMotifs(pools, concept) {
     // sola palabra con una frase del banco. En cambio, un concepto de escena
     // concreta («motero en ruta...») sí puede usar un motivo de ruta que comparta
     // ese término. La regla distingue semántica abstracta de vocabulario visual.
-    const ABSTRACT_CONCEPT_TERMS = new Set([
-      'fidelidad', 'faithfulness', 'fe', 'faith', 'gracia', 'grace', 'amor', 'love',
-      'esperanza', 'hope', 'paz', 'peace', 'gozo', 'joy', 'misericordia', 'mercy',
-      'confianza', 'trust', 'perseverancia', 'perseverance', 'promesa', 'promise',
-      'salvacion', 'salvation', 'redencion', 'redemption', 'proposito', 'purpose',
-      'identidad', 'identity', 'bendicion', 'blessing', 'adoracion', 'worship'
-    ]);
+
     const abstractSingleWordMatch = overlap.length < 2
       && overlap.some(function (token) { return ABSTRACT_CONCEPT_TERMS.has(token); });
     if (abstractSingleWordMatch || (!semanticMatches.length && overlap.length < 2 && tokens.length < 3)) return null;
