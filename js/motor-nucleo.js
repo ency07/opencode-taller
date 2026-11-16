@@ -2966,6 +2966,7 @@ function _similarityRecordForCard(card) {
     message: MOTOR_STATE.message,
     symbol: String(symbol || ''),
     silhouette: String(card.formaSimbolo || ''),
+    layout: String(card.layout || ''),
     composition: [card.layout, card.jerarquiaVisual, card.integracionTexto, card.distribucionTexto].filter(Boolean).join(' | '),
     palette: [card.familiaColor, card.paleta].filter(Boolean).join(' | '),
     style: String(card.estilo || '').split(' × ')[0].trim(),
@@ -2995,8 +2996,10 @@ function _findCreativeSimilarityConflicts(card) {
       style: entry.pattern.estilo,
       silhouette: entry.pattern.formaSimbolo,
       treatment: entry.pattern.tratamiento,
+      layout: entry.pattern.layout,
       composition: entry.pattern.layout,
-      palette: entry.pattern.familiaColor
+      palette: entry.pattern.familiaColor,
+      legacyLayoutOnly: true
     } : null);
     if (!old) return;
     const result = api.compareCreativeMetadataSimilarity(current, old);
