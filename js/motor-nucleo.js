@@ -3455,7 +3455,8 @@ function _creativeTerritoryCompatibleWithMarket(territory) {
   const brands = Array.isArray(rec.brandAssociation) ? rec.brandAssociation : [];
   const current = String(MOTOR_STATE.market || '').trim();
   if (markets.length && current && markets.indexOf(current) === -1) return 'auto';
-  if (brands.length && brands.indexOf(_activeBrandId()) === -1) return 'auto';
+  const activeBrand = _activeBrandId();
+  if (brands.length && activeBrand !== 'UNBRANDED' && brands.indexOf(activeBrand) === -1) return 'auto';
   return t;
 }
 
