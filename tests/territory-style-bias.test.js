@@ -37,6 +37,8 @@ function sample(territory){
     MOTOR_STATE.concept='territory-style-bias-'+i;
     MOTOR_STATE._rerollNonce=i;
     const result=resolveEstilos({A:'unisex_nacional',B:'unisex_nacional',C:'unisex_nacional'});
+    // Aislar el peso del territorio de la penalización por uso reciente.
+    setJSON(key,[]);
     ['A','B','C'].forEach(function(k){
       const style=result[k];counts[style]=(counts[style]||0)+1;
       if(compatible.indexOf(style)===-1)outside++;
