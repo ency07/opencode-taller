@@ -474,7 +474,21 @@ function resolveEstilos(audsPerKey) {
      territorio); el pool filtrado se usa para la selección automática. */
   const fullCandidates = _styleCandidatesForContext();
   const candidates = _territoryStyleFilter(fullCandidates);
-  const stableBase = [MOTOR_STATE.market, MOTOR_STATE.product, MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE.groupMode, MOTOR_STATE._rerollNonce || 0].join('|');
+  const aesthetic = typeof getAestheticPreferenceProfile === 'function'
+    ? (getAestheticPreferenceProfile(MOTOR_STATE.aestheticPreference) || {})
+    : {};
+  const aestheticPreferred = (aesthetic.stylePreferred || []).concat(aesthetic.styleSecondary || []);
+  const aestheticAvoid = aesthetic.styleAvoid || [];
+  const styleWeight = function (style, base) {
+    const key = _getStyleBase(style);
+    let weight = base;
+    if ((aesthetic.stylePreferred || []).indexOf(key) !== -1) weight *= 1.35;
+    else if ((aesthetic.styleSecondary || []).indexOf(key) !== -1) weight *= 1.15;
+    if (aestheticAvoid.indexOf(key) !== -1) weight *= 0.5;
+    if (recentStyles.has(style)) weight *= 0.35;
+    return Math.max(0.2, weight);
+  };
+  const stableBase = [MOTOR_STATE.market, MOTOR_STATE.product, MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE.groupMode, MOTOR_STATE.aestheticPreference || 'auto', MOTOR_STATE._rerollNonce || 0].join('|');
   const fixed = {};
   const auto = [];
   const memKeyFn = typeof memKey === 'function' ? memKey : _memKey;
@@ -495,10 +509,9 @@ function resolveEstilos(audsPerKey) {
   if (MOTOR_STATE.groupMode === 'mismo') {
     const baseAud = audsPerKey[K[0]] || 'unisex_nacional';
     const basePref = (typeof AUD_STYLE_PREF !== 'undefined' ? AUD_STYLE_PREF[baseAud] : []) || [];
+    const combinedPref = Array.from(new Set(basePref.concat(aestheticPreferred)));
     const weights = candidates.map(function (style) {
-      let weight = basePref.indexOf(_getStyleBase(style)) !== -1 ? 3 : 1;
-      if (recentStyles.has(style)) weight *= 0.35;
-      return weight;
+      return styleWeight(style, combinedPref.indexOf(_getStyleBase(style)) !== -1 ? 3 : 1);
     });
     const base = Object.values(fixed)[0] || _pickWeightedStable(candidates, weights, stableBase + '|same-group|' + baseAud);
     auto.forEach(function (k) { fixed[k] = base; });
@@ -516,7 +529,8 @@ function resolveEstilos(audsPerKey) {
 
   autoKeys.forEach(function (k, idx) {
     const aud = audsPerKey[k] || 'unisex_nacional';
-    const pref = (typeof AUD_STYLE_PREF !== 'undefined' ? AUD_STYLE_PREF[aud] : []) || [];
+    const demographicPref = (typeof AUD_STYLE_PREF !== 'undefined' ? AUD_STYLE_PREF[aud] : []) || [];
+    const pref = Array.from(new Set(demographicPref.concat(aestheticPreferred)));
     const isLast = idx === autoKeys.length - 1;
     const mustExplore = (quotaUsed < quotaNeeded) && (isLast || _stableUnit(stableBase + '|explore|' + k + '|' + aud) < 0.8);
     const biasPool = candidates.filter(function (e) {
@@ -528,18 +542,18 @@ function resolveEstilos(audsPerKey) {
     const fallbackPool = candidates.filter(function (e) { return !used.has(e); });
     let pick;
     if (mustExplore && explorePool.length) {
-      const weights = explorePool.map(function (style) { return recentStyles.has(style) ? 0.7 : 2; });
+      const weights = explorePool.map(function (style) { return styleWeight(style, 2); });
       pick = _pickWeightedStable(explorePool, weights, stableBase + '|explore-pick|' + k + '|' + aud);
       quotaUsed++;
     } else if (biasPool.length && _stableUnit(stableBase + '|bias|' + k + '|' + aud) < 0.7) {
-      const weights = biasPool.map(function (style) { return recentStyles.has(style) ? 1.05 : 3; });
+      const weights = biasPool.map(function (style) { return styleWeight(style, 3); });
       pick = _pickWeightedStable(biasPool, weights, stableBase + '|bias-pick|' + k + '|' + aud);
     } else if (explorePool.length) {
       const weights = explorePool.map(function (style) { return recentStyles.has(style) ? 0.7 : 2; });
       pick = _pickWeightedStable(explorePool, weights, stableBase + '|explore-normal|' + k + '|' + aud);
       if (!biasPool.length) quotaUsed++;
     } else if (fallbackPool.length) {
-      const weights = fallbackPool.map(function (style) { return recentStyles.has(style) ? 0.35 : 1; });
+      const weights = fallbackPool.map(function (style) { return styleWeight(style, 1); });
       pick = _pickWeightedStable(fallbackPool, weights, stableBase + '|fallback|' + k + '|' + aud);
     } else {
       pick = candidates[_stableHash(stableBase + '|last-resort|' + k) % candidates.length];
