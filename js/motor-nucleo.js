@@ -482,16 +482,22 @@ function resolveEstilos(audsPerKey) {
     : {};
   const aestheticPreferred = (aesthetic.stylePreferred || []).concat(aesthetic.styleSecondary || []);
   const aestheticAvoid = aesthetic.styleAvoid || [];
+  const activeTerritoryId = typeof _creativeTerritoryCompatibleWithMarket === 'function'
+    ? _creativeTerritoryCompatibleWithMarket(MOTOR_STATE.creativeTerritory)
+    : 'auto';
+  const activeTerritory = activeTerritoryId !== 'auto' ? (_CREATIVE_TERRITORIES[activeTerritoryId] || {}) : {};
+  const territoryPreferred = Array.isArray(activeTerritory.compatibleStyles) ? activeTerritory.compatibleStyles : [];
   const styleWeight = function (style, base) {
     const key = _getStyleBase(style);
     let weight = base;
     if ((aesthetic.stylePreferred || []).indexOf(key) !== -1) weight *= 1.35;
     else if ((aesthetic.styleSecondary || []).indexOf(key) !== -1) weight *= 1.15;
+    if (territoryPreferred.indexOf(key) !== -1) weight *= 1.5;
     if (aestheticAvoid.indexOf(key) !== -1) weight *= 0.5;
     if (recentStyles.has(style)) weight *= 0.35;
     return Math.max(0.2, weight);
   };
-  const stableBase = [MOTOR_STATE.market, MOTOR_STATE.product, MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE.groupMode, MOTOR_STATE.aestheticPreference || 'auto', MOTOR_STATE._rerollNonce || 0].join('|');
+  const stableBase = [MOTOR_STATE.market, MOTOR_STATE.product, MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE.groupMode, MOTOR_STATE.aestheticPreference || 'auto', activeTerritoryId, MOTOR_STATE._rerollNonce || 0].join('|');
   const fixed = {};
   const auto = [];
   const memKeyFn = typeof memKey === 'function' ? memKey : _memKey;
