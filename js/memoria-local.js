@@ -113,15 +113,47 @@
     }
   }
 
+  const BRAND_SCOPED_FAMILIES = { locks: true, patterns: true, visualIdentity: true, creativeTerritory: true, decisionMode: true, aestheticPreference: true, styleRecentSets: true };
+
+  function _brandScopeForMarket(market) {
+    let selected = 'auto';
+    try { selected = String((typeof MOTOR_STATE !== 'undefined' && MOTOR_STATE.brand) || 'auto').trim(); } catch (e) {}
+    if (selected === 'BERESHITH_CO' || selected === 'CrossLampCo') return selected;
+    const marketId = String(market || (typeof MOTOR_STATE !== 'undefined' && MOTOR_STATE.market) || '').split('|')[0].trim();
+    if (['colombia', 'global_es', 'gospel_es', 'latam', 'spain', 'diaspora_col'].indexOf(marketId) !== -1) return 'BERESHITH_CO';
+    if (['global_en', 'gospel_en', 'anglo'].indexOf(marketId) !== -1) return 'CrossLampCo';
+    return 'UNBRANDED';
+  }
+
   function memKey(parts) {
     const clean = (Array.isArray(parts) ? parts : [parts]).map(function (p) {
       return String(p === undefined || p === null ? '' : p).trim();
     });
+    if (clean.length > 1 && BRAND_SCOPED_FAMILIES[clean[0]]) {
+      clean.splice(1, 0, _brandScopeForMarket(clean[1]));
+    }
     return MEM_PREFIX + clean.join('|');
   }
 
   function getRaw(key) {
-    return POD_LS.getItem(key);
+    const current = POD_LS.getItem(key);
+    if (current !== null && current !== undefined) return current;
+    // Legacy keys had no brand segment. Attribute them only to the brand that
+    // is the deterministic default for that market; never copy them to both brands.
+    try {
+      const prefix = MEM_PREFIX;
+      if (String(key).indexOf(prefix) !== 0) return current;
+      const parts = String(key).slice(prefix.length).split('|');
+      if (!BRAND_SCOPED_FAMILIES[parts[0]] || parts.length < 4) return current;
+      const brand = parts[1];
+      const market = parts[2];
+      if (brand !== _brandScopeForMarket(market)) return current;
+      const legacyKey = prefix + [parts[0]].concat(parts.slice(2)).join('|');
+      const legacy = POD_LS.getItem(legacyKey);
+      if (legacy === null || legacy === undefined) return current;
+      POD_LS.setItem(key, legacy);
+      return legacy;
+    } catch (e) { return current; }
   }
 
   function setRaw(key, value) {

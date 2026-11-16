@@ -124,6 +124,7 @@ function _hexScheme(palStr, mode) {
 /* --- Estado global del motor --- */
 let MOTOR_STATE = {
   market: 'global_en',
+  brand: 'auto',
   language: 'auto',
   marketplace: 'generic',
   region: 'global',
@@ -167,16 +168,28 @@ let MOTOR_STATE = {
 const K = ['A', 'B', 'C'];
 const N = ['01A', '01B', '01C'];
 
+/* --- Marca activa: selección explícita o asignación segura por mercado --- */
+function _activeBrandId() {
+  const selected = String((MOTOR_STATE && MOTOR_STATE.brand) || 'auto').trim();
+  if (selected === 'BERESHITH_CO' || selected === 'CrossLampCo') return selected;
+  const market = String((MOTOR_STATE && MOTOR_STATE.market) || '').trim();
+  if (['colombia', 'global_es', 'gospel_es', 'latam', 'spain', 'diaspora_col'].indexOf(market) !== -1) return 'BERESHITH_CO';
+  if (['global_en', 'gospel_en', 'anglo'].indexOf(market) !== -1) return 'CrossLampCo';
+  return 'UNBRANDED';
+}
+
 /* --- Sincronización mínima del contexto de locks --- */
 function syncContext() {
   const marketEl = document.getElementById('market');
   const regionEl = document.getElementById('region');
   const productEl = document.getElementById('product');
+  const brandEl = document.getElementById('brand');
   MOTOR_STATE.market = marketEl ? marketEl.value : 'global_en';
+  MOTOR_STATE.brand = brandEl ? brandEl.value : (MOTOR_STATE.brand || 'auto');
   MOTOR_STATE.region = regionEl ? regionEl.value : 'global';
   MOTOR_STATE.product = productEl ? productEl.value : 'CAMISETA SOFT';
   if (LAST_RESULT && !_lastResultMatchesContext(LAST_RESULT)) _showStaleResultContext();
-  return { market: MOTOR_STATE.market, region: MOTOR_STATE.region, product: MOTOR_STATE.product };
+  return { market: MOTOR_STATE.market, region: MOTOR_STATE.region, product: MOTOR_STATE.product, brand: _activeBrandId() };
 }
 
 /* --- Lectura de estado desde el DOM --- */
@@ -3344,7 +3357,7 @@ function _promptSignature() {
     const fi = document.getElementById('imageUpload');
     if (fi && fi.files && fi.files[0]) { const f = fi.files[0]; img = [f.name, f.size, f.lastModified].join('|'); }
   } catch (e) {}
-  return [g('workflowMode'), g('market'), g('product'), g('subniche'), g('concept'), g('message'), g('support'), g('serie'), g('audienceSet'), img].join('§');
+  return [g('workflowMode'), g('market'), g('brand'), g('product'), g('subniche'), g('concept'), g('message'), g('support'), g('serie'), g('audienceSet'), img].join('§');
 }
 
 /* Resolución del territorio creativo activo (Arquitectura Creativa — Fase 1).
@@ -3437,8 +3450,10 @@ function _creativeTerritoryCompatibleWithMarket(territory) {
   const rec = records[t];
   if (!rec) return 'auto';
   const markets = Array.isArray(rec.compatibleMarkets) ? rec.compatibleMarkets : [];
+  const brands = Array.isArray(rec.brandAssociation) ? rec.brandAssociation : [];
   const current = String(MOTOR_STATE.market || '').trim();
   if (markets.length && current && markets.indexOf(current) === -1) return 'auto';
+  if (brands.length && brands.indexOf(_activeBrandId()) === -1) return 'auto';
   return t;
 }
 
@@ -3957,6 +3972,9 @@ function formatPrompt(result) {
       o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
     }
   }
+  const activeBrand = _activeBrandId();
+  const brandLabel = activeBrand === 'BERESHITH_CO' ? 'BERESHITH CO.' : (activeBrand === 'CrossLampCo' ? 'Cross & Lamp Co.' : 'Sin marca asignada');
+  o += 'CONTEXTO DE MARCA (no imprimir el nombre salvo que forme parte del mensaje): ' + brandLabel + '. Mantén separados su identidad visual, memoria, preferencias y territorios de los de cualquier otra marca.\n';
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
   if (cultDir) o += 'CULTURA: ' + cultDir + '\n';
   if (legalDir) o += 'LEGAL: ' + legalDir + '\n';
