@@ -48,7 +48,7 @@ ok(!/function tell\(msg\)[\s\S]*?statusEl\.innerHTML/.test(validator), 'vision v
 ok(/const label = rec\.label_es \|\| rec\.label \|\| id;[\s\S]*?escHtml\(id\)[\s\S]*?escHtml\(label\)/.test(motor), 'creative territory selector must escape option values and labels');
 ok(/\+ escHtml\(treatmentKey\) \+ ': '/.test(motor), 'card treatment label must be escaped before HTML rendering');
 ok(/const label = labels\[id\] \|\| id;[\s\S]*?escHtml\(id\)[\s\S]*?escHtml\(label\)/.test(motor), 'print method selector must escape option values and labels');
-ok(/escHtml\(umbralMsg \|\| 'revisa el control de calidad'\)/.test(motor), 'quality warning text must be escaped before HTML rendering');
+ok(/escHtml\(umbralMsg \|\| '[^']*'\)/.test(motor), 'quality warning text must be escaped before HTML rendering regardless of its user-facing fallback copy');
 ok(/Validación con fallos: ' \+ escHtml\(ev\.detalle\.join\(' · '\)\)/.test(motor), 'validation details must be escaped before HTML rendering');
 ok(/const avisoHtml = \(aviso \? '[^\n]*escHtml\(aviso\)[\s\S]*?escHtml\(avisoObsoleto\)/.test(motor), 'prompt copy warnings must be escaped before HTML rendering');
 ok(/function _escapeOptionHTML\(value\)[\s\S]*?replace\(\/&\/g, '&amp;'\)[\s\S]*?replace\(\/<\/g, '&lt;'\)[\s\S]*?replace\(\/>\/g, '&gt;'\)[\s\S]*?replace\(\/\\\"\/g, '&quot;'\)[\s\S]*?replace\(\/'\/g, '&#39;'\)/.test(markets), 'shared market option escaper must encode all HTML-significant characters');
