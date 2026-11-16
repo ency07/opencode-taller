@@ -3708,10 +3708,10 @@ function formatPrompt(result) {
     ? getAestheticPreferenceProfile(MOTOR_STATE.aestheticPreference)
     : null;
   if (activeAestheticPreference) {
-    o += 'PREFERENCIA ESTÉTICA INDEPENDIENTE: ' + activeAestheticPreference.label + '. Intensidad ' + activeAestheticPreference.intensity + '; complejidad ' + activeAestheticPreference.complexity + '.\\n';
-    o += 'Estilos preferidos: ' + (activeAestheticPreference.stylePreferred || []).join(', ') + '. Secundarios: ' + (activeAestheticPreference.styleSecondary || []).join(', ') + '. Menos adecuados: ' + (activeAestheticPreference.styleAvoid || []).join(', ') + '.\\n';
-    o += 'Jerarquías preferidas: ' + (activeAestheticPreference.hierarchyPref || []).join(', ') + '; layouts preferidos: ' + (activeAestheticPreference.layoutPref || []).join(', ') + '; densidades: ' + (activeAestheticPreference.densityPref || []).join(', ') + '; tratamientos: ' + (activeAestheticPreference.treatmentPref || []).join(', ') + '.\\n';
-    o += 'La preferencia estética es un sesgo flexible, independiente de edad/género y no una lista de prohibiciones. Mantén locks y compatibilidad real de producto; explora fuera de la preferencia cuando el concepto, mercado o producto lo justifiquen. No cambies el estilo fijado en cada ficha.\\n\\n';
+    o += 'PREFERENCIA ESTÉTICA INDEPENDIENTE: ' + activeAestheticPreference.label + '. Intensidad ' + activeAestheticPreference.intensity + '; complejidad ' + activeAestheticPreference.complexity + '.\n';
+    o += 'Estilos preferidos: ' + (activeAestheticPreference.stylePreferred || []).join(', ') + '. Secundarios: ' + (activeAestheticPreference.styleSecondary || []).join(', ') + '. Menos adecuados: ' + (activeAestheticPreference.styleAvoid || []).join(', ') + '.\n';
+    o += 'Jerarquías preferidas: ' + (activeAestheticPreference.hierarchyPref || []).join(', ') + '; layouts preferidos: ' + (activeAestheticPreference.layoutPref || []).join(', ') + '; densidades: ' + (activeAestheticPreference.densityPref || []).join(', ') + '; tratamientos: ' + (activeAestheticPreference.treatmentPref || []).join(', ') + '.\n';
+    o += 'La preferencia estética es un sesgo flexible, independiente de edad/género y no una lista de prohibiciones. Mantén locks y compatibilidad real de producto; explora fuera de la preferencia cuando el concepto, mercado o producto lo justifiquen. No cambies el estilo fijado en cada ficha.\n\n';
   }
 
   o += 'CONTRATO DE ESTILO POR FICHA (INMUTABLE):\n';
