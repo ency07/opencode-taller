@@ -5040,10 +5040,11 @@ window.renderColorAudit = renderColorAudit;
       if (typeof getAestheticPreferenceOptions === 'function') {
         aestheticPreference.innerHTML = getAestheticPreferenceOptions();
       }
-      aestheticPreference.value = MOTOR_STATE.aestheticPreference || 'auto';
+      MOTOR_STATE.aestheticPreference = loadAestheticPreference();
+      aestheticPreference.value = MOTOR_STATE.aestheticPreference;
       if (!aestheticPreference.__podAestheticPreferenceBound) {
         aestheticPreference.addEventListener('change', function () {
-          MOTOR_STATE.aestheticPreference = this.value || 'auto';
+          setAestheticPreference(this.value || 'auto');
         });
         aestheticPreference.__podAestheticPreferenceBound = true;
       }
@@ -5053,7 +5054,7 @@ window.renderColorAudit = renderColorAudit;
       product.addEventListener('change', function () {
         // Capture phase: persistir el contexto anterior antes de cualquier listener
         // de burbuja que pueda sincronizar MOTOR_STATE con el producto nuevo.
-        switchVisualIdentityContext(syncContext);
+        switchVisualIdentityContext(syncAestheticPreferenceContext);
         refreshPrintMethodSelector();
       }, true);
       product.__podPrintMethodBound = true;
