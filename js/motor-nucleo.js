@@ -2955,9 +2955,68 @@ function _showStaleResultContext() {
   if (statusEl) statusEl.textContent = 'El mercado, la región o el producto cambió. Genera un conjunto nuevo antes de validar o regenerar una ficha.';
 }
 
+function _similarityRecordForCard(card) {
+  card = card || {};
+  const objectValue = card.objeto;
+  const symbol = objectValue && typeof objectValue === 'object'
+    ? (objectValue.motivo || objectValue.idea || objectValue.texto || objectValue.nombre || '')
+    : objectValue;
+  return {
+    concept: MOTOR_STATE.concept,
+    message: MOTOR_STATE.message,
+    symbol: String(symbol || ''),
+    silhouette: String(card.formaSimbolo || ''),
+    composition: [card.layout, card.jerarquiaVisual, card.integracionTexto, card.distribucionTexto].filter(Boolean).join(' | '),
+    palette: [card.familiaColor, card.paleta].filter(Boolean).join(' | '),
+    style: String(card.estilo || '').split(' × ')[0].trim(),
+    treatment: String(card.tratamiento || '').split(':')[0].trim(),
+    typography: String(card.tipografia || '')
+  };
+}
+
+function _findCreativeSimilarityConflicts(card) {
+  const api = typeof PODCreativeCatalogs !== 'undefined' && PODCreativeCatalogs.diversity
+    ? PODCreativeCatalogs.diversity
+    : null;
+  if (!api || typeof api.compareCreativeMetadataSimilarity !== 'function' || typeof loadPatternMemory !== 'function') {
+    return { available: false, basis: 'metadata_only', compared: 0, alerts: [] };
+  }
+  const current = _similarityRecordForCard(card);
+  const history = loadPatternMemory(memPatternMarket(), MOTOR_STATE.product);
+  const currentGeneration = String(MOTOR_STATE._generationId || '');
+  const currentSeries = String(MOTOR_STATE.serie || '').trim();
+  const alerts = [];
+  let compared = 0;
+  (Array.isArray(history) ? history : []).forEach(function (entry) {
+    const meta = entry && entry.meta || {};
+    if (currentGeneration && meta.generationId && String(meta.generationId) === currentGeneration) return;
+    if (currentSeries && meta.serie && String(meta.serie) === currentSeries) return;
+    const old = meta.similarityRecord || (entry && entry.pattern ? {
+      style: entry.pattern.estilo,
+      silhouette: entry.pattern.formaSimbolo,
+      treatment: entry.pattern.tratamiento,
+      composition: entry.pattern.layout,
+      palette: entry.pattern.familiaColor
+    } : null);
+    if (!old) return;
+    const result = api.compareCreativeMetadataSimilarity(current, old);
+    compared++;
+    if (result.alert) alerts.push({
+      createdAt: entry.t || '',
+      similarity: result,
+      series: meta.serie || '',
+      subniche: meta.subniche || ''
+    });
+  });
+  alerts.sort(function (a, b) { return b.similarity.overall - a.similarity.overall; });
+  return { available: true, basis: 'metadata_only', compared: compared, alerts: alerts };
+}
+
 function generateSet() {
   readStateFromDOM();
   if (!_requireResolvedMarketEngine('generar diseños')) return null;
+  MOTOR_STATE._generationCounter = (Number(MOTOR_STATE._generationCounter) || 0) + 1;
+  MOTOR_STATE._generationId = [Date.now(), MOTOR_STATE._generationCounter].join('-');
   MOTOR_STATE.explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? _resolveExplorationBrief() : null;
   const audsPerKey = resolveAudiences();
   const fixedIdentity = _isLockedContactSet() ? _resolveContactIdentity(getObjectPool()) : null;
@@ -3047,8 +3106,25 @@ _preservation = {
       // Si hay conflicto, intentar regenerar esa ficha (simplificado: aceptar con advertencia)
       console.warn('[Motor] Conflicto de patrón en ' + N[K.indexOf(k)] + ': ' + conflict.maxMatches + ' ejes coincidentes');
     }
-    _recordPattern(best[k], memPatternMarket(), MOTOR_STATE.product, { serie: MOTOR_STATE.serie, subniche: MOTOR_STATE.subniche });
+    const similarityAudit = _findCreativeSimilarityConflicts(best[k]);
+    best[k]._similarityAudit = similarityAudit;
+    _recordPattern(best[k], memPatternMarket(), MOTOR_STATE.product, {
+      serie: MOTOR_STATE.serie,
+      subniche: MOTOR_STATE.subniche,
+      generationId: MOTOR_STATE._generationId,
+      similarityRecord: _similarityRecordForCard(best[k])
+    });
   });
+
+  const similarityAlerts = K.reduce(function (all, key) {
+    const audit = best[key] && best[key]._similarityAudit;
+    if (audit && audit.alerts) audit.alerts.forEach(function (item) { all.push({ card: key, similarity: item.similarity, createdAt: item.createdAt }); });
+    return all;
+  }, []);
+  const similarityCompared = K.reduce(function (sum, key) {
+    const audit = best[key] && best[key]._similarityAudit;
+    return sum + (audit && audit.compared || 0);
+  }, 0);
 
   // Guardar objetos usados
   const historyKey = _makeHistoryKey({
@@ -3063,7 +3139,15 @@ _preservation = {
   _addUsedObjects(historyKey, usedObjs);
 
   const prevColorAuditSet = (LAST_RESULT && LAST_RESULT.set && _lastResultMatchesContext(LAST_RESULT)) ? LAST_RESULT.set : null;
-  LAST_RESULT = { set: best, score: bestScore, passed: passed, explorationBrief: MOTOR_STATE.explorationBrief, objectConflicts: (best && best.objectConflicts) || [], context: _motorResultContext() };
+  LAST_RESULT = {
+    set: best,
+    score: bestScore,
+    passed: passed,
+    explorationBrief: MOTOR_STATE.explorationBrief,
+    objectConflicts: (best && best.objectConflicts) || [],
+    similarityAudit: { basis: 'metadata_only', available: true, compared: similarityCompared, alerts: similarityAlerts },
+    context: _motorResultContext()
+  };
   try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
   try { window.V = best; } catch (e) {} // Puente para el revisor IA (ia-revisor.js lee window.V con fichas A/B/C).
   try {
