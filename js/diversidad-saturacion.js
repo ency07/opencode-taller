@@ -89,7 +89,7 @@
   function normalizeComparableText(value) {
     return String(value == null ? '' : value)
       .toLowerCase()
-      .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, ' ')
       .trim();
   }
@@ -99,7 +99,7 @@
     const b = normalizeComparableText(right);
     if (!a || !b) return null;
     if (a === b) return 1;
-    const aa = new Set(a.split(/\\s+/).filter(Boolean));
+    const aa = new Set(a.split(/\s+/).filter(Boolean));
     const bb = new Set(b.split(/\\s+/).filter(Boolean));
     const intersection = Array.from(aa).filter(function (token) { return bb.has(token); }).length;
     const union = new Set(Array.from(aa).concat(Array.from(bb))).size;
