@@ -94,13 +94,26 @@
       .trim();
   }
 
+  /* Artículos y conectores frecuentes no deben penalizar frases equivalentes.
+     Se conservan términos de contenido: el score sigue siendo Jaccard, no una
+     coincidencia por mera inclusión de una frase corta dentro de otra. */
+  const COMPARISON_STOPWORDS = new Set([
+    'a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'on', 'for', 'with',
+    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'de', 'del',
+    'y', 'o', 'en', 'por', 'para', 'con', 'al'
+  ]);
+
+  function comparableTokens(value) {
+    return normalizeComparableText(value).split(/\s+/).filter(function (token) {
+      return token && !COMPARISON_STOPWORDS.has(token);
+    });
+  }
+
   function tokenSimilarity(left, right) {
-    const a = normalizeComparableText(left);
-    const b = normalizeComparableText(right);
-    if (!a || !b) return null;
-    if (a === b) return 1;
-    const aa = new Set(a.split(/\s+/).filter(Boolean));
-    const bb = new Set(b.split(/\s+/).filter(Boolean));
+    const aa = new Set(comparableTokens(left));
+    const bb = new Set(comparableTokens(right));
+    if (!aa.size || !bb.size) return null;
+    if (aa.size === bb.size && Array.from(aa).every(function (token) { return bb.has(token); })) return 1;
     const intersection = Array.from(aa).filter(function (token) { return bb.has(token); }).length;
     const union = new Set(Array.from(aa).concat(Array.from(bb))).size;
     return union ? intersection / union : 0;
