@@ -127,7 +127,17 @@
       phrase: tokenSimilarity(left.message, right.message),
       symbol: tokenSimilarity(left.symbol, right.symbol),
       silhouette: tokenSimilarity(left.silhouette, right.silhouette),
-      composition: tokenSimilarity(left.composition, right.composition),
+      /* Los registros anteriores guardaban solo el nombre del layout.
+         En ese caso se compara layout contra layout; entre registros nuevos
+         se conserva la composición completa (layout + jerarquía + texto). */
+      composition: tokenSimilarity(
+        left.legacyLayoutOnly || right.legacyLayoutOnly
+          ? (left.layout || left.composition)
+          : left.composition,
+        left.legacyLayoutOnly || right.legacyLayoutOnly
+          ? (right.layout || right.composition)
+          : right.composition
+      ),
       palette: tokenSimilarity(left.palette, right.palette),
       treatment: tokenSimilarity([left.style, left.treatment].filter(Boolean).join(' '), [right.style, right.treatment].filter(Boolean).join(' ')),
       typography: tokenSimilarity(left.typography, right.typography)
