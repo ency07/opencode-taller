@@ -4527,9 +4527,27 @@ function rerollSingle(keyLetter) {
     if (typeof limpiarQAVisual === 'function') limpiarQAVisual();
     LAST_RESULT.score = freshEval.score;
     LAST_RESULT.passed = freshEval.passed;
+    const rerollSimilarity = _findCreativeSimilarityConflicts(bestOk);
+    bestOk._similarityAudit = rerollSimilarity;
+    const rerollAlerts = [];
+    let rerollCompared = 0;
+    K.forEach(function (cardKey) {
+      const audit = LAST_RESULT.set[cardKey] && LAST_RESULT.set[cardKey]._similarityAudit;
+      if (!audit) return;
+      rerollCompared += audit.compared || 0;
+      (audit.alerts || []).forEach(function (item) {
+        rerollAlerts.push({ card: cardKey, similarity: item.similarity, createdAt: item.createdAt });
+      });
+    });
+    LAST_RESULT.similarityAudit = { basis: 'metadata_only', available: true, compared: rerollCompared, alerts: rerollAlerts };
     try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
     try { window.V = LAST_RESULT.set; } catch (e) {}
-    _recordPattern(best, memPatternMarket(), MOTOR_STATE.product, { serie: MOTOR_STATE.serie, reroll: keyLetter });
+    _recordPattern(bestOk, memPatternMarket(), MOTOR_STATE.product, {
+      serie: MOTOR_STATE.serie,
+      reroll: keyLetter,
+      generationId: MOTOR_STATE._generationId,
+      similarityRecord: _similarityRecordForCard(bestOk)
+    });
     renderCards(LAST_RESULT);
     renderGates({ score: scoreSet(LAST_RESULT.set) });
     renderMatrix(LAST_RESULT);
