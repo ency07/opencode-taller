@@ -2967,7 +2967,8 @@ function _motorResultContext() {
   return {
     market: String(MOTOR_STATE.market || ''),
     region: String(MOTOR_STATE.region || ''),
-    product: String(MOTOR_STATE.product || '')
+    product: String(MOTOR_STATE.product || ''),
+    brand: _activeBrandId()
   };
 }
 
@@ -2976,12 +2977,13 @@ function _lastResultMatchesContext(result) {
   var current = _motorResultContext();
   return result.context.market === current.market
     && result.context.region === current.region
-    && result.context.product === current.product;
+    && result.context.product === current.product
+    && result.context.brand === current.brand;
 }
 
 function _showStaleResultContext() {
   var statusEl = document.getElementById('status');
-  if (statusEl) statusEl.textContent = 'El mercado, la región o el producto cambió. Genera un conjunto nuevo antes de validar o regenerar una ficha.';
+  if (statusEl) statusEl.textContent = 'El mercado, la región, el producto o la marca cambió. Genera un conjunto nuevo antes de validar o regenerar una ficha.';
 }
 
 function _similarityRecordForCard(card) {
@@ -5220,6 +5222,25 @@ window.renderColorAudit = renderColorAudit;
       product.__podPrintMethodBound = true;
     }
     refreshPrintMethodSelector();
+
+    const brandSelect = document.getElementById('brand');
+    if (brandSelect && !brandSelect.__podBrandContextBound) {
+      brandSelect.addEventListener('change', function () {
+        // Guardar la identidad bajo la marca anterior antes de sincronizar la nueva.
+        switchVisualIdentityContext(syncContext);
+        const territorySelect = document.getElementById('creativeTerritory');
+        MOTOR_STATE.creativeTerritory = loadCreativeTerritory();
+        if (territorySelect) territorySelect.value = MOTOR_STATE.creativeTerritory;
+        MOTOR_STATE.decisionMode = loadDecisionMode();
+        const decisionSelect = document.getElementById('decisionMode');
+        if (decisionSelect) decisionSelect.value = MOTOR_STATE.decisionMode;
+        const aestheticSelect = document.getElementById('aestheticPreference');
+        MOTOR_STATE.aestheticPreference = loadAestheticPreference();
+        if (aestheticSelect) aestheticSelect.value = MOTOR_STATE.aestheticPreference;
+        refreshContextSelectors(true);
+      }, true);
+      brandSelect.__podBrandContextBound = true;
+    }
 
     if (market && !market.__podAudienceRefreshBound) {
       market.addEventListener('change', function () {
