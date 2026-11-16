@@ -46,6 +46,19 @@ ok(abstractIdentity.symbol === MOTOR_STATE.concept, 'la fidelidad que permanece 
 ok(abstractIdentity.identityMode === 'concept', 'el concepto abstracto debe conservar identidad de concepto');
 ok(abstractIdentity.guiaSimbolo.indexOf('No lo reformules') !== -1, 'la guía debe impedir reformular el concepto abstracto');
 
+// Regresión E2E del planificador: un motivo que solo comparte «fidelidad»
+// no puede reemplazar el concepto abstracto ni convertirse en el ancla de serie.
+MOTOR_STATE.market = 'gospel_es';
+MOTOR_STATE.region = 'universal_es';
+const abstractConcept = 'La fidelidad de Dios permanece.';
+const misleadingMotif = 'fidelidad que no se demuestra, se cumple';
+const weakMatches = _rankCompatibleMotifs([misleadingMotif], abstractConcept);
+ok(weakMatches.length === 0, 'una coincidencia de una sola palabra no debe autorizar un motivo de banco');
+const abstractPlan = _planExploreMotifs([misleadingMotif], [], abstractConcept, abstractConcept, '');
+ok(abstractPlan.anchor === abstractConcept, 'el plan de serie debe conservar literalmente el concepto abstracto como ancla');
+ok(abstractPlan.list.length === 1 && abstractPlan.list[0].includes(abstractConcept), 'la instrucción visual debe derivarse del concepto original, no de la frase del banco');
+ok(abstractPlan.conflict.indexOf('No hay un motivo del banco') !== -1, 'la falta de correspondencia debe quedar explícita y no ocultarse como coincidencia válida');
+
 MOTOR_STATE.concept = 'Cruz de madera con ramas';
 const namedIdentity = _resolveContactIdentity(['Cruz de madera', 'paloma blanca']);
 ok(namedIdentity.symbol === 'Cruz de madera', 'un objeto nombrado literalmente puede resolverse desde el banco');
