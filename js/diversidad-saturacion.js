@@ -131,7 +131,7 @@
       if (score >= 0.7) matchedAxes++;
     });
     const overall = totalWeight ? weighted / totalWeight : 0;
-    const limit = Number.isFinite(threshold) ? threshold : 0.72;
+    const limit = Number.isFinite(threshold) ? threshold : 0.62;
     const alert = overall >= limit && matchedAxes >= 3 &&
       Math.max(axes.phrase || 0, axes.symbol || 0, axes.composition || 0) >= 0.7;
     return {
