@@ -3346,8 +3346,8 @@ function _contrastBlock(set) {
     s += '- ' + ax[0] + ': ' + K.map(function (k, i) { return N[i] + ' ' + vals[i]; }).join(' | ')
       + (distinct ? ' (distinto)' : ' (REPETIDO: cámbialo en al menos una columna)') + '\n';
   });
-  s += 'REGLA DE CONTRASTE MACROVISUAL: compara el ARTE IMPRESO, no el mockup. A/B/C deben diferir de forma perceptible en la silueta exterior, el centro de atención, la distribución de masas, el recorrido de lectura y el uso del espacio negativo. La diferencia de color, textura o acabado por sí sola NO cuenta como una composición distinta.\\n';
-  s += 'ANTI-PLANTILLA: no repitas automáticamente emblema centrado, ilustración central con título arriba/abajo ni la misma estructura con elementos recolocados. Usa únicamente la arquitectura y el layout declarados para cada ficha; no fuerces una composición central si la ficha pide otra ubicación.\\n';
+  s += 'REGLA DE CONTRASTE MACROVISUAL: compara el ARTE IMPRESO, no el mockup. A/B/C deben diferir de forma perceptible en la silueta exterior, el centro de atención, la distribución de masas, el recorrido de lectura y el uso del espacio negativo. La diferencia de color, textura o acabado por sí sola NO cuenta como una composición distinta.\n';
+  s += 'ANTI-PLANTILLA: no repitas automáticamente emblema centrado, ilustración central con título arriba/abajo ni la misma estructura con elementos recolocados. Usa únicamente la arquitectura y el layout declarados para cada ficha; no fuerces una composición central si la ficha pide otra ubicación.\n';
   s += 'PRUEBA DE MINIATURA: reduce mentalmente cada arte a una silueta negra sin texto ni color. Si dos fichas siguen pareciendo la misma forma o tienen la misma distribución de masas, son demasiado parecidas: replantea encuadre, escala, forma global y espacio negativo sin cambiar concepto, mensaje, estilo ni tratamiento asignados.';
   return s;
 }
