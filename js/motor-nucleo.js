@@ -1627,7 +1627,10 @@ function _rankCompatibleMotifs(pools, concept) {
        idea que el motivo representa, sin sustituir la escena por una anécdota. */
     if (conceptAxes.length && !semanticMatches.length) return null;
     if (!overlap.length && !semanticMatches.length) return null;
-    if (!semanticMatches.length && overlap.length < 2 && tokens.length < 3) return null;
+    // Un solo término compartido no demuestra equivalencia conceptual.
+    // Evita que «fidelidad» por sí sola sustituya «la fidelidad de Dios permanece»
+    // por una frase o motivo de banco que solo comparte esa palabra.
+    if (!semanticMatches.length && overlap.length < 2) return null;
     const lexicalScore = overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0);
     return { label: label, score: semanticMatches.length * 100 + lexicalScore, matches: semanticMatches.length + overlap.length };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
