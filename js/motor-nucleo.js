@@ -111,6 +111,9 @@ function _matchesPreference(preferences, value) {
     return String(value || '').startsWith(String(pref));
   });
 }
+function _mergePreferenceLists() {
+  return Array.from(new Set([].concat.apply([], arguments).filter(Boolean)));
+}
 
 function _hexScheme(palStr, mode) {
   if (typeof hexScheme === 'function') return hexScheme(palStr, mode);
@@ -624,7 +627,13 @@ function resolveTextImageModes(estilos, audsPerKey, profileByKey) {
     (productBias.hierarchy || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 3 : 1); });
     const audHierarchy = (typeof AUD_HIERARCHY_PREF !== 'undefined' ? AUD_HIERARCHY_PREF[audsPerKey[key]] : []) || [];
     audHierarchy.forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : 1); });
-    // Preferencia del perfil: +2 primera opción, +1 segunda, +0 tercera.
+    const aesthetic = typeof getAestheticPreferenceProfile === 'function'
+      ? (getAestheticPreferenceProfile(MOTOR_STATE.aestheticPreference) || {})
+      : {};
+    (aesthetic.hierarchyPref || []).forEach(function (x, i) {
+      if (MODES[x]) score[x] = (score[x] || 0) + (i === 0 ? 2 : (i === 1 ? 1 : 0));
+    });
+    // Preferencia del perfil estructural: +2 primera opción, +1 segunda, +0 tercera.
     const profileModes = (profileByKey && PROFILE_VISUAL_MODES[profileByKey[key]]) || null;
     (profileModes || []).forEach(function (x, i) { score[x] = (score[x] || 0) + (i === 0 ? 2 : (i === 1 ? 1 : 0)); });
     return score;
@@ -2422,14 +2431,18 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     const _rawAud = _AUD_PROFILES[v.audiencia] || {};
     const _LP = (typeof AUD_LAYOUT_PREF !== 'undefined' ? AUD_LAYOUT_PREF : {})[v.audiencia] || [];
     const _SP = (typeof AUD_STYLE_PREF !== 'undefined' ? AUD_STYLE_PREF : {})[v.audiencia] || [];
+    const aestheticProfile = typeof getAestheticPreferenceProfile === 'function'
+      ? (getAestheticPreferenceProfile(MOTOR_STATE.aestheticPreference) || {})
+      : {};
     const audProfile = {
-      tipoPref: _rawAud.tipoPref || [],
-      formaPref: _rawAud.formaPref || [],
-      tratPref: _rawAud.tratPref || [],
-      layoutPref: _rawAud.layoutPref || _LP,
-      densityPref: (typeof AUD_DENSITY_PREF !== 'undefined' ? AUD_DENSITY_PREF[v.audiencia] : []) || [],
-      modoCol: _rawAud.modoCol || [],
-      stylePref: _SP
+      tipoPref: _mergePreferenceLists(_rawAud.tipoPref || [], aestheticProfile.typographyPref || []),
+      formaPref: _mergePreferenceLists(_rawAud.formaPref || [], aestheticProfile.formaPref || []),
+      tratPref: _mergePreferenceLists(_rawAud.tratPref || [], aestheticProfile.treatmentPref || []),
+      layoutPref: _mergePreferenceLists(_rawAud.layoutPref || _LP, aestheticProfile.layoutPref || []),
+      densityPref: _mergePreferenceLists((typeof AUD_DENSITY_PREF !== 'undefined' ? AUD_DENSITY_PREF[v.audiencia] : []) || [], aestheticProfile.densityPref || []),
+      modoCol: _mergePreferenceLists(_rawAud.modoCol || [], aestheticProfile.colorMode || []),
+      stylePref: _mergePreferenceLists(_SP, aestheticProfile.stylePreferred || [], aestheticProfile.styleSecondary || []),
+      aestheticProfile: MOTOR_STATE.aestheticPreference || 'auto'
     };
 
     const allowedPool = _allowedLayoutPool();
