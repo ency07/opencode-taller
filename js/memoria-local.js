@@ -512,8 +512,11 @@
     // including when save and delete happen within the same millisecond.
     Object.keys(next).forEach(function (entryKey) {
       const deletedAt = Date.parse(deleted[entryKey] || '') || 0;
-      const now = Date.now();
-      updated[entryKey] = new Date(now > deletedAt ? now : deletedAt + 1).toISOString();
+      const previousUpdateAt = Date.parse(updated[entryKey] || '') || 0;
+      // A save is an explicit recreation. Its version must be strictly newer
+      // than both the tombstone and any prior version, even within one tick.
+      const nextVersionAt = Math.max(Date.now(), deletedAt, previousUpdateAt) + 1;
+      updated[entryKey] = new Date(nextVersionAt).toISOString();
     });
     next[PERSONAL_BANK_DELETED_KEY] = deleted;
     next[PERSONAL_BANK_UPDATED_KEY] = updated;
