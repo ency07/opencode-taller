@@ -94,6 +94,16 @@
         objeto: String(f.objeto || ''),
         audiencia: String(f.audiencia || ''),
         tratamiento: String(f.tratamiento || ''),
+        perfil: String(f.perfilEstructural || ''),
+        layout: String(f.layout || ''),
+        composicion: String(f.composicion || ''),
+        arquitectura: String(f.arquitectura || ''),
+        tipografia: String(f.tipografia || ''),
+        formaSimbolo: String(f.formaSimbolo || ''),
+        distribucionTexto: String(f.distribucionTexto || ''),
+        integracionTexto: String(f.integracionTexto || ''),
+        densidad: String(f.densidad || ''),
+        negativeSpace: String(f.negativeSpace || ''),
         cara: f.cara ? String(f.cara) : '',
         peso: pesoExigido(f.jerarquiaVisual)
       };
@@ -130,6 +140,16 @@
         objeto: r.objeto,
         audiencia: (m[3] || '').trim(),
         tratamiento: '',
+        perfil: ((secciones[id] || '').match(/PERFIL ESTRUCTURAL:\s*([^·\n]+)/) || [])[1] || '',
+        layout: ((secciones[id] || '').match(/LAYOUT \(ubicación\):\s*([^\n]+)/) || [])[1] || '',
+        composicion: ((secciones[id] || '').match(/composicion:\s*([^\n]+)/i) || [])[1] || '',
+        arquitectura: ((secciones[id] || '').match(/arquitectura:\s*([^\n]+)/i) || [])[1] || '',
+        tipografia: ((secciones[id] || '').match(/tipografía\s+([^·\n]+)/i) || [])[1] || '',
+        formaSimbolo: ((secciones[id] || '').match(/forma del símbolo\s+([^·\n]+)/i) || [])[1] || '',
+        distribucionTexto: ((secciones[id] || '').match(/arquitectura textual\s+([^·\n]+)/i) || [])[1] || '',
+        integracionTexto: ((secciones[id] || '').match(/integración\s+([^·\n]+)/i) || [])[1] || '',
+        densidad: ((secciones[id] || '').match(/densidad\s+([^·\n]+)/i) || [])[1] || '',
+        negativeSpace: ((secciones[id] || '').match(/espacio negativo\s+([^·\n]+)/i) || [])[1] || '',
         cara: !/CARA DEL ESTAMPADO:/.test(secciones[id] || '')
           ? ''
           : (/CARA DEL ESTAMPADO:\s*ESPALDA/.test(secciones[id] || '') ? 'espalda' : 'frente'),
@@ -152,6 +172,14 @@
       '; jerarquía ' + (f.jerarquia || '?') + ' (peso exigido ' + (f.peso || '?') + ')' +
       (f.objeto ? '; objeto autorizado «' + f.objeto + '»' : '; sin objeto autorizado') +
       (f.tratamiento ? '; tratamiento ' + f.tratamiento : '') +
+      (f.perfil ? '; perfil estructural ' + f.perfil : '') +
+      (f.layout ? '; layout ' + f.layout : '') +
+      (f.tipografia ? '; tipografía ' + f.tipografia : '') +
+      (f.formaSimbolo ? '; forma del símbolo ' + f.formaSimbolo : '') +
+      (f.distribucionTexto ? '; arquitectura textual ' + f.distribucionTexto : '') +
+      (f.integracionTexto ? '; integración texto-símbolo ' + f.integracionTexto : '') +
+      (f.densidad ? '; densidad ' + f.densidad : '') +
+      (f.negativeSpace ? '; espacio negativo ' + f.negativeSpace : '') +
       '; audiencia ID=' + (f.audiencia || 'sin declarar') + ' / perfil=' + _ap.perfil + ' / edad=' + _ap.edad + ' / género=' + _ap.genero + ' (mockup esperado: ' + _audienceMockupExpectation(f.audiencia) + '); evaluar de forma independiente para esta columna, sin mezclar con otras fichas' +
         '; cara ' + (!f.cara
           ? 'sin declaración (producto sin caras: no exijas vistas traseras ni espaldas de persona)'
@@ -169,8 +197,9 @@
     o += '- fondo_ok: false si hay cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas o escenas de fondo DENTRO del arte de cada diseño (en recuadros de ambiente de mockup, el ambiente es normal).\n';
     o += '- espalda_ok: false si una columna con cara frente muestra espalda de persona o prenda, o una columna con cara espalda carece de vista de espalda.\n';
     o += '- audiencia_ok: false si el mockup de la columna no representa la audiencia asignada (edad/género/talla). Infantil = modelo infantil con talla infantil (un modelo adulto genérico invalida); femenino = mujer con corte y talla femeninos; masculino = hombre con corte y talla masculinos; unisex/amplia = modelo acorde al perfil sin forzar género. Evalúa cada columna de forma independiente según su audiencia; no traslades restricciones de una ficha a otra. Si no hay evidencia visual suficiente para verificar, marca audiencia_ok como null (INDETERMINADO) en lugar de true.\n';
+    o += '- diversidad_visual: compara ENTRE SÍ las tres zonas de arte impreso, no los modelos, prendas ni fondos del mockup. Evalúa silueta exterior, encuadre/escala, distribución de masas, foco visual, espacio negativo y relación texto-símbolo. Cambiar solo color, textura o estilo no cuenta como diferencia estructural. Marca SIMILARES si dos o más artes parecen la misma plantilla, emblema o composición recoloreada; DIFERENCIADAS solo si las diferencias se perciben a primera vista; INDETERMINADO si el tamaño/resolución/recorte no permite compararlas. No inventes diferencias que no puedas observar.\n';
     o += 'FORMATO EXACTO:\n';
-    o += '{"fichas":[{"ficha":"01A","estilo_asignado":"X","estilo_detectado":"X o descripcion breve","estilo_ok":true,"jerarquia_medida":"80% texto / 20% simbolo","jerarquia_ok":true,"objetos_inventados":[],"textos_inventados":[],"fondo_ok":true,"espalda_ok":true,"audiencia_ok":true,"audiencia_detectada":"descripcion breve del modelo visto","modelo_mockup":"infantil/femenino/masculino/unisex","nota_audiencia":"una frase","nota":"una frase"}],"estilos_correctos":3,"resumen":"frase corta","avisos_generales":[]}';
+    o += '{"fichas":[{"ficha":"01A","estilo_asignado":"X","estilo_detectado":"X o descripcion breve","estilo_ok":true,"jerarquia_medida":"80% texto / 20% simbolo","jerarquia_ok":true,"objetos_inventados":[],"textos_inventados":[],"fondo_ok":true,"espalda_ok":true,"audiencia_ok":true,"audiencia_detectada":"descripcion breve del modelo visto","modelo_mockup":"infantil/femenino/masculino/unisex","nota_audiencia":"una frase","nota":"una frase"}],"diversidad_visual":{"estado":"DIFERENCIADAS|SIMILARES|INDETERMINADO","pares":[{"par":"01A-01B","similitud":"BAJA|MEDIA|ALTA|INDETERMINADA","coincidencias_visuales":[],"diferencias_visuales":[],"nota":"una frase"},{"par":"01A-01C","similitud":"BAJA|MEDIA|ALTA|INDETERMINADA","coincidencias_visuales":[],"diferencias_visuales":[],"nota":"una frase"},{"par":"01B-01C","similitud":"BAJA|MEDIA|ALTA|INDETERMINADA","coincidencias_visuales":[],"diferencias_visuales":[],"nota":"una frase"}],"resumen":"una frase"},"estilos_correctos":3,"resumen":"frase corta","avisos_generales":[]}';
     return o;
     }
 
@@ -243,6 +272,20 @@
       return;
     }
     var html = '<div><b>AVISOS (no bloquean copiar ni regenerar):</b> ' + esc(v.resumen || '') + '</div>';
+    var dv = v.diversidad_visual;
+    if (dv && dv.estado) {
+      var estado = String(dv.estado).toUpperCase();
+      var estadoIcon = estado === 'DIFERENCIADAS' ? good() : (estado === 'SIMILARES' ? bad() : warn());
+      html += '<div style="border:1px solid rgba(148,163,184,.35);border-radius:10px;padding:10px;margin-top:8px;"><b>Diferenciación visual A/B/C:</b> ' + estadoIcon + esc(estado) + (dv.resumen ? ' — ' + esc(dv.resumen) : '');
+      (Array.isArray(dv.pares) ? dv.pares : []).forEach(function (p) {
+        html += '<div style="margin-top:6px;"><b>' + esc(p.par || 'Par') + '</b> · similitud ' + esc(p.similitud || 'sin dato');
+        if (Array.isArray(p.coincidencias_visuales) && p.coincidencias_visuales.length) html += '<br>Coinciden: ' + p.coincidencias_visuales.map(esc).join(', ');
+        if (Array.isArray(p.diferencias_visuales) && p.diferencias_visuales.length) html += '<br>Difieren: ' + p.diferencias_visuales.map(esc).join(', ');
+        if (p.nota) html += '<br>' + esc(p.nota);
+        html += '</div>';
+      });
+      html += '</div>';
+    }
     v.fichas.forEach(function (f) {
       var lineas = [];
       lineas.push((f.estilo_ok ? good() : bad()) + ' estilo ' + esc(f.estilo_asignado || '?') + (f.estilo_ok ? '' : ' — detectado «' + esc(f.estilo_detectado || '?') + '»'));
