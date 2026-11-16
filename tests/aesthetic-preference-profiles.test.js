@@ -73,6 +73,16 @@ ok(/aesthetic\.stylePreferred/.test(motorSource) && /aestheticAvoid/.test(motorS
 ok(/aesthetic\.hierarchyPref/.test(motorSource), 'las preferencias estéticas deben influir en la puntuación de jerarquía');
 ok(/aestheticProfile\.layoutPref/.test(motorSource), 'las preferencias estéticas deben influir en layouts compatibles');
 ok(/PREFERENCIA ESTÉTICA INDEPENDIENTE/.test(motorSource), 'el prompt debe declarar la preferencia estética');
+ok(/function loadAestheticPreference\(/.test(motorSource), 'el perfil estético debe poder recuperarse de memoria');
+ok(/function setAestheticPreference\(/.test(motorSource), 'el perfil estético debe guardarse en memoria');
+ok(/switchVisualIdentityContext\(syncAestheticPreferenceContext\)/.test(motorSource), 'la preferencia debe cambiar con el contexto de mercado/producto');
+
+setAestheticPreference('minimal_cotidiano', 'global_en', 'CAMISETA SOFT');
+ok(loadAestheticPreference('global_en', 'CAMISETA SOFT') === 'minimal_cotidiano', 'debe persistir la preferencia para Global English');
+ok(loadAestheticPreference('gospel_es', 'CAMISETA SOFT') === 'auto', 'Gospel ES no debe heredar la preferencia de Global English');
+setAestheticPreference('heritage_atemporal', 'gospel_es', 'CAMISETA SOFT');
+ok(loadAestheticPreference('gospel_es', 'CAMISETA SOFT') === 'heritage_atemporal', 'debe persistir la preferencia propia de Gospel ES');
+ok(loadAestheticPreference('global_en', 'CAMISETA SOFT') === 'minimal_cotidiano', 'guardar Gospel ES no debe alterar Global English');
 
 MOTOR_STATE.market = 'global_en';
 MOTOR_STATE.region = 'global';
