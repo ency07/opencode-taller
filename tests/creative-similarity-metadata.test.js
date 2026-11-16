@@ -44,6 +44,13 @@ assert.ok(repeatedVisualDifferentCopy.axes.composition === 1);
 assert.ok(repeatedVisualDifferentCopy.axes.palette === 1);
 assert.strictEqual(repeatedVisualDifferentCopy.alert, true, 'misma estructura/símbolo/paleta con copy distinto debe generar alerta');
 
+const sameLayoutDifferentArchitecture = similarity.compareCreativeMetadataSimilarity(
+  Object.assign({}, same, { layout: 'Emblema circular', composition: 'Emblema circular / texto debajo / balanceado' }),
+  Object.assign({}, same, { layout: 'Emblema circular', composition: 'Emblema circular / texto arriba / objeto dominante' })
+);
+assert.ok(sameLayoutDifferentArchitecture.axes.composition < 1,
+  'los registros modernos deben conservar diferencias de arquitectura aunque compartan layout');
+
 const noData = similarity.compareCreativeMetadataSimilarity({}, {});
 assert.strictEqual(noData.overall, 0);
 assert.strictEqual(noData.alert, false);
