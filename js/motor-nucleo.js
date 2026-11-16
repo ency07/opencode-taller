@@ -1627,10 +1627,20 @@ function _rankCompatibleMotifs(pools, concept) {
        idea que el motivo representa, sin sustituir la escena por una anécdota. */
     if (conceptAxes.length && !semanticMatches.length) return null;
     if (!overlap.length && !semanticMatches.length) return null;
-    // Un solo término compartido no demuestra equivalencia conceptual.
-    // Evita que «fidelidad» por sí sola sustituya «la fidelidad de Dios permanece»
-    // por una frase o motivo de banco que solo comparte esa palabra.
-    if (!semanticMatches.length && overlap.length < 2) return null;
+    // Los conceptos abstractos no se deben materializar por compartir una
+    // sola palabra con una frase del banco. En cambio, un concepto de escena
+    // concreta («motero en ruta...») sí puede usar un motivo de ruta que comparta
+    // ese término. La regla distingue semántica abstracta de vocabulario visual.
+    const ABSTRACT_CONCEPT_TERMS = new Set([
+      'fidelidad', 'faithfulness', 'fe', 'faith', 'gracia', 'grace', 'amor', 'love',
+      'esperanza', 'hope', 'paz', 'peace', 'gozo', 'joy', 'misericordia', 'mercy',
+      'confianza', 'trust', 'perseverancia', 'perseverance', 'promesa', 'promise',
+      'salvacion', 'salvation', 'redencion', 'redemption', 'proposito', 'purpose',
+      'identidad', 'identity', 'bendicion', 'blessing', 'adoracion', 'worship'
+    ]);
+    const abstractSingleWordMatch = overlap.length < 2
+      && overlap.some(function (token) { return ABSTRACT_CONCEPT_TERMS.has(token); });
+    if (abstractSingleWordMatch || (!semanticMatches.length && overlap.length < 2 && tokens.length < 3)) return null;
     const lexicalScore = overlap.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0);
     return { label: label, score: semanticMatches.length * 100 + lexicalScore, matches: semanticMatches.length + overlap.length };
   }).filter(Boolean).sort(function (a, b) { return b.score - a.score || b.matches - a.matches; });
