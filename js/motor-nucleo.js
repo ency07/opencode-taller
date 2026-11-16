@@ -4571,6 +4571,19 @@ function renderGates(result) {
   html += '<span class="badge ' + (m.familias.length >= 3 ? 'good' : 'warn') + '">Paletas distintas</span>';
   html += _qaBadgeHtml(null);
 
+  const similarityAudit = result.similarityAudit || (LAST_RESULT && LAST_RESULT.similarityAudit);
+  if (similarityAudit && similarityAudit.available && similarityAudit.alerts && similarityAudit.alerts.length) {
+    const top = similarityAudit.alerts[0];
+    const axes = Object.keys(top.similarity.axes || {}).filter(function (axis) {
+      return top.similarity.axes[axis] !== null && top.similarity.axes[axis] >= 0.7;
+    });
+    html += '<span class="badge warn" title="Comparación de metadatos del historial propio; no analiza imágenes finales. Ejes coincidentes: ' + escHtml(axes.join(', ')) + '. No es un rechazo automático.">Similitud interna: ' + similarityAudit.alerts.length + ' alerta(s) · ' + Math.round(top.similarity.overall * 100) + '%</span>';
+  } else if (similarityAudit && similarityAudit.available && similarityAudit.compared > 0) {
+    html += '<span class="badge" title="Sin alerta de similitud en los metadatos comparados. No equivale a una auditoría de imágenes.">Similitud interna: sin alerta</span>';
+  } else if (similarityAudit && similarityAudit.available) {
+    html += '<span class="badge" title="Aún no hay fichas históricas comparables en este mercado y producto.">Historial propio: sin comparables</span>';
+  }
+
   gateEl.innerHTML = html;
 }
 
