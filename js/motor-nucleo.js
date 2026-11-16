@@ -3849,9 +3849,9 @@ function formatPrompt(result) {
       return /Falta el concepto principal/i.test(String(message || ''));
     });
     if (missingConcept) {
-      o += 'AVISO CONCEPTO AUSENTE: ' + result.objectConflicts.join(' ') + ' El motivo visual queda sin resolver. No selecciones objetos del banco, no inventes un símbolo y no presentes A/B/C como artes definitivos hasta que se complete el concepto.\\n';
+      o += 'AVISO CONCEPTO AUSENTE: ' + result.objectConflicts.join(' ') + ' El motivo visual queda sin resolver. No selecciones objetos del banco, no inventes un símbolo y no presentes A/B/C como artes definitivos hasta que se complete el concepto.\n';
     } else {
-      o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\\n';
+      o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
     }
   }
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
