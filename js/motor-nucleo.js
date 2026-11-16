@@ -1710,59 +1710,26 @@ function _planExploreMotifs(familyObjs, objectPool, anchor, userConcept, userMes
 function _resolveContactIdentity(objectPool) {
   const concept = String(MOTOR_STATE.concept || '').trim();
   const message = String(MOTOR_STATE.message || '').trim();
-  // La identidad primaria debe venir del concepto del usuario.
-  // Si no hay un único objeto, el concepto completo funciona como ancla semántica:
-  // el motor puede crear una escena o metáfora coherente sin elegir un objeto al azar.
-  const normalize = function (value) {
-    return (typeof _normalizeTxt === 'function' ? _normalizeTxt(String(value || '')) : String(value || '').toLowerCase())
-      .replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
-  };
-  const source = normalize(concept);
-  const stop = new Set(['que','con','para','desde','hacia','sobre','entre','una','uno','unos','unas','los','las','el','la','de','del','en','por','como','sin','the','and','with','for','from','into','over','under','that','which','holding','sosteniendo','representa','lugares','turisticos','tourist','places','profundo','deep']);
-  const tokens = source.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); });
   const pool = Array.isArray(objectPool) ? objectPool : [];
-  const scored = pool.map(function (item) {
-    const label = String(item || '').trim();
-    const normLabel = normalize(label);
-    const labelTokens = [...new Set(normLabel.split(/\s+/).filter(function (t) { return t.length >= 3 && !stop.has(t); }))];
-    const overlap = labelTokens.filter(function (t) { return tokens.indexOf(t) !== -1; });
-    const distinctive = overlap.filter(function (t) { return t.length >= 5; });
-    return {
-      label: label,
-      distinctive: distinctive,
-      score: distinctive.reduce(function (sum, t) { return sum + Math.min(t.length, 10); }, 0)
-    };
-  }).filter(function (x) { return x.score > 0; })
-    .sort(function (a, b) { return b.score - a.score || b.distinctive.length - a.distinctive.length; });
 
-  let symbol = '';
-  let resolvedFromBank = false;
-  if (scored.length && scored[0].distinctive.length) {
-    const first = scored[0], second = scored[1];
-    // Usar un objeto del banco solo si destaca inequívocamente.
-    if (!second || first.score > second.score) {
-      symbol = first.label;
-      resolvedFromBank = true;
-    }
-  }
+  // Solo seleccionar un objeto del banco si el usuario lo nombró literalmente
+  // dentro del concepto. Una palabra abstracta compartida (p. ej. «fidelidad»)
+  // no autoriza a sustituir la idea por un motivo distinto del banco.
+  const namedObject = concept && typeof _userNamedObject === 'function'
+    ? _userNamedObject(concept, pool)
+    : '';
+  const symbol = namedObject || concept;
+  const resolvedFromBank = !!namedObject;
 
-  // Los conceptos largos, escenas y relaciones entre varios elementos son válidos.
-  // En vez de bloquear o inventar un símbolo, conservar la frase completa como ancla.
-  const hasConcept = !!concept;
-  if (!symbol && hasConcept) symbol = concept;
-
-  const protective = /\b(proteg\w*|protect\w*|guard\w*|defend\w*|cuid\w*|care\w*|safe\w*)\b/i.test(concept + ' ' + message);
-  const claw = /\b(garra|claw|pata|paw)\b/i.test(source);
+  const protective = /\\b(proteg\\w*|protect\\w*|guard\\w*|defend\\w*|cuid\\w*|care\\w*|safe\\w*)\\b/i.test(concept + ' ' + message);
   return {
-    ok: hasConcept,
-    reason: hasConcept ? '' : 'Escribe el concepto principal para generar A/B/C. Si no existe un único objeto, describe la escena o idea completa.',
+    ok: !!concept,
+    reason: concept ? '' : 'Escribe el concepto principal para generar A/B/C. Si no existe un único objeto, describe la escena o idea completa.',
     symbol: symbol,
     identityMode: resolvedFromBank ? 'symbol' : 'concept',
     guiaSimbolo: resolvedFromBank
-      ? (claw
-        ? 'Mantén reconocible la garra o pata animal completa como símbolo de protección; no la conviertas en arañazo o ataque ni inventes una especie.'
-        : 'Representa el símbolo identificado en el concepto sin sustituirlo por otro objeto no solicitado.')
-      : 'Usa el concepto completo como ancla semántica. Si describe una escena, lugar, relación o conjunto de elementos, representa esa idea de forma coherente; no la reduzcas a un objeto arbitrario ni inventes un símbolo dominante.',
+      ? 'Representa el objeto nombrado literalmente en el concepto; no lo sustituyas por otro objeto.'
+      : 'Conserva el concepto completo como ancla semántica. No lo reformules como otra frase, no lo reduzcas a una metáfora del banco y no inventes un símbolo dominante ajeno a la idea del usuario.',
     funcionSimbolica: protective ? 'Protección y cuidado' : 'Expresión visual del concepto indicado',
     intencionEmocional: protective ? 'Seguridad y cuidado' : 'Interpretación coherente con el concepto indicado'
   };
