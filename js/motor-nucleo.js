@@ -4996,22 +4996,22 @@ window.renderColorAudit = renderColorAudit;
 
     if (product && !product.__podPrintMethodBound) {
       product.addEventListener('change', function () {
-        // Guardar la identidad en el contexto anterior antes de que syncContext
-        // cambie MOTOR_STATE; después cargar solo la identidad del nuevo producto.
+        // Capture phase: persistir el contexto anterior antes de cualquier listener
+        // de burbuja que pueda sincronizar MOTOR_STATE con el producto nuevo.
         switchVisualIdentityContext(syncContext);
         refreshPrintMethodSelector();
-      });
+      }, true);
       product.__podPrintMethodBound = true;
     }
     refreshPrintMethodSelector();
 
     if (market && !market.__podAudienceRefreshBound) {
       market.addEventListener('change', function () {
-        // El select ya contiene el nuevo mercado, pero MOTOR_STATE aún conserva
-        // el anterior. Persistir primero y luego recargar la identidad del destino.
+        // Capture phase: guardar la identidad con el contexto previo antes de que
+        // listeners de burbuja (p. ej. cascadeUpdate) actualicen MOTOR_STATE.
         switchVisualIdentityContext(syncContext);
         refreshContextSelectors(true);
-      });
+      }, true);
       market.__podAudienceRefreshBound = true;
     }
     if (region && !region.__podAudienceRefreshBound) {
