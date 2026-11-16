@@ -199,7 +199,7 @@ ok(counter['Vector Flat / Plano vectorial'] > 0, 'recordStyleUse no registra uso
 const motorSource = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
 ok(/MOTOR_STATE\._rerollNonce\s*=\s*\(Number\(MOTOR_STATE\._rerollNonce\)\s*\|\|\s*0\)\s*\+\s*1/.test(motorSource), 'el dado debe incrementar la semilla de regeneración');
 ok(/MOTOR_STATE\.message, MOTOR_STATE\._rerollNonce \|\| 0, k/.test(motorSource), 'la audiencia Auto por tarjeta debe variar al regenerar');
-ok(/MOTOR_STATE\.groupMode, MOTOR_STATE\._rerollNonce \|\| 0\]\.join\('\|'\)/.test(motorSource), 'la selección automática de estilos debe variar al regenerar');
+ok(/MOTOR_STATE\.groupMode, MOTOR_STATE\.aestheticPreference \|\| 'auto', MOTOR_STATE\._rerollNonce \|\| 0\]\.join\('\|'\)/.test(motorSource), 'la selección automática de estilos debe variar por preferencia estética y al regenerar');
 
 const passed = failures.length === 0;
 console.log((passed ? 'PASS' : 'FAIL') + '  style-coverage  (' + checks + ' aserciones, ' + failures.length + ' fallos)');
