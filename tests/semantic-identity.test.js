@@ -31,8 +31,25 @@ ok(/camión de bomberos/i.test(unrelatedConcept), 'debe conservar el concepto au
 MOTOR_STATE.concept = 'astronauta en el espacio profundo sosteniendo una roca';
 MOTOR_STATE.message = 'A los que aman a Dios, todas las cosas les ayudan a bien';
 const clearMatch = _resolveContactIdentity(['astronauta con casco espacial','roca lunar agrietada']);
-ok(clearMatch.ok, 'debe identificar un objeto distintivo incluido en un concepto largo');
-ok(/astronauta/i.test(clearMatch.symbol), 'debe conservar el símbolo identificado y no cambiarlo por otro');
+ok(clearMatch.ok, 'debe conservar un concepto largo como ancla válida');
+ok(clearMatch.symbol === MOTOR_STATE.concept, 'si el banco solo comparte una palabra del concepto, debe conservar el concepto completo en vez de elegir un motivo');
+ok(clearMatch.identityMode === 'concept', 'un concepto compuesto no debe etiquetarse como símbolo del banco');
+
+MOTOR_STATE.concept = 'La fidelidad de Dios permanece.';
+const abstractIdentity = _resolveContactIdentity([
+  'fidelidad que no se demuestra, se cumple',
+  'promesa que se cumple sin que nadie la recuerde',
+  'ancla que no toca el fondo pero sostiene'
+]);
+ok(abstractIdentity.ok, 'un concepto abstracto de fe debe ser válido');
+ok(abstractIdentity.symbol === MOTOR_STATE.concept, 'la fidelidad que permanece no debe sustituirse por una frase de cumplimiento ni por un objeto del banco');
+ok(abstractIdentity.identityMode === 'concept', 'el concepto abstracto debe conservar identidad de concepto');
+ok(abstractIdentity.guiaSimbolo.indexOf('No lo reformules') !== -1, 'la guía debe impedir reformular el concepto abstracto');
+
+MOTOR_STATE.concept = 'Cruz de madera con ramas';
+const namedIdentity = _resolveContactIdentity(['Cruz de madera', 'paloma blanca']);
+ok(namedIdentity.symbol === 'Cruz de madera', 'un objeto nombrado literalmente puede resolverse desde el banco');
+ok(namedIdentity.identityMode === 'symbol', 'el objeto nombrado literalmente se reconoce como símbolo');
 
 MOTOR_STATE.concept = 'Cruz';
 const explicit = _resolveContactIdentity([]);
