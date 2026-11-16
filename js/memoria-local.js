@@ -115,14 +115,18 @@
 
   const BRAND_SCOPED_FAMILIES = { locks: true, patterns: true, visualIdentity: true, creativeTerritory: true, decisionMode: true, aestheticPreference: true, styleRecentSets: true };
 
-  function _brandScopeForMarket(market) {
-    let selected = 'auto';
-    try { selected = String((typeof MOTOR_STATE !== 'undefined' && MOTOR_STATE.brand) || 'auto').trim(); } catch (e) {}
-    if (selected === 'BERESHITH_CO' || selected === 'CrossLampCo') return selected;
+  function _defaultBrandScopeForMarket(market) {
     const marketId = String(market || (typeof MOTOR_STATE !== 'undefined' && MOTOR_STATE.market) || '').split('|')[0].trim();
     if (['colombia', 'global_es', 'gospel_es', 'latam', 'spain', 'diaspora_col'].indexOf(marketId) !== -1) return 'BERESHITH_CO';
     if (['global_en', 'gospel_en', 'anglo'].indexOf(marketId) !== -1) return 'CrossLampCo';
     return 'UNBRANDED';
+  }
+
+  function _brandScopeForMarket(market) {
+    let selected = 'auto';
+    try { selected = String((typeof MOTOR_STATE !== 'undefined' && MOTOR_STATE.brand) || 'auto').trim(); } catch (e) {}
+    if (selected === 'BERESHITH_CO' || selected === 'CrossLampCo') return selected;
+    return _defaultBrandScopeForMarket(market);
   }
 
   function memKey(parts) {
@@ -147,7 +151,7 @@
       if (!BRAND_SCOPED_FAMILIES[parts[0]] || parts.length < 4) return current;
       const brand = parts[1];
       const market = parts[2];
-      if (brand !== _brandScopeForMarket(market)) return current;
+      if (brand !== _defaultBrandScopeForMarket(market)) return current;
       const legacyKey = prefix + [parts[0]].concat(parts.slice(2)).join('|');
       const legacy = POD_LS.getItem(legacyKey);
       if (legacy === null || legacy === undefined) return current;
