@@ -100,7 +100,7 @@
     if (!a || !b) return null;
     if (a === b) return 1;
     const aa = new Set(a.split(/\s+/).filter(Boolean));
-    const bb = new Set(b.split(/\\s+/).filter(Boolean));
+    const bb = new Set(b.split(/\s+/).filter(Boolean));
     const intersection = Array.from(aa).filter(function (token) { return bb.has(token); }).length;
     const union = new Set(Array.from(aa).concat(Array.from(bb))).size;
     return union ? intersection / union : 0;
