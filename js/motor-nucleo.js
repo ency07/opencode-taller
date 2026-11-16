@@ -5042,6 +5042,8 @@ window.renderColorAudit = renderColorAudit;
     const product = document.getElementById('product');
     const aestheticPreference = document.getElementById('aestheticPreference');
 
+    // Leer el contexto real del formulario antes de recuperar una preferencia guardada.
+    syncContext();
     if (aestheticPreference) {
       if (typeof getAestheticPreferenceOptions === 'function') {
         aestheticPreference.innerHTML = getAestheticPreferenceOptions();
