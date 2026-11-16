@@ -166,7 +166,7 @@
 
   function getJSON(key, fallback) {
     try {
-      const raw = POD_LS.getItem(key);
+      const raw = getRaw(key);
       if (!raw) return fallback;
       const value = JSON.parse(raw);
       // Un tombstone debe comportarse como dato ausente para todos los loaders,

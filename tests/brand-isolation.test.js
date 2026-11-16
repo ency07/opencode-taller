@@ -37,6 +37,11 @@ recordPattern({ objeto: 'ancla', formaSimbolo: 'ancla vertical' }, memPatternMar
 
 MOTOR_STATE.brand = 'CrossLampCo';
 assert.equal(_activeBrandId(), 'CrossLampCo');
+const spanishResultContext = _motorResultContext();
+assert.equal(spanishResultContext.brand, 'CrossLampCo');
+MOTOR_STATE.brand = 'BERESHITH_CO';
+assert.equal(_lastResultMatchesContext({ context: spanishResultContext }), false);
+MOTOR_STATE.brand = 'CrossLampCo';
 assert.notEqual(memKey(['locks', memLocksMarket(), MOTOR_STATE.product]), spanishLockKey);
 assert.equal(loadLocks(memLocksMarket(), MOTOR_STATE.product).estilo.A, 'Auto');
 assert.equal(loadVisualIdentity(), '');
