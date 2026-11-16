@@ -175,8 +175,13 @@ ok(JSON.stringify(prevSet) === overlayPrevSnapshot, '7. el overlay no modifica L
 
 /* generateSet solo escribe LAST_RESULT tras el loop de validación. */
 var genSrc = fs.readFileSync(path.join(JS, 'motor-nucleo.js'), 'utf8');
-ok(/LAST_RESULT = \{ set: best, score: bestScore/.test(genSrc), '7. LAST_RESULT se escribe solo tras la validación');
-ok(/if \(!best\)[\s\S]{0,400}?return null;/.test(genSrc), '7. sin candidato válido no se sobrescribe LAST_RESULT');
+var noCandidateGuard = genSrc.indexOf('if (!best)');
+var noCandidateReturn = noCandidateGuard >= 0 ? genSrc.indexOf('return null;', noCandidateGuard) : -1;
+var resultAssignment = genSrc.indexOf('LAST_RESULT = {', noCandidateGuard >= 0 ? noCandidateGuard : 0);
+ok(noCandidateGuard >= 0 && noCandidateReturn > noCandidateGuard && resultAssignment > noCandidateReturn,
+  '7. LAST_RESULT se escribe después de validar que existe un candidato');
+ok(noCandidateGuard >= 0 && noCandidateReturn > noCandidateGuard,
+  '7. sin candidato válido la generación retorna null antes de guardar LAST_RESULT');
 
 var gen = generateSet();
 ok(gen !== null, '7. la generación produjo un set');
