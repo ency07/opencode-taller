@@ -1431,7 +1431,7 @@ const AESTHETIC_PREFERENCE_PROFILES = {
     label: "Experimental / alternativo",
     stylePreferred: ["Y2K / Cyber", "Vaporwave", "Photomontage / Dada", "Neoexpresionismo", "Pixel / 8-bit", "Collage Cut-Paper"],
     styleSecondary: ["Constructivismo", "Neón punk", "Anime / Manga", "Risograph"],
-    styleAvoid: ["Conservador visual", "Kids Storybook", "Heritage / Atemporal"],
+    styleAvoid: ["Minimal Modern", "Kids Storybook", "Vintage Desgastado"],
     hierarchyPref: ["OBJETO_DOMINANTE", "SOLO_TEXTO", "BALANCEADO"],
     layoutPref: ["Diagonal ascendente", "Split 2/3-1/3", "Órbita radial", "Tríptico de bandas"],
     densityPref: ["Balanced", "Heavy"],
