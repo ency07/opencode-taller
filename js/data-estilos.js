@@ -1,7 +1,7 @@
 ﻿'use strict';
 
 /* ============================================================
-   DATA ESTILOS — 49 estilos y recursos visuales POD
+   DATA ESTILOS — 57 estilos visuales + 12 tratamientos/recursos de producción POD (69 entradas)
    Paletas, tipografías, tratamientos, pools de dirección.
    Vocabulario 100% comercial. Sin referencias religiosas.
    ============================================================ */
