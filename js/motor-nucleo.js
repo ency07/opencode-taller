@@ -3442,6 +3442,41 @@ function setDecisionMode(value) {
   return v;
 }
 
+/* Preferencia estética independiente, persistida por mercado y producto.
+   Los mercados de Cross & Lamp Co. y BERESHITH CO. ya usan claves separadas. */
+function _normalizeAestheticPreference(value) {
+  const id = String(value || 'auto').trim();
+  if (id === 'auto') return 'auto';
+  return typeof getAestheticPreferenceProfile === 'function' && getAestheticPreferenceProfile(id) ? id : 'auto';
+}
+function loadAestheticPreference(market, product) {
+  try {
+    const key = _memKey(['aestheticPreference', market || MOTOR_STATE.market, product || MOTOR_STATE.product]);
+    const stored = _memGetJSON(key, null);
+    const raw = stored && typeof stored === 'object' ? stored.value : stored;
+    return _normalizeAestheticPreference(raw);
+  } catch (e) { return 'auto'; }
+}
+function setAestheticPreference(value, market, product) {
+  const id = _normalizeAestheticPreference(value);
+  MOTOR_STATE.aestheticPreference = id;
+  try {
+    const key = _memKey(['aestheticPreference', market || MOTOR_STATE.market, product || MOTOR_STATE.product]);
+    _memSetJSON(key, { value: id, updatedAt: new Date().toISOString() });
+  } catch (e) {}
+  return id;
+}
+function syncAestheticPreferenceContext() {
+  const previousMarket = MOTOR_STATE.market;
+  const previousProduct = MOTOR_STATE.product;
+  setAestheticPreference(MOTOR_STATE.aestheticPreference, previousMarket, previousProduct);
+  syncContext();
+  MOTOR_STATE.aestheticPreference = loadAestheticPreference(MOTOR_STATE.market, MOTOR_STATE.product);
+  const select = document.getElementById('aestheticPreference');
+  if (select) select.value = MOTOR_STATE.aestheticPreference;
+  return MOTOR_STATE.aestheticPreference;
+}
+
 /* FIX 3D — Estados de lock diferenciados:
    - 'PRESERVE': conserva el valor de LAST_RESULT (solo en modo manual).
    - 'Auto':     el motor vuelve a decidir.
