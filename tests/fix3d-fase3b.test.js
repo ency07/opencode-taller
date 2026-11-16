@@ -7,7 +7,7 @@
 const _originalConsoleLog = console.log;
 console.log = function () {
   const first = arguments.length ? String(arguments[0]) : '';
-  if (/^(DBG|\\[DBG)/.test(first)) return;
+  if (first.indexOf('DBG') === 0 || first.indexOf('[DBG') === 0) return;
   return _originalConsoleLog.apply(console, arguments);
 };
 const fs = require('fs');
