@@ -74,10 +74,16 @@ MOTOR_STATE.brand = 'CrossLampCo';
 assert.equal(_creativeTerritoryCompatibleWithMarket('CHRISTIAN_HERITAGE'), 'auto');
 MOTOR_STATE.brand = 'BERESHITH_CO';
 assert.equal(_creativeTerritoryCompatibleWithMarket('CHRISTIAN_HERITAGE'), 'CHRISTIAN_HERITAGE');
+MOTOR_STATE.market = 'christian';
+MOTOR_STATE.brand = 'auto';
+assert.equal(_activeBrandId(), 'UNBRANDED');
+assert.equal(_creativeTerritoryCompatibleWithMarket('SACRED_EDITORIAL'), 'SACRED_EDITORIAL');
 
 // Legacy unbranded data is migrated only to its market's deterministic default brand.
+MOTOR_STATE.market = 'global_es';
+MOTOR_STATE.product = 'HOODIE';
 MOTOR_STATE.brand = 'auto';
-const scoped = memKey(['visualIdentity', 'gospel_es', 'CAMISETA SOFT']);
+const scoped = memKey(['visualIdentity', 'global_es', 'HOODIE']);
 const legacy = scoped.replace('|BERESHITH_CO|', '|');
 store[legacy] = JSON.stringify({ value: 'legacy BERESHITH identity' });
 assert.equal(loadVisualIdentity(), 'legacy BERESHITH identity');
