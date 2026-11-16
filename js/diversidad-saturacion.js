@@ -79,6 +79,72 @@
     6: ['HEAVY', 'SOFT', 'MODERN', 'HEAVY', 'SOFT', 'MODERN']
   };
 
+  /* Comparación de similitud de metadatos creativos.
+     No inspecciona imágenes ni certifica originalidad visual. */
+  const SIMILARITY_WEIGHTS = {
+    concept: 0.20, phrase: 0.15, symbol: 0.15, silhouette: 0.10,
+    composition: 0.15, palette: 0.10, treatment: 0.10, typography: 0.05
+  };
+
+  function normalizeComparableText(value) {
+    return String(value == null ? '' : value)
+      .toLowerCase()
+      .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  function tokenSimilarity(left, right) {
+    const a = normalizeComparableText(left);
+    const b = normalizeComparableText(right);
+    if (!a || !b) return null;
+    if (a === b) return 1;
+    const aa = new Set(a.split(/\\s+/).filter(Boolean));
+    const bb = new Set(b.split(/\\s+/).filter(Boolean));
+    const intersection = Array.from(aa).filter(function (token) { return bb.has(token); }).length;
+    const union = new Set(Array.from(aa).concat(Array.from(bb))).size;
+    return union ? intersection / union : 0;
+  }
+
+  function compareCreativeMetadataSimilarity(left, right, threshold) {
+    left = left || {};
+    right = right || {};
+    const axes = {
+      concept: tokenSimilarity(left.concept, right.concept),
+      phrase: tokenSimilarity(left.message, right.message),
+      symbol: tokenSimilarity(left.symbol, right.symbol),
+      silhouette: tokenSimilarity(left.silhouette, right.silhouette),
+      composition: tokenSimilarity(left.composition, right.composition),
+      palette: tokenSimilarity(left.palette, right.palette),
+      treatment: tokenSimilarity([left.style, left.treatment].filter(Boolean).join(' '), [right.style, right.treatment].filter(Boolean).join(' ')),
+      typography: tokenSimilarity(left.typography, right.typography)
+    };
+    let weighted = 0;
+    let totalWeight = 0;
+    let matchedAxes = 0;
+    Object.keys(SIMILARITY_WEIGHTS).forEach(function (axis) {
+      const score = axes[axis];
+      if (score === null) return;
+      const weight = SIMILARITY_WEIGHTS[axis];
+      weighted += score * weight;
+      totalWeight += weight;
+      if (score >= 0.7) matchedAxes++;
+    });
+    const overall = totalWeight ? weighted / totalWeight : 0;
+    const limit = Number.isFinite(threshold) ? threshold : 0.72;
+    const alert = overall >= limit && matchedAxes >= 3 &&
+      Math.max(axes.phrase || 0, axes.symbol || 0, axes.composition || 0) >= 0.7;
+    return {
+      basis: 'metadata_only',
+      overall: Number(overall.toFixed(4)),
+      axes: axes,
+      matchedAxes: matchedAxes,
+      threshold: limit,
+      alert: alert,
+      risk: alert ? 'high' : (overall >= 0.5 ? 'medium' : 'low')
+    };
+  }
+
   const api = {
     SATURATION_THRESHOLD,
     STRUCTURAL_PROFILE_DISTRIBUTION,
@@ -91,6 +157,10 @@
     countVisualStyles,
     isVisualStyleSaturated,
     redistributeVisualStyles,
+    SIMILARITY_WEIGHTS,
+    normalizeComparableText,
+    tokenSimilarity,
+    compareCreativeMetadataSimilarity,
     /* Legacy aliases: their input axis is supplied by the caller. */
     SATURACION_UMBRAL: SATURATION_THRESHOLD,
     DISTRIBUCION_ESTILOS: STRUCTURAL_PROFILE_DISTRIBUTION,
