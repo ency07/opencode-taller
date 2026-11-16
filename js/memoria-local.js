@@ -1386,7 +1386,24 @@
 
     const current = {};
     listMemoryKeys().filter(_isPersonalBankMemoryKey).forEach(function (key) { current[key] = POD_LS.getItem(key); });
-    const merged = mergeMemoryObjects(current, incoming);
+
+    // La importación confirmada es una escritura explícita posterior al borrado.
+    // Marcarla en el lado entrante ANTES de fusionar evita que la barrera global
+    // convierta el snapshot importado en tombstone por no tener aún preservedKeys.
+    const mergeRemote = Object.assign({}, incoming);
+    const clearMarker = _readGlobalMemoryClear();
+    if (clearMarker) {
+      const preservedKeys = Object.assign({}, clearMarker.preservedKeys || {});
+      const clearEpoch = Date.parse(clearMarker.deletedAt || '') || 0;
+      const importVersion = new Date(Math.max(Date.now(), clearEpoch) + 1).toISOString();
+      keys.forEach(function (key) { preservedKeys[key] = importVersion; });
+      mergeRemote[GLOBAL_MEMORY_CLEAR_KEY] = JSON.stringify({
+        __podGlobalClear: true,
+        deletedAt: clearMarker.deletedAt,
+        preservedKeys: preservedKeys
+      });
+    }
+    const merged = mergeMemoryObjects(current, mergeRemote);
     const writeKeys = Object.keys(merged).filter(_isPersonalBankMemoryKey);
     const previous = {};
     writeKeys.forEach(function (key) { previous[key] = POD_LS.getItem(key); });
