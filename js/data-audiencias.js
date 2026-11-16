@@ -1307,7 +1307,184 @@ Object.assign(AUD_LAYOUT_PREF, {
   gospel_comunidad: ["Emblema circular", "Tarjeta interior", "Arco y cúpula"]
 });
 
+/* Preferencias estéticas independientes de la demografía.
+   Son sesgos suaves: nunca restringen el catálogo ni sustituyen locks manuales. */
+const AESTHETIC_PREFERENCE_PROFILES = {
+  minimal_cotidiano: {
+    label: "Minimalista cotidiano",
+    stylePreferred: ["Minimal Modern", "Line art minimalista", "Línea art de una tinta", "Vector Flat / Plano vectorial", "Blanco y negro"],
+    styleSecondary: ["Bauhaus", "Doodle a dos colores", "Hand-Drawn"],
+    styleAvoid: ["Barroco Ornamental", "Gótico Ornamental", "Papercraft 3D", "Neón punk"],
+    hierarchyPref: ["SOLO_TEXTO", "TEXTO_DOMINANTE", "BALANCEADO"],
+    layoutPref: ["Axial centrado", "Tarjeta interior", "Editorial asimétrica", "Retícula áurea"],
+    densityPref: ["Minimal", "Balanced"],
+    treatmentPref: ["SOFT", "MODERN"],
+    typographyPref: ["Sans humanista limpia", "Serif moderna alto contraste", "Mono técnica"],
+    intensity: "baja-media", complexity: "baja",
+    contexts: ["uso diario", "regalo discreto", "ropa casual"]
+  },
+  clasico_tradicional: {
+    label: "Clásico tradicional",
+    stylePreferred: ["Grabado / Linóleo", "Vintage Desgastado", "Folk Popular", "Barroco Ornamental", "Gótico Ornamental", "Art déco"],
+    styleSecondary: ["Ukiyo-e / Woodblock", "Tattoo Old School", "Pintura al óleo"],
+    styleAvoid: ["Y2K / Cyber", "Vaporwave", "Neón punk"],
+    hierarchyPref: ["BALANCEADO", "OBJETO_DOMINANTE", "TEXTO_DOMINANTE"],
+    layoutPref: ["Emblema circular", "Axial centrado", "Arco y cúpula", "Columna apilada"],
+    densityPref: ["Balanced", "Heavy"],
+    treatmentPref: ["HEAVY", "SOFT"],
+    typographyPref: ["Serif clásica titulada", "Slab pesada de oficio", "Gótica blackletter"],
+    intensity: "media", complexity: "media-alta",
+    contexts: ["tradición", "identidad cultural", "regalo con significado"]
+  },
+  conservador_visual: {
+    label: "Conservador visual",
+    stylePreferred: ["Minimal Modern", "Vintage Desgastado", "Grabado / Linóleo", "Línea art de una tinta", "Blanco y negro"],
+    styleSecondary: ["Bauhaus", "Folk Popular", "Art déco"],
+    styleAvoid: ["Neón punk", "Y2K / Cyber", "Vaporwave", "Grunge / DIY"],
+    hierarchyPref: ["TEXTO_DOMINANTE", "BALANCEADO", "OBJETO_DOMINANTE"],
+    layoutPref: ["Axial centrado", "Tarjeta interior", "Emblema circular", "Editorial asimétrica"],
+    densityPref: ["Minimal", "Balanced"],
+    treatmentPref: ["SOFT", "MODERN"],
+    typographyPref: ["Serif clásica titulada", "Sans humanista limpia", "Slab pesada de oficio"],
+    intensity: "baja-media", complexity: "baja-media",
+    contexts: ["uso cotidiano", "regalo formal", "mensaje sobrio"]
+  },
+  contemporaneo_discreto: {
+    label: "Discreto contemporáneo",
+    stylePreferred: ["Minimal Modern", "Bauhaus", "Line art minimalista", "Vector Flat / Plano vectorial", "Noir gráfico"],
+    styleSecondary: ["Blueprint / Technical", "Photomontage / Dada", "Línea a dos tintas"],
+    styleAvoid: ["Barroco Ornamental", "Cartoon retro", "Neón punk"],
+    hierarchyPref: ["TEXTO_DOMINANTE", "BALANCEADO", "SOLO_TEXTO"],
+    layoutPref: ["Editorial asimétrica", "Retícula áurea", "Tarjeta interior", "Sello descentrado"],
+    densityPref: ["Minimal", "Balanced"],
+    treatmentPref: ["SOFT", "MODERN"],
+    typographyPref: ["Sans humanista limpia", "Mono técnica", "Serif moderna alto contraste"],
+    intensity: "baja-media", complexity: "media",
+    contexts: ["oficina", "uso diario", "regalo contemporáneo"]
+  },
+  heritage_atemporal: {
+    label: "Heritage / Atemporal",
+    stylePreferred: ["Vintage Desgastado", "Grabado / Linóleo", "Folk Popular", "Ukiyo-e / Woodblock", "Tattoo Old School", "Art déco"],
+    styleSecondary: ["Bordado / Puntada", "Pintura al óleo", "Barroco Ornamental"],
+    styleAvoid: ["Y2K / Cyber", "Vaporwave", "Retro 80s Neon"],
+    hierarchyPref: ["BALANCEADO", "OBJETO_DOMINANTE", "TEXTO_DOMINANTE"],
+    layoutPref: ["Emblema circular", "Axial centrado", "Tríptico de bandas", "Tarjeta interior"],
+    densityPref: ["Balanced", "Heavy"],
+    treatmentPref: ["HEAVY", "SOFT"],
+    typographyPref: ["Serif clásica titulada", "Slab pesada de oficio", "Itálica solemne"],
+    intensity: "media", complexity: "media-alta",
+    contexts: ["herencia", "oficio", "colección duradera"]
+  },
+  editorial_moderno: {
+    label: "Editorial moderno",
+    stylePreferred: ["Minimal Modern", "Bauhaus", "Photomontage / Dada", "Blueprint / Technical", "Constructivismo", "Vector Flat / Plano vectorial"],
+    styleSecondary: ["Noir gráfico", "Art déco", "Línea a dos tintas"],
+    styleAvoid: ["Kids Storybook", "Cartoon retro", "Barroco Ornamental"],
+    hierarchyPref: ["TEXTO_DOMINANTE", "BALANCEADO", "OBJETO_DOMINANTE"],
+    layoutPref: ["Editorial asimétrica", "Retícula áurea", "Split 2/3-1/3", "Tríptico de bandas"],
+    densityPref: ["Minimal", "Balanced"],
+    treatmentPref: ["MODERN", "SOFT"],
+    typographyPref: ["Sans humanista limpia", "Serif moderna alto contraste", "Mono técnica"],
+    intensity: "media", complexity: "media-alta",
+    contexts: ["diseño", "cultura", "publicación", "regalo contemporáneo"]
+  },
+  ilustrativo_artistico: {
+    label: "Ilustrativo / artístico",
+    stylePreferred: ["Hand-Drawn", "Acuarela Suelta", "Collage Cut-Paper", "Papercraft 3D", "Sumi-e / Tinta Lavada", "Pintura al óleo"],
+    styleSecondary: ["Folk Popular", "Ukiyo-e / Woodblock", "Neoexpresionismo", "Risograph"],
+    styleAvoid: ["Brutalist", "Stencil Urbano", "Blueprint / Technical"],
+    hierarchyPref: ["BALANCEADO", "OBJETO_DOMINANTE", "TEXTO_DOMINANTE"],
+    layoutPref: ["Editorial asimétrica", "Órbita radial", "Columna apilada", "Tarjeta interior"],
+    densityPref: ["Balanced", "Minimal"],
+    treatmentPref: ["SOFT", "MODERN"],
+    typographyPref: ["Lettering brush gestual", "Serif clásica titulada", "Display caligráfica expresiva"],
+    intensity: "media-alta", complexity: "alta",
+    contexts: ["arte", "narrativa", "regalo personal", "colección ilustrada"]
+  },
+  urbano_streetwear: {
+    label: "Urbano / streetwear",
+    stylePreferred: ["Stencil Urbano", "Grunge / DIY", "Brutalist", "Paste-up Wheatpaste", "Dark Tattoo", "Cómic / Halftone"],
+    styleSecondary: ["Neón punk", "Y2K / Cyber", "Tattoo Old School", "Puff Print / 3D Ink"],
+    styleAvoid: ["Kids Storybook", "Acuarela Suelta", "Sumi-e / Tinta Lavada"],
+    hierarchyPref: ["TEXTO_DOMINANTE", "OBJETO_DOMINANTE", "BALANCEADO"],
+    layoutPref: ["Diagonal descendente", "Banda horizontal", "Split 2/3-1/3", "Sello descentrado"],
+    densityPref: ["Heavy", "Balanced"],
+    treatmentPref: ["HEAVY", "MODERN"],
+    typographyPref: ["Grotesca black condensada", "Slab pesada de oficio", "Geométrica deconstructivista"],
+    intensity: "alta", complexity: "media-alta",
+    contexts: ["streetwear", "música", "cultura urbana", "identidad de grupo"]
+  },
+  retro_vintage: {
+    label: "Retro / Vintage",
+    stylePreferred: ["Retro 70s", "Vintage Desgastado", "Retro 80s Neon", "Folk Popular", "Risograph", "Cartoon retro"],
+    styleSecondary: ["Surf / Skate 90s", "Tattoo Old School", "Bordado / Puntada"],
+    styleAvoid: ["Blueprint / Technical", "Minimal Modern", "Noir gráfico"],
+    hierarchyPref: ["BALANCEADO", "TEXTO_DOMINANTE", "OBJETO_DOMINANTE"],
+    layoutPref: ["Emblema circular", "Banda horizontal", "Arco y cúpula", "Tríptico de bandas"],
+    densityPref: ["Balanced", "Heavy"],
+    treatmentPref: ["HEAVY", "SOFT"],
+    typographyPref: ["Slab pesada de oficio", "Rounded amable", "Serif clásica titulada"],
+    intensity: "media-alta", complexity: "media",
+    contexts: ["nostalgia", "música", "deporte", "regalo temático"]
+  },
+  experimental_alternativo: {
+    label: "Experimental / alternativo",
+    stylePreferred: ["Y2K / Cyber", "Vaporwave", "Photomontage / Dada", "Neoexpresionismo", "Pixel / 8-bit", "Collage Cut-Paper"],
+    styleSecondary: ["Constructivismo", "Neón punk", "Anime / Manga", "Risograph"],
+    styleAvoid: ["Conservador visual", "Kids Storybook", "Heritage / Atemporal"],
+    hierarchyPref: ["OBJETO_DOMINANTE", "SOLO_TEXTO", "BALANCEADO"],
+    layoutPref: ["Diagonal ascendente", "Split 2/3-1/3", "Órbita radial", "Tríptico de bandas"],
+    densityPref: ["Balanced", "Heavy"],
+    treatmentPref: ["MODERN", "HEAVY"],
+    typographyPref: ["Geométrica deconstructivista", "Mono técnica", "Display caligráfica expresiva"],
+    intensity: "alta", complexity: "alta",
+    contexts: ["arte alternativo", "música", "cultura digital", "colección experimental"]
+  },
+  familiar_amable: {
+    label: "Familiar / amable",
+    stylePreferred: ["Kids Storybook", "Cartoon moderno", "Folk Popular", "Hand-Drawn", "Superflat", "Caricatura"],
+    styleSecondary: ["Doodle a dos colores", "Collage Cut-Paper", "Acuarela Suelta"],
+    styleAvoid: ["Dark Tattoo", "Gótico Ornamental", "Grunge / DIY", "Neón punk"],
+    hierarchyPref: ["BALANCEADO", "OBJETO_DOMINANTE", "TEXTO_DOMINANTE"],
+    layoutPref: ["Tarjeta interior", "Órbita radial", "Arco y cúpula", "Columna apilada"],
+    densityPref: ["Minimal", "Balanced"],
+    treatmentPref: ["SOFT", "MODERN"],
+    typographyPref: ["Rounded amable", "Sans humanista limpia", "Script de pluma"],
+    intensity: "baja-media", complexity: "baja-media",
+    contexts: ["familia", "regalo", "uso compartido", "actividades cotidianas"]
+  },
+  infantil_narrativo: {
+    label: "Infantil / narrativo",
+    stylePreferred: ["Kids Storybook", "Cartoon retro", "Caricatura", "Doodle a dos colores", "Superflat", "Anime / Manga"],
+    styleSecondary: ["Hand-Drawn", "Cartoon moderno", "Collage Cut-Paper"],
+    styleAvoid: ["Barroco Ornamental", "Gótico Ornamental", "Dark Tattoo", "Brutalist"],
+    hierarchyPref: ["OBJETO_DOMINANTE", "BALANCEADO", "TEXTO_DOMINANTE"],
+    layoutPref: ["Órbita radial", "Tarjeta interior", "Tríptico de bandas", "Arco y cúpula"],
+    densityPref: ["Minimal", "Balanced"],
+    treatmentPref: ["SOFT", "MODERN"],
+    typographyPref: ["Rounded amable", "Display caligráfica expresiva", "Sans humanista limpia"],
+    intensity: "media", complexity: "baja-media",
+    contexts: ["infantil", "cuento", "regalo", "aprendizaje visual"]
+  }
+};
+
+function getAestheticPreferenceProfile(id) {
+  const key = String(id || 'auto').trim();
+  return key === 'auto' ? null : (AESTHETIC_PREFERENCE_PROFILES[key] || null);
+}
+
+function getAestheticPreferenceOptions() {
+  const options = Object.keys(AESTHETIC_PREFERENCE_PROFILES).map(function (id) {
+    const profile = AESTHETIC_PREFERENCE_PROFILES[id];
+    return '<option value="' + _escapeAudienceOptionHTML(id) + '">' + _escapeAudienceOptionHTML(profile.label) + '</option>';
+  }).join('');
+  return '<option value="auto">Auto — sin preferencia estética fijada</option>' + options;
+}
+
 /* Compatibilidad explícita para otros scripts */
+window.AESTHETIC_PREFERENCE_PROFILES = AESTHETIC_PREFERENCE_PROFILES;
+window.getAestheticPreferenceProfile = getAestheticPreferenceProfile;
+window.getAestheticPreferenceOptions = getAestheticPreferenceOptions;
 window.AUD_PROFILES = AUD_PROFILES;
 window.getAudiencesForRegion = getAudiencesForRegion;
 window.getAudiencesForMarketRegion = getAudiencesForMarketRegion;
