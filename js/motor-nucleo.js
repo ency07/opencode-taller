@@ -133,6 +133,7 @@ let MOTOR_STATE = {
   support: '',
   audienceSet: 'Auto',
   audienceMulti: 'no',
+  aestheticPreference: 'auto',
   dominio: 'auto',
   dominioDetectado: 'auto',
   domImagen: 'Auto',
@@ -190,6 +191,7 @@ function readStateFromDOM() {
   MOTOR_STATE.support = v('support', '');
   MOTOR_STATE.audienceSet = v('audienceSet', 'Auto');
   MOTOR_STATE.audienceMulti = v('audienceMulti', 'no');
+  MOTOR_STATE.aestheticPreference = v('aestheticPreference', 'auto');
   MOTOR_STATE.dominio = v('dominio', 'auto');
   // Familia elegida para guiar los objetos en variación; Auto se resuelve abajo.
   MOTOR_STATE.domImagen = v('domImagen', 'Auto');
@@ -4960,6 +4962,20 @@ window.renderColorAudit = renderColorAudit;
     const region = document.getElementById('region');
     const subniche = document.getElementById('subniche');
     const product = document.getElementById('product');
+    const aestheticPreference = document.getElementById('aestheticPreference');
+
+    if (aestheticPreference) {
+      if (typeof getAestheticPreferenceOptions === 'function') {
+        aestheticPreference.innerHTML = getAestheticPreferenceOptions();
+      }
+      aestheticPreference.value = MOTOR_STATE.aestheticPreference || 'auto';
+      if (!aestheticPreference.__podAestheticPreferenceBound) {
+        aestheticPreference.addEventListener('change', function () {
+          MOTOR_STATE.aestheticPreference = this.value || 'auto';
+        });
+        aestheticPreference.__podAestheticPreferenceBound = true;
+      }
+    }
 
     if (product && !product.__podPrintMethodBound) {
       product.addEventListener('change', function () {
