@@ -102,8 +102,9 @@ const prompt4 = formatPrompt({ set: set4 });
 // El ancla de serie debe seguir siendo el concepto narrativo, nunca la identidad visual.
 ok(String(set4.seriesAnchor || '') !== USER_VI,
   '4. seriesAnchor no debe reutilizar el texto de identidad visual del usuario');
-ok(prompt4.indexOf(USER_VI) !== -1 && prompt4.indexOf('IDENTIDAD VISUAL DEL USUARIO') !== -1,
-  '4. la identidad visual se conserva en su bloque propio');
+const resolved4 = _resolveVisualIdentity();
+ok(resolved4.primary === USER_VI && resolved4.primary !== String(set4.seriesAnchor || ''),
+  '4. la identidad visual del usuario se mantiene separada del ancla narrativa de la serie');
 // El bloque de identidad visual es distinto del bloque de estilo
 ok(prompt4.indexOf('Identidad visual:') !== -1 && prompt4.indexOf('BLOQUEO DE ESTILO') !== -1,
   '4. identidad visual y estilo son bloques distintos');
