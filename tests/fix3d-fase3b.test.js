@@ -1,6 +1,15 @@
 /* FIX 3D — FASE 3b: preservación de derivados y recálculo de ajustes.
    Verifica las 7 condiciones de la entrega 3b. */
 'use strict';
+
+/* Evita que el diagnóstico interno DBG del motor inunde el log de CI.
+   No modifica la ejecución ni oculta errores/assertions del test. */
+const _originalConsoleLog = console.log;
+console.log = function () {
+  const first = arguments.length ? String(arguments[0]) : '';
+  if (/^(DBG|\\[DBG)/.test(first)) return;
+  return _originalConsoleLog.apply(console, arguments);
+};
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
