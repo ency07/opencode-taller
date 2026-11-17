@@ -4041,15 +4041,15 @@ function formatPrompt(result) {
     const sharedAudience = set.A && set.A.audiencia ? _audienceDisplay(set.A.audiencia) : 'audiencia única seleccionada';
     const audienceIds = new Set(K.map(function (k) { return set[k].audiencia; }));
     if (audienceIds.size !== 1) {
-      o += 'ERROR DE VALIDACIÓN — AUDIENCIA: la prueba exige una sola audiencia, pero A/B/C contienen perfiles diferentes. No generar esta hoja; corregir la resolución de audiencia.\\n';
+      o += 'ERROR DE VALIDACIÓN — AUDIENCIA: la prueba exige una sola audiencia, pero A/B/C contienen perfiles diferentes. No generar esta hoja; corregir la resolución de audiencia.\n';
     } else {
-      o += 'AUDIENCIA ÚNICA DEL SET: «' + sharedAudience + '». Debe mantenerse exactamente la misma audiencia en 01A, 01B y 01C. Prohibido reasignar, inferir o cambiar edad/género/perfil entre fichas. La diversidad A/B/C debe proceder de estilos, jerarquías, layouts, tipografía y composición, nunca de cambiar la audiencia.\\n';
+      o += 'AUDIENCIA ÚNICA DEL SET: «' + sharedAudience + '». Debe mantenerse exactamente la misma audiencia en 01A, 01B y 01C. Prohibido reasignar, inferir o cambiar edad/género/perfil entre fichas. La diversidad A/B/C debe proceder de estilos, jerarquías, layouts, tipografía y composición, nunca de cambiar la audiencia.\n';
     }
   } else {
-    o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, tipografía, densidad, forma del símbolo y espacio negativo; no la representes con estereotipos ni objetos añadidos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\\n';
+    o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, tipografía, densidad, forma del símbolo y espacio negativo; no la representes con estereotipos ni objetos añadidos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\n';
   }
   if (MOTOR_STATE._audienceSelectionWarning) {
-    o += 'AUDIENCIA (AVISO): ' + MOTOR_STATE._audienceSelectionWarning + '\\n';
+    o += 'AUDIENCIA (AVISO): ' + MOTOR_STATE._audienceSelectionWarning + '\n';
   }
   if (MOTOR_STATE._audsShort && MOTOR_STATE._audsShort.faltantes) {
     o += 'AUDIENCIA (AVISO): el pool del mercado tiene menos perfiles que fichas y ' + MOTOR_STATE._audsShort.faltantes + ' ficha(s) repiten audiencia porque se agotó el pool; es un aviso válido, no bloquea la hoja.\n\n';
