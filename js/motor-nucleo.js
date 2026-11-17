@@ -316,9 +316,44 @@ function resolveAudiences() {
   const result = {};
   const autos = [];
   MOTOR_STATE._audsShort = null;
+  MOTOR_STATE._audienceSelectionWarning = null;
 
-  // Las elecciones manuales por tarjeta prevalecen también en Exploración.
-  // No se deben sustituir al pulsar "Crear los 3 diseños".
+  /*
+   * "Explorar 3 audiencias" controla si la audiencia varía entre fichas.
+   * NO: una sola audiencia compartida por A/B/C; los locks antiguos no pueden
+   * convertir silenciosamente el set en tres perfiles distintos.
+   * SÍ: permite perfiles distintos y conserva locks manuales válidos.
+   */
+  if (!multi) {
+    let sharedAudience = '';
+    if (base !== 'Auto' && pool.indexOf(base) !== -1) {
+      sharedAudience = base;
+    } else if (base !== 'Auto') {
+      MOTOR_STATE._audienceSelectionWarning =
+        'La audiencia seleccionada (' + base + ') no está disponible en el pool actual; se eligió una única audiencia compatible.';
+    }
+
+    if (!sharedAudience && pool.length) {
+      const stableContext = [
+        market, region, MOTOR_STATE.subniche, MOTOR_STATE.product,
+        MOTOR_STATE.concept, MOTOR_STATE.message
+      ].map(function (value) { return String(value || '').trim().toLowerCase(); }).join('|');
+      let stableHash = 0;
+      for (let i = 0; i < stableContext.length; i++) {
+        stableHash = ((stableHash << 5) - stableHash + stableContext.charCodeAt(i)) | 0;
+      }
+      sharedAudience = pool[Math.abs(stableHash) % pool.length];
+    }
+
+    K.forEach(function (k) { result[k] = sharedAudience; });
+    if (!sharedAudience) {
+      MOTOR_STATE._audienceSelectionWarning =
+        MOTOR_STATE._audienceSelectionWarning || 'No hay audiencias compatibles para el mercado y región seleccionados.';
+    }
+    return result;
+  }
+
+  // Solo en exploración explícita se asignan audiencias distintas.
   K.forEach(function (k) {
     const locked = audienceLocks[k];
     if (locked && locked !== 'Auto' && pool.indexOf(locked) !== -1) {
@@ -330,72 +365,27 @@ function resolveAudiences() {
 
   if (!autos.length) return result;
 
-  if (multi) {
-    // "Explorar 3 audiencias": cada tarjeta Auto recibe un perfil propio
-    // cuando el pool lo permite; las audiencias fijadas manualmente quedan intactas.
-    const used = new Set(K.filter(function (k) { return !!result[k]; }).map(function (k) { return result[k]; }));
-    autos.forEach(function (k) {
-      const available = pool.filter(function (aud) { return !used.has(aud); });
-      let pick = '';
-      if (available.length) {
-        if (MOTOR_STATE.workflowMode === 'explore') {
-          const stableContext = [
-            market, region, MOTOR_STATE.subniche, MOTOR_STATE.product,
-            MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE._rerollNonce || 0, k
-          ].map(function (value) { return String(value || '').trim().toLowerCase(); }).join('|');
-          let stableHash = 0;
-          for (let i = 0; i < stableContext.length; i++) {
-            stableHash = ((stableHash << 5) - stableHash + stableContext.charCodeAt(i)) | 0;
-          }
-          pick = available[Math.abs(stableHash) % available.length];
-        } else {
-          pick = _pick(available);
-        }
-      } else {
-        pick = pool.length ? pool[0] : '';
-      }
-      result[k] = pick;
-      if (pick) used.add(pick);
-    });
-    if (pool.length < K.length) MOTOR_STATE._audsShort = { faltantes: K.length - pool.length };
-    return result;
-  }
-
-  // Audiencia específica elegida por el usuario: decisión explícita de
-  // compartirla en las tarjetas Auto (los locks de B/C nunca se sobrescriben).
-  if (base !== 'Auto') {
-    if (pool.indexOf(base) !== -1) {
-      autos.forEach(function (k) { result[k] = base; });
-    }
-    return result;
-  }
-
-  // En Auto nada se repite: cada ficha recibe un perfil propio del pool
-  // (elección estable por re-roll con la ficha en el contexto). Si el pool
-  // tiene menos perfiles que fichas, las sobrantes reutilizan el pool y
-  // quedan marcadas como AVISO en el prompt, nunca como bloqueo.
-  const usedNow = new Set(Object.values(result));
-  let faltantes = 0;
+  const used = new Set(Object.values(result));
   autos.forEach(function (k) {
-    const available = pool.filter(function (aud) { return !usedNow.has(aud); });
-    if (!available.length) {
-      faltantes++;
-      result[k] = pool.length ? pool[0] : '';
-      return;
+    const available = pool.filter(function (aud) { return !used.has(aud); });
+    let pick = '';
+    if (available.length) {
+      const stableContext = [
+        market, region, MOTOR_STATE.subniche, MOTOR_STATE.product,
+        MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE._rerollNonce || 0, k
+      ].map(function (value) { return String(value || '').trim().toLowerCase(); }).join('|');
+      let stableHash = 0;
+      for (let i = 0; i < stableContext.length; i++) {
+        stableHash = ((stableHash << 5) - stableHash + stableContext.charCodeAt(i)) | 0;
+      }
+      pick = available[Math.abs(stableHash) % available.length];
+    } else {
+      pick = pool.length ? pool[0] : '';
     }
-    const stableContext = [
-      market, region, MOTOR_STATE.subniche, MOTOR_STATE.product,
-      MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE._rerollNonce || 0, k
-    ].map(function (value) { return String(value || '').trim().toLowerCase(); }).join('|');
-    let stableHash = 0;
-    for (let i = 0; i < stableContext.length; i++) {
-      stableHash = ((stableHash << 5) - stableHash + stableContext.charCodeAt(i)) | 0;
-    }
-    const pick = available[Math.abs(stableHash) % available.length];
     result[k] = pick;
-    usedNow.add(pick);
+    if (pick) used.add(pick);
   });
-  if (faltantes) MOTOR_STATE._audsShort = { faltantes: faltantes };
+  if (pool.length < K.length) MOTOR_STATE._audsShort = { faltantes: K.length - pool.length };
   return result;
 }
 
@@ -3986,7 +3976,7 @@ function formatPrompt(result) {
   if (productRule) o += 'PRODUCTO: ' + productRule + '\n';
   if (printPrepRule) o += 'ACABADO / PREPARACION TECNICA (' + printMethodName + '): ' + printPrepRule + '\n';
   if (mockupRule) {
-    const colsByAudience = new Set(K.map(function (k) { return set[k].audiencia; })).size === 3;
+    const colsByAudience = MOTOR_STATE.audienceMulti === 'si';
     o += 'REGLAS DEL MOCKUP COMERCIAL (el modelo que lleva la prenda — NO el arte estampado): ' + mockupRule + '\n';
     o += 'IMPORTANTE: la prohibición de figuras humanas del bloque de arte (CONTROL DE ELEMENTOS / FIGURAS HUMANAS) NO aplica aquí. El mockup DEBE mostrar una persona acorde a la audiencia de la columna. MOCKUP OBLIGATORIO POR AUDIENCIA: infantil = niño o niña de apariencia inequívocamente infantil (proporciones corporales infantiles: cabeza grande, extremidades cortas; rostro y anatomía de niño, no de adulto joven; camiseta de corte y talla infantil; un adulto de baja estatura NO cumple). femenino = mujer con corte y talla femeninos. masculino = hombre con corte y talla masculinos. unisex = modelo acorde al perfil sin forzar género. Un modelo adulto en una ficha infantil invalida la hoja. Prohibido usar adultos como sustitutos.\n';
     o += 'EJE DE COLUMNAS: ' + (colsByAudience
@@ -4047,7 +4037,20 @@ function formatPrompt(result) {
   } else {
     o += 'TEXTOS: si existe mensaje proporcionado, conservarlo literalmente y usarlo como único copy principal; no exigir tres niveles ni inventar apoyos, sellos, citas, datos o microtexto. Si no existe mensaje, proponer una sola frase principal exacta y omitir texto secundario salvo que el usuario lo solicite.\n';
   }
-  o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, tipografía, densidad, forma del símbolo y espacio negativo; no la representes con estereotipos ni objetos añadidos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\n';
+  if (MOTOR_STATE.audienceMulti !== 'si') {
+    const sharedAudience = set.A && set.A.audiencia ? _audienceDisplay(set.A.audiencia) : 'audiencia única seleccionada';
+    const audienceIds = new Set(K.map(function (k) { return set[k].audiencia; }));
+    if (audienceIds.size !== 1) {
+      o += 'ERROR DE VALIDACIÓN — AUDIENCIA: la prueba exige una sola audiencia, pero A/B/C contienen perfiles diferentes. No generar esta hoja; corregir la resolución de audiencia.\\n';
+    } else {
+      o += 'AUDIENCIA ÚNICA DEL SET: «' + sharedAudience + '». Debe mantenerse exactamente la misma audiencia en 01A, 01B y 01C. Prohibido reasignar, inferir o cambiar edad/género/perfil entre fichas. La diversidad A/B/C debe proceder de estilos, jerarquías, layouts, tipografía y composición, nunca de cambiar la audiencia.\\n';
+    }
+  } else {
+    o += 'AUDIENCIA: cada perfil debe modificar al menos dos decisiones visibles entre composición, tipografía, densidad, forma del símbolo y espacio negativo; no la representes con estereotipos ni objetos añadidos. Si al quitar el perfil el diseño no cambia de forma verificable, RECHAZAR.\\n';
+  }
+  if (MOTOR_STATE._audienceSelectionWarning) {
+    o += 'AUDIENCIA (AVISO): ' + MOTOR_STATE._audienceSelectionWarning + '\\n';
+  }
   if (MOTOR_STATE._audsShort && MOTOR_STATE._audsShort.faltantes) {
     o += 'AUDIENCIA (AVISO): el pool del mercado tiene menos perfiles que fichas y ' + MOTOR_STATE._audsShort.faltantes + ' ficha(s) repiten audiencia porque se agotó el pool; es un aviso válido, no bloquea la hoja.\n\n';
   } else {
