@@ -1804,7 +1804,7 @@ function _resolveContactIdentity(objectPool) {
     identityMode: resolvedFromBank ? 'symbol' : 'concept',
     guiaSimbolo: resolvedFromBank
       ? 'Representa el objeto nombrado literalmente en el concepto; no lo sustituyas por otro objeto.'
-      : 'Conserva el concepto completo como ancla semántica. No lo reformules como otra frase, no lo reduzcas a una metáfora del banco y no inventes un símbolo dominante ajeno a la idea del usuario.',
+      : 'Conserva el concepto completo como ancla semántica. Si es abstracto, tradúcelo a un motivo o metáfora visual derivado directamente de su significado y función; no lo sustituyas por un objeto genérico del banco ni por símbolos cristianos automáticos. Si no existe una metáfora visual defendible, usa una construcción tipográfica o geométrica abstracta. No añadas escenas ni objetos ajenos al concepto.',
     funcionSimbolica: protective ? 'Protección y cuidado' : 'Expresión visual del concepto indicado',
     intencionEmocional: protective ? 'Seguridad y cuidado' : 'Interpretación coherente con el concepto indicado'
   };
@@ -4159,7 +4159,8 @@ function formatPrompt(result) {
         o += 'SIN EXCEPCIONES: aunque el concepto nombre un objeto concreto (fogata, animal, vehículo, paisaje), está prohibido dibujarlo: ni grande ni pequeño, ni como fondo ni integrado entre letras. El objeto solo existe como palabras del copy literal.\n';
       }
     } else {
-      o += 'OBJETO: ' + v.objeto + '\n';
+      o += 'OBJETO / ANCLA SEMÁNTICA: ' + v.objeto + '\n';
+      if (v.guiaSimbolo) o += 'MOTIVO VISUAL / GUÍA DE SÍMBOLO: ' + v.guiaSimbolo + '\n';
       if (!_figurasUnicas) o += _figureDirective(v.objeto) + '\n';
       if (v.jerarquiaVisual === 'SOLO_OBJETO') {
         o += 'CERO TEXTO (SOLO_OBJETO): prohibido cualquier letra, cifra, número, logo tipográfico, microtexto o sellos con rótulos, incluso decorativos. Los recursos del estilo que normalmente portan texto (cintas, cartelas, banderines, sellos, escudos) aparecen SIN rótulo alguno; si un elemento necesita un rótulo para leerse, no lo uses.\n';
@@ -4770,6 +4771,7 @@ function arbitroSelectores(promptText, result) {
     if (!_arbHas(text, v.jerarquiaVisual)) faltas.push('jerarquía');
     const objetoOk = v.jerarquiaVisual === 'SOLO_TEXTO' ? _arbHas(text, 'recap ' + N[i]) : _arbHas(text, v.objeto);
     if (!objetoOk) faltas.push('objeto');
+    if (v.guiaSimbolo && !_arbHas(text, 'MOTIVO VISUAL / GUÍA DE SÍMBOLO: ' + v.guiaSimbolo)) faltas.push('guía del motivo visual');
     if (!layoutOk) faltas.push('layout fuera del catálogo del producto');
     add('Ficha ' + N[i], 'Estilo · audiencia · objeto · jerarquía',
       faltas.length === 0, faltas.join(', '));
