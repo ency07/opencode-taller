@@ -1555,8 +1555,18 @@ function _applyStructuralProfile(v, profileKey, productBias, audienceProfile, us
   return v;
 }
 
+/* El modo patrón solo existe en productos con soporte real de repetición.
+   En productos normales, un selector residual "patron" no debe bloquear los
+   contratos de motivo del CONTACTSHEET ni convertir el arte en un patrón. */
+function _isPatternModeActive() {
+  const patternProducts = ['MOCHILA', 'TOTE BAG', 'FUNDA MÓVIL'];
+  return MOTOR_STATE.workflowMode !== 'variation'
+    && MOTOR_STATE.designMode === 'patron'
+    && patternProducts.indexOf(String(MOTOR_STATE.product || '').trim().toUpperCase()) !== -1;
+}
+
 function _isLockedContactSet() {
-  return MOTOR_STATE.workflowMode !== 'variation' && MOTOR_STATE.workflowMode !== 'explore' && MOTOR_STATE.designMode !== 'patron';
+  return MOTOR_STATE.workflowMode !== 'variation' && MOTOR_STATE.workflowMode !== 'explore' && !_isPatternModeActive();
 }
 
 /* En Exploración el ADN del set es el CONCEPTO, no un único símbolo: cada ficha
@@ -2364,7 +2374,7 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     }
   }
   let patronMotif = '';
-  if (MOTOR_STATE.workflowMode !== 'variation' && MOTOR_STATE.designMode === 'patron') {
+  if (_isPatternModeActive()) {
     const pConcept = String(MOTOR_STATE.concept || '').trim();
     const pCommon = (typeof _commonBankForMarket === 'function') ? _commonBankForMarket() : [];
     const pFamily = (Array.isArray(objectPool) ? objectPool : []).filter(function (ob) { return pCommon.indexOf(ob) === -1; });
@@ -2413,8 +2423,8 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     v.audiencia = audsPerKey[k];
     v.jerarquiaVisual = hierarchyPerKey[k];
     // Mismo ancla semántica; distinta ruta de representación por ficha.
-    v.rutaVisual = (!isVar && MOTOR_STATE.designMode !== 'patron') ? _visualExpressionRoute(k) : '';
-    v.motivoVisual = (!isVar && MOTOR_STATE.designMode !== 'patron') ? _motifExpressionDirective(k, MOTOR_STATE.concept || '') : '';
+    v.rutaVisual = (!isVar && !_isPatternModeActive()) ? _visualExpressionRoute(k) : '';
+    v.motivoVisual = (!isVar && !_isPatternModeActive()) ? _motifExpressionDirective(k, MOTOR_STATE.concept || '') : '';
 
     // En un contactsheet nuevo, el símbolo se decide una vez para A/B/C.
     // Variación desde imagen conserva su propia lógica y sus selectores.
@@ -3792,8 +3802,7 @@ function formatPrompt(result) {
   const printMethodName = MOTOR_STATE.product === 'GORRA' && selectedPrintMethod === 'auto'
     ? 'Auto: elegir técnica por dirección (bordado / parche / impresión)'
     : (printMethodLabels[selectedPrintMethod] || printMethodLabels.auto || 'Auto');
-  const supportsPattern = ['MOCHILA', 'TOTE BAG', 'FUNDA MÓVIL'].indexOf(MOTOR_STATE.product) !== -1;
-  const isPatron = MOTOR_STATE.designMode === 'patron' && !isVar && supportsPattern;
+  const isPatron = _isPatternModeActive();
   const tplActive = _activeTemplateSafe();
   const explorationBrief = MOTOR_STATE.workflowMode === 'explore' ? (MOTOR_STATE.explorationBrief || _resolveExplorationBrief()) : null;
   const promptConcept = String((explorationBrief && explorationBrief.concept) || MOTOR_STATE.concept || '').trim() || '—';
