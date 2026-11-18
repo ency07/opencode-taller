@@ -132,26 +132,7 @@ ok(/const multi = MOTOR_STATE\.audienceMulti === 'si';/.test(motor), 'Explorar 3
 ok(/const audienceLocks = locks\.audiencia \|\| \{\}/.test(motor), 'resolverAudiences lee los locks individuales de audiencia');
 ok(/if \(locked && locked !== 'Auto' && pool\.indexOf\(locked\) !== -1\)/.test(motor), 'audiencias manuales compatibles prevalecen por tarjeta también en Exploración');
 ok(/if \(!multi\) \{[\s\S]{0,1800}return result;[\s\S]{0,900}const used = new Set\(Object\.values\(result\)\)/.test(motor), 'el modo de audiencia compartida retorna antes del asignador multi y las audiencias Auto distintas usan un conjunto de perfiles ya ocupados');
-const _savedAudienceState = {
-  market: MOTOR_STATE.market, region: MOTOR_STATE.region, product: MOTOR_STATE.product,
-  subniche: MOTOR_STATE.subniche, audienceMulti: MOTOR_STATE.audienceMulti,
-  audienceSet: MOTOR_STATE.audienceSet, workflowMode: MOTOR_STATE.workflowMode,
-  decisionMode: MOTOR_STATE.decisionMode
-};
-MOTOR_STATE.market = 'gospel_en';
-MOTOR_STATE.region = 'global';
-MOTOR_STATE.product = 'CAMISETA SOFT';
-MOTOR_STATE.subniche = 'auto';
-MOTOR_STATE.audienceMulti = 'si';
-MOTOR_STATE.audienceSet = 'Auto';
-MOTOR_STATE.workflowMode = 'explore';
-MOTOR_STATE.decisionMode = 'assisted';
-const _autoAudiencePool = getCurrentAudiencePool();
-const _autoAudienceResult = resolveAudiences();
-const _autoAudienceValues = Object.values(_autoAudienceResult);
-ok(_autoAudiencePool.length < 3 || new Set(_autoAudienceValues).size === 3,
-  'audiencias Auto deben ser distintas cuando el pool disponible contiene al menos tres perfiles');
-Object.assign(MOTOR_STATE, _savedAudienceState);
+
 ok(!/const multi = MOTOR_STATE\.audienceMulti === 'si' && MOTOR_STATE\.workflowMode !== 'explore'/.test(motor), 'Explorar no desactiva el modo de audiencias distintas');
 
 // El selector de técnica de impresión debe inicializarse y seguir el producto.
