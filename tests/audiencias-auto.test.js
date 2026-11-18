@@ -1,4 +1,4 @@
-/* Audiencias Auto: en Auto nada se repite; locks intocables; pool corto = avenida.
+/* Audiencias Auto: el selector multi controla diversidad; locks intocables; pool corto = aviso.
    Ejecutar: node tests/audiencias-auto.test.js
    Sale con código 1 si algo falla. */
 
@@ -41,16 +41,24 @@ function baseState() {
   MOTOR_STATE._rerollNonce = 0;
 }
 
-/* --- 1) Auto sin multi: 3 audiencias distintas --- */
+/* --- 1) Auto sin multi: una audiencia compartida y no infantil por defecto --- */
 baseState();
 let auds = resolveAudiences();
-ok(new Set(Object.values(auds)).size === 3, 'en Auto, A/B/C deben tener audiencias distintas');
+ok(new Set(Object.values(auds)).size === 1, 'Auto sin multi debe compartir una audiencia entre A/B/C');
+ok(Object.values(auds).every(function (id) { return (AUD_PROFILES[id] || {}).edad !== 'infantil'; }), 'Auto genérico no debe elegir audiencia infantil sin señal explícita');
 let set = buildCandidate(auds, null);
 let prompt = formatPrompt({ set: set });
 ok(prompt.indexOf('AUDIENCIA (AVISO)') === -1, 'con pool grande no debe avisar');
 
+/* --- 1B) Auto con multi: tres audiencias distintas --- */
+baseState();
+MOTOR_STATE.audienceMulti = 'si';
+auds = resolveAudiences();
+ok(new Set(Object.values(auds)).size === 3, 'con Explorar 3 audiencias, A/B/C deben recibir perfiles distintos');
+
 /* --- 2) Lock manual: A fija, B/C Auto siguen sin repetirse ni con A --- */
 baseState();
+MOTOR_STATE.audienceMulti = 'si';
 setLockValue(memLocksMarket(), 'CAMISETA SOFT', 'audiencia', 'A', 'infantil_col');
 auds = resolveAudiences();
 ok(auds.A === 'infantil_col', 'el lock manual de A se respeta');
@@ -69,8 +77,9 @@ MOTOR_STATE.audienceSet = 'infantil_col';
 auds = resolveAudiences();
 ok(Object.values(auds).every(function (v) { return v === 'infantil_col'; }), 'audiencia específica elegida se cumple en todas las fichas');
 
-/* --- 5) Pool corto: AVISO válido, nada se bloquea --- */
+/* --- 5) Pool corto en multi: AVISO válido, nada se bloquea --- */
 baseState();
+MOTOR_STATE.audienceMulti = 'si';
 const poolReal = getCurrentAudiencePool();
 const poolCorto = poolReal.slice(0, 2);
 const original = getCurrentAudiencePool;
