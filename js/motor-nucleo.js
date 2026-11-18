@@ -1014,6 +1014,17 @@ function _resolveExplorationBrief() {
    formaSimbolo salía siempre de los 2 valores de formaPref de una misma
    audiencia compartida â†’ jamás había 3 valores distintos â†’ ejesOk=false
    siempre â†’ generateSet() nunca marcaba passed=true (comprobado: 0/3000). */
+/* Rutas visuales exclusivas A/B/C. Conservan el mismo ancla semántica:
+   cambian el modo de representación, no el concepto ni los objetos autorizados. */
+const _VISUAL_EXPRESSION_ROUTES = {
+  A: 'SOLID FORM / MASS: express the same authorized concept through one compact silhouette, solid mass or letterform-derived counterform. Keep the concept recognizable; do not add a scene or a new physical object.',
+  B: 'GESTURE / DIRECTION: express the same authorized concept through one open directional stroke, visual rhythm or sequence derived directly from its action or relationship. Use a different outer silhouette from A; do not add a scene or a new physical object.',
+  C: 'GRID / NEGATIVE SPACE: express the same authorized concept through modular geometry, cutouts and a distinct negative-space structure. Do not reuse the dominant motif or outer silhouette of A or B; do not add a scene or a new physical object.'
+};
+function _visualExpressionRoute(key) {
+  return _VISUAL_EXPRESSION_ROUTES[key] || '';
+}
+
 function _pickFresh(biasPool, fullPool, used) {
   const bias = (biasPool || []).filter(function (x) { return used.indexOf(x) === -1; });
   if (bias.length) return _pick(bias);
@@ -2367,6 +2378,8 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     v.estilo = estilos[k];
     v.audiencia = audsPerKey[k];
     v.jerarquiaVisual = hierarchyPerKey[k];
+    // Mismo ancla semántica; distinta ruta de representación por ficha.
+    v.rutaVisual = (!isVar && MOTOR_STATE.designMode !== 'patron') ? _visualExpressionRoute(k) : '';
 
     // En un contactsheet nuevo, el símbolo se decide una vez para A/B/C.
     // Variación desde imagen conserva su propia lógica y sus selectores.
@@ -3882,6 +3895,7 @@ function formatPrompt(result) {
     o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje; no inventes objetos, datos ni texto. Si falta un dato, omítelo.\n';
     o += 'DIRECCIÓN: el estilo artístico define el lenguaje visual; HEAVY/SOFT/MODERN modifican composición y jerarquía sin borrar ese estilo. No mezcles instrucciones incompatibles.\n';
     o += 'A/B/C: misma identidad semántica, soluciones distintas en composición, silueta, tipografía y relación texto-imagen; no basta recolorear o cambiar textura.\n';
+  o += 'DIVERSIDAD DE MOTIVO: A/B/C conservan el mismo concepto y ancla semántica, pero no deben repetir el mismo cliché o motivo gráfico. Cada ficha aplica su ruta visual exclusiva; la ruta modifica la representación, no sustituye el concepto. Un recurso habitual de un estilo (por ejemplo, olas, flores, flechas, montañas o estrellas) no queda autorizado por el estilo: solo se usa si está nombrado o se deriva directamente del significado literal del concepto. No inventar escenas ni objetos físicos nuevos.\\n';
   }
   if (isVar) {
     const _profileHints = {
@@ -4134,6 +4148,7 @@ function formatPrompt(result) {
     o += 'PERFIL ESTRUCTURAL: ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + '\n';
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento), v.audiencia) + '\n';
     o += 'ESQUELETO ESTRUCTURAL (MANDA): perfil ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · jerarquía ' + v.jerarquiaVisual + ' · layout ' + String(v.layout || '').split(':')[0] + ' · arquitectura textual ' + v.distribucionTexto + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + ' · forma del símbolo ' + v.formaSimbolo + ' · integración ' + v.integracionTexto + ' · tipografía ' + v.tipografia + '\n';
+    if (v.rutaVisual) o += 'RUTA VISUAL EXCLUSIVA DE ESTA FICHA (no cambia el concepto ni autoriza objetos nuevos): ' + v.rutaVisual + '\n';
     o += 'ACABADO DE ESTILO (SUBORDINADO): «' + v.estilo + '» es solo la técnica de acabado sobre este esqueleto; no cambia jerarquía, layout, proporción ni densidad. Si pide un recurso que lo rompa, reduce el acabado a acento controlado.\n';
     const styleIsLettering = /graffiti|street|lettering|sign paint/i.test(String(v.estilo || ''));
     o += 'TÉCNICA GLOBAL: todo el arte de esta ficha — símbolo, letras, fondo y detalles — se ejecuta con la técnica del estilo «' + v.estilo + '»' + (styleIsLettering ? '; aquí el lettering SÍ es el estilo activo.' : '. Prohibido dibujar el copy como graffiti, lettering streetwear, lettering retro o cualquier lenguaje de letras ajeno al estilo activo: las letras también llevan la técnica del estilo.') + '\n';
