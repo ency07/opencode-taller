@@ -31,10 +31,10 @@ function ficha(jer) {
   return {
     jerarquiaVisual: jer, estilo: 'Barroco Ornamental', objeto: 'zapato junto a la puerta',
     audiencia: 'gospel_adulto_fe', tratamiento: 'HEAVY: masas y contraste', perfilEstructural: 'HEAVY',
-    layout: 'central: símbolo dominante con respiración', tipografia: 'Slab de oficio',
+    layout: 'Axial centrado: eje vertical único; símbolo centrado; textos centrados debajo', tipografia: 'Slab de oficio',
     tecnica: 'Claroscuro dramático', formaSimbolo: 'silueta pesada', tratamientoDetalle: '',
     paleta: 'sepia clásica', densidad: 'media', negativeSpace: 'generoso',
-   cara: 'frente', distribucionTexto: 'bloque central', integracionTexto: 'integrado',
+   cara: 'frente', distribucionTexto: 'TEXTO CENTRADO DEBAJO: bloque tipográfico centrado bajo el símbolo', integracionTexto: 'separación limpia',
     textoPrincipal: 'x / y / z', fitAudiencia: 80, fitProducto: 80
   };
 }
@@ -61,7 +61,7 @@ const prompt = formatPrompt({ set: set });
 ok(prompt.indexOf('RECAP 01C: jerarquía=SOLO_OBJETO') !== -1, 'RECP 01C con la jerarquía nueva');
 ok(prompt.indexOf('símbolo 100% del área · texto 0% — el arte completo es el objeto autorizado; CERO letras') !== -1, 'PESO VISUAL de SOLO_OBJETO: 100% objeto, 0% texto');
 ok(prompt.indexOf('CERO TEXTO (SOLO_OBJETO)') !== -1, 'bloque CERO TEXTO presente');
-ok(prompt.indexOf('even') === -1 && prompt.indexOf('ELEMENTOS SECUNDARIOS ADMITIDOS') !== -1, 'elementos secundarios no textuales admitidos por contrato');
+ok(prompt.indexOf('ELEMENTOS SECUNDARIOS: ninguno por defecto') !== -1 && prompt.indexOf('nunca añadir marcos, ornamentos, sellos, cintas, cartelas') !== -1 && prompt.indexOf('ADMITE elementos secundarios visuales no textuales del estilo asignado') === -1, 'SOLO_OBJETO bloquea secundarios independientes y evita directivas contradictorias');
 ok(prompt.split('CERO TEXTO (SOLO_OBJETO)').length === 2, 'el bloque CERO TEXTO sale solo en la ficha SOLO_OBJETO');
 ok(prompt.indexOf('TEXTO: NINGUNO (jerarquía SOLO_OBJETO)') !== -1, 'la ficha declara TEXTO: NINGUNO');
 ok(prompt.split('TEXTO: NINGUNO (jerarquía SOLO_OBJETO)').length === 2, 'TEXTO NINGUNO solo en esa ficha');
