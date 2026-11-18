@@ -59,6 +59,16 @@ assert.ok(repair.changes.some(change => change.ficha === 'A' && change.eje === '
 assert.equal(_validateCreativeContract(repaired, {}).ok, true,
   'la ficha reparada debe volver a cumplir el contrato');
 
+const lockedLayout = JSON.parse(JSON.stringify(candidate));
+lockedLayout.A.layout = 'Columna apilada';
+lockedLayout.A.distribucionTexto = 'DIAGONAL ascendente izquierda-derecha; texto sobre un eje diagonal.';
+const lockedLayoutValue = lockedLayout.A.layout;
+_reconcileCreativeStructure(lockedLayout);
+assert.equal(lockedLayout.A.layout, lockedLayoutValue,
+  'la reconciliación nunca debe modificar el layout fijado por el usuario');
+assert.equal(_validateCreativeContract(lockedLayout, { layout: { A: lockedLayoutValue } }).ok, true,
+  'la arquitectura derivada debe adaptarse al layout bloqueado sin alterar el lock');
+
 const duplicateArchitecture = JSON.parse(JSON.stringify(candidate));
 duplicateArchitecture.B.distribucionTexto = duplicateArchitecture.A.distribucionTexto;
 const duplicateRepair = _reconcileCreativeStructure(duplicateArchitecture);
