@@ -35,7 +35,7 @@ vm.runInNewContext(motifSource, motifContext);
 const concept = 'Walk by Faith';
 const routes = ['A', 'B', 'C'].map(key => motifContext._motifExpressionDirective(key, concept));
 assert.equal(new Set(routes).size, 3, 'cada ficha debe recibir una representación propia');
-assert.match(routes[0], /huellas\/pasos/);
+assert.match(routes[0], /progresión escalonada/);
 assert.match(routes[1], /trazo continuo, abierto y calibrado/);
 assert.match(routes[2], /módulos pixelados rectangulares/);
 assert.ok(routes[0].includes('No dibujar huellas, zapatos, escaleras físicas ni un camino paisajístico.'));
@@ -46,8 +46,9 @@ assert.match(motifContext._motifExpressionDirective('B', 'Grace is Enough'), /ge
 assert.match(motifContext._motifExpressionDirective('C', 'Grace is Enough'), /tipografía, contraformas y espacio negativo/);
 
 assert.match(motor, /sharedAudience = _preferredBroadAudience\(pool\)/);
-assert.match(motor, /v\.motivoVisual = \(MOTOR_STATE\.workflowMode === 'explore'/);
+assert.match(motor, /v\.motivoVisual = \(!isVar && MOTOR_STATE\.designMode !== 'patron'\)/);
 assert.match(motor, /MOTIVO \/ REPRESENTACIÓN EXCLUSIVA/);
 assert.match(motor, /no construyas una escena ni añadas objetos físicos por asociación libre/);
+assert.match(motor, /RESTRICCIÓN SEMÁNTICA: no añadir paisajes, montañas, soles, horizontes, mares, olas, árboles, cruces, personas, calzado, huellas/);
 
-assert.match(motor, /v\\.motivoVisual = \\(!isVar && MOTOR_STATE\\.designMode !== 'patron'\\)/, 'CONTACTSHEET nuevo también debe recibir rutas semánticas A/B/C');\n\nconsole.log('PASS p1-motif-audience-regression: motif separation, contact-sheet semantic lock and broad Auto audience');
+console.log('PASS p1-motif-audience-regression: motif separation, contact-sheet semantic lock and broad Auto audience');
