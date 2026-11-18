@@ -44,7 +44,7 @@ function ficha(jerarquia, extra) {
     textoPrincipal: 'T', textoApoyo: 'A', textoTerciario: 'S',
     tipografia: 'Slab pesada', paleta: 'pal (modo: X)', familiaColor: 'f',
     fitAudiencia: 70, fitProducto: 60, densidad: 'Media', negativeSpace: 'abierto',
-    distribucionTexto: 'texto en diagonal ascendente', integracionTexto: 'w', relacion: 'r'
+    distribucionTexto: 'TEXTO ARRIBA: bloque principal centrado en la parte superior; textos secundarios apilados debajo en columna', integracionTexto: 'w', relacion: 'r'
   };
   if (extra) Object.keys(extra).forEach(function (k) { base[k] = extra[k]; });
   return base;
