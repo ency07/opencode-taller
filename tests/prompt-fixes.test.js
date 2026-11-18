@@ -141,6 +141,11 @@ MOTOR_STATE.concept = 'cruz y roca firme';
 MOTOR_STATE.explorationBrief = null;
 const outContact = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') } });
 ok(outContact.indexOf('COPY PROPUESTO: escribir frase') === -1, 'contacto sin mensaje: no debe delegar inventar');
+const guidedSet = { A: ficha('BALANCEADO', { guiaSimbolo: 'Represent the abstract idea with a forward-moving path and deliberate footsteps.' }), B: ficha('TEXTO_DOMINANTE', { guiaSimbolo: 'Represent the abstract idea with a forward-moving path and deliberate footsteps.' }), C: ficha('OBJETO_DOMINANTE', { guiaSimbolo: 'Represent the abstract idea with a forward-moving path and deliberate footsteps.' }) };
+const guidedPrompt = formatPrompt({ set: guidedSet });
+ok(count(guidedPrompt, 'MOTIVO VISUAL / GUÍA DE SÍMBOLO:') === 3, 'la guía visual debe llegar a las tres fichas del prompt final');
+ok(guidedPrompt.includes('forward-moving path and deliberate footsteps'), 'el prompt final conserva literalmente la guía visual');
+ok(count(guidedPrompt, 'OBJETO / ANCLA SEMÁNTICA:') === 3, 'el prompt distingue ancla semántica de motivo visual');
 ok(count(outContact, '«Cruz y roca firme»') >= 3, 'contacto sin mensaje: literal derivado en las 3 fichas');
 
 /* Vacío total en mercado secular: no inventar copy si no hay concepto ni mensaje. */
