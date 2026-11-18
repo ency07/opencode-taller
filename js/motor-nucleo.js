@@ -1046,20 +1046,19 @@ function _motifExpressionDirective(key, concept) {
   const walking = /\b(walk|walking|caminar|camino|andar|andando|paso|pasos|footstep|footsteps)\b/.test(source);
   if (walking) {
     const walkingRoutes = {
-      A: 'MOTIVO ÚNICO: secuencia breve de huellas/pasos que representa literalmente caminar. Sin calzado gigante, cruz, persona, montaña, mar, olas, árboles, sol, estrellas ni paisaje.',
-      B: 'MOTIVO ÚNICO: una sola línea continua de recorrido que representa avanzar. Prohibido dibujar huellas, pisadas, calzado, personas, montañas, árboles, mar, olas, sol, estrellas o paisaje.',
-      C: 'MOTIVO ÚNICO: tipografía con ritmo de avance y contraformas direccionales; ninguna ilustración ni icono independiente. Prohibido dibujar huellas, pisadas, calzado, camino, personas, cruces, montañas, árboles, mar, olas, sol, estrellas o paisaje.'
+      A: 'MOTIVO ÚNICO: progresión escalonada de 3–5 bloques tipográficos sólidos y desplazados hacia delante; la secuencia geométrica expresa avanzar con fe. No dibujar huellas, zapatos, escaleras físicas ni un camino paisajístico.',
+      B: 'MOTIVO ÚNICO: un único trazo continuo, abierto y calibrado que cambia de dirección una vez para expresar avance sostenido; mantenerlo separado del texto y con mucho aire. No convertirlo en carretera, sendero, río ni paisaje.',
+      C: 'MOTIVO ÚNICO: módulos pixelados rectangulares que avanzan en una secuencia ascendente y forman una silueta geométrica compacta; el mensaje ocupa el lateral indicado. Sin icono figurativo independiente.'
     };
     return walkingRoutes[key] || '';
   }
   const genericRoutes = {
-    A: 'MOTIVO ÚNICO: una sola forma focal directamente nombrada en el concepto; no construir escena ni añadir elementos de ambientación.',
+    A: 'MOTIVO ÚNICO: una sola forma focal directamente nombrada en el concepto; si el concepto es abstracto, usa una masa tipográfica o geométrica derivada de su significado, nunca un objeto genérico.',
     B: 'MOTIVO ÚNICO: representar la acción o relación principal del concepto mediante un solo gesto gráfico abstracto; no repetir la forma focal de A ni añadir objetos.',
-    C: 'MOTIVO ÚNICO: expresar el concepto mediante tipografía, contraformas y espacio negativo; sin objeto figurativo ni icono independiente.'
+    C: 'MOTIVO ÚNICO: expresar el concepto mediante geometría modular, contraformas y espacio negativo; sin objeto figurativo ni icono independiente.'
   };
   return genericRoutes[key] || '';
 }
-
 function _pickFresh(biasPool, fullPool, used) {
   const bias = (biasPool || []).filter(function (x) { return used.indexOf(x) === -1; });
   if (bias.length) return _pick(bias);
@@ -2415,7 +2414,7 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     v.jerarquiaVisual = hierarchyPerKey[k];
     // Mismo ancla semántica; distinta ruta de representación por ficha.
     v.rutaVisual = (!isVar && MOTOR_STATE.designMode !== 'patron') ? _visualExpressionRoute(k) : '';
-    v.motivoVisual = (MOTOR_STATE.workflowMode === 'explore' && MOTOR_STATE.designMode !== 'patron') ? _motifExpressionDirective(k, MOTOR_STATE.concept || '') : '';
+    v.motivoVisual = (!isVar && MOTOR_STATE.designMode !== 'patron') ? _motifExpressionDirective(k, MOTOR_STATE.concept || '') : '';
 
     // En un contactsheet nuevo, el símbolo se decide una vez para A/B/C.
     // Variación desde imagen conserva su propia lógica y sus selectores.
