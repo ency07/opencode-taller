@@ -59,6 +59,16 @@ assert.ok(repair.changes.some(change => change.ficha === 'A' && change.eje === '
 assert.equal(_validateCreativeContract(repaired, {}).ok, true,
   'la ficha reparada debe volver a cumplir el contrato');
 
+const duplicateArchitecture = JSON.parse(JSON.stringify(candidate));
+duplicateArchitecture.B.distribucionTexto = duplicateArchitecture.A.distribucionTexto;
+const duplicateRepair = _reconcileCreativeStructure(duplicateArchitecture);
+assert.ok(duplicateRepair.changes.some(change => change.ficha === 'B' && change.eje === 'arquitectura'),
+  'la reconciliación debe separar arquitecturas repetidas cuando existe alternativa compatible');
+assert.equal(new Set(['A', 'B', 'C'].map(key => duplicateArchitecture[key].distribucionTexto)).size, 3,
+  'la reparación no debe clonar arquitectura textual entre fichas');
+assert.equal(_validateCreativeContract(duplicateArchitecture, {}).ok, true,
+  'el set con arquitectura repetida reparada debe cumplir el contrato');
+
 const badIntegration = JSON.parse(JSON.stringify(candidate));
 badIntegration.A.layout = 'Columna apilada';
 badIntegration.A.integracionTexto = 'una cinta que envuelve el texto y el símbolo';
