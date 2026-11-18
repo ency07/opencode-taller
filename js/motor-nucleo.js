@@ -2123,7 +2123,7 @@ function _validateCreativeContract(set, locks) {
     if (v.layout && v.integracionTexto && _integracionCompatible(v.layout, v.integracionTexto) !== v.integracionTexto) {
       errors.push('Ficha ' + k + ': integración texto-símbolo incompatible con el layout.');
     }
-    if (v.jerarquiaVisual !== 'SOLO_TEXTO' && v.jerarquiaVisual !== 'SOLO_OBJETO'
+    if (v.jerarquiaVisual !== 'SOLO_TEXTO'
       && (v.objeto == null || String(v.objeto).trim() === '')) errors.push('Ficha ' + k + ': falta el motivo autorizado.');
     var expected = { estilo: v.estilo, jerarquia: v.jerarquiaVisual, layout: v.layout, tratamiento: _treatmentKey(v.tratamiento) };
     Object.keys(expected).forEach(function (field) {
