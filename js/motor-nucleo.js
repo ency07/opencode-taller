@@ -4781,8 +4781,12 @@ function arbitroSelectores(promptText, result) {
     if (!_arbHas(text, v.jerarquiaVisual)) faltas.push('jerarquía');
     const objetoOk = v.jerarquiaVisual === 'SOLO_TEXTO' ? _arbHas(text, 'recap ' + N[i]) : _arbHas(text, v.objeto);
     if (!objetoOk) faltas.push('objeto');
-    if (v.guiaSimbolo && !_arbHas(text, 'MOTIVO VISUAL / GUÍA DE SÍMBOLO: ' + v.guiaSimbolo)) faltas.push('guía del motivo visual');
+    const contactNeedsGuide = MOTOR_STATE.workflowMode !== 'explore' && MOTOR_STATE.workflowMode !== 'variation'
+      && MOTOR_STATE.designMode !== 'patron' && v.jerarquiaVisual !== 'SOLO_TEXTO';
+    if (contactNeedsGuide && !v.guiaSimbolo) faltas.push('guía del motivo visual ausente');
+    if (v.guiaSimbolo && !_arbHas(text, 'MOTIVO VISUAL / GUÍA DE SÍMBOLO: ' + v.guiaSimbolo)) faltas.push('guía del motivo visual no llegó al prompt');
     if (!layoutOk) faltas.push('layout fuera del catálogo del producto');
+    if (typeof _arquitecturaCompatible === 'function' && !_arquitecturaCompatible(v.distribucionTexto, v.layout)) faltas.push('arquitectura incompatible con layout');
     add('Ficha ' + N[i], 'Estilo · audiencia · objeto · jerarquía',
       faltas.length === 0, faltas.join(', '));
   });
