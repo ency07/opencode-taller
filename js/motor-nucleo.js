@@ -1871,6 +1871,8 @@ function _soloTextCompositionDirective(architecture) {
 function _compatibleCompositionDirective(hierarchy, architecture) {
   const lower = String(architecture || '').toLocaleLowerCase();
   const placements = [
+    [/texto centrado debajo/, 'texto centrado debajo del símbolo'],
+    [/texto centrado arriba/, 'texto centrado arriba del símbolo'],
     [/texto arriba|banda superior|franja superior/, 'texto en la zona superior'],
     [/columna lateral|bloque vertical lateral|pila vertical/, 'texto en una columna lateral'],
     [/arco superior|arco lateral|texto sigue un solo lado/, 'texto siguiendo un tramo del contorno'],
@@ -1956,9 +1958,14 @@ function _arquitecturaCompatible(arch, layout) {
     return /^(TEXTO ARRIBA|TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|TEXTO DIVIDIDO|DOS BLOQUES|BLOQUES MODULARES|BLOQUE INFERIOR|FRANJA INFERIOR|PALABRA CLAVE)/i.test(a);
   }
   if (/Axial centrado/i.test(l)) {
-    // Un texto dividido simétricamente a ambos lados puede conservar el eje axial;
-    // lo incompatible es la alineación lateral irregular o una diagonal ajena.
-    return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO DIVIDIDO|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
+    // Si el propio layout declara el texto debajo, no aceptar bandas ni bloques superiores.
+    if (/textos? centrados? debajo/i.test(l)) {
+      return /^TEXTO CENTRADO DEBAJO/i.test(a);
+    }
+    if (/textos? centrados? arriba/i.test(l)) {
+      return /^TEXTO CENTRADO ARRIBA/i.test(a);
+    }
+    return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|TEXTO dentro de un vacío real)/i.test(a);
   }
   if (/Emblema circular|Arco y cúpula/i.test(l)) {
     return /^(TEXTO CENTRADO ARRIBA|TEXTO CENTRADO DEBAJO|ARCO SUPERIOR|BANDA SUPERIOR|TEXTO dentro de un vacío real|SÍMBOLO integrado)/i.test(a);
@@ -1998,6 +2005,9 @@ function _fallbackTextArchitectureForLayout(layout) {
   }
   if (/Órbita radial/i.test(l)) {
     return 'ÓRBITA PARCIAL alrededor del motivo; deja una abertura amplia y conserva lectura natural.';
+  }
+  if (/Axial centrado/i.test(l) && /textos? centrados? debajo/i.test(l)) {
+    return 'TEXTO CENTRADO DEBAJO; símbolo centrado arriba; eje vertical limpio y separación amplia.';
   }
   if (/Axial centrado|Emblema circular|Arco y cúpula/i.test(l)) {
     return 'TEXTO CENTRADO ARRIBA; motivo centrado debajo; eje vertical limpio y separación amplia.';
