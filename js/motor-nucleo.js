@@ -1043,7 +1043,7 @@ function _visualExpressionRoute(key) {
    derivada del concepto y sin iconografía o escenarios añadidos por asociación. */
 function _motifExpressionDirective(key, concept) {
   const source = String(concept || '').toLowerCase();
-  const walking = /\\b(walk|walking|caminar|camino|andar|andando|paso|pasos|footstep|footsteps)\\b/.test(source);
+  const walking = /\b(walk|walking|caminar|camino|andar|andando|paso|pasos|footstep|footsteps)\b/.test(source);
   if (walking) {
     const walkingRoutes = {
       A: 'MOTIVO ÚNICO: secuencia breve de huellas/pasos que representa literalmente caminar. Sin calzado gigante, cruz, persona, montaña, mar, olas, árboles, sol, estrellas ni paisaje.',
