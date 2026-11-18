@@ -4787,6 +4787,32 @@ function arbitroSelectores(promptText, result) {
       faltas.length === 0, faltas.join(', '));
   });
 
+  // Regresiones P1-A/P1-B: el modo de audiencia y la guía visual deben
+  // sobrevivir hasta el prompt completo, no solo al estado interno del motor.
+  const effectiveAudiences = K.map(function (k) { return String((set[k] || {}).audiencia || ''); });
+  const audienceLocksNow = (_resolveLocks() || {}).audiencia || {};
+  const allAudienceCardsAuto = K.every(function (k) {
+    const lock = audienceLocksNow[k];
+    return !lock || lock === 'Auto';
+  });
+  if (MOTOR_STATE.audienceSet === 'Auto' && MOTOR_STATE.audienceMulti !== 'si' && allAudienceCardsAuto) {
+    add('Regresión', 'Auto sin explorar 3 audiencias = una audiencia compartida',
+      new Set(effectiveAudiences).size === 1,
+      'el selector está en modo de audiencia única, pero A/B/C recibieron perfiles distintos');
+  }
+  const audienceContextText = [MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE.support,
+    MOTOR_STATE.subniche, (typeof dominioEfectivo === 'function' ? dominioEfectivo() : '')].join(' ');
+  const explicitKidsSignal = /\\b(kids?|children|child|infant|toddler|school\\s*age|niñ[oa]s?|infantil|preescolar)\\b/i.test(audienceContextText);
+  const explicitKidsAudience = MOTOR_STATE.audienceSet === 'gospel_infantil'
+    || effectiveAudiences.some(function (id) { return (audienceLocksNow.A === id || audienceLocksNow.B === id || audienceLocksNow.C === id) && id === 'gospel_infantil'; });
+  if (MOTOR_STATE.market === 'gospel_en' || MOTOR_STATE.market === 'gospel_es') {
+    if (MOTOR_STATE.audienceSet === 'Auto' && !explicitKidsSignal && !explicitKidsAudience) {
+      add('Regresión', 'No asignar audiencia infantil sin señal explícita',
+        effectiveAudiences.indexOf('gospel_infantil') === -1,
+        'apareció gospel_infantil sin que concepto, mensaje, subnicho o selección lo solicitaran');
+    }
+  }
+
   // Anti-repetición de ejes duros entre A/B/C.
   const hardAxes = ['layout', 'tipografia', 'tratamiento', 'formaSimbolo', 'integracionTexto', 'distribucionTexto', 'tecnica'];
   const repetidos = hardAxes.filter(function (ax) {
