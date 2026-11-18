@@ -160,7 +160,13 @@ MOTOR_STATE.audienceSet = 'gospel_infantil';
 MOTOR_STATE.audienceMulti = 'no';
 const gospelKidsExplicit = resolveAudiences();
 ok(['A','B','C'].every(function (k) { return gospelKidsExplicit[k] === 'gospel_infantil'; }),
-  'la selección explícita Infantil cristiana debe seguir permitida');
+  'la selección explícita Infantil cristiana debe prevalecer sobre el filtro automático del subnicho');
+MOTOR_STATE.audienceSet = 'Auto';
+MOTOR_STATE.subniche = 'gospel_en';
+setLockValue('gospel_en|global', 'CAMISETA SOFT', 'audiencia', 'A', 'gospel_infantil');
+const gospelKidsLocked = resolveAudiences();
+ok(gospelKidsLocked.A === 'gospel_infantil', 'un lock infantil explícito por ficha prevalece sobre el pool automático');
+ok(gospelKidsLocked.B !== 'gospel_infantil' && gospelKidsLocked.C !== 'gospel_infantil', 'las fichas Auto no heredan el lock infantil de otra ficha');
 clearAudience('gospel_en|global');
 MOTOR_STATE.market = 'colombia';
 MOTOR_STATE.region = 'todas';
