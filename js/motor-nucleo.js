@@ -311,6 +311,9 @@ function resolveAudiences() {
   const market = MOTOR_STATE.market;
   const region = MOTOR_STATE.region;
   const pool = getCurrentAudiencePool();
+  const marketPool = typeof getAudiencesForMarketRegion === 'function'
+    ? (getAudiencesForMarketRegion(market, region) || [])
+    : pool;
   const locks = _resolveLocks() || {};
   const audienceLocks = locks.audiencia || {};
   const result = {};
@@ -321,7 +324,9 @@ function resolveAudiences() {
   // No se deben sustituir al pulsar "Crear los 3 diseños".
   K.forEach(function (k) {
     const locked = audienceLocks[k];
-    if (locked && locked !== 'Auto' && pool.indexOf(locked) !== -1) {
+    // Un lock explícito del usuario prevalece sobre el filtro automático del subnicho,
+    // pero nunca puede importar una audiencia de otro mercado.
+    if (locked && locked !== 'Auto' && marketPool.indexOf(locked) !== -1) {
       result[k] = locked;
     } else {
       autos.push(k);
@@ -364,7 +369,9 @@ function resolveAudiences() {
   // Audiencia específica elegida por el usuario: decisión explícita de
   // compartirla en las tarjetas Auto (los locks de B/C nunca se sobrescriben).
   if (base !== 'Auto') {
-    if (pool.indexOf(base) !== -1) {
+    // La audiencia fijada en el selector es una decisión explícita: se valida
+    // contra el mercado, no contra el pool automático restringido por subnicho.
+    if (marketPool.indexOf(base) !== -1) {
       autos.forEach(function (k) { result[k] = base; });
     }
     return result;
