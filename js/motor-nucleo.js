@@ -5094,7 +5094,12 @@ async function copiarPrompt() {
   const outEl = document.getElementById('out');
   const statusEl = document.getElementById('status');
   if (!outEl || !outEl.value) {
-    if (statusEl) statusEl.innerHTML = '<span class="bad">No hay prompt. Primero crea los 3 diseños.</span>';
+    const contractErrors = (typeof LAST_RESULT !== 'undefined' && LAST_RESULT && Array.isArray(LAST_RESULT.creativeContractErrors))
+      ? LAST_RESULT.creativeContractErrors : [];
+    const reason = contractErrors.length
+      ? 'No se puede copiar: contrato creativo rechazado. ' + contractErrors.join(' · ')
+      : 'No hay prompt. Primero crea los 3 diseños.';
+    if (statusEl) statusEl.innerHTML = '<span class="bad">' + escHtml(reason) + '</span>';
     return;
   }
   // Prompt obsoleto: la configuración cambió después de generar. El copiado
