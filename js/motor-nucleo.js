@@ -370,7 +370,22 @@ function resolveAudiences() {
     return result;
   }
 
-  // En Auto nada se repite: cada ficha recibe un perfil propio del pool
+  // AUTO + "No — solo la fijada": una audiencia compartida para las tres fichas.
+  // Antes caía al bloque de asignación única por tarjeta aunque multi=false,
+  // contradiciendo el selector y permitiendo que una ficha saliera infantil.
+  if (!multi) {
+    const preferredShared = [
+      'gospel_joven_adulto', 'gospel_comunidad', 'gospel_adulto_fe',
+      'gospel_adult_faith', 'gospel_hombre', 'gospel_mujer', 'gospel_familia'
+    ];
+    const shared = preferredShared.find(function (id) { return pool.indexOf(id) !== -1; })
+      || pool.find(function (id) { return id !== 'gospel_infantil'; })
+      || pool[0] || '';
+    autos.forEach(function (k) { result[k] = shared; });
+    return result;
+  }
+
+  // En Auto + "Sí — cada Auto con la suya" se exploran perfiles distintos. cada ficha recibe un perfil propio del pool
   // (elección estable por re-roll con la ficha en el contexto). Si el pool
   // tiene menos perfiles que fichas, las sobrantes reutilizan el pool y
   // quedan marcadas como AVISO en el prompt, nunca como bloqueo.
