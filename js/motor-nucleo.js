@@ -2070,7 +2070,7 @@ function _reconcileCreativeStructure(set) {
     var v = set[k];
     if (!v) { unresolved.push('Ficha ' + k + ': ausente.'); return; }
     var current = String(v.distribucionTexto || '');
-    if (!_arquitecturaCompatible(current, v.layout)) {
+    if (!_arquitecturaCompatible(current, v.layout) || used[current]) {
       var eligible = _TEXT_COMPOSITION_BANK.filter(function (candidate) {
         return _arquitecturaCompatible(candidate, v.layout) && !used[candidate];
       });
@@ -2085,7 +2085,7 @@ function _reconcileCreativeStructure(set) {
           v.distribucionTexto = fallback;
           changes.push({ ficha: k, eje: 'arquitectura', before: current, after: fallback });
         } else {
-          unresolved.push('Ficha ' + k + ': no existe arquitectura textual compatible con el layout "' + String(v.layout || '') + '".');
+          unresolved.push('Ficha ' + k + ': no existe arquitectura textual compatible y no repetida para el layout "' + String(v.layout || '') + '".');
         }
       }
     }
