@@ -90,7 +90,7 @@ ok(prompt.indexOf('EJE DE COLUMNAS:') !== -1, 'el prompt debe aclarar el eje de 
 ok(prompt.indexOf('CARAS DEL SET:') !== -1, 'el prompt debe resumir las caras del set');
 ok(prompt.indexOf('todas FRENTE') !== -1, 'sin espalda pedida, el set completo debe ser FRENTE');
 ok(motorSource.includes('function _contrastBlock(set)'), 'el contraste A/B/C debe estar encapsulado en una función');
-ok(motorSource.includes('si dos columnas comparten encuadre, silueta global o distribución de masas'),
+ok(motorSource.includes('Si dos fichas siguen pareciendo la misma forma o tienen la misma distribución de masas'),
   'el contraste debe prohibir columnas con la misma estructura');
 
 /* --- 3b) El prompt de DISPLATE omite cara y CARAS DEL SET --- */
