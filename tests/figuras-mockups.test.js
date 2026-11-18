@@ -38,7 +38,7 @@ function ficha(jerarquia, objeto) {
     textoPrincipal: 'T', textoApoyo: 'A', textoTerciario: 'S',
     tipografia: 'Slab pesada', paleta: 'pal (modo: X)', familiaColor: 'f',
     fitAudiencia: 70, fitProducto: 60, densidad: 'Media', negativeSpace: 'abierto',
-    distribucionTexto: 'texto en diagonal', integracionTexto: 'w', relacion: 'r'
+    distribucionTexto: 'TEXTO ARRIBA · bloque superior', integracionTexto: 'w', relacion: 'r'
   };
 }
 function count(out, sub) { return out.split(sub).length - 1; }
@@ -58,7 +58,9 @@ function setup(concept) {
   MOTOR_STATE.explorationBrief = null;
 }
 function set3(objeto) {
-  return { A: ficha('BALANCEADO', objeto), B: ficha('TEXTO_DOMINANTE', objeto), C: ficha('OBJETO_DOMINANTE', objeto) };
+  const set = { A: ficha('BALANCEADO', objeto), B: ficha('TEXTO_DOMINANTE', objeto), C: ficha('OBJETO_DOMINANTE', objeto) };
+  _reconcileCreativeStructure(set);
+  return set;
 }
 
 /* Gesto facial: autoriza SOLO rostro + calidad anatómica */
@@ -84,7 +86,9 @@ ok(outNombrado.indexOf('sin añadir otras personas ni multitudes') !== -1, 'nomb
 ok(outNombrado.indexOf('CALIDAD ANATÓMICA OBLIGATORIA') !== -1, 'nombrado: debe exigir calidad anatómica');
 
 /* SOLO_TEXTO no lleva línea FIGURAS (no hay objeto) */
-const outSolo = formatPrompt({ set: { A: ficha('SOLO_TEXTO', 'x'), B: ficha('TEXTO_DOMINANTE', 'x'), C: ficha('BALANCEADO', 'x') } });
+const soloSet = { A: ficha('SOLO_TEXTO', 'x'), B: ficha('TEXTO_DOMINANTE', 'x'), C: ficha('BALANCEADO', 'x') };
+_reconcileCreativeStructure(soloSet);
+const outSolo = formatPrompt({ set: soloSet });
 ok(count(outSolo, 'FIGURAS HUMANAS:') === 1, 'SOLO_TEXTO no debe traer FIGURAS por ficha (1 único en REGLAS COMUNES esperado)');
 
 /* FICHA SERIE: franja metadata + 3 columnas por audiencia + colores + adicionales + paleta */
