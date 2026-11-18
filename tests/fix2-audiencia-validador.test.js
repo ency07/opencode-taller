@@ -157,7 +157,7 @@ ok(['A','B','C'].every(function (k) { return gospelMulti[k] !== 'gospel_infantil
   'Explorar 3 audiencias tampoco debe introducir infantil por defecto en fe general');
 MOTOR_STATE.subniche = 'auto';
 MOTOR_STATE.audienceSet = 'gospel_infantil';
-MOTOR_STATE.audienceMulti = 'no';
+MOTOR_STATE.audienceMulti = 'si';
 const gospelKidsExplicit = resolveAudiences();
 ok(['A','B','C'].every(function (k) { return gospelKidsExplicit[k] === 'gospel_infantil'; }),
   'la selección explícita Infantil cristiana debe prevalecer sobre el filtro automático del subnicho');
