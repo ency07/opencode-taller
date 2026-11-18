@@ -56,8 +56,12 @@ LAYOUTS.forEach(function (layout) {
 /* --- 2) Incompatibilidades del caso real (01B: Columna apilada + TEXTO DIVIDIDO) --- */
 ok(_arquitecturaCompatible('TEXTO DIVIDIDO a ambos lados del motivo; lectura natural y pausa visual central.', 'Columna apilada') === false,
   'Columna apilada no admite TEXTO DIVIDIDO (caso real 01B)');
-ok(_arquitecturaCompatible('TEXTO DIVIDIDO a ambos lados del motivo; lectura natural y pausa visual central.', 'Axial centrado') === true,
-  'Axial centrado sí admite TEXTO DIVIDIDO');
+ok(_arquitecturaCompatible('TEXTO DIVIDIDO a ambos lados del motivo; lectura natural y pausa visual central.', 'Axial centrado') === false,
+  'Axial centrado no admite distribución dividida si el layout no la declara');
+ok(_arquitecturaCompatible('BANDA SUPERIOR estrecha y centrada; motivo debajo separado por intervalo limpio.', 'Axial centrado: eje vertical único; símbolo centrado; textos centrados debajo') === false,
+  'Axial con textos debajo rechaza banda superior');
+ok(_arquitecturaCompatible('TEXTO CENTRADO DEBAJO; símbolo centrado arriba; eje vertical limpio.', 'Axial centrado: eje vertical único; símbolo centrado; textos centrados debajo') === true,
+  'Axial con textos debajo acepta texto centrado debajo');
 ok(_arquitecturaCompatible('COLUMNA LATERAL izquierda; motivo al lado opuesto; líneas cortas y corredor de espacio negativo.', 'Diagonal ascendente') === false,
   'Diagonal no admite COLUMNA LATERAL');
 ok(_arquitecturaCompatible('TEXTO ARRIBA, motivo debajo; alineación izquierda irregular; franja horizontal y separación amplia.', 'Columna apilada') === true,
@@ -118,6 +122,8 @@ ok(out.indexOf('INTERPRETACIÓN DEL CONCEPTO:') !== -1, 'P3: interpretación lit
 ok(out.indexOf('lectura más literal de sus palabras') !== -1, 'P3: elige la lectura más literal');
 ok(out.indexOf('DISTRIBUCIÓN ADAPTADA:') !== -1, 'P2: la integración adapta la arquitectura al layout sin alterar la jerarquía');
 ok(_compatibleCompositionDirective('TEXTO_DOMINANTE', '').indexOf('texto y símbolo en zonas diferenciadas con asimetría controlada') !== -1, 'P2: fallback de arquitectura conserva una relación compositiva segura');
+ok(_compatibleCompositionDirective('TEXTO_DOMINANTE', 'TEXTO CENTRADO DEBAJO; símbolo centrado arriba.').includes('texto centrado debajo del símbolo'), 'P1: directiva de distribución respeta texto debajo');
+ok(!_compatibleCompositionDirective('TEXTO_DOMINANTE', 'TEXTO CENTRADO DEBAJO; símbolo centrado arriba.').includes('una sola silueta tipográfica-simbólica integrada'), 'P1: texto dominante no fuerza integración si la arquitectura separa zonas');
 ok(out.indexOf('entrega por prioridad:') !== -1 && out.indexOf('mejor un parcial limpio que columnas incompletas') !== -1, 'P4: orden de degradación de la hoja');
 
 /* --- 6) P5 en fuente (MODERN) --- */
