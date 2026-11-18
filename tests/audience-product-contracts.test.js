@@ -131,7 +131,10 @@ ok(/getAudiencesForSubniche\(subniche, region, market\)/.test(motor), 'motor con
 ok(/const multi = MOTOR_STATE\.audienceMulti === 'si';/.test(motor), 'Explorar 3 audiencias debe respetar el selector multi-audiencia');
 ok(/const audienceLocks = locks\.audiencia \|\| \{\}/.test(motor), 'resolverAudiences lee los locks individuales de audiencia');
 ok(/if \(locked && locked !== 'Auto' && pool\.indexOf\(locked\) !== -1\)/.test(motor), 'audiencias manuales compatibles prevalecen por tarjeta también en Exploración');
-ok(/if \(!multi\) \{[\s\S]{0,1800}return result;[\s\S]{0,900}const used = new Set\(Object\.values\(result\)\)/.test(motor), 'el modo de audiencia compartida retorna antes del asignador multi y las audiencias Auto distintas usan un conjunto de perfiles ya ocupados');
+const audienceResolverStart = motor.indexOf('function resolveAudiences()');
+const audienceResolverEnd = motor.indexOf('/* --- Contrato de técnica', audienceResolverStart);
+const audienceResolver = motor.slice(audienceResolverStart, audienceResolverEnd);
+ok(audienceResolver.includes('if (!multi)') && audienceResolver.includes('return result;') && audienceResolver.includes('const used = new Set(Object.values(result))'), 'el modo de audiencia compartida retorna antes del asignador multi y las audiencias Auto distintas usan un conjunto de perfiles ya ocupados');
 
 ok(!/const multi = MOTOR_STATE\.audienceMulti === 'si' && MOTOR_STATE\.workflowMode !== 'explore'/.test(motor), 'Explorar no desactiva el modo de audiencias distintas');
 
