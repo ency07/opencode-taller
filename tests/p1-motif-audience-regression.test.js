@@ -36,11 +36,11 @@ const concept = 'Walk by Faith';
 const routes = ['A', 'B', 'C'].map(key => motifContext._motifExpressionDirective(key, concept));
 assert.equal(new Set(routes).size, 3, 'cada ficha debe recibir una representación propia');
 assert.match(routes[0], /huellas\/pasos/);
-assert.match(routes[1], /línea continua de recorrido/);
-assert.match(routes[2], /tipografía con ritmo de avance/);
-assert.ok(routes[0].includes('Sin calzado gigante, cruz, persona, montaña, mar, olas, árboles, sol, estrellas ni paisaje.'));
-assert.ok(routes[1].includes('Prohibido dibujar huellas, pisadas, calzado'));
-assert.ok(routes[2].includes('ninguna ilustración ni icono independiente'));
+assert.match(routes[1], /trazo continuo, abierto y calibrado/);
+assert.match(routes[2], /módulos pixelados rectangulares/);
+assert.ok(routes[0].includes('No dibujar huellas, zapatos, escaleras físicas ni un camino paisajístico.'));
+assert.ok(routes[1].includes('No convertirlo en carretera, sendero, río ni paisaje.'));
+assert.ok(routes[2].includes('Sin icono figurativo independiente.'));
 assert.match(motifContext._motifExpressionDirective('A', 'Grace is Enough'), /forma focal directamente nombrada/);
 assert.match(motifContext._motifExpressionDirective('B', 'Grace is Enough'), /gesto gráfico abstracto/);
 assert.match(motifContext._motifExpressionDirective('C', 'Grace is Enough'), /tipografía, contraformas y espacio negativo/);
@@ -50,4 +50,4 @@ assert.match(motor, /v\.motivoVisual = \(MOTOR_STATE\.workflowMode === 'explore'
 assert.match(motor, /MOTIVO \/ REPRESENTACIÓN EXCLUSIVA/);
 assert.match(motor, /no construyas una escena ni añadas objetos físicos por asociación libre/);
 
-console.log('PASS p1-motif-audience-regression: motif separation and broad Auto audience');
+assert.match(motor, /v\\.motivoVisual = \\(!isVar && MOTOR_STATE\\.designMode !== 'patron'\\)/, 'CONTACTSHEET nuevo también debe recibir rutas semánticas A/B/C');\n\nconsole.log('PASS p1-motif-audience-regression: motif separation, contact-sheet semantic lock and broad Auto audience');
