@@ -67,6 +67,8 @@ jobs:
         run: node tests/test_gospel_es_prompt_fix.js
       - name: Run semantic identity regression
         run: node tests/semantic-identity.test.js
+      - name: Run semantic motif contract regression
+        run: node tests/p1-motif-audience-regression.test.js
 
   rt03-audience:
     name: RT-03 audience regressions
