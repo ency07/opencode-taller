@@ -41,7 +41,7 @@ assert.match(routes[2], /módulos pixelados rectangulares/);
 assert.ok(routes[0].includes('No dibujar huellas, zapatos, escaleras físicas ni un camino paisajístico.'));
 assert.ok(routes[1].includes('No convertirlo en carretera, sendero, río ni paisaje.'));
 assert.ok(routes[2].includes('Sin icono figurativo independiente.'));
-assert.match(motifContext._motifExpressionDirective('A', 'Grace is Enough'), /forma focal directamente nombrada/);
+assert.match(motifContext._motifExpressionDirective('A', 'Grace is Enough'), /masa tipográfica o geométrica compacta/);
 assert.match(motifContext._motifExpressionDirective('B', 'Grace is Enough'), /gesto gráfico abstracto/);
 assert.match(motifContext._motifExpressionDirective('C', 'Grace is Enough'), /tipografía, contraformas y espacio negativo/);
 
