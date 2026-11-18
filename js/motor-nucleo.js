@@ -4802,7 +4802,7 @@ function arbitroSelectores(promptText, result) {
   }
   const audienceContextText = [MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE.support,
     MOTOR_STATE.subniche, (typeof dominioEfectivo === 'function' ? dominioEfectivo() : '')].join(' ');
-  const explicitKidsSignal = /\\b(kids?|children|child|infant|toddler|school\\s*age|niñ[oa]s?|infantil|preescolar)\\b/i.test(audienceContextText);
+  const explicitKidsSignal = /\b(kids?|children|child|infant|toddler|school\s*age|niñ[oa]s?|infantil|preescolar)\b/i.test(audienceContextText);
   const explicitKidsAudience = MOTOR_STATE.audienceSet === 'gospel_infantil'
     || effectiveAudiences.some(function (id) { return (audienceLocksNow.A === id || audienceLocksNow.B === id || audienceLocksNow.C === id) && id === 'gospel_infantil'; });
   if (MOTOR_STATE.market === 'gospel_en' || MOTOR_STATE.market === 'gospel_es') {
