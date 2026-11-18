@@ -3895,7 +3895,7 @@ function formatPrompt(result) {
     o += 'CONTRATO CREATIVO: conserva concepto, familia, función y mensaje; no inventes objetos, datos ni texto. Si falta un dato, omítelo.\n';
     o += 'DIRECCIÓN: el estilo artístico define el lenguaje visual; HEAVY/SOFT/MODERN modifican composición y jerarquía sin borrar ese estilo. No mezcles instrucciones incompatibles.\n';
     o += 'A/B/C: misma identidad semántica, soluciones distintas en composición, silueta, tipografía y relación texto-imagen; no basta recolorear o cambiar textura.\n';
-  o += 'DIVERSIDAD DE MOTIVO: A/B/C conservan el mismo concepto y ancla semántica, pero no deben repetir el mismo cliché o motivo gráfico. Cada ficha aplica su ruta visual exclusiva; la ruta modifica la representación, no sustituye el concepto. Un recurso habitual de un estilo (por ejemplo, olas, flores, flechas, montañas o estrellas) no queda autorizado por el estilo: solo se usa si está nombrado o se deriva directamente del significado literal del concepto. No inventar escenas ni objetos físicos nuevos.\\n';
+  o += 'DIVERSIDAD DE MOTIVO: A/B/C conservan el mismo concepto y ancla semántica, pero no deben repetir el mismo cliché o motivo gráfico. Cada ficha aplica su ruta visual exclusiva; la ruta modifica la representación, no sustituye el concepto. Un recurso habitual de un estilo (por ejemplo, olas, flores, flechas, montañas o estrellas) no queda autorizado por el estilo: solo se usa si está nombrado o se deriva directamente del significado literal del concepto. No inventar escenas ni objetos físicos nuevos.\n';
   }
   if (isVar) {
     const _profileHints = {
