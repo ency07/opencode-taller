@@ -2963,7 +2963,7 @@ function evaluaSetOk(set) {
   if (umbralMsg) detalle.push(umbralMsg);
   if (!creativeContract.ok) detalle.push.apply(detalle, creativeContract.errors);
   if (_patternConflictsOf(set) !== 0) detalle.push('patrones recientes repetidos');
-  return { score: m, passed: ok, detalle: detalle };
+  return { score: m, passed: ok, detalle: detalle, creativeContract: creativeContract };
 }
 /* Ejes en los que una carta candidata repite con las conservadas.
    El dado la usa como exclusión dura (no como puntos): lo que aquí salga
@@ -3310,6 +3310,7 @@ _preservation = {
     set: best,
     score: bestScore,
     passed: passed,
+    creativeContractErrors: _validateCreativeContract(best, _resolveLocks() || {}).errors,
     explorationBrief: MOTOR_STATE.explorationBrief,
     objectConflicts: (best && best.objectConflicts) || [],
     similarityAudit: { basis: 'metadata_only', available: true, compared: similarityCompared, alerts: similarityAlerts },
@@ -5010,7 +5011,9 @@ function _estadoUnificado(result) {
   }
   if (!okScore) {
     const umbralMsg = (typeof _mensajeUmbral === 'function') ? _mensajeUmbral(ev) : '';
-    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Validación del set con fallos: ' + escHtml(umbralMsg || 'no supera los controles de calidad') + '</span>' };
+    const contractErrors = result && Array.isArray(result.creativeContractErrors) ? result.creativeContractErrors : [];
+    const detail = contractErrors.length ? 'Contrato creativo: ' + contractErrors.join(' · ') : (umbralMsg || 'no supera los controles de calidad');
+    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Validación del set con fallos: ' + escHtml(detail) + '</span>' };
   }
   if (!okArb) {
     const checksOkArb = totalArb - fallosArb;
