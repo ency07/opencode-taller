@@ -50,6 +50,9 @@ ok(getAudiencesForSubniche('fe_popular_col', 'todas', 'colombia').every(function
 ok(getAudiencesForSubniche('gospel_es', 'global', 'gospel_es').every(function (id) {
   return id.indexOf('gospel_') === 0;
 }), 'subnicho Gospel debe limitarse al catálogo Gospel');
+ok(getAudiencesForSubniche('gospel_en', 'global', 'gospel_en').indexOf('gospel_infantil') === -1, 'fe general no debe inferir audiencia infantil sin señal kids explícita');
+ok(getAudiencesForSubniche('gospel_en', 'global', 'faith').indexOf('gospel_infantil') === -1, 'faith no debe incluir infantil solo por ser Gospel');
+ok(getAudiencesForSubniche('gospel_en', 'global', 'kids').indexOf('gospel_infantil') !== -1, 'un subnicho kids explícito sí puede incluir audiencia infantil');
 ok(getAudienceSelectOptions('global', 'global_es', 'auto').includes('global_joven_es'), 'selector debe usar mercado global español');
 ok(!getAudienceSelectOptions('global', 'global_es', 'auto').includes('coste_joven_m'), 'selector global español no debe incluir audiencia costeña');
 
