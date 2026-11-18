@@ -335,6 +335,17 @@ function resolveAudiences() {
 
   if (!autos.length) return result;
 
+  // Audiencia específica elegida por el usuario: decisión explícita de
+  // compartirla en las tarjetas Auto (los locks de B/C nunca se sobrescriben).
+  if (base !== 'Auto') {
+    // La audiencia fijada en el selector es una decisión explícita: se valida
+    // contra el mercado, no contra el pool automático restringido por subnicho.
+    if (marketPool.indexOf(base) !== -1) {
+      autos.forEach(function (k) { result[k] = base; });
+    }
+    return result;
+  }
+
   if (multi) {
     // "Explorar 3 audiencias": cada tarjeta Auto recibe un perfil propio
     // cuando el pool lo permite; las audiencias fijadas manualmente quedan intactas.
@@ -363,17 +374,6 @@ function resolveAudiences() {
       if (pick) used.add(pick);
     });
     if (pool.length < K.length) MOTOR_STATE._audsShort = { faltantes: K.length - pool.length };
-    return result;
-  }
-
-  // Audiencia específica elegida por el usuario: decisión explícita de
-  // compartirla en las tarjetas Auto (los locks de B/C nunca se sobrescriben).
-  if (base !== 'Auto') {
-    // La audiencia fijada en el selector es una decisión explícita: se valida
-    // contra el mercado, no contra el pool automático restringido por subnicho.
-    if (marketPool.indexOf(base) !== -1) {
-      autos.forEach(function (k) { result[k] = base; });
-    }
     return result;
   }
 
