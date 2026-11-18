@@ -1053,9 +1053,9 @@ function _motifExpressionDirective(key, concept) {
     return walkingRoutes[key] || '';
   }
   const genericRoutes = {
-    A: 'MOTIVO ÚNICO: una sola forma focal directamente nombrada en el concepto; si el concepto es abstracto, usa una masa tipográfica o geométrica derivada de su significado, nunca un objeto genérico.',
-    B: 'MOTIVO ÚNICO: representar la acción o relación principal del concepto mediante un solo gesto gráfico abstracto; no repetir la forma focal de A ni añadir objetos.',
-    C: 'MOTIVO ÚNICO: expresar el concepto mediante geometría modular, contraformas y espacio negativo; sin objeto figurativo ni icono independiente.'
+    A: 'MOTIVO ÚNICO: una masa tipográfica o geométrica compacta que exprese la idea central sin convertirla en un objeto físico ni construir una escena.',
+    B: 'MOTIVO ÚNICO: representar la relación o tensión principal del concepto mediante un solo gesto gráfico abstracto, abierto y distinto de la masa de A; no añadir objetos.',
+    C: 'MOTIVO ÚNICO: expresar el concepto mediante una estructura geométrica modular y contraformas de silueta distinta a A y B; sin objeto figurativo ni icono independiente.'
   };
   return genericRoutes[key] || '';
 }
