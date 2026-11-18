@@ -34,6 +34,8 @@ MOTOR_STATE.marketplace = 'generic';
 MOTOR_STATE.product = 'CAMISETA SOFT';
 MOTOR_STATE.concept = 'Fogata de fe';
 MOTOR_STATE.message = 'SIGUE LA LUZ';
+MOTOR_STATE.audienceSet = 'Auto';
+MOTOR_STATE.audienceMulti = 'si';
 
 const NAMES = ['01A', '01B', '01C'];
 
