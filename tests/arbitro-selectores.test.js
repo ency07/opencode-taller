@@ -69,6 +69,7 @@ function buildPrompt(set, product) {
     const v = set[k];
     p += '### ' + NAMES[i] + ' · ' + v.estilo + ' · ' + v.audiencia + '\n';
     p += 'RECAP ' + NAMES[i] + ': objeto=«' + v.objeto + '»\n';
+    if (v.guiaSimbolo) p += 'MOTIVO VISUAL / GUÍA DE SÍMBOLO: ' + v.guiaSimbolo + '\n';
     p += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
     p += 'PALETA: ' + v.paleta + '\n';
   });
@@ -117,6 +118,22 @@ const chFichaC = findCheck(infoMochilaBad, 'Ficha 01C');
 ok(chFichaC && chFichaC.ok === false, 'layout fuera del catálogo se marca como fallo');
 ok(chFichaC.detalle.indexOf('layout') !== -1, 'el detalle nombra el layout inválido');
 MOTOR_STATE.product = 'CAMISETA SOFT';
+
+/* 4B. Contact sheet: la guía del motivo visual debe llegar al prompt */
+MOTOR_STATE.workflowMode = 'new';
+MOTOR_STATE.audienceSet = 'gospel_comunidad';
+MOTOR_STATE.audienceMulti = 'no';
+const guidedSet = buenSet();
+['A','B','C'].forEach(function (k) { guidedSet[k].guiaSimbolo = 'metáfora visual derivada del concepto'; });
+const guidedText = buildPrompt(guidedSet, 'CAMISETA SOFT');
+const guidedInfo = arbitroSelectores(guidedText, { set: guidedSet });
+const guideCheck = findCheck(guidedInfo, 'Ficha 01A');
+ok(guideCheck && guideCheck.ok === true, 'el árbitro acepta la guía visual presente en el prompt final');
+const missingGuideSet = buenSet();
+const missingGuideInfo = arbitroSelectores(buildPrompt(missingGuideSet, 'CAMISETA SOFT'), { set: missingGuideSet });
+const missingGuideCheck = findCheck(missingGuideInfo, 'Ficha 01A');
+ok(missingGuideCheck && missingGuideCheck.ok === false && missingGuideCheck.detalle.indexOf('guía del motivo visual') !== -1, 'el árbitro rechaza una ficha de contacto sin guía visual');
+MOTOR_STATE.workflowMode = 'explore';
 
 /* 5. Sin diseños → null */
 vm.runInThisContext('LAST_RESULT = null;');
