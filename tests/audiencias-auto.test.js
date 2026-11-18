@@ -43,6 +43,8 @@ function baseState() {
 
 /* --- 1) Auto sin multi: 3 audiencias distintas --- */
 baseState();
+MOTOR_STATE.workflowMode = 'explore';
+MOTOR_STATE.audienceMulti = 'si';
 let auds = resolveAudiences();
 ok(new Set(Object.values(auds)).size === 3, 'en Auto, A/B/C deben tener audiencias distintas');
 let set = buildCandidate(auds, null);
@@ -51,6 +53,8 @@ ok(prompt.indexOf('AUDIENCIA (AVISO)') === -1, 'con pool grande no debe avisar')
 
 /* --- 2) Lock manual: A fija, B/C Auto siguen sin repetirse ni con A --- */
 baseState();
+MOTOR_STATE.workflowMode = 'explore';
+MOTOR_STATE.audienceMulti = 'si';
 setLockValue(memLocksMarket(), 'CAMISETA SOFT', 'audiencia', 'A', 'infantil_col');
 auds = resolveAudiences();
 ok(auds.A === 'infantil_col', 'el lock manual de A se respeta');
@@ -59,6 +63,8 @@ clearLocks(memLocksMarket(), 'CAMISETA SOFT');
 
 /* --- 3) Determinismo estable: mismo estado, misma respuesta (sin nonce) --- */
 baseState();
+MOTOR_STATE.workflowMode = 'explore';
+MOTOR_STATE.audienceMulti = 'si';
 const primero = resolveAudiences();
 const segundo = resolveAudiences();
 ok(primero.A === segundo.A && primero.B === segundo.B && primero.C === segundo.C, 'mismo estado → misma asignación (estable, estable)');
@@ -71,6 +77,8 @@ ok(Object.values(auds).every(function (v) { return v === 'infantil_col'; }), 'au
 
 /* --- 5) Pool corto: AVISO válido, nada se bloquea --- */
 baseState();
+MOTOR_STATE.workflowMode = 'explore';
+MOTOR_STATE.audienceMulti = 'si';
 const poolReal = getCurrentAudiencePool();
 const poolCorto = poolReal.slice(0, 2);
 const original = getCurrentAudiencePool;
