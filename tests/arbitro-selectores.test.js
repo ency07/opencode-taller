@@ -40,9 +40,12 @@ const NAMES = ['01A', '01B', '01C'];
 function ficha(suf, jer) {
   return {
     estilo: 'Estilo ' + suf, audiencia: 'Adultos ' + suf, jerarquiaVisual: jer,
-    objeto: 'objeto ' + suf, layout: 'Layout ' + suf + ': variante',
+    objeto: 'objeto ' + suf,
+    layout: ({ A: 'Axial centrado: eje vertical único; símbolo centrado; textos centrados debajo', B: 'Editorial asimétrica: columna lateral con espacio negativo', C: 'Tarjeta interior: palabra clave en lateral' })[suf],
     tipografia: 'Tipo ' + suf, formaSimbolo: 'Forma ' + suf, tratamiento: 'TRAT ' + suf,
-    integracionTexto: 'Int ' + suf, distribucionTexto: 'Dist ' + suf, tecnica: 'Tec ' + suf,
+    integracionTexto: 'Int ' + suf,
+    distribucionTexto: ({ A: 'TEXTO CENTRADO DEBAJO; símbolo centrado arriba; eje vertical limpio.', B: 'COLUMNA LATERAL izquierda; motivo al lado opuesto; líneas cortas.', C: 'PALABRA CLAVE en un lateral; resto separado; motivo invade el margen tipográfico.' })[suf],
+    tecnica: 'Tec ' + suf,
     paleta: 'Paleta ' + suf, familiaColor: 'Fam ' + suf,
     _esquema: { bg: '#111111', dom: '#222222', acc: '#333333', ink: '#444444' }
   };
@@ -71,6 +74,8 @@ function buildPrompt(set, product) {
     p += 'RECAP ' + NAMES[i] + ': objeto=«' + v.objeto + '»\n';
     if (v.guiaSimbolo) p += 'MOTIVO VISUAL / GUÍA DE SÍMBOLO: ' + v.guiaSimbolo + '\n';
     p += 'JERARQUÍA: ' + v.jerarquiaVisual + '\n';
+    p += 'LAYOUT: ' + v.layout + '\n';
+    p += 'ARQUITECTURA TEXTUAL: ' + v.distribucionTexto + '\n';
     p += 'PALETA: ' + v.paleta + '\n';
   });
   return p;
