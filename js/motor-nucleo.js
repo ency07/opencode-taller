@@ -378,8 +378,14 @@ function resolveAudiences() {
       'gospel_joven_adulto', 'gospel_comunidad', 'gospel_adulto_fe',
       'gospel_adult_faith', 'gospel_hombre', 'gospel_mujer', 'gospel_familia'
     ];
+    const kidsContext = /\\b(kids?|children|child|infant|toddler|school\\s*age|niñ[oa]s?|infantil|preescolar|back_to_school|pets|gaming_setup)\\b/i
+      .test([MOTOR_STATE.subniche, MOTOR_STATE.concept, MOTOR_STATE.message, MOTOR_STATE.support].join(' '));
+    const nonInfantPool = kidsContext ? pool : pool.filter(function (id) {
+      const profile = _AUD_PROFILES[id] || {};
+      return profile.edad !== 'infantil';
+    });
     const shared = preferredShared.find(function (id) { return pool.indexOf(id) !== -1; })
-      || pool.find(function (id) { return id !== 'gospel_infantil'; })
+      || nonInfantPool[0]
       || pool[0] || '';
     autos.forEach(function (k) { result[k] = shared; });
     return result;
