@@ -5066,6 +5066,7 @@ function validarSetActual() {
   const ev = evaluaSetOk(LAST_RESULT.set);
   LAST_RESULT.score = ev.score;
   LAST_RESULT.passed = ev.passed;
+  LAST_RESULT.creativeContractErrors = ev.creativeContract ? ev.creativeContract.errors : [];
   try { window.LAST_RESULT = LAST_RESULT; } catch (e) {}
   renderGates(LAST_RESULT);
   renderMatrix(LAST_RESULT);
