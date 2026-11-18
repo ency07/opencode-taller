@@ -115,8 +115,11 @@ ok(chRep.detalle.indexOf('tipografia') !== -1, 'el detalle nombra el eje repetid
 MOTOR_STATE.product = 'MOCHILA';
 const setMochila = buenSet();
 setMochila.A.layout = 'Emblema circular: centrado';
+setMochila.A.distribucionTexto = 'TEXTO CENTRADO DEBAJO; motivo centrado arriba.';
 setMochila.B.layout = 'Banda horizontal: inferior';
+setMochila.B.distribucionTexto = 'BANDA SUPERIOR estrecha y centrada; motivo debajo separado.';
 setMochila.C.layout = 'Diagonal ascendente: izquierda';
+setMochila.C.distribucionTexto = 'DIAGONAL ascendente izquierda-derecha; cruza espacio negativo.';
 const infoMochilaOk = arbitroSelectores(buildPrompt(setMochila, 'MOCHILA'), { set: setMochila });
 ok(infoMochilaOk.ok === true, 'layouts permitidos de MOCHILA pasan');
 setMochila.C.layout = 'Foo raro: inventado';
