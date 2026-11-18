@@ -1725,7 +1725,7 @@ function _motifSceneFromMessage(concept, message) {
   return 'símbolo derivado del mensaje'
     + (m ? ' literal «' + m + '»' : '')
     + (c ? ' y del concepto «' + c + '»' : '')
-    + ': no construyas una escena ni añadas objetos físicos por asociación libre; expresa solo el significado literal del concepto mediante una forma gráfica focal, un gesto abstracto o tipografía; cualquier símbolo adicional debe estar nombrado por el usuario';
+    + ': no construyas una escena ni añadas objetos físicos por asociación libre; no inventes motivos ajenos al concepto ni añadas símbolos adicionales que el usuario no haya nombrado o autorizado; expresa solo el significado literal del concepto mediante una forma gráfica focal, un gesto abstracto o tipografía';
 }
 
 /* Plan de motivos de la SERIE (exploración). Se calcula UNA vez por set:
