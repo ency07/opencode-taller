@@ -13,6 +13,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/prompt-creative-quality
   workflow_dispatch:
 
 permissions:
@@ -60,8 +61,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Run Gospel ES prompt regression
@@ -95,10 +94,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Node.js
-        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Run product fit and layout regressions
         run: |
           node tests/product-fit-soft-tee.test.js
           node tests/umbral-qc.test.js
@@ -112,8 +109,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
+        uses:
           node-version: 20
       - name: Check motor syntax
         run: node --check js/motor-nucleo.js
@@ -127,7 +123,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Node.js
-        uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Run approved directions tombstone regression
