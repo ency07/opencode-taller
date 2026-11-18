@@ -71,8 +71,9 @@ const primero = resolveAudiences();
 const segundo = resolveAudiences();
 ok(primero.A === segundo.A && primero.B === segundo.B && primero.C === segundo.C, 'mismo estado → misma asignación (estable, estable)');
 
-/* --- 4) Audiencia elegida por el usuario se comparte (decisión explícita) --- */
+/* --- 4) Audiencia elegida por el usuario se comparte aunque multi esté activo --- */
 baseState();
+MOTOR_STATE.audienceMulti = 'si';
 MOTOR_STATE.audienceSet = 'infantil_col';
 auds = resolveAudiences();
 ok(Object.values(auds).every(function (v) { return v === 'infantil_col'; }), 'audiencia específica elegida se cumple en todas las fichas');
