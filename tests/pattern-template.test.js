@@ -128,7 +128,7 @@ function ficha(estilo) {
   return {
     estilo: estilo, audiencia: 'unisex_nacional', jerarquiaVisual: 'BALANCEADO',
     objeto: 'mochila de viaje', arquitectura: 'a', composicion: 'b',
-    layout: 'Axial centrado', distribucionTexto: 'Símbolo superior con texto inferior',
+    layout: 'Axial centrado', distribucionTexto: 'TEXTO CENTRADO DEBAJO: bloque centrado bajo el motivo, siguiendo el eje vertical',
     integracionTexto: 'Texto y símbolo comparten una unidad compositiva',
     placement: 'panel frontal', escalaProducto: 'media', formaSimbolo: 'silueta sólida a una tinta',
     tecnica: 'impresión DTF', tratamiento: 'SOFT',
