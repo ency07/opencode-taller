@@ -132,6 +132,42 @@ ok(vPrompt.indexOf('INDETERMINADO') !== -1, 'permite resultado INDETERMINADO');
 ok(vPrompt.indexOf('evaluar de forma independiente') !== -1, 'evaluación independiente declarada');
 ok(vPrompt.indexOf('"audiencia_ok":true') !== -1, 'audiencia_ok en formato JSON');
 
+/* --- 3B) Regresión Gospel: Auto único no puede derivar infantil --- */
+MOTOR_STATE.market = 'gospel_en';
+MOTOR_STATE.region = 'global';
+MOTOR_STATE.product = 'CAMISETA SOFT';
+MOTOR_STATE.workflowMode = 'new';
+MOTOR_STATE.designMode = 'contacto';
+MOTOR_STATE.concept = 'Walk by Faith';
+MOTOR_STATE.message = 'WALK BY FAITH';
+MOTOR_STATE.subniche = 'gospel_en';
+MOTOR_STATE.audienceSet = 'Auto';
+MOTOR_STATE.audienceMulti = 'no';
+clearAudience('gospel_en|global');
+const gospelSingle = resolveAudiences();
+ok(new Set(['A','B','C'].map(function (k) { return gospelSingle[k]; })).size === 1,
+  'Gospel Auto + No debe compartir una sola audiencia en A/B/C');
+ok(['A','B','C'].every(function (k) { return gospelSingle[k] !== 'gospel_infantil'; }),
+  'Gospel genérico no debe asignar audiencia infantil sin señal explícita');
+ok(getAudiencesForSubniche('gospel_en', 'global', 'gospel_en').indexOf('gospel_infantil') === -1,
+  'subnicho Gospel genérico excluye infantil');
+MOTOR_STATE.audienceMulti = 'si';
+const gospelMulti = resolveAudiences();
+ok(['A','B','C'].every(function (k) { return gospelMulti[k] !== 'gospel_infantil'; }),
+  'Explorar 3 audiencias tampoco debe introducir infantil por defecto en fe general');
+MOTOR_STATE.subniche = 'auto';
+MOTOR_STATE.audienceSet = 'gospel_infantil';
+MOTOR_STATE.audienceMulti = 'no';
+const gospelKidsExplicit = resolveAudiences();
+ok(['A','B','C'].every(function (k) { return gospelKidsExplicit[k] === 'gospel_infantil'; }),
+  'la selección explícita Infantil cristiana debe seguir permitida');
+clearAudience('gospel_en|global');
+MOTOR_STATE.market = 'colombia';
+MOTOR_STATE.region = 'todas';
+MOTOR_STATE.subniche = 'celebracion_col';
+MOTOR_STATE.audienceSet = 'Auto';
+MOTOR_STATE.audienceMulti = 'si';
+
 /* --- 4) Productos con y sin reglas específicas --- */
 MOTOR_STATE.product = 'HOODIE';
 const setH = buildCandidate(resolveAudiences(), null);
