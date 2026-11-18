@@ -2789,12 +2789,6 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     set.conflicts = _applyDerivedPreservation(set, preservation.prevSet, preservation.effectiveLocks, preservation.targetKey);
   }
 
-  /* La diversificación puede cambiar el layout después del ajuste P1 inicial.
-     Reconciliar tras diversificación y preservación impide reintroducir conflictos. */
-  var _finalStructure = _reconcileCreativeStructure(set);
-  set.creativeContractChanges = _finalStructure.changes;
-  set.creativeContractUnresolved = _finalStructure.unresolved;
-
 
   /* FIX 3E: verificación post-FIX 3C. Clasifica propuestas como redistribuido
      o descartado-por-lock. Reconcilia derivados si FIX 3C restauró un valor. */
@@ -2822,6 +2816,12 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
       }
     });
   }
+
+  /* Último paso de mutación: después de diversidad, preservación y restauración
+     de derivados. Así la reparación no puede ser deshecha por un paso posterior. */
+  var _finalStructure = _reconcileCreativeStructure(set);
+  set.creativeContractChanges = _finalStructure.changes;
+  set.creativeContractUnresolved = _finalStructure.unresolved;
 
   return set;
 }
