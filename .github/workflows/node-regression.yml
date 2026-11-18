@@ -9,6 +9,7 @@ on:
       - integration/taller-pod-consolidation
       - feat/prompt-creative-quality
       - fix/redteam-production-hardening
+      - fix/creative-contract-guard-2026-11
   pull_request:
     branches:
       - main
