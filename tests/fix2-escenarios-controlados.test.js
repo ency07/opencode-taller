@@ -57,6 +57,8 @@ function runScenario(audienceId, expected) {
   clearAudience('colombia|todas');
   lockAll('colombia|todas', audienceId);
   const set = buildCandidate(resolveAudiences(), null);
+  const contractDebug = _validateCreativeContract(set, _resolveLocks() || {});
+  if (!contractDebug.ok) console.log('CREATIVE_CONTRACT_DEBUG ' + audienceId + ': ' + contractDebug.errors.join(' | '), set.creativeContractUnresolved || []);
   const prompt = formatPrompt({ set: set });
   els.out = { value: prompt };
   global.__podSet = set;
