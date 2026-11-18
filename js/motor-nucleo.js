@@ -2059,6 +2059,82 @@ function _integracionCompatible(layout, integracion) {
   return integracion;
 }
 
+
+/* Contrato creativo central: se ejecuta tras TODAS las mutaciones del set.
+   Solo repara decisiones derivadas; nunca altera estilo, jerarquía, tratamiento,
+   layout ni locks explícitos del usuario. */
+function _reconcileCreativeStructure(set) {
+  if (!set) return { changes: [], unresolved: [] };
+  var changes = [], unresolved = [], used = {}, recent = _recentArchitectures();
+  K.forEach(function (k) {
+    var v = set[k];
+    if (!v) { unresolved.push('Ficha ' + k + ': ausente.'); return; }
+    var current = String(v.distribucionTexto || '');
+    if (!_arquitecturaCompatible(current, v.layout)) {
+      var eligible = _TEXT_COMPOSITION_BANK.filter(function (candidate) {
+        return _arquitecturaCompatible(candidate, v.layout) && !used[candidate];
+      });
+      if (eligible.length) {
+        var weights = eligible.map(function (candidate) { return recent.has(candidate) ? 0.35 : 1; });
+        var replacement = _pickWeighted(eligible, weights);
+        v.distribucionTexto = replacement;
+        changes.push({ ficha: k, eje: 'arquitectura', before: current, after: replacement });
+      } else {
+        var fallback = _fallbackTextArchitectureForLayout(v.layout);
+        if (fallback && _arquitecturaCompatible(fallback, v.layout) && !used[fallback]) {
+          v.distribucionTexto = fallback;
+          changes.push({ ficha: k, eje: 'arquitectura', before: current, after: fallback });
+        } else {
+          unresolved.push('Ficha ' + k + ': no existe arquitectura textual compatible con el layout "' + String(v.layout || '') + '".');
+        }
+      }
+    }
+    if (v.distribucionTexto) used[v.distribucionTexto] = true;
+    var beforeIntegration = String(v.integracionTexto || '');
+    var afterIntegration = _integracionCompatible(v.layout, beforeIntegration);
+    if (afterIntegration !== beforeIntegration) {
+      v.integracionTexto = afterIntegration;
+      changes.push({ ficha: k, eje: 'integración', before: beforeIntegration, after: afterIntegration });
+    }
+  });
+  return { changes: changes, unresolved: unresolved };
+}
+
+/* Validador duro: acepta locks manuales repetidos, pero nunca una ficha
+   incompleta ni una arquitectura/integración incompatible con su layout. */
+function _validateCreativeContract(set, locks) {
+  var errors = [];
+  var allowedHierarchy = ['SOLO_TEXTO', 'TEXTO_DOMINANTE', 'BALANCEADO', 'OBJETO_DOMINANTE', 'SOLO_OBJETO'];
+  var lockMap = locks || {};
+  if (!set) return { ok: false, errors: ['Set ausente.'] };
+  K.forEach(function (k) {
+    var v = set[k];
+    if (!v || typeof v !== 'object') { errors.push('Ficha ' + k + ': datos ausentes.'); return; }
+    [['estilo', v.estilo], ['jerarquía', v.jerarquiaVisual], ['tratamiento', v.tratamiento],
+      ['layout', v.layout], ['arquitectura textual', v.distribucionTexto],
+      ['integración texto-símbolo', v.integracionTexto], ['tipografía', v.tipografia],
+      ['forma del símbolo', v.formaSimbolo]].forEach(function (field) {
+      if (field[1] == null || String(field[1]).trim() === '') errors.push('Ficha ' + k + ': falta ' + field[0] + '.');
+    });
+    if (allowedHierarchy.indexOf(String(v.jerarquiaVisual || '')) === -1) errors.push('Ficha ' + k + ': jerarquía visual no reconocida.');
+    if (v.layout && v.distribucionTexto && !_arquitecturaCompatible(v.distribucionTexto, v.layout)) {
+      errors.push('Ficha ' + k + ': arquitectura textual incompatible con el layout.');
+    }
+    if (v.layout && v.integracionTexto && _integracionCompatible(v.layout, v.integracionTexto) !== v.integracionTexto) {
+      errors.push('Ficha ' + k + ': integración texto-símbolo incompatible con el layout.');
+    }
+    if (v.jerarquiaVisual !== 'SOLO_TEXTO' && v.jerarquiaVisual !== 'SOLO_OBJETO'
+      && (v.objeto == null || String(v.objeto).trim() === '')) errors.push('Ficha ' + k + ': falta el motivo autorizado.');
+    var expected = { estilo: v.estilo, jerarquia: v.jerarquiaVisual, layout: v.layout, tratamiento: _treatmentKey(v.tratamiento) };
+    Object.keys(expected).forEach(function (field) {
+      var locked = lockMap[field] && lockMap[field][k];
+      if (!locked || locked === 'Auto' || locked === 'PRESERVE') return;
+      if (String(expected[field]) !== String(locked)) errors.push('Ficha ' + k + ': se alteró el lock explícito de ' + field + '.');
+    });
+  });
+  return { ok: errors.length === 0, errors: errors };
+}
+
 // ============================================================
 // FIX 3E: _diversifyAxes — Búsqueda exhaustiva de diversidad estructural
 // ============================================================
@@ -2713,6 +2789,13 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     set.conflicts = _applyDerivedPreservation(set, preservation.prevSet, preservation.effectiveLocks, preservation.targetKey);
   }
 
+  /* La diversificación puede cambiar el layout después del ajuste P1 inicial.
+     Reconciliar tras diversificación y preservación impide reintroducir conflictos. */
+  var _finalStructure = _reconcileCreativeStructure(set);
+  set.creativeContractChanges = _finalStructure.changes;
+  set.creativeContractUnresolved = _finalStructure.unresolved;
+
+
   /* FIX 3E: verificación post-FIX 3C. Clasifica propuestas como redistribuido
      o descartado-por-lock. Reconcilia derivados si FIX 3C restauró un valor. */
   if (set.diversityConflicts && _diversityResult && _diversityResult.originalDerivados) {
@@ -2835,6 +2918,7 @@ function evaluaSetOk(set) {
   // Los locks manuales pueden repetir un eje (decisión del usuario); el gate
   // solo rechaza repetición entre tarjetas que el motor asignó en Auto.
   const modeLocks = _resolveLocks() || {};
+  const creativeContract = _validateCreativeContract(set, modeLocks);
   const jerLocks = modeLocks.jerarquia || {};
   const jerAutoDistintas = K.every(function (ki, i) {
     if (!set[ki]) return false;
@@ -2863,7 +2947,7 @@ function evaluaSetOk(set) {
     : m.estilos.length === 3;
   const contactRulesOk = !_isLockedContactSet() || (m.symbolStable && m.treatmentsComplete);
   const ok = m.diversity >= 55 && estilosOk && contactRulesOk && ejesOk && pertinenciaOk
-    && _patternConflictsOf(set) === 0;
+    && creativeContract.ok && _patternConflictsOf(set) === 0;
   const detalle = [];
   if (!(m.diversity >= 55)) detalle.push('diferencia ' + m.diversity + '/100 (mín 55)');
   [['layout', 'layout'], ['distribucionTexto', 'arquitectura textual'], ['tipografia', 'tipografía'], ['formaSimbolo', 'forma del símbolo'], ['integracionTexto', 'integración'], ['tratamiento', 'tratamiento'], ['tecnica', 'técnica']].forEach(function (e) {
@@ -2877,6 +2961,7 @@ function evaluaSetOk(set) {
   if (_isLockedContactSet() && !(m.symbolStable && m.treatmentsComplete)) detalle.push('identidad de contacto inestable');
   const umbralMsg = _mensajeUmbral(m);
   if (umbralMsg) detalle.push(umbralMsg);
+  if (!creativeContract.ok) detalle.push.apply(detalle, creativeContract.errors);
   if (_patternConflictsOf(set) !== 0) detalle.push('patrones recientes repetidos');
   return { score: m, passed: ok, detalle: detalle };
 }
@@ -3757,6 +3842,8 @@ function _generationLocks(effectiveLocks, prevSet) {
 function formatPrompt(result) {
   if (!result || !result.set) return '';
   if (!_lastResultMatchesContext(result)) return '';
+  const contractCheck = _validateCreativeContract(result.set, _resolveLocks() || {});
+  if (!contractCheck.ok) return '';
   if (resolveEngineForMarket(MOTOR_STATE.market).status !== 'resolved') return '';
   const set = result.set;
   const seriesAnchor = String(set.seriesAnchor || '').trim();
@@ -4025,9 +4112,9 @@ function formatPrompt(result) {
       o += 'AVISO OBJETO (conflicto): ' + result.objectConflicts.join(' ') + ' El motivo provisional de la serie debe revisarse con el usuario antes de producir definitivos; integra ese motivo de forma coherente con el concepto y no añadas objetos ajenos ni inventes un motivo propio.\n';
     }
   }
-  const activeBrand = _activeBrandId();
-  const brandLabel = activeBrand === 'BERESHITH_CO' ? 'BERESHITH CO.' : (activeBrand === 'CrossLampCo' ? 'Cross & Lamp Co.' : 'Sin marca asignada');
-  o += 'CONTEXTO DE MARCA (no imprimir el nombre salvo que forme parte del mensaje): ' + brandLabel + '. Mantén separados su identidad visual, memoria, preferencias y territorios de los de cualquier otra marca.\n';
+  /* La marca permanece aislada en estado/memoria, pero su nombre no se envía
+     al generador: es metadato interno que puede convertirse en un logo no pedido. */
+  o += 'CONTEXTO DE MARCA: metadato interno únicamente. No representar nombres de marca, logotipos, wordmarks, firmas ni etiquetas comerciales salvo que formen parte literal del mensaje autorizado. Mantener aisladas la identidad visual, memoria, preferencias y territorios de cada marca.\\n';
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
   if (cultDir) o += 'CULTURA: ' + cultDir + '\n';
   if (legalDir) o += 'LEGAL: ' + legalDir + '\n';
@@ -4213,7 +4300,7 @@ function formatPrompt(result) {
       if (!_figurasUnicas) o += _figureDirective(v.objeto) + '\n';
       if (v.jerarquiaVisual === 'SOLO_OBJETO') {
         o += 'CERO TEXTO (SOLO_OBJETO): prohibido cualquier letra, cifra, número, logo tipográfico, microtexto o sellos con rótulos, incluso decorativos. Los recursos del estilo que normalmente portan texto (cintas, cartelas, banderines, sellos, escudos) aparecen SIN rótulo alguno; si un elemento necesita un rótulo para leerse, no lo uses.\n';
-        o += 'ELEMENTOS SECUNDARIOS ADMITIDOS: únicamente recursos visuales NO textuales del estilo asignado (ornamentos, marco, filete, textura, recursos gráficos de taller) que no introduzcan texto y respeten el contrato de elementos del concepto; ningún elemento secundario puede competir con el objeto.\n';
+        o += 'ELEMENTOS SECUNDARIOS: ninguno por defecto. Solo se admite un recurso no textual cuando el usuario lo haya autorizado expresamente o sea inseparable de la representación literal del objeto; nunca añadir marcos, ornamentos, sellos, cintas, cartelas ni recursos decorativos independientes.\\n';
       }
     }
     if (contactDNA && v.jerarquiaVisual !== 'SOLO_TEXTO') o += 'FUNCIÓN CONSTANTE: ' + v.funcionSimbolica + ' · intención ' + v.intencionEmocional + '\n';
