@@ -43,7 +43,7 @@ assert.ok(routes[1].includes('No convertirlo en carretera, sendero, río ni pais
 assert.ok(routes[2].includes('Sin icono figurativo independiente.'));
 assert.match(motifContext._motifExpressionDirective('A', 'Grace is Enough'), /masa tipográfica o geométrica compacta/);
 assert.match(motifContext._motifExpressionDirective('B', 'Grace is Enough'), /gesto gráfico abstracto/);
-assert.match(motifContext._motifExpressionDirective('C', 'Grace is Enough'), /tipografía, contraformas y espacio negativo/);
+assert.match(motifContext._motifExpressionDirective('C', 'Grace is Enough'), /estructura geométrica modular y contraformas/);
 
 assert.match(motor, /sharedAudience = _preferredBroadAudience\(pool\)/);
 assert.match(motor, /v\.motivoVisual = \(!isVar && MOTOR_STATE\.designMode !== 'patron'\)/);
