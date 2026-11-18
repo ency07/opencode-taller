@@ -305,6 +305,21 @@ function getCurrentAudiencePool() {
   return pool.filter(function (id) { return !!id; });
 }
 
+/* Audiencia Auto sin exploración: preferir el perfil general/unisex.
+   No inferir una etapa infantil, género o nicho cuando el usuario no lo pidió. */
+function _preferredBroadAudience(pool) {
+  const available = Array.isArray(pool) ? pool.filter(Boolean) : [];
+  if (!available.length) return '';
+  if (available.indexOf('gospel_comunidad') !== -1) return 'gospel_comunidad';
+  const broad = available.filter(function (id) {
+    const profile = (typeof _AUD_PROFILES !== 'undefined' && _AUD_PROFILES) ? (_AUD_PROFILES[id] || {}) : {};
+    const gender = String(profile.genero || '').toLowerCase();
+    const age = String(profile.edad || '').toLowerCase();
+    return gender === 'unisex' && (age === 'todas' || age === 'todas las edades' || age === 'all');
+  });
+  return broad[0] || available[0];
+}
+
 function resolveAudiences() {
   const base = MOTOR_STATE.audienceSet;
   const multi = MOTOR_STATE.audienceMulti === 'si';
@@ -342,7 +357,7 @@ function resolveAudiences() {
       for (let i = 0; i < stableContext.length; i++) {
         stableHash = ((stableHash << 5) - stableHash + stableContext.charCodeAt(i)) | 0;
       }
-      sharedAudience = pool[Math.abs(stableHash) % pool.length];
+      sharedAudience = _preferredBroadAudience(pool);
     }
 
     K.forEach(function (k) { result[k] = sharedAudience; });
@@ -1024,6 +1039,26 @@ const _VISUAL_EXPRESSION_ROUTES = {
 function _visualExpressionRoute(key) {
   return _VISUAL_EXPRESSION_ROUTES[key] || '';
 }
+/* Diversidad de motivos en exploración: una representación distinta por ficha,
+   derivada del concepto y sin iconografía o escenarios añadidos por asociación. */
+function _motifExpressionDirective(key, concept) {
+  const source = String(concept || '').toLowerCase();
+  const walking = /\\b(walk|walking|caminar|camino|andar|andando|paso|pasos|footstep|footsteps)\\b/.test(source);
+  if (walking) {
+    const walkingRoutes = {
+      A: 'MOTIVO ÚNICO: secuencia breve de huellas/pasos que representa literalmente caminar. Sin calzado gigante, cruz, persona, montaña, mar, olas, árboles, sol, estrellas ni paisaje.',
+      B: 'MOTIVO ÚNICO: una sola línea continua de recorrido que representa avanzar. Prohibido dibujar huellas, pisadas, calzado, personas, montañas, árboles, mar, olas, sol, estrellas o paisaje.',
+      C: 'MOTIVO ÚNICO: tipografía con ritmo de avance y contraformas direccionales; ninguna ilustración ni icono independiente. Prohibido dibujar huellas, pisadas, calzado, camino, personas, cruces, montañas, árboles, mar, olas, sol, estrellas o paisaje.'
+    };
+    return walkingRoutes[key] || '';
+  }
+  const genericRoutes = {
+    A: 'MOTIVO ÚNICO: una sola forma focal directamente nombrada en el concepto; no construir escena ni añadir elementos de ambientación.',
+    B: 'MOTIVO ÚNICO: representar la acción o relación principal del concepto mediante un solo gesto gráfico abstracto; no repetir la forma focal de A ni añadir objetos.',
+    C: 'MOTIVO ÚNICO: expresar el concepto mediante tipografía, contraformas y espacio negativo; sin objeto figurativo ni icono independiente.'
+  };
+  return genericRoutes[key] || '';
+}
 
 function _pickFresh(biasPool, fullPool, used) {
   const bias = (biasPool || []).filter(function (x) { return used.indexOf(x) === -1; });
@@ -1681,7 +1716,7 @@ function _motifSceneFromMessage(concept, message) {
   return 'símbolo derivado del mensaje'
     + (m ? ' literal «' + m + '»' : '')
     + (c ? ' y del concepto «' + c + '»' : '')
-    + ': crea una escena o metáfora coherente con la familia y la doctrina del mercado; no inventes motivos ajenos al concepto ni objetos no solicitados';
+    + ': no construyas una escena ni añadas objetos físicos por asociación libre; expresa solo el significado literal del concepto mediante una forma gráfica focal, un gesto abstracto o tipografía; cualquier símbolo adicional debe estar nombrado por el usuario';
 }
 
 /* Plan de motivos de la SERIE (exploración). Se calcula UNA vez por set:
@@ -2380,6 +2415,7 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     v.jerarquiaVisual = hierarchyPerKey[k];
     // Mismo ancla semántica; distinta ruta de representación por ficha.
     v.rutaVisual = (!isVar && MOTOR_STATE.designMode !== 'patron') ? _visualExpressionRoute(k) : '';
+    v.motivoVisual = (MOTOR_STATE.workflowMode === 'explore' && MOTOR_STATE.designMode !== 'patron') ? _motifExpressionDirective(k, MOTOR_STATE.concept || '') : '';
 
     // En un contactsheet nuevo, el símbolo se decide una vez para A/B/C.
     // Variación desde imagen conserva su propia lógica y sus selectores.
@@ -4149,6 +4185,7 @@ function formatPrompt(result) {
     o += 'COMPATIBILIDAD ESTILO × TRATAMIENTO: ' + _styleTreatmentDirective(v.estilo, v.perfilEstructural || _treatmentKey(v.tratamiento), v.audiencia) + '\n';
     o += 'ESQUELETO ESTRUCTURAL (MANDA): perfil ' + (v.perfilEstructural || _treatmentKey(v.tratamiento)) + ' · jerarquía ' + v.jerarquiaVisual + ' · layout ' + String(v.layout || '').split(':')[0] + ' · arquitectura textual ' + v.distribucionTexto + ' · densidad ' + v.densidad + ' · espacio negativo ' + v.negativeSpace + ' · forma del símbolo ' + v.formaSimbolo + ' · integración ' + v.integracionTexto + ' · tipografía ' + v.tipografia + '\n';
     if (v.rutaVisual) o += 'RUTA VISUAL EXCLUSIVA DE ESTA FICHA (no cambia el concepto ni autoriza objetos nuevos): ' + v.rutaVisual + '\n';
+    if (v.motivoVisual) o += 'MOTIVO / REPRESENTACIÓN EXCLUSIVA (misma identidad conceptual, sin reutilizar motivos de otras fichas): ' + v.motivoVisual + '\n';
     o += 'ACABADO DE ESTILO (SUBORDINADO): «' + v.estilo + '» es solo la técnica de acabado sobre este esqueleto; no cambia jerarquía, layout, proporción ni densidad. Si pide un recurso que lo rompa, reduce el acabado a acento controlado.\n';
     const styleIsLettering = /graffiti|street|lettering|sign paint/i.test(String(v.estilo || ''));
     o += 'TÉCNICA GLOBAL: todo el arte de esta ficha — símbolo, letras, fondo y detalles — se ejecuta con la técnica del estilo «' + v.estilo + '»' + (styleIsLettering ? '; aquí el lettering SÍ es el estilo activo.' : '. Prohibido dibujar el copy como graffiti, lettering streetwear, lettering retro o cualquier lenguaje de letras ajeno al estilo activo: las letras también llevan la técnica del estilo.') + '\n';
