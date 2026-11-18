@@ -32,6 +32,16 @@ assert.equal(audienceContext._preferredBroadAudience(['kids']), 'kids');
 const motifSource = extract('function _motifExpressionDirective(key, concept)', 'function _pickFresh(biasPool, fullPool, used)');
 const motifContext = {};
 vm.runInNewContext(motifSource, motifContext);
+
+/* El modo patrón depende del producto, no del valor residual del selector. */
+const patternGateSource = extract('function _isPatternModeActive()', 'function _isLockedContactSet()');
+const patternGateContext = { MOTOR_STATE: { workflowMode: 'new', designMode: 'patron', product: 'CAMISETA SOFT' } };
+vm.runInNewContext(patternGateSource, patternGateContext);
+assert.equal(patternGateContext._isPatternModeActive(), false, 'CAMISETA SOFT no activa modo patrón aunque el selector conserve patron');
+patternGateContext.MOTOR_STATE.product = 'MOCHILA';
+assert.equal(patternGateContext._isPatternModeActive(), true, 'MOCHILA sí admite modo patrón');
+patternGateContext.MOTOR_STATE.workflowMode = 'variation';
+assert.equal(patternGateContext._isPatternModeActive(), false, 'variación desde imagen no activa modo patrón');
 const concept = 'Walk by Faith';
 const routes = ['A', 'B', 'C'].map(key => motifContext._motifExpressionDirective(key, concept));
 assert.equal(new Set(routes).size, 3, 'cada ficha debe recibir una representación propia');
@@ -46,7 +56,9 @@ assert.match(motifContext._motifExpressionDirective('B', 'Grace is Enough'), /ge
 assert.match(motifContext._motifExpressionDirective('C', 'Grace is Enough'), /estructura geométrica modular y contraformas/);
 
 assert.match(motor, /sharedAudience = _preferredBroadAudience\(pool\)/);
-assert.match(motor, /v\.motivoVisual = \(!isVar && MOTOR_STATE\.designMode !== 'patron'\)/);
+assert.match(motor, /v\.motivoVisual = \(!isVar && !_isPatternModeActive\(\)\)/);
+assert.match(motor, /v\.rutaVisual = \(!isVar && !_isPatternModeActive\(\)\)/);
+assert.match(motor, /if \(_isPatternModeActive\(\)\)/);
 assert.match(motor, /MOTIVO \/ REPRESENTACIÓN EXCLUSIVA/);
 assert.match(motor, /no construyas una escena ni añadas objetos físicos por asociación libre/);
 assert.match(motor, /RESTRICCIÓN SEMÁNTICA: no añadir paisajes, montañas, soles, horizontes, mares, olas, árboles, cruces, personas, calzado, huellas/);
