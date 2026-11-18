@@ -68,6 +68,12 @@ assert.equal(_validateCreativeContract(badIntegration, {}).ok, false,
 const brokenLock = _validateCreativeContract(candidate, { estilo: { A: 'ESTILO DISTINTO' } });
 assert.equal(brokenLock.ok, false, 'un lock explícito no puede alterarse silenciosamente');
 
+const missingSoloObject = JSON.parse(JSON.stringify(candidate));
+missingSoloObject.A.jerarquiaVisual = 'SOLO_OBJETO';
+missingSoloObject.A.objeto = '';
+assert.equal(_validateCreativeContract(missingSoloObject, {}).ok, false,
+  'SOLO_OBJETO requiere un motivo autorizado aunque no imprima texto');
+
 const incomplete = JSON.parse(JSON.stringify(candidate));
 incomplete.B.tipografia = '';
 assert.equal(_validateCreativeContract(incomplete, {}).ok, false,
