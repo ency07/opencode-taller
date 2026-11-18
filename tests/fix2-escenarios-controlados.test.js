@@ -39,7 +39,8 @@ function baseState() {
   MOTOR_STATE.region = 'todas';
   MOTOR_STATE.product = 'CAMISETA SOFT';
   MOTOR_STATE.audienceSet = 'Auto';
-  MOTOR_STATE.audienceMulti = 'no';
+  // Este test valida locks de audiencia por ficha: requiere exploración explícita.
+  MOTOR_STATE.audienceMulti = 'si';
   MOTOR_STATE.groupMode = 'distintos';
   MOTOR_STATE.designMode = 'contacto';
   MOTOR_STATE.support = '';
