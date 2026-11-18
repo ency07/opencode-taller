@@ -385,7 +385,7 @@ function resolveAudiences() {
     return result;
   }
 
-  // En Auto + "Sí — cada Auto con la suya" se exploran perfiles distintos. cada ficha recibe un perfil propio del pool
+  // En Auto + "Sí — cada Auto con la suya" se exploran perfiles distintos.
   // (elección estable por re-roll con la ficha en el contexto). Si el pool
   // tiene menos perfiles que fichas, las sobrantes reutilizan el pool y
   // quedan marcadas como AVISO en el prompt, nunca como bloqueo.
@@ -1895,7 +1895,7 @@ function _compatibleCompositionDirective(hierarchy, architecture) {
   }
   if (!placement) placement = 'texto y símbolo en zonas diferenciadas con asimetría controlada';
   if (hierarchy === 'TEXTO_DOMINANTE') {
-    return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; convierte ubicación y módulos en una sola silueta tipográfica-simbólica integrada. El texto conserva 70–80% del área y es la primera lectura; el símbolo queda integrado y subordinado. La arquitectura cambia ubicación, nunca proporción ni jerarquía.';
+    return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; ejecuta esta ubicación exactamente como está descrita. El texto conserva 70–80% del área y es la primera lectura; el símbolo queda subordinado. La relación puede ser integrada o en zonas separadas según la arquitectura indicada. La arquitectura cambia ubicación, nunca proporción ni jerarquía.';
   }
   if (hierarchy === 'OBJETO_DOMINANTE') {
     return 'DISTRIBUCIÓN ADAPTADA: ' + placement + '; el símbolo autorizado conserva 70–80% del área y el copy queda subordinado dentro del 20–30% restante. No añadas cintas, marcos, bandas, emblemas ni objetos para ejecutar la distribución.';
@@ -4195,10 +4195,10 @@ function formatPrompt(result) {
       ? 'FICHA INCOMPLETA: la jerarquía seleccionada requiere texto, pero no hay mensaje ni copy automático autorizado. No generes letras ni sustituyas el texto; no presentes esta ficha como diseño terminado. Solicita un mensaje o habilita el copy automático.'
       : ({
       SOLO_TEXTO: 'SOLO_TEXTO: solo copy literal; 100% tipografía y cero imágenes, objetos o adornos independientes. ÚNICOS elementos permitidos: letras del copy literal. SOLO_TEXTO NO SIGNIFICA SIMPLE: crea un arte tipográfico impactante y con identidad artística. Usa las letras como forma visual principal mediante escala, ritmo, composición, cortes, contraformas, densidad, espacio negativo y textura integrada; elige una estrategia coherente y mantén legible el copy literal. No añadas objetos, ilustraciones, iconos, marcos ni adornos independientes.',
-      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto autorizado queda subordinado en 20–30%. El COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible. Texto y símbolo forman una sola composición integrada, no dos bloques separados. Si el elemento autorizado es físico, intégralo con su forma y acción reales; si el concepto es abstracto, no lo conviertas en objeto: usa geometría, ritmo, contraformas o integración tipográfica derivada directamente del concepto. El símbolo aporta como máximo 20–30% del peso visual. Conserva todas las palabras exactas y legibles, sin regresar al esquema automático ilustración arriba/texto abajo. La jerarquía fija área y escala; la arquitectura solo cambia la ubicación. Si la arquitectura propone zonas separadas, conserva su dirección solo mediante solapamiento dentro de la forma unificada.',
+      TEXTO_DOMINANTE: 'TEXTO_DOMINANTE: el copy literal es la primera lectura y ocupa visualmente 70–80% del área imprimible; el objeto o recurso visual autorizado queda subordinado en 20–30%. El COPY TIPOGRÁFICO ocupa 70–80% del área total imprimible. Mantén una composición coherente y ejecuta la relación texto-símbolo que indique el layout y la arquitectura: integrada cuando así se indique, o en zonas separadas cuando así se indique. Si el elemento autorizado es físico, intégralo con su forma y acción reales solo cuando la arquitectura lo permita; si el concepto es abstracto, no lo conviertas en objeto: usa geometría, ritmo, contraformas o integración tipográfica derivada directamente del concepto. Conserva todas las palabras exactas y legibles. La jerarquía fija área y escala; la arquitectura solo define ubicación y relación, nunca altera la proporción.',
       OBJETO_DOMINANTE: 'OBJETO_DOMINANTE: el símbolo autorizado de esta ficha («' + v.objeto + '») ocupa 70–80% del arte; copy 20–30%. No lo sustituyas por árboles, personas u otros objetos no indicados. Respeta literalmente el estilo seleccionado; si es Pixel / 8-bit, usa formas pixeladas y bloques discretos, no pintura orgánica ni textura de pincel.',
       SOLO_OBJETO: 'SOLO_OBJETO: el objeto autorizado («' + v.objeto + '») ocupa el 100% visual de la ficha y NO HAY TEXTO en absoluto: ni letras, ni cifras, ni tipografía decorativa ni accidental. Diferéncialo de OBJETO_DOMINANTE (allí el copy ocupa 20–30%; aquí ninguna letra existe). ADMITE elementos secundarios visuales no textuales del estilo asignado (ornamentos, marcos, filetes, texturas, recursos gráficos de taller) siempre que no introduzcan texto y respeten el contrato de elementos del concepto.',
-      BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual; ninguno puede quedar como adorno secundario. Construye una sola unidad compositiva; evita dos bloques desconectados. La arquitectura define colocación/relación, nunca cambia la proporción.'
+      BALANCEADO: 'BALANCEADO: texto y símbolo tienen igual importancia y ocupan cada uno 45–55% del peso/área visual; ninguno puede quedar como adorno secundario. Construye una composición coherente; pueden ocupar zonas diferenciadas si el layout y la arquitectura así lo indican, sin perder relación visual. La arquitectura define colocación/relación, nunca cambia la proporción.'
     }[v.jerarquiaVisual] || '');
     o += 'JERARQUÍA: ' + hierarchyDirective + '\n';
     o += 'LAYOUT (ubicación): ' + v.layout + '. El layout rige dónde se ubica cada elemento y dónde respira el vacío; no cambia tamaño, área ni jerarquía.\n';
