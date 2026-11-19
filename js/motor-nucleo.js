@@ -5012,8 +5012,9 @@ function _estadoUnificado(result) {
   if (!okScore) {
     const umbralMsg = (typeof _mensajeUmbral === 'function') ? _mensajeUmbral(ev) : '';
     const contractErrors = result && Array.isArray(result.creativeContractErrors) ? result.creativeContractErrors : [];
-    const detail = contractErrors.length ? 'Contrato creativo: ' + contractErrors.join(' · ') : (umbralMsg || 'no supera los controles de calidad');
-    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Validación del set con fallos: ' + escHtml(detail) + '</span>' };
+    const fallback = escHtml(umbralMsg || 'no supera los controles de calidad');
+    const detail = contractErrors.length ? 'Contrato creativo: ' + contractErrors.join(' · ') : fallback;
+    return { ok: false, okScore: false, okArb: okArb, checks: info, fallos: 0, html: '<span class="warn">Validación del set con fallos: ' + (contractErrors.length ? escHtml(detail) : detail) + '</span>' };
   }
   if (!okArb) {
     const checksOkArb = totalArb - fallosArb;
