@@ -4115,7 +4115,7 @@ function formatPrompt(result) {
   }
   /* La marca permanece aislada en estado/memoria, pero su nombre no se envía
      al generador: es metadato interno que puede convertirse en un logo no pedido. */
-  o += 'CONTEXTO DE MARCA: metadato interno únicamente. No representar nombres de marca, logotipos, wordmarks, firmas ni etiquetas comerciales salvo que formen parte literal del mensaje autorizado. Mantener aisladas la identidad visual, memoria, preferencias y territorios de cada marca.\\n';
+  o += 'CONTEXTO DE MARCA: metadato interno únicamente. No representar nombres de marca, logotipos, wordmarks, firmas ni etiquetas comerciales salvo que formen parte literal del mensaje autorizado. Mantener aisladas la identidad visual, memoria, preferencias y territorios de cada marca.\n';
   if (langDir) o += 'IDIOMA: ' + langDir + '\n';
   if (cultDir) o += 'CULTURA: ' + cultDir + '\n';
   if (legalDir) o += 'LEGAL: ' + legalDir + '\n';
@@ -4301,7 +4301,7 @@ function formatPrompt(result) {
       if (!_figurasUnicas) o += _figureDirective(v.objeto) + '\n';
       if (v.jerarquiaVisual === 'SOLO_OBJETO') {
         o += 'CERO TEXTO (SOLO_OBJETO): prohibido cualquier letra, cifra, número, logo tipográfico, microtexto o sellos con rótulos, incluso decorativos. Los recursos del estilo que normalmente portan texto (cintas, cartelas, banderines, sellos, escudos) aparecen SIN rótulo alguno; si un elemento necesita un rótulo para leerse, no lo uses.\n';
-        o += 'ELEMENTOS SECUNDARIOS: ninguno por defecto. Solo se admite un recurso no textual cuando el usuario lo haya autorizado expresamente o sea inseparable de la representación literal del objeto; nunca añadir marcos, ornamentos, sellos, cintas, cartelas ni recursos decorativos independientes.\\n';
+        o += 'ELEMENTOS SECUNDARIOS: ninguno por defecto. Solo se admite un recurso no textual cuando el usuario lo haya autorizado expresamente o sea inseparable de la representación literal del objeto; nunca añadir marcos, ornamentos, sellos, cintas, cartelas ni recursos decorativos independientes.\n';
       }
     }
     if (contactDNA && v.jerarquiaVisual !== 'SOLO_TEXTO') o += 'FUNCIÓN CONSTANTE: ' + v.funcionSimbolica + ' · intención ' + v.intencionEmocional + '\n';
