@@ -8,13 +8,14 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <a class="skip-link" href="#panel-mercado">Saltar al contenido</a>
 
   <style>
-    .pod-nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:#0E1016;border-bottom:1px solid #2A2E38;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px}
-    .pod-nav .pod-nav-title{color:#8A90A0;margin-right:4px}
-    .pod-nav a{color:#B9C0CF;text-decoration:none;padding:6px 12px;border:1px solid #2A2E38;border-radius:6px;background:#161920}
-    .pod-nav a:hover{color:#fff;border-color:#5B8DEF}
-    .pod-nav a[aria-current="page"]{color:#fff;background:rgba(91,141,239,.16);border-color:#5B8DEF}
+    .pod-nav{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 14px;background:#0B0D10;border-bottom:1px solid #262C37;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:12px}
+    .pod-nav .pod-nav-title{color:#6B7382;margin-right:4px;font-weight:600;letter-spacing:.02em}
+    .pod-nav a{color:#9AA3B2;text-decoration:none;padding:6px 10px;border:1px solid #262C37;border-radius:999px;background:#12151A;transition:color .18s ease,border-color .18s ease,background-color .18s ease}
+    .pod-nav a:hover{color:#E8EAF0;border-color:#D4A75A;background:#171B22}
+    .pod-nav a[aria-current="page"]{color:#D4A75A;background:rgba(212,167,90,.12);border-color:#D4A75A}
   </style>
   <nav class="pod-nav" aria-label="Herramientas POD">
     <span class="pod-nav-title">Taller POD ·</span>
@@ -42,7 +43,7 @@
       </div>
 
       <div class="topbar-right">
-        <button id="btnMemory" class="ghost icon-btn" type="button" title="Memoria portable">
+        <button id="btnMemory" class="ghost icon-btn" type="button" title="Memoria portable" aria-label="Memoria portable">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M17.5 19a4.5 4.5 0 1 0 0-9h-1.8A7 7 0 1 0 4 14.9"></path>
             <path d="M12 12v9"></path>
@@ -50,7 +51,7 @@
           </svg>
         </button>
 
-        <button id="btnAI" class="ghost icon-btn" type="button" title="Configurar IA">
+        <button id="btnAI" class="ghost icon-btn" type="button" title="Configurar IA" aria-label="Configurar IA">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
             <circle cx="12" cy="12" r="3"></circle>
@@ -61,11 +62,22 @@
   </div>
 
   <div class="shell">
+    <nav class="app-nav" aria-label="Secciones del taller">
+      <a href="#panel-mercado">Configuración</a>
+      <a href="#panel-idea">Concepto</a>
+      <a href="#panel-banco">Banco</a>
+      <a href="#varPanel">Variación</a>
+      <a href="#mixPanel">Mezclas</a>
+      <a href="#panel-resultados">Resultados</a>
+      <a href="#panel-calidad">Calidad</a>
+      <a href="#panel-prompt">Prompt</a>
+      <a href="#panel-validador">Validador</a>
+    </nav>
     <div class="main-grid">
 
       <div class="left-col">
 
-        <section class="panel">
+        <section class="panel" id="panel-mercado">
           <div class="panel-title">
             <span class="step-num">1</span>
             <span>Mercado y Producto</span>
@@ -275,7 +287,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="panel-idea">
           <div class="panel-title">
             <span class="step-num">2</span>
             <span>La idea</span>
@@ -340,7 +352,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="panel-banco">
           <div class="panel-title">
             <span class="step-num">3</span>
             <span>Banco de motivos — candidatos enriquecidos</span>
@@ -380,7 +392,7 @@
 
           <div class="panel-body">
             <div class="upload-zone" id="uploadZone">
-              <input id="imageUpload" type="file" accept="image/*" />
+              <input id="imageUpload" type="file" accept="image/*" aria-label="Subir imagen de referencia" />
               <div class="upload-text">
                 Sube una imagen de referencia. La IA puede analizarla y llenar campos automáticamente.
               </div>
@@ -528,13 +540,13 @@
 
       <div class="right-col">
 
-        <div id="status" class="status info">
+        <div id="status" class="status info" role="status" aria-live="polite">
           Preparado. Elige Explorar ideas para descubrir conceptos, o Desarrollar un concepto si ya tienes una idea.
         </div>
 
         <div id="colorAudit" class="status info" style="display:none;"></div>
 
-        <section class="panel">
+        <section class="panel" id="panel-calidad">
           <div class="panel-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path>
@@ -547,7 +559,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="panel-arbitro">
           <div class="panel-title">
             <span>Árbitro de selectores</span>
           </div>
@@ -565,7 +577,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="panel-visual">
           <div class="panel-title">
             <span>Revisión visual</span>
           </div>
@@ -578,7 +590,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="panel-resultados">
           <div class="panel-title">
             <span>Fichas 01A · 01B · 01C</span>
           </div>
@@ -590,7 +602,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="panel-matriz">
           <div class="panel-title">
             <span>Matriz comparativa</span>
           </div>
@@ -602,7 +614,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="panel-prompt">
           <div class="panel-title">
             <span>Prompt final</span>
           </div>
@@ -616,13 +628,13 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="panel-validador">
           <div class="panel-title">
             <span>Validador de hoja (avisos)</span>
           </div>
 
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <input type="file" id="sheetUpload" accept="image/png,image/jpeg,image/webp" style="max-width:320px;">
+            <input type="file" id="sheetUpload" accept="image/png,image/jpeg,image/webp" style="max-width:320px;" aria-label="Subir hoja para validar" />
             <button id="btnValidarHoja" class="ghost" type="button">Validar hoja con IA</button>
           </div>
 
@@ -657,5 +669,6 @@
   <script src="js/copy-ia.js" defer></script>
   <script src="js/ia-validador.js" defer></script>
   <script src="js/sync-supabase.js" defer></script>
+  <script src="js/ui-feedback.js" defer></script>
 </body>
 </html>
