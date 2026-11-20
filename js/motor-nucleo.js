@@ -4411,7 +4411,10 @@ function formatPrompt(result) {
   } else {
     o += '\n';
   }
-  o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + (_PLACEMENT[MOTOR_STATE.product] || _PLACEMENT['CAMISETA SOFT'] || 'pecho centrado') + '; ' + ((_PRODUCT_BIAS[MOTOR_STATE.product] || {}).scale || 'escala adecuada al producto') + '\n\n';
+  o += 'PRODUCTO / UBICACION / ESCALA: ' + MOTOR_STATE.product + '; ' + (_PLACEMENT[MOTOR_STATE.product] || _PLACEMENT['CAMISETA SOFT'] || 'pecho centrado') + '; ' + ((_PRODUCT_BIAS[MOTOR_STATE.product] || {}).scale || 'escala adecuada al producto') + '\n';
+  const safeMarginDirective = String(((_PRODUCT_BIAS[MOTOR_STATE.product] || {}).safeMargin) || '').trim();
+  if (safeMarginDirective) o += 'MARGENES DE SEGURIDAD: ' + safeMarginDirective + '\n';
+  o += '\n';
 
   /* Territorio creativo (Arquitectura Creativa — Fase 1): cuando el usuario
      fijó un territorio concreto, se entrega como dirección creativa global al
