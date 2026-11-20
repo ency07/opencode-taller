@@ -4186,13 +4186,16 @@ function formatPrompt(result) {
       const semanticAbstract = semanticSet && semanticSet.type === 'abstract_or_verbal';
       const semanticAnchor = String((semanticSet && (semanticSet.namedObject || semanticSet.anchor)) || contactSymbol || '').trim();
       const semanticLabel = semanticAbstract ? 'representación autorizada del concepto' : 'símbolo/objeto autorizado';
+      const supportLiteral = contactSupportText
+        ? 'apoyo literal «' + contactSupportText + '»'
+        : 'apoyo: NINGUNO; no imprimir ningún texto secundario';
       const hasSoloText = K.some(k => set[k].jerarquiaVisual === 'SOLO_TEXTO');
       const adnSoloTexto = !semanticAbstract
-        ? 'ADN IGUAL EN A/B/C: concepto y mensaje literal; el símbolo se conserva solo en las tarjetas cuya jerarquía admite objeto. SOLO_TEXTO es exclusivamente tipografía y no representa el símbolo. Apoyo literal «' + (contactSupportText || 'no indicado; no se imprime') + '»\n'
-        : 'ADN IGUAL EN A/B/C: concepto y mensaje literal; ' + semanticLabel + ' visible solo en las fichas cuya jerarquía admite motivo no tipográfico. SOLO_TEXTO es exclusivamente tipografía y no representa ' + semanticLabel + '. Apoyo literal «' + (contactSupportText || 'no indicado; no se imprime') + '»\n';
+        ? 'ADN IGUAL EN A/B/C: concepto y mensaje literal; el símbolo se conserva solo en las tarjetas cuya jerarquía admite objeto. SOLO_TEXTO es exclusivamente tipografía y no representa el símbolo. ' + supportLiteral + '\n'
+        : 'ADN IGUAL EN A/B/C: concepto y mensaje literal; ' + semanticLabel + ' visible solo en las fichas cuya jerarquía admite motivo no tipográfico. SOLO_TEXTO es exclusivamente tipografía y no representa ' + semanticLabel + '. ' + supportLiteral + '\n';
       o += hasSoloText
         ? adnSoloTexto
-        : 'ADN IGUAL EN A/B/C: ' + semanticLabel + ' «' + (semanticAnchor || 'derivado del concepto') + '» · mensaje literal «' + (contactMainText || 'sin texto indicado; no se imprime') + '» · apoyo literal «' + (contactSupportText || 'no indicado; no se imprime') + '» · función «' + (contactFunction || 'una misma función') + '»\n';
+        : 'ADN IGUAL EN A/B/C: ' + semanticLabel + ' «' + (semanticAnchor || 'derivado del concepto') + '» · mensaje literal «' + (contactMainText || 'NINGUNO; no imprimir texto') + '» · ' + supportLiteral + ' · función «' + (contactFunction || 'una misma función') + '»\n';
       if (contactSymbolGuide) o += 'LECTURA CONSTANTE ' + (semanticAbstract ? 'DE LA REPRESENTACIÓN' : 'DEL SÍMBOLO') + ': ' + contactSymbolGuide + '\n';
       o += 'ORDEN FIJO DE TRATAMIENTOS: 01A HEAVY · 01B SOFT · 01C MODERN. Cada tratamiento gobierna composición, jerarquía, tipografía, contraste, densidad y formas; el estilo artístico lo ejecuta sin contradecirlo.\n\n';
     } else {
@@ -4290,7 +4293,7 @@ function formatPrompt(result) {
         : 'COPY: no hay texto autorizado. No generar letras, frases, citas, versículos ni microtexto.\n';
     } else if (contactDNA) {
       o += contactMainText
-        ? 'COPY: conservar literalmente «' + contactMainText + '»; no añadir otro mensaje.\n'
+        ? 'COPY: conservar literalmente «' + contactMainText + '»; apoyo: ' + (contactSupportText ? 'literal «' + contactSupportText + '»' : 'NINGUNO; no imprimir texto secundario') + '; no añadir ningún otro mensaje.\n'
         : (sharedDerivedCopy
           ? 'COPY CANÓNICO: «' + sharedDerivedCopy + '». Es la única frase automática y debe ser idéntica en A/B/C donde la jerarquía admita texto.\n'
           : 'COPY: no autorizado. No generar texto ni placeholders.\n');
@@ -4303,6 +4306,9 @@ function formatPrompt(result) {
     o += 'La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
   } else {
     o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto. La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
+  }
+  if (contactDNA) {
+    o += 'CONTRATO DE COPY A/B/C: mensaje principal literal «' + (contactMainText || 'NINGUNO') + '»; apoyo: ' + (contactSupportText ? 'literal «' + contactSupportText + '»' : 'NINGUNO; no imprimir texto secundario') + '. No añadir ningún otro texto, versículo, referencia bíblica, lema, cita, firma, sello, subtítulo ni microtexto. Los nombres de estilo, jerarquía, tratamiento, audiencia o ficha no son texto imprimible.\n';
   }
   o += 'SALIDA: produce solo el arte solicitado y los mockups indicados. No añadas paneles explicativos, objetos decorativos, logotipos, firmas ni texto no solicitado. Los adornos no solicitados cuentan como objetos inventados, aunque sean habituales en el estilo. Prohibido pintar códigos de ficha (01A/01B/01C), nombres de estilo, jerarquía, tratamiento o audiencia DENTRO de los dibujos, estampados y mockups: separa las tres direcciones solo con división limpia, sin cabeceras, banners ni etiquetas pintadas en el arte. Los rótulos de ficha viven solo en este texto y, en la hoja de presentación, únicamente como encabezados editoriales de columna (ver PRESENTACIÓN), nunca dentro de un estampado. FONDO DEL ARTE: liso, plano o transparente; prohibido añadir cielo, suelo, paisaje, rayos, resplandores, degradados ambientales, salpicaduras, viñetas, marcos ni escenas de fondo no solicitadas, aunque el estilo los use habitualmente. Si la hoja completa no cabe en una sola imagen, entrega por prioridad: 1) los tres estampados frontales, 2) los mockups por columna, 3) los colores rotulados, 4) detalles de impresión y paleta; mejor un parcial limpio que columnas incompletas o texto deforme.\n';
   o += 'REGLAS INQUEBRANTABLES:\n';
@@ -4523,13 +4529,13 @@ function formatPrompt(result) {
     if (contactDNA && v.jerarquiaVisual !== 'SOLO_TEXTO') o += 'FUNCIÓN CONSTANTE: ' + v.funcionSimbolica + ' · intención ' + v.intencionEmocional + '\n';
     const textLine = contactDNA
       ? (contactMainText
-        ? 'MENSAJE PRINCIPAL literal: «' + contactMainText + '»' + (contactSupportText ? ' · APOYO literal: «' + contactSupportText + '»' : '') + ' · sin texto terciario · ' + v.tipografia
+        ? 'MENSAJE PRINCIPAL literal: «' + contactMainText + '» · APOYO: ' + (contactSupportText ? 'literal «' + contactSupportText + '»' : 'NINGUNO; no imprimir texto secundario') + ' · sin texto terciario · ' + v.tipografia
         : ((isGospel || isSecular) && !sharedDerivedCopy
           ? 'SIN COPY AUTORIZADO: no generar letras, cifras, palabras ni microtexto; no inventar una frase · ' + v.tipografia
           : 'COPY LITERAL (derivado del concepto): «' + sharedDerivedCopy + '»; usarlo exacto en las tres direcciones; apoyo opcional solo si aporta; no inventar datos ni usar microtexto · ' + v.tipografia))
       : (isExplore
         ? (String(MOTOR_STATE.message || '').trim()
-          ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'omitir si no aporta') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
+          ? 'COPY PRINCIPAL LITERAL: «' + String(MOTOR_STATE.message).trim() + '»; no modificar palabras. APOYO: ' + (String(MOTOR_STATE.support || '').trim() ? '«' + String(MOTOR_STATE.support).trim() + '»' : 'NINGUNO; no imprimir texto secundario') + '; tercer nivel solo con dato real; tipografía ' + v.tipografia
           : ((isGospel || isSecular) && !sharedExploreCopy
             ? 'SIN COPY AUTORIZADO: no generar letras, cifras, palabras ni microtexto; no inventar una frase. Tipografía: ' + v.tipografia
             : 'COPY LITERAL COMPARTIDO A/B/C (propuesto por el motor): «' + sharedExploreCopy + '»; usar exactamente este texto en las tres direcciones, sin modificar palabras, traducirlo ni sustituirlo. Apoyo: omitir salvo que el usuario lo solicite; tercer nivel solo con dato real o se omite. Prohibidos placeholders y microtexto. Tipografía: ' + v.tipografia))
@@ -4553,6 +4559,7 @@ function formatPrompt(result) {
       : (semanticAbstracto ? abstractHierarchy : namedHierarchy)[v.jerarquiaVisual] || '';
     o += 'JERARQUÍA: ' + hierarchyDirective + '\n';
     o += 'LAYOUT (ubicación): ' + v.layout + '. El layout rige dónde se ubica cada elemento y dónde respira el vacío; no cambia tamaño, área ni jerarquía.\n';
+    o += 'RESOLUCIÓN DE CONTRADICCIONES: el LAYOUT fija la ubicación y la separación. Si la arquitectura textual o el nombre del layout sugiere texto detrás, superposición, marco, tarjeta, firma, sello o cinta, se ignora esa sugerencia cuando contradice la separación indicada por el LAYOUT. No se autorizan firmas, sellos, marcos, tarjetas, cintas ni rótulos decorativos salvo que el mensaje los contenga literalmente. Los degradados solo son permitidos como técnica del estilo cuando no afectan la legibilidad ni el fondo; nunca degradados ambientales, de fondo ni decorativos.\n';
     if (!missingGospelCopy && v.jerarquiaVisual === 'BALANCEADO') {
       // COMPOSICIÓN: el layout manda la ubicación; la arquitectura textual se adapta
       o += 'COMPOSICIÓN BALANCEADA: arquitectura dominante = LAYOUT (' + v.layout + '). El bloque tipográfico (' + v.distribucionTexto + ') se ejecuta DENTRO de esa ubicación; si sugiere una posición distinta, prevalece el LAYOUT. La arquitectura nunca cambia la proporción.\n';
