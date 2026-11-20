@@ -127,9 +127,13 @@ setActiveTemplate('MOCHILA', rr.id);
 function ficha(estilo) {
   return {
     estilo: estilo, audiencia: 'unisex_nacional', jerarquiaVisual: 'BALANCEADO',
-    objeto: 'mochila de viaje', arquitectura: 'a', composicion: 'b', layout: 'Axial centrado',
-    placement: 'panel frontal', escalaProducto: 'media', formaSimbolo: 'c', tecnica: 'd',
-    tratamiento: 'e', textoPrincipal: 'T', textoApoyo: 'A', textoTerciario: 'S',
+    objeto: 'mochila de viaje', arquitectura: 'a', composicion: 'b',
+    layout: 'Axial centrado', distribucionTexto: 'TEXTO CENTRADO DEBAJO: bloque centrado bajo el motivo, siguiendo el eje vertical',
+    integracionTexto: 'Texto y símbolo comparten una unidad compositiva',
+    placement: 'panel frontal', escalaProducto: 'media', formaSimbolo: 'silueta sólida a una tinta',
+    tecnica: 'impresión DTF', tratamiento: 'SOFT',
+    perfilEstructural: 'SOFT', densidad: 'Balanced', negativeSpace: 'aire alrededor del motivo',
+    textoPrincipal: 'T', textoApoyo: 'A', textoTerciario: 'S',
     tipografia: 'Sans humanista limpia', paleta: 'pal (modo: X)', familiaColor: 'f',
     fitAudiencia: 80, fitProducto: 80
   };

@@ -37,9 +37,9 @@ function densSuf(suf) { const ps = { A: 'Media', B: 'Baja suave', C: 'Alta core'
 function ficha(suf, jer, tr) {
   return {
     estilo: 'Estilo' + suf, audiencia: 'coste_adulto_m', jerarquiaVisual: jer,
-    objeto: 'fogata prueba', layout: 'Layout' + suf, tipografia: 'Tipo' + suf,
+    objeto: 'fogata prueba', layout: ({ A: 'Columna apilada', B: 'Diagonal ascendente', C: 'Emblema circular' })[suf], tipografia: 'Tipo' + suf,
     formaSimbolo: 'Forma' + suf, tratamiento: tr, integracionTexto: 'Int' + suf,
-    distribucionTexto: 'Dist' + suf, familiaColor: 'Fam' + suf, tecnica: 'Tec' + suf,
+    distribucionTexto: ({ A: 'TEXTO ARRIBA · bloque superior', B: 'DIAGONAL ascendente izquierda-derecha · eje diagonal', C: 'TEXTO CENTRADO ARRIBA · eje circular' })[suf], familiaColor: 'Fam' + suf, tecnica: 'Tec' + suf,
     densidad: densSuf(suf), negativeSpace: 'aire ' + suf, fitAudiencia: 80, fitProducto: 80,
     funcionSimbolica: 'f', intencionEmocional: 'e'
   };

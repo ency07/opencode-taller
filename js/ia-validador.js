@@ -114,7 +114,7 @@
     var txt = String(promptText || '');
     if (!txt) return null;
     var fichas = [];
-    var reRecap = /RECAP (01A|01B|01C): jerarquía=([^·]+) · estilo=([^·]+) · objeto=«([^»]*)»/g;
+    var reRecap = /RECAP (01A|01B|01C): jerarquía=([^·]+) · estilo=([^·]+) · (?:objeto|representación|elemento)=«([^»]*)»/g;
     var recaps = {};
     var mr;
     while ((mr = reRecap.exec(txt)) !== null) {
@@ -144,8 +144,7 @@
         layout: ((secciones[id] || '').match(/LAYOUT \(ubicación\):\s*([^\n]+)/) || [])[1] || '',
         composicion: ((secciones[id] || '').match(/composicion:\s*([^\n]+)/i) || [])[1] || '',
         arquitectura: ((secciones[id] || '').match(/arquitectura:\s*([^\n]+)/i) || [])[1] || '',
-        tipografia: ((secciones[id] || '').match(/tipografía\s+([^·\n]+)/i) || [])[1] || '',
-        formaSimbolo: ((secciones[id] || '').match(/forma del símbolo\s+([^·\n]+)/i) || [])[1] || '',
+        formaSimbolo: ((secciones[id] || '').match(/forma del (?:símbolo|elemento)\s+([^·\n]+)/i) || [])[1] || '',
         distribucionTexto: ((secciones[id] || '').match(/arquitectura textual\s+([^·\n]+)/i) || [])[1] || '',
         integracionTexto: ((secciones[id] || '').match(/integración\s+([^·\n]+)/i) || [])[1] || '',
         densidad: ((secciones[id] || '').match(/densidad\s+([^·\n]+)/i) || [])[1] || '',
@@ -153,6 +152,7 @@
         cara: !/CARA DEL ESTAMPADO:/.test(secciones[id] || '')
           ? ''
           : (/CARA DEL ESTAMPADO:\s*ESPALDA/.test(secciones[id] || '') ? 'espalda' : 'frente'),
+        tipografia: ((secciones[id] || '').match(/TEXTO:.*·\s*([^·\n]+)/) || (secciones[id] || '').match(/tipografía\s+([^·\n]+)/i) || [])[1] || '',
         peso: pesoExigido(r.jerarquia)
       });
     }

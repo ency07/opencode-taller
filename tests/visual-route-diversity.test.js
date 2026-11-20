@@ -23,7 +23,28 @@ assert.match(routes[2], /GRID \/ NEGATIVE SPACE/);
 assert.ok(routes.every(route => /same authorized concept/.test(route)), 'las tres rutas deben conservar el mismo concepto');
 assert.ok(routes.every(route => /do not add a scene or a new physical object/.test(route)), 'las rutas no deben autorizar objetos o escenas nuevos');
 
-assert.match(motor, /v\.rutaVisual = \(!isVar && MOTOR_STATE\.designMode !== 'patron'\) \? _visualExpressionRoute\(k\) : ''/);
+const patternStart = motor.indexOf('function _isPatternModeActive() {');
+const patternEnd = motor.indexOf('function _isLockedContactSet()', patternStart);
+assert.ok(patternStart >= 0 && patternEnd > patternStart, 'debe existir _isPatternModeActive antes de _isLockedContactSet');
+const patternSource = motor.slice(patternStart, patternEnd);
+const patternCases = [
+  { product: 'CAMISETA SOFT', designMode: 'patron', workflowMode: 'new', expected: false },
+  { product: 'MOCHILA', designMode: 'patron', workflowMode: 'new', expected: true },
+  { product: 'TOTE BAG', designMode: 'patron', workflowMode: 'new', expected: true },
+  { product: 'FUNDA MÓVIL', designMode: 'patron', workflowMode: 'new', expected: true },
+  { product: 'MOCHILA', designMode: 'contacto', workflowMode: 'new', expected: false },
+  { product: 'GORRA', designMode: 'patron', workflowMode: 'new', expected: false },
+  { product: 'MOCHILA', designMode: 'patron', workflowMode: 'variation', expected: false }
+];
+patternCases.forEach((scenario, index) => {
+  const context = { MOTOR_STATE: Object.assign({}, scenario) };
+  vm.runInNewContext(patternSource, context);
+  assert.equal(context._isPatternModeActive(), scenario.expected,
+    'caso ' + (index + 1) + ': _isPatternModeActive debe respetar producto, modo y diseño');
+});
+
+assert.match(motor, /v\.rutaVisual = \(!isVar && !_isPatternModeActive\(\)\) \? _visualExpressionRoute\(k\) : ''/);
+assert.match(motor, /v\.motivoVisual = \(!isVar && !_isPatternModeActive\(\)\)/);
 assert.match(motor, /RUTA VISUAL EXCLUSIVA DE ESTA FICHA/);
 assert.match(motor, /DIVERSIDAD DE MOTIVO: A\/B\/C conservan el mismo concepto y ancla semántica/);
 assert.match(motor, /no queda autorizado por el estilo: solo se usa si está nombrado o se deriva directamente del significado literal del concepto/);

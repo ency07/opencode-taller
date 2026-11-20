@@ -98,12 +98,16 @@ function count(out, sub) { return out.split(sub).length - 1; }
 resetMotor();
 MOTOR_STATE.workflowMode = 'new';
 MOTOR_STATE.message = 'MENSAJE DE PRUEBA';
-const outMix = formatPrompt({ set: { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') } });
+const setMix = { A: ficha('BALANCEADO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('OBJETO_DOMINANTE') };
+_reconcileCreativeStructure(setMix);
+const outMix = formatPrompt({ set: setMix });
 ok(count(outMix, 'LAYOUT (ubicación):') === 3, 'LAYOUT debe aparecer en BALANCEADO, TEXTO_DOMINANTE y OBJETO_DOMINANTE (hay ' + count(outMix, 'LAYOUT (ubicación):') + ')');
 ok(outMix.indexOf('LAYOUT (ubicación): Columna apilada') !== -1, 'LAYOUT debe citar el layout asignado a la ficha');
 ok(outMix.indexOf('no cambia tamaño, área ni jerarquía') !== -1, 'LAYOUT debe declarar que rige ubicación, no jerarquía');
 
-const outSolo = formatPrompt({ set: { A: ficha('SOLO_TEXTO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('BALANCEADO') } });
+const setSolo = { A: ficha('SOLO_TEXTO'), B: ficha('TEXTO_DOMINANTE'), C: ficha('BALANCEADO') };
+_reconcileCreativeStructure(setSolo);
+const outSolo = formatPrompt({ set: setSolo });
 ok(count(outSolo, 'LAYOUT (ubicación):') === 3, 'LAYOUT también debe aparecer cuando hay SOLO_TEXTO');
 
 /* ---------- 4. Sesgo suave 1.5:1, no lista cerrada ---------- */
