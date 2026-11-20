@@ -63,6 +63,23 @@ for (const product of products) {
   ok(prompt.includes('MARGENES DE SEGURIDAD: ' + safe), product + ': falta margen de seguridad específico');
   ok(prompt.includes('PRODUCTO: ' + product), product + ': falta la regla de producto');
   ok(prompt.includes('REGLAS DEL MOCKUP COMERCIAL'), product + ': falta la regla de mockup comercial');
+  ok(prompt.includes('COLORES SUGERIDOS POR COLUMNA'), product + ': falta la fila de colores por columna');
+  ok(prompt.includes('DETALLES DE IMPRESIÓN'), product + ': falta detalles de impresión');
+  ok(prompt.includes('PALETA GENERAL DE LA SERIE'), product + ': falta paleta general de la serie');
+  ok(prompt.includes('PROHIBIDO rotular DENTRO del arte'), product + ': falta prohibir rótulos dentro del arte');
+  const viewKey = {
+    'CAMISETA SOFT': 'camiseta',
+    'CAMISETA APPAREL': 'prenda fashion',
+    'HOODIE': 'hoodie',
+    'GORRA': 'gorra',
+    'ILUSTRACION PREMIUM APPAREL': 'prenda premium',
+    'MUG': 'taza',
+    'MOCHILA': 'mochila',
+    'TOTE BAG': 'bolso',
+    'FUNDA MÓVIL': 'funda',
+    'DISPLATE': 'placa mural'
+  }[product];
+  ok(prompt.includes(viewKey), product + ': falta la vista específica del producto');
   ok(prompt.includes('ACABADO / PREPARACION TECNICA'), product + ': falta la preparación técnica');
 }
 
