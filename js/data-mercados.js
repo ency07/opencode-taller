@@ -996,11 +996,11 @@ function getCulturalDirective(marketId) {
   }
 
   if (marketId === "gospel_es") {
-    return "Gospel universal en español. Doctrina obligatoria: Trinitario (Padre, Hijo, Espíritu Santo) y cristocéntrico (cruz y resurrección al centro). Prohibido: prosperidad mágica, decretos, ángeles como centro, santos mediadores, esoterismo, horóscopo, energía. Si el concepto viola esto, rechazar y reformular.";
+    return "Gospel universal en español. Doctrina orientadora: Trinitario (Padre, Hijo, Espíritu Santo) y cristocéntrico. Prohibido: prosperidad mágica, decretos, ángeles como centro, santos mediadores, esoterismo, horóscopo, energía. La doctrina no autoriza símbolos ni reformulaciones silenciosas: si el concepto entra en conflicto, detener y marcar como no autorizado; conservar el concepto y el mensaje explícitos.";
   }
 
   if (marketId === "gospel_en") {
-    return "Universal Gospel in English. Mandatory doctrine: Trinitarian (Father, Son, Holy Spirit) and Christ-centered (cross and resurrection at the center). Forbidden: prosperity magic, decrees, angel-centered art, saint mediators, esotericism, horoscope, energy healing. If the concept violates this, reject and reformulate.";
+    return "Universal Gospel in English. Doctrine as guidance, not authorization: Trinitarian, Christ-centered. Forbidden: prosperity magic, decrees, angel-centered art, saint mediators, esotericism, horoscope, energy healing. Doctrine never authorizes symbols, scenes or objects absent from the user's concept and message; if the concept conflicts, stop and report it unauthorized. Preserve the explicit concept and message; never substitute or silently reformulate.";
   }
 
   return "Adapt the concept to the selected market without losing the core idea.";
