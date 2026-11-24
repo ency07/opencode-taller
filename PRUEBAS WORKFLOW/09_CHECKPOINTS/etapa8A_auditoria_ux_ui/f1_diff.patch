@@ -1,0 +1,299 @@
+# Etapa 8A-F1 - diff
+# index.html: adicion de <script src=js/taller-shell.js>
+718-  <script src="js/multiproducto-zip.js" defer></script>
+719-  <script src="js/multiproducto-ui.js" defer></script>
+720:  <script src="js/taller-shell.js" defer></script>
+721-</body>
+722-</html>
+
+# styles.css: bloque tp- (F0) + ajuste stepper movil (F1), solo adiciones
+396	0	styles.css
+
+# js/taller-shell.js (nuevo)
+diff --git a/js/taller-shell.js b/js/taller-shell.js
+new file mode 100644
+index 0000000..d73482a
+--- /dev/null
++++ js/taller-shell.js
+@@ -0,0 +1,281 @@
++/* Taller POD · Etapa 8A-F1 · Estructura común: cabecera de contexto y modos.
++ *
++ * Objetivo: que el generador individual y el multiproducto se perciban como UNA
++ * aplicación con contexto compartido, no como dos bloques superpuestos.
++ *
++ * Reglas:
++ * - No crea campos nuevos: los chips de contexto son una VISTA de los campos ya
++ *   existentes (#market, #brand, #serie, #product, ...). No hay información duplicada
++ *   ni fuentes alternativas de verdad.
++ * - El selector de modo solo cambia la VISIBILIDAD del panel multiproducto; no altera
++ *   valores ni comportamiento de ninguno de los dos flujos.
++ * - El modo elegido persiste en localStorage (POD2|taller|modo).
++ * - Degradacion elegante: si falta cualquier elemento, la cabecera simplemente no se
++ *   inyecta y la aplicacion sigue funcionando como antes.
++ * - Sin dependencias externas. Usa los componentes tp-* de la F0.
++ */
++(function () {
++  'use strict';
++
++  var CLAVE_MODO = 'POD2|taller|modo';
++  var MODOS = { INDIVIDUAL: 'individual', MULTI: 'multiproducto' };
++  var IDS_CONTEXTO = ['market', 'region', 'brand', 'language', 'marketplace', 'product', 'serie'];
++
++  var modo = MODOS.INDIVIDUAL;
++  var inyectado = false;
++
++  function $(id) { return document.getElementById(id); }
++
++  function texto(id) {
++    var e = $(id);
++    if (!e) return '';
++    return String(e.value == null ? '' : e.value).trim();
++  }
++
++  /* Texto legible de la opción elegida (fuente: el propio <select>). */
++  function opcionTexto(id) {
++    var s = $(id);
++    if (!s || !s.selectedOptions || !s.selectedOptions.length) return '';
++    return String(s.selectedOptions[0].textContent || '').trim();
++  }
++
++  function leerContexto() {
++    var M = window.MOTOR_STATE || {};
++    var market = opcionTexto('market') || texto('market') || M.market || '—';
++    var brand = opcionTexto('brand') || texto('brand') || M.brand || 'auto';
++    var product = opcionTexto('product') || texto('product') || M.product || '—';
++    var language = opcionTexto('language') || texto('language') || M.language || 'auto';
++    var serie = String(M.serie || texto('serie') || '').trim();
++    var region = opcionTexto('region') || texto('region') || M.region || '';
++    return {
++      market: market,
++      brand: brand,
++      product: product,
++      language: language,
++      serie: serie,
++      region: region
++    };
++  }
++
++  function recortar(s, n) {
++    s = String(s == null ? '' : s);
++    return s.length > n ? s.slice(0, n) + '…' : s;
++  }
++
++  function pintarContexto() {
++    var c = leerContexto();
++    var chips = document.querySelectorAll('#tpContexto .tp-context-chip');
++    chips.forEach(function (chip) {
++      var clave = chip.getAttribute('data-ctx');
++      if (clave === 'market') {
++        /* Etiqueta corta del mercado (antes del " — ") + región abreviada:
++           evita chips largos truncados en móvil. */
++        var nomMarket = String(c.market || '').split(' — ')[0].trim();
++        chip.textContent = '◆ ' + recortar(nomMarket || c.market, 18) +
++          (c.region ? '  ·  ' + recortar(String(c.region).split(' ').slice(0, 2).join(' '), 16) : '');
++      } else if (clave === 'brand') {
++        var nomBrand = String(c.brand || '').split(' — ')[0].trim();
++        chip.textContent = 'Marca: ' + recortar(nomBrand || c.brand, 18);
++      } else if (clave === 'product') {
++        chip.textContent = 'Producto: ' + recortar(c.product, 22);
++      } else if (clave === 'serie') {
++        chip.textContent = c.serie ? ('Serie ' + recortar(c.serie, 18)) : 'Sin serie';
++      }
++    });
++  }
++
++  /* ---------- selector de modo ---------- */
++
++  function aplicarModo(nuevo, opciones) {
++    opciones = opciones || {};
++    modo = (nuevo === MODOS.MULTI) ? MODOS.MULTI : MODOS.INDIVIDUAL;
++
++    var mp = $('mpPanel');
++    if (mp) mp.style.display = (modo === MODOS.MULTI) ? '' : 'none';
++
++    document.querySelectorAll('#tpMode button').forEach(function (b) {
++      var es = b.getAttribute('data-modo') === modo;
++      b.classList.toggle('active', es);
++      b.setAttribute('aria-selected', es ? 'true' : 'false');
++    });
++
++    document.body.setAttribute('data-modo', modo);
++
++    if (!opciones.silencioso) {
++      try { window.localStorage.setItem(CLAVE_MODO, modo); } catch (e) { /* sin storage */ }
++    }
++    if (typeof opciones.onCambio === 'function') {
++      try { opciones.onCambio(modo); } catch (e) { console.warn('[TallerShell] onCambio falló:', e); }
++    }
++  }
++
++  function leerModoGuardado() {
++    try { return window.localStorage.getItem(CLAVE_MODO); } catch (e) { return null; }
++  }
++
++  /* ---------- stepper de fases ---------- */
++
++  var PASOS = ['configurar', 'generar', 'revisar', 'exportar'];
++
++  function fase(idx) {
++    document.querySelectorAll('#tpStepper .tp-step').forEach(function (el) {
++      var i = parseInt(el.getAttribute('data-paso'), 10);
++      el.classList.remove('done', 'active', 'pending');
++      if (i < idx) el.classList.add('done');
++      else if (i === idx) el.classList.add('active');
++      else el.classList.add('pending');
++    });
++    document.body.setAttribute('data-fase', PASOS[idx] || '');
++  }
++
++  function actualizarFase() {
++    var statusTxt = String(($('status') && $('status').textContent) || '').toLowerCase();
++    var mpTxt = String(($('mpStatus') && $('mpStatus').textContent) || '').toLowerCase();
++    var hayResultado = !!((($('out') && $('out').value) || '') ||
++                         (window.MultiproductoUI && window.MultiproductoUI._lote && window.MultiproductoUI._lote()));
++    var generando = /generando|preparando|cancelando/.test(statusTxt + ' ' + mpTxt);
++    var exportado = /zip generado|lote guardado/.test(statusTxt + ' ' + mpTxt);
++
++    if (generando) return fase(1);
++    if (exportado) return fase(3);
++    if (hayResultado) return fase(2);
++    return fase(0);
++  }
++
++  /* ---------- inyección ---------- */
++
++  function el(tag, cls, text) {
++    var e = document.createElement(tag);
++    if (cls) e.className = cls;
++    if (text != null) e.textContent = text;
++    return e;
++  }
++
++  /* Se construye con DOM API (sin innerHTML) para no introducir ninguna superficie
++     de inyección: los textos de contexto se asignan con textContent. */
++  function construir() {
++    /* La estructura real tiene dos bloques .shell: el primero envuelve la cabecera y
++       el segundo la rejilla principal. Se usa el padre real de .main-grid para no
++       depender del orden de selección. */
++    var rejilla = document.querySelector('.main-grid');
++    if (!rejilla || !rejilla.parentElement) return false;
++    var shell = rejilla.parentElement;
++
++    var wrap = el('div', 'tp-scope');
++    wrap.id = 'tpTopbar';
++
++    var topbar = el('div', 'tp-topbar');
++    topbar.appendChild(el('span', 'tp-context-chip', '⚡ Taller POD'));
++
++    var ctx = el('span');
++    ctx.id = 'tpContexto';
++    ctx.style.display = 'flex';
++    ctx.style.gap = '8px';
++    ctx.style.flexWrap = 'wrap';
++    [['market', 'Mercado'], ['brand', 'Marca'], ['product', 'Producto'], ['serie', 'Serie']].forEach(function (par) {
++      ctx.appendChild(el('span', 'tp-context-chip', ''));
++      ctx.lastChild.setAttribute('data-ctx', par[0]);
++    });
++    topbar.appendChild(ctx);
++
++    var spacer = el('span');
++    spacer.style.flex = '1';
++    topbar.appendChild(spacer);
++
++    var mode = el('div', 'tp-mode');
++    mode.id = 'tpMode';
++    mode.setAttribute('role', 'tablist');
++    mode.setAttribute('aria-label', 'Modo de trabajo');
++    [[MODOS.INDIVIDUAL, 'Un producto'], [MODOS.MULTI, 'Multiproducto']].forEach(function (par) {
++      var b = el('button', '', par[1]);
++      b.type = 'button';
++      b.setAttribute('role', 'tab');
++      b.setAttribute('data-modo', par[0]);
++      b.setAttribute('aria-selected', 'false');
++      mode.appendChild(b);
++    });
++    topbar.appendChild(mode);
++
++    wrap.appendChild(topbar);
++
++    var stepper = el('div', 'tp-stepper');
++    stepper.id = 'tpStepper';
++    stepper.setAttribute('aria-label', 'Progreso');
++    [['Configurar', 0], ['Generar', 1], ['Revisar', 2], ['Exportar', 3]].forEach(function (par) {
++      var s = el('span', 'tp-step', '');
++      s.setAttribute('data-paso', String(par[1]));
++      var n = el('span', 'tp-step-n', String(par[1] + 1));
++      s.appendChild(n);
++      s.appendChild(document.createTextNode(' ' + par[0]));
++      stepper.appendChild(s);
++    });
++    wrap.appendChild(stepper);
++
++    shell.insertBefore(wrap, rejilla);
++    return true;
++  }
++
++  function bind() {
++    document.querySelectorAll('#tpMode button').forEach(function (b) {
++      b.addEventListener('click', function () {
++        aplicarModo(b.getAttribute('data-modo'));
++        pintarContexto();
++      });
++    });
++
++    /* La vista de contexto se actualiza con los campos reales (no al revés). */
++    IDS_CONTEXTO.forEach(function (id) {
++      var el = $(id);
++      if (!el) return;
++      el.addEventListener('change', function () { pintarContexto(); });
++      el.addEventListener('input', function () { pintarContexto(); });
++    });
++    ['concept', 'message'].forEach(function (id) {
++      var el = $(id);
++      if (el) el.addEventListener('input', function () { pintarContexto(); });
++    });
++
++    /* Stepper: observa los mensajes de estado existentes, sin tocar el motor. */
++    try {
++      var obs = new MutationObserver(function () { actualizarFase(); });
++      ['status', 'mpStatus'].forEach(function (id) {
++        var el = $(id);
++        if (el) obs.observe(el, { childList: true, characterData: true, subtree: true });
++      });
++      obs.observe(document.body, { attributes: true, attributeFilter: ['data-modo'] });
++    } catch (e) { /* navegador sin MutationObserver: el stepper queda en fase inicial */ }
++  }
++
++  function init() {
++    var guardado = leerModoGuardado();
++    if (guardado === MODOS.MULTI) modo = MODOS.MULTI;
++    else if (guardado === MODOS.INDIVIDUAL) modo = MODOS.INDIVIDUAL;
++
++    if (!construir()) return;   /* degradación: sin .shell/.main-grid no se inyecta nada */
++    inyectado = true;
++
++    aplicarModo(modo, { silencioso: true });   /* persiste el modo sin reescribir storage */
++    pintarContexto();
++    bind();
++    actualizarFase();
++  }
++
++  if (document.readyState === 'loading') {
++    document.addEventListener('DOMContentLoaded', init);
++  } else {
++    init();
++  }
++
++  /* API mínima para pruebas y futuras fases (no forma parte del motor). */
++  window.TallerShell = {
++    _state: function () {
++      return {
++        modo: modo,
++        inyectado: inyectado,
++        ctx: leerContexto()
++      };
++    },
++    _setModo: function (m) { aplicarModo(m); },
++    _fase: actualizarFase
++  };
++})();

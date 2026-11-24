@@ -295,6 +295,25 @@ function isBag(product) {
   return product === "MOCHILA" || product === "TOTE BAG";
 }
 
+/* Superficie de presentación del mockup comercial (etapa 1 multiproducto).
+   Clasifica el SOPORTE del mockup, no la imprimibilidad: prenda / pared / objeto.
+   No altera PRODUCT_BIAS, reglas de producto, umbrales ni preparación técnica.
+   Nota: isTextile() no sirve para esto (marca como textil a GORRA/MOCHILA/TOTE y
+   como no textil a MUG/FUNDA/DISPLATE), porque la superficie del mockup es otra
+   categoría. */
+const PRODUCT_SURFACE = {
+  prenda: ["CAMISETA SOFT", "CAMISETA APPAREL", "HOODIE", "ILUSTRACION PREMIUM APPAREL"],
+  pared: ["DISPLATE"],
+  objeto: ["GORRA", "MUG", "MOCHILA", "TOTE BAG", "FUNDA MÓVIL"]
+};
+function getProductSurface(product) {
+  const p = String(product === undefined || product === null ? "" : product).trim();
+  if (PRODUCT_SURFACE.prenda.indexOf(p) !== -1) return "prenda";
+  if (PRODUCT_SURFACE.pared.indexOf(p) !== -1) return "pared";
+  if (PRODUCT_SURFACE.objeto.indexOf(p) !== -1) return "objeto";
+  return "objeto";
+}
+
 function getProductScaleDirective(product) {
   const bias = getProductBias(product);
   return bias.scale || "escala y superficie de impresión adecuadas al producto";
@@ -330,6 +349,8 @@ window.PRINT_METHOD_LABELS = PRINT_METHOD_LABELS;
 window.PRINT_PREP_RULES = PRINT_PREP_RULES;
 window.getPrintMethods = getPrintMethods;
 window.getPrintPrepRule = getPrintPrepRule;
+window.getProductSurface = getProductSurface;
+window.PRODUCT_SURFACE = PRODUCT_SURFACE;
 window.isDrinkware = isDrinkware;
 window.isCase = isCase;
 window.isBag = isBag;

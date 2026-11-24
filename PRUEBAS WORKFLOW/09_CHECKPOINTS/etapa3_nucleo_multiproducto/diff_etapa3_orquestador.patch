@@ -1,0 +1,59 @@
+--- C:/Users/Administrator/AppData/Local/hermes/cache/scratch/previo_orquestador_etapa3.js	2026-11-23 21:51:01.313257200 -0500
++++ "C:/Users/Administrator/Desktop/POD/Taller-pod-copia opencode/js/orquestador-multiproducto.js"	2026-11-23 21:40:23.103379400 -0500
+@@ -192,9 +192,55 @@
+     return { ok: resultados.every(function (r) { return !!r.ok; }), resultados: resultados };
+   }
+ 
++  /* Etapa 3 (multiproducto): lote secuencial de N productos.
++     - Secuencial por diseño: nunca concurrente (el motor comparte estado global).
++     - Cada producto pasa por generarProductoAislado(), cuyo try/finally interno
++       restaura motor, DOM, LAST_RESULT y locks tras cada generación.
++     - Un fallo no cancela el lote: el resto de productos se sigue procesando.
++     - onProgreso({ indice, total, producto, resultado }) tras cada producto,
++       también cuando falla; un error en el callback no detiene el lote. */
++  function generarMuchos(opts) {
++    opts = opts || {};
++    var base = Object.assign({}, opts);
++    delete base.productos;
++    delete base.onProgreso;
++    var productos = Array.isArray(opts.productos) ? opts.productos.slice() : [];
++    /* Snapshot inicial del estado global (motor, DOM, LAST_RESULT, locks):
++       la operación de lote restaura ese mismo estado al terminar, de modo que
++       el lote es invisible para el resto de la app (contenedores de generación
++       incluidos, que el restore por producto dejaba avanzados). */
++    var snap = _snapshot();
++    var resultados = [];
++    try {
++      for (var i = 0; i < productos.length; i++) {
++        var producto = String(productos[i] == null ? '' : productos[i]);
++        var r = generarProductoAislado(Object.assign({}, base, { producto: producto }));
++        resultados.push(r);
++        if (typeof opts.onProgreso === 'function') {
++          try {
++            opts.onProgreso({ indice: i, total: productos.length, producto: producto, resultado: r });
++          } catch (e) {
++            console.warn('[OrquestadorMultiProducto] onProgreso falló:', e);
++          }
++        }
++      }
++    } catch (e) {
++      /* Nunca perder los resultados ya obtenidos: se devuelven los parciales. */
++      console.error('[OrquestadorMultiProducto] lote interrumpido:', e);
++    } finally {
++      try { _restore(snap); } catch (e) { console.warn('[OrquestadorMultiProducto] restore falló:', e); }
++    }
++    return {
++      ok: resultados.every(function (r) { return !!r.ok; }),
++      total: productos.length,
++      resultados: resultados
++    };
++  }
++
+   window.OrquestadorMultiProducto = {
+     generarProducto: generarProducto,
+     generar: generar,
+-    generarAislado: generarAislado
++    generarAislado: generarAislado,
++    generarMuchos: generarMuchos
+   };
+ })();

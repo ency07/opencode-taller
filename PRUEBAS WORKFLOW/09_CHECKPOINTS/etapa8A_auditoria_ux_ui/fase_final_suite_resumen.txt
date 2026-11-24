@@ -1,0 +1,101 @@
+Fase final F2-F6 - Suite Node completa
+Ficheros: 98  TOTAL PASS=10642 FAIL=0 SKIP=0
+
+aesthetic-preference-profiles.test.js        PASS=  494 FAIL=0 SKIP=0 rc=0 | PASS aesthetic-preference-profiles (494 assertions, 0 failures)
+ai-slots.test.js                             PASS=   23 FAIL=0 SKIP=0 rc=0 | PASS  ai-slots  (23 aserciones, 0 fallos)
+ai-vision-diag.test.js                       PASS=   61 FAIL=0 SKIP=0 rc=0 | PASS  ai-vision-diag  (61 aserciones, 0 fallos)
+anti-repeticion.test.js                      PASS=  805 FAIL=0 SKIP=0 rc=0 | PASS  anti-repeticion  (805 aserciones, 0 fallos)
+approved-directions-sync-tombstone.test.js   PASS=    8 FAIL=0 SKIP=0 rc=0 | PASS approved-directions-sync-tombstone (8 assertions, 0 failures)
+arbitro-selectores.test.js                   PASS=   22 FAIL=0 SKIP=0 rc=0 | PASS  arbitro-selectores  (22 aserciones, 0 fallos)
+arquitectura-rotacion.test.js                PASS=   10 FAIL=0 SKIP=0 rc=0 | PASS  arquitectura-rotacion  (10 aserciones, 0 fallos)
+aud-origen-label.test.js                     PASS=   31 FAIL=0 SKIP=0 rc=0 | PASS  aud-origen-label  (31 aserciones, 0 fallos)
+audience-product-contracts.test.js           PASS= 1417 FAIL=0 SKIP=0 rc=0 | PASS (1417 checks): audience/product contracts
+audiencia-mockup.test.js                     PASS=   12 FAIL=0 SKIP=0 rc=0 | PASS audiencia-mockup (12 aserciones, 0 fallos)
+audiencias-auto.test.js                      PASS=   10 FAIL=0 SKIP=0 rc=0 | PASS audiencias-auto (10 aserciones, 0 fallos)
+bank-named.test.js                           PASS=   54 FAIL=0 SKIP=0 rc=0 | PASS  bank-named  (54 aserciones, 0 fallos)
+bank-sandbox.test.js                         PASS= 3122 FAIL=0 SKIP=0 rc=0 | PASS  bank-sandbox  (3122 aserciones, 0 fallos)
+brand-isolation.test.js                      PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS brand-isolation (brand-scoped locks, identity, territory, decision mode, pa
+clear-all-memory-sync-tombstone.test.js      PASS=   15 FAIL=0 SKIP=0 rc=0 | PASS clear-all-memory-sync-tombstone (15 assertions, 0 failures)
+color-audit.test.js                          PASS=   16 FAIL=0 SKIP=0 rc=0 | PASS  color-audit  (16 aserciones, 0 fallos)
+contactsheet-cara.test.js                    PASS=   29 FAIL=0 SKIP=0 rc=0 | PASS contactsheet-cara (29 aserciones, 0 fallos)
+contrato-imagen.test.js                      PASS=   26 FAIL=0 SKIP=0 rc=0 | PASS contrato-imagen (26 aserciones, 0 fallos)
+copiar-prompt-partes.test.js                 PASS=   28 FAIL=0 SKIP=0 rc=0 | PASS  copiar-prompt-partes  (28 aserciones, 0 fallos)
+copy-contract.test.js                        PASS=   21 FAIL=0 SKIP=0 rc=0 | PASS copy-contract: 21 aserciones, 0 fallos
+copy-derivado.test.js                        PASS=   13 FAIL=0 SKIP=0 rc=0 | PASS copy-derivado (13 aserciones, 0 fallos)
+copy-explore-coherencia.test.js              PASS=   42 FAIL=0 SKIP=0 rc=0 | PASS copy-explore-coherencia: 42 aserciones, 0 fallos
+copy-ia.test.js                              PASS=   64 FAIL=0 SKIP=0 rc=0 | PASS copy-ia (64 aserciones, 0 fallos)
+creative-contract-guard.test.js              PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS creative-contract-guard: reconciliation, locks, required fields, prompt bra
+creative-contract-routes.test.js             PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS creative-contract-routes: visual routes validated, duplicated routes reject
+creative-integration.test.js                 PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS creative-integration: source catalogs, namespace isolation and P5 boundarie
+creative-pipeline-contract.test.js           PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS creative-pipeline-contract: construction, preservation and final validation
+creative-similarity-metadata.test.js         PASS=   14 FAIL=0 SKIP=0 rc=0 | PASS creative-similarity-metadata (14 assertions, 0 failures). Metadata only; im
+dado-anti-repeticion.test.js                 PASS=   26 FAIL=0 SKIP=0 rc=0 | PASS  dado-anti-repeticion  (26 aserciones, 0 fallos)
+diversity-contract.test.js                   PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS diversity-contract: structural and visual axes isolated
+edad-carga.test.js                           PASS=   52 FAIL=0 SKIP=0 rc=0 | PASS  edad-carga  (52 aserciones, 0 fallos)
+fichas-contexto.test.js                      PASS=   35 FAIL=0 SKIP=0 rc=0 | PASS fichas-contexto (35 aserciones, 0 fallos)
+figuras-mockups.test.js                      PASS=   27 FAIL=0 SKIP=0 rc=0 | PASS  figuras-mockups  (27 aserciones, 0 fallos)
+fix-critico-proveedores.test.js              PASS=   30 FAIL=0 SKIP=0 rc=0 | PASS  fix-critico-proveedores  (30 aserciones, 0 fallos)
+fix2-audiencia-validador.test.js             PASS=   45 FAIL=0 SKIP=0 rc=0 | PASS fix2-audiencia-validador (45 aserciones, 0 fallos)
+fix2-escenarios-controlados.test.js          PASS=   64 FAIL=0 SKIP=0 rc=0 | PASS fix2-escenarios-controlados (64 aserciones, 0 fallos)
+fix3a-territorio-resolucion.test.js          PASS=   84 FAIL=0 SKIP=0 rc=0 | PASS  fix3a-territorio-resolucion  (84 aserciones, 0 fallos)
+fix3b-prompt-directive.test.js               PASS=  141 FAIL=0 SKIP=0 rc=0 | PASS  fix3b-prompt-directive  (141 aserciones, 0 fallos)
+fix3c-visual-identity.test.js                PASS=   38 FAIL=0 SKIP=0 rc=0 | PASS  fix3c-visual-identity  (38 aserciones, 0 fallos)
+fix3d-decision-mode.test.js                  PASS=   41 FAIL=0 SKIP=0 rc=0 | PASS  fix3d-decision-mode  (41 aserciones, 0 fallos)
+fix3d-fase3a.test.js                         PASS=   50 FAIL=0 SKIP=0 rc=0 | PASS  fix3d-fase3a  (50 aserciones, 0 fallos)
+fix3d-fase3b.test.js                         PASS=   50 FAIL=0 SKIP=0 rc=0 | PASS  fix3d-fase3b  (50 aserciones, 0 fallos)
+fix3d-fase3c.test.js                         PASS=   28 FAIL=0 SKIP=0 rc=0 | PASS  fix3d-fase3c  (28 aserciones, 0 fallos)
+fix3e-smoke.test.js                          PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS fix3e-smoke
+gate-axes.test.js                            PASS=    5 FAIL=0 SKIP=0 rc=0 | PASS gate-axes (5 aserciones, 0 fallos)
+ia-client.test.js                            PASS=   66 FAIL=0 SKIP=0 rc=0 | PASS  ia-client  (66 aserciones, 0 fallos)
+jerarquia-solo-objeto.test.js                PASS=   16 FAIL=0 SKIP=0 rc=0 | PASS jerarquia-solo-objeto (16 aserciones, 0 fallos)
+lang-reset.test.js                           PASS=   27 FAIL=0 SKIP=0 rc=0 | PASS  lang-reset  (27 aserciones, 0 fallos)
+layout-arq-compat.test.js                    PASS=  121 FAIL=0 SKIP=0 rc=0 | PASS  layout-arq-compat  (121 aserciones, 0 fallos)
+layout-rotation.test.js                      PASS=   32 FAIL=0 SKIP=0 rc=0 | PASS  layout-rotation  (32 aserciones, 0 fallos)
+layout-selector.test.js                      PASS=   13 FAIL=0 SKIP=0 rc=0 | PASS  layout-selector  (13 aserciones, 0 fallos)
+legacy-personal-bank-sync-tombstone.test.js  PASS=   19 FAIL=0 SKIP=0 rc=0 | PASS legacy-personal-bank-sync-tombstone (19 assertions, 0 failures)
+locks-persistencia.test.js                   PASS=   21 FAIL=0 SKIP=0 rc=0 | PASS locks-persistencia (21 aserciones, 0 fallos)
+locks-sync-tombstone.test.js                 PASS=    5 FAIL=0 SKIP=0 rc=0 | PASS locks-sync-tombstone (5 assertions, 0 failures)
+market-intelligence-contract.test.js         PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS market-intelligence-contract: provenance, freshness and cohort isolation
+memoria-import-hardening.test.js             PASS=   75 FAIL=0 SKIP=0 rc=0 | PASS memoria-import-hardening (75 aserciones, 0 fallos)
+memory-family-sync-tombstone.test.js         PASS=   17 FAIL=0 SKIP=0 rc=0 | PASS memory-family-sync-tombstone (17 assertions, 0 failures)
+mockup-superficie.test.js                    PASS=  117 FAIL=0 SKIP=0 rc=0 | PASS mockup-superficie: 117 aserciones, 0 fallos
+multiproducto-aislamiento.test.js            PASS=   63 FAIL=0 SKIP=0 rc=0 | PASS multiproducto-aislamiento: 63 aserciones, 0 fallos
+multiproducto-contratos.test.js              PASS=  118 FAIL=0 SKIP=0 rc=0 | PASS multiproducto-contratos: 118 aserciones, 0 fallos (35057 ms, 10 productos)
+multiproducto-historial.test.js              PASS=   41 FAIL=0 SKIP=0 rc=0 | PASS multiproducto-historial: 41 aserciones, 0 fallos
+multiproducto-zip.test.js                    PASS=   61 FAIL=0 SKIP=0 rc=0 | PASS multiproducto-zip: 61 aserciones, 0 fallos
+nav-sync.test.js                             PASS=   67 FAIL=0 SKIP=0 rc=0 | PASS  nav-sync  (67 aserciones, 0 fallos)
+objetos-subnicho.test.js                     PASS=  503 FAIL=0 SKIP=0 rc=0 | PASS  objetos-subnicho  (503 aserciones, 0 fallos)
+p1-motif-audience-regression.test.js         PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS p1-motif-audience-regression: motif separation, contact-sheet semantic lock
+pattern-template.test.js                     PASS=   79 FAIL=0 SKIP=0 rc=0 | PASS  pattern-template  (79 aserciones, 0 fallos)
+pertinencia-gate.test.js                     PASS=   19 FAIL=0 SKIP=0 rc=0 | PASS  pertinencia-gate  (19 aserciones, 0 fallos)
+peso-tecnica.test.js                         PASS=   15 FAIL=0 SKIP=0 rc=0 | PASS peso-tecnica (15 aserciones, 0 fallos)
+product-contract.test.js                     PASS=  101 FAIL=0 SKIP=0 rc=0 | PASS product-contract: 101 aserciones, 0 fallos
+product-fit-soft-tee.test.js                 PASS=  220 FAIL=0 SKIP=0 rc=0 | PASS RT-04 product fit (220 assertions, 0 failures)
+profile-governs.test.js                      PASS=  198 FAIL=0 SKIP=0 rc=0 | PASS profile-governs (198 aserciones)
+prompt-fixes.test.js                         PASS=   35 FAIL=0 SKIP=0 rc=0 | PASS  prompt-fixes  (35 aserciones, 0 fallos)
+proposals-bank-sync-tombstone.test.js        PASS=    8 FAIL=0 SKIP=0 rc=0 | PASS proposals-bank-sync-tombstone (8 assertions, 0 failures)
+redteam-territorio-ancla.test.js             PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS redteam-territorio-ancla: ANCLA CONCEPTO inyectado por _resolveTerritoryDir
+region-estilos-audiencias.test.js            PASS=   16 FAIL=0 SKIP=0 rc=0 | PASS region-estilos-audiencias (16 aserciones, 0 fallos)
+secular-prompt-contract.test.js              PASS=  665 FAIL=0 SKIP=0 rc=0 | PASS secular-prompt-contract (665 assertions, 0 failures)
+security-browser.test.js                     PASS=    6 FAIL=0 SKIP=0 rc=0 | PASS security-browser (6 assertions)
+security-regression.test.js                  PASS=   81 FAIL=0 SKIP=0 rc=0 | PASS security-regression (81 aserciones, 0 fallos)
+selector-texto.test.js                       PASS=   13 FAIL=0 SKIP=0 rc=0 | PASS selector-texto (13 aserciones, 0 fallos)
+semantic-authorization-contract.test.js      PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS semantic-authorization-contract: concept is transported as an authorized an
+semantic-compatibility-contract.test.js      PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS semantic-compatibility-contract: abstract dominance allowed, incompatible c
+semantic-identity.test.js                    PASS=  163 FAIL=0 SKIP=0 rc=0 | PASS semantic-identity (163 aserciones, 0 fallos)
+semantic-market-contract.test.js             PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS semantic-market-contract: Gospel and Secular accept abstract autorizado, re
+similarity-history-integration.test.js       PASS=    8 FAIL=0 SKIP=0 rc=0 | PASS similarity-history-integration (8 assertions, 0 failures; metadata only).
+storage-unavailable.test.js                  PASS=    5 FAIL=0 SKIP=0 rc=0 | PASS storage-unavailable (5 assertions, 0 failures)
+style-coverage.test.js                       PASS=  370 FAIL=0 SKIP=0 rc=0 | PASS  style-coverage  (370 aserciones, 0 fallos)
+supabase-cfg.test.js                         PASS=   18 FAIL=0 SKIP=0 rc=0 | PASS  supabase-cfg  (18 aserciones, 0 fallos)
+sync-cas.test.js                             PASS=    6 FAIL=0 SKIP=0 rc=0 | PASS sync-cas (6 aserciones, 0 fallos)
+sync-preserve-concurrent-local-edits.test.js PASS=    5 FAIL=0 SKIP=0 rc=0 | PASS sync-preserve-concurrent-local-edits (5 assertions, 0 failures)
+template-sync-tombstone.test.js              PASS=    9 FAIL=0 SKIP=0 rc=0 | PASS template-sync-tombstone (9 assertions, 0 failures)
+territory-style-bias.test.js                 PASS=    5 FAIL=0 SKIP=0 rc=0 | PASS territory-style-bias (5 assertions, 0 failures)
+umbral-qc.test.js                            PASS=   20 FAIL=0 SKIP=0 rc=0 | PASS  umbral-qc  (20 aserciones, 0 fallos)
+unified-banks.test.js                        PASS=   50 FAIL=0 SKIP=0 rc=0 | PASS unified-banks (50 aserciones: lote sintético de 14 registros/28 strings, me
+validador-hoja.test.js                       PASS=   31 FAIL=0 SKIP=0 rc=0 | PASS validador-hoja (31 aserciones, 0 fallos)
+validar-qa.test.js                           PASS=   34 FAIL=0 SKIP=0 rc=0 | PASS  validar-qa  (34 aserciones, 0 fallos)
+variacion-consistencia.test.js               PASS=   27 FAIL=0 SKIP=0 rc=0 | PASS  variacion-consistencia  (27 aserciones, 0 fallos)
+visual-prompt-contract.test.js               PASS=    0 FAIL=0 SKIP=0 rc=0 | OK visual-prompt-contract: 93 comprobaciones. Contrato del prompt verificado; la
+visual-route-diversity.test.js               PASS=    0 FAIL=0 SKIP=0 rc=0 | PASS visual-route-diversity: three exclusive routes, shared semantic anchor, no 

@@ -65,6 +65,62 @@
 
       <div class="left-col">
 
+<!-- ============ MULTIPRODUCTO (etapa 6) ============ -->
+<section class="panel mp-panel" id="mpPanel">
+  <div class="panel-title"><span class="step-num">⚡</span><span>Generación multiproducto</span>
+    <span class="badge-src">usa el mercado, la serie y la idea ya configurados</span>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label for="mpMode">Modo</label>
+      <select id="mpMode">
+        <option value="all">TODOS los productos</option>
+        <option value="selected">SELECCIONADOS</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <div class="mp-counter"><span id="mpSelCount">0</span> seleccionados</div>
+    </div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <button class="btn ghost" id="mpAllBtn" type="button">Todos</button>
+      <button class="btn ghost" id="mpNoneBtn" type="button">Ninguno</button>
+    </div>
+  </div>
+
+  <div class="mp-grid" id="mpGrid"></div>
+
+  <div class="ctx-line" id="mpCtx">Contexto compartido: —</div>
+
+  <div class="progress"><span id="mpBar" style="width:0%"></span></div>
+  <div class="status" id="mpStatus">Selecciona los productos y pulsa Generar.</div>
+
+  <div class="actions-primary">
+    <button class="btn primary" id="mpGenerate" type="button">Generar</button>
+    <button class="btn ghost" id="mpCancel" type="button" disabled>Cancelar</button>
+    <button class="btn ghost" id="mpSave" type="button">Guardar lote</button>
+    <button class="btn primary" id="mpZip" type="button">Exportar ZIP del lote</button>
+  </div>
+
+  <div class="tabs" id="mpTabs"></div>
+  <textarea id="mpPrompt" readonly placeholder="El prompt del producto seleccionado aparecerá aquí."></textarea>
+  <div class="meta-line" id="mpMeta">—</div>
+  <div class="actions">
+    <button class="btn ghost" id="mpCopy" type="button">Copiar</button>
+    <button class="btn ghost" id="mpCopyPart" type="button">Copiar parte 1/2</button>
+    <button class="btn ghost" id="mpReroll" type="button">Regenerar solo este</button>
+  </div>
+
+  <div class="mp-historial" id="mpHistorialWrap">
+    <div class="panel-title" style="font-size:14px"><span class="step-num">▤</span><span>Historial local</span>
+      <span class="badge-src">máx. 20 lotes · rotación automática</span>
+    </div>
+    <div id="mpHistorial"></div>
+  </div>
+</section>
+
         <section class="panel">
           <div class="panel-title">
             <span class="step-num">1</span>
@@ -657,5 +713,10 @@
   <script src="js/copy-ia.js" defer></script>
   <script src="js/ia-validador.js" defer></script>
   <script src="js/sync-supabase.js" defer></script>
+  <script src="js/orquestador-multiproducto.js" defer></script>
+  <script src="js/multiproducto-historial.js" defer></script>
+  <script src="js/multiproducto-zip.js" defer></script>
+  <script src="js/multiproducto-ui.js" defer></script>
+  <script src="js/taller-shell.js" defer></script>
 </body>
 </html>

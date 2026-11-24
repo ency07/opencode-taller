@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F0 · Fundaciones visuales — demostrador (no producción)</title>
+<!-- Demostrador de las fundaciones F0. Enlaza el styles.css REAL del taller
+     para verificar que conviven con el tema actual sin alterarlo. -->
+<link rel="stylesheet" href="/styles.css">
+<style>
+  body { padding: 16px; }
+  .demo-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:1100px; }
+  .demo-card { border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--panel); }
+  .demo-card h2 { font-size:14px; margin:0 0 10px; color:var(--mut); text-transform:uppercase; letter-spacing:.04em; }
+  .fila { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+</style>
+</head>
+<body class="tp-scope">
+<h1 class="tp-title">F0 · Fundaciones visuales</h1>
+<p class="tp-help">Demostrador aislado de los componentes nuevos (prefijo <code>tp-</code>). No forma parte de la aplicación.</p>
+
+<div class="demo-grid" style="margin-top:16px">
+  <div class="demo-card">
+    <h2>Cabecera y modos</h2>
+    <div class="tp-topbar">
+      <span class="tp-context-chip">Colombia · ES</span>
+      <span class="tp-context-chip">Serie ETAPA 8</span>
+      <span class="tp-mode"><button>Un producto</button><button class="active">Multiproducto</button></span>
+    </div>
+  </div>
+
+  <div class="demo-card">
+    <h2>Stepper de fases</h2>
+    <div class="tp-stepper">
+      <span class="tp-step done"><span class="tp-step-n">1</span> Configurar</span>
+      <span class="tp-step active"><span class="tp-step-n">2</span> Generar</span>
+      <span class="tp-step pending"><span class="tp-step-n">3</span> Revisar</span>
+      <span class="tp-step pending"><span class="tp-step-n">4</span> Exportar</span>
+    </div>
+  </div>
+
+  <div class="demo-card">
+    <h2>Acordeón de configuración</h2>
+    <details class="tp-accordion" open>
+      <summary>Contexto <span class="tp-accordion-summary-line">COLOMBIA · COSTA CARIBE</span></summary>
+      <div class="tp-accordion-body">
+        <span class="tp-muted">Mercado / Idioma · Marca activa · Región · Serie</span>
+      </div>
+    </details>
+    <details class="tp-accordion">
+      <summary>Avanzado <span class="tp-accordion-summary-line">plegado por defecto</span></summary>
+      <div class="tp-accordion-body"><span class="tp-muted">Territorio · Dominio · Estética</span></div>
+    </details>
+  </div>
+
+  <div class="demo-card">
+    <h2>Estados</h2>
+    <div class="fila">
+      <span class="tp-state idle">Pendiente</span>
+      <span class="tp-state ok">OK</span>
+      <span class="tp-state err">Error</span>
+      <span class="tp-state run">Generando…</span>
+    </div>
+    <p class="tp-muted">Texto + color, sin forma de botón.</p>
+  </div>
+
+  <div class="demo-card">
+    <h2>Botones</h2>
+    <div class="fila">
+      <button class="tp-btn primary">Acción principal</button>
+      <button class="tp-btn">Secundario</button>
+      <button class="tp-btn" disabled>Deshabilitado</button>
+    </div>
+    <p class="tp-muted">Pulsa Tab para ver el anillo de foco (solo en esta capa).</p>
+  </div>
+
+  <div class="demo-card">
+    <h2>Estado vacío</h2>
+    <div class="tp-empty">
+      <span class="tp-empty-icon">✓</span>
+      <span class="tp-empty-title">Aún no hay diseños</span>
+      <span class="tp-empty-text">Configura el contexto y pulsa «Crear los 3 diseños» para generar tu primer set.</span>
+      <button class="tp-btn primary">Crear los 3 diseños</button>
+    </div>
+  </div>
+</div>
+
+<p class="tp-muted" style="margin-top:14px">Tipografía: <span class="tp-title" style="font-size:16px">Título</span> ·
+<span class="tp-help">texto de ayuda</span> · <span class="tp-muted">texto secundario</span></p>
+</body>
+</html>

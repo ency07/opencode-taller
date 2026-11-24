@@ -1,0 +1,141 @@
+{
+  "fecha": "2026-11-24T02:48:04.616Z",
+  "ok": true,
+  "total": 10,
+  "duracionMs": 46701,
+  "progreso": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "estadoRestaurado": true,
+  "resultados": [
+    {
+      "producto": "CAMISETA SOFT",
+      "ok": true,
+      "promptLen": 38549,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "CAMISETA SOFT",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    },
+    {
+      "producto": "CAMISETA APPAREL",
+      "ok": true,
+      "promptLen": 37636,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "CAMISETA APPAREL",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    },
+    {
+      "producto": "HOODIE",
+      "ok": true,
+      "promptLen": 37831,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "HOODIE",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    },
+    {
+      "producto": "GORRA",
+      "ok": true,
+      "promptLen": 38551,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "GORRA",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    },
+    {
+      "producto": "MUG",
+      "ok": true,
+      "promptLen": 37477,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "MUG",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    },
+    {
+      "producto": "MOCHILA",
+      "ok": true,
+      "promptLen": 37534,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "MOCHILA",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    },
+    {
+      "producto": "TOTE BAG",
+      "ok": true,
+      "promptLen": 37793,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "TOTE BAG",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    },
+    {
+      "producto": "FUNDA MÓVIL",
+      "ok": true,
+      "promptLen": 37837,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "FUNDA MÓVIL",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    },
+    {
+      "producto": "ILUSTRACION PREMIUM APPAREL",
+      "ok": true,
+      "promptLen": 37412,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "ILUSTRACION PREMIUM APPAREL",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    },
+    {
+      "producto": "DISPLATE",
+      "ok": true,
+      "promptLen": 37510,
+      "context": {
+        "market": "colombia",
+        "region": "todas",
+        "product": "DISPLATE",
+        "brand": "BERESHITH_CO"
+      },
+      "error": null
+    }
+  ]
+}

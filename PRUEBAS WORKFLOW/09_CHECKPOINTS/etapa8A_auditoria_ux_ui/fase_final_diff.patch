@@ -1,0 +1,1825 @@
+# Fase final F2-F6 - diff
+# rama feat/multiproducto-definitivo-2026-11 @ 33df81d (base)
+## sha256
+1c0ed88ea228d62f *js/taller-shell.js
+342ea1adad0746c6 *js/multiproducto-ui.js
+b6435545ed436bdc *styles.css
+12419e5f0d9dfbb0 *index.html
+
+## MODIFICADOS (git diff numstat)
+61	0	index.html
+451	0	styles.css
+
+## MODIFICADOS (diff completo)
+diff --git a/index.html b/index.html
+index e11d8cd..437de1f 100644
+--- a/index.html
++++ b/index.html
+@@ -65,6 +65,62 @@
+ 
+       <div class="left-col">
+ 
++<!-- ============ MULTIPRODUCTO (etapa 6) ============ -->
++<section class="panel mp-panel" id="mpPanel">
++  <div class="panel-title"><span class="step-num">⚡</span><span>Generación multiproducto</span>
++    <span class="badge-src">usa el mercado, la serie y la idea ya configurados</span>
++  </div>
++
++  <div class="field-row">
++    <div class="field">
++      <label for="mpMode">Modo</label>
++      <select id="mpMode">
++        <option value="all">TODOS los productos</option>
++        <option value="selected">SELECCIONADOS</option>
++      </select>
++    </div>
++    <div class="field">
++      <label>&nbsp;</label>
++      <div class="mp-counter"><span id="mpSelCount">0</span> seleccionados</div>
++    </div>
++    <div class="field">
++      <label>&nbsp;</label>
++      <button class="btn ghost" id="mpAllBtn" type="button">Todos</button>
++      <button class="btn ghost" id="mpNoneBtn" type="button">Ninguno</button>
++    </div>
++  </div>
++
++  <div class="mp-grid" id="mpGrid"></div>
++
++  <div class="ctx-line" id="mpCtx">Contexto compartido: —</div>
++
++  <div class="progress"><span id="mpBar" style="width:0%"></span></div>
++  <div class="status" id="mpStatus">Selecciona los productos y pulsa Generar.</div>
++
++  <div class="actions-primary">
++    <button class="btn primary" id="mpGenerate" type="button">Generar</button>
++    <button class="btn ghost" id="mpCancel" type="button" disabled>Cancelar</button>
++    <button class="btn ghost" id="mpSave" type="button">Guardar lote</button>
++    <button class="btn primary" id="mpZip" type="button">Exportar ZIP del lote</button>
++  </div>
++
++  <div class="tabs" id="mpTabs"></div>
++  <textarea id="mpPrompt" readonly placeholder="El prompt del producto seleccionado aparecerá aquí."></textarea>
++  <div class="meta-line" id="mpMeta">—</div>
++  <div class="actions">
++    <button class="btn ghost" id="mpCopy" type="button">Copiar</button>
++    <button class="btn ghost" id="mpCopyPart" type="button">Copiar parte 1/2</button>
++    <button class="btn ghost" id="mpReroll" type="button">Regenerar solo este</button>
++  </div>
++
++  <div class="mp-historial" id="mpHistorialWrap">
++    <div class="panel-title" style="font-size:14px"><span class="step-num">▤</span><span>Historial local</span>
++      <span class="badge-src">máx. 20 lotes · rotación automática</span>
++    </div>
++    <div id="mpHistorial"></div>
++  </div>
++</section>
++
+         <section class="panel">
+           <div class="panel-title">
+             <span class="step-num">1</span>
+@@ -657,5 +713,10 @@
+   <script src="js/copy-ia.js" defer></script>
+   <script src="js/ia-validador.js" defer></script>
+   <script src="js/sync-supabase.js" defer></script>
++  <script src="js/orquestador-multiproducto.js" defer></script>
++  <script src="js/multiproducto-historial.js" defer></script>
++  <script src="js/multiproducto-zip.js" defer></script>
++  <script src="js/multiproducto-ui.js" defer></script>
++  <script src="js/taller-shell.js" defer></script>
+ </body>
+ </html>
+\ No newline at end of file
+diff --git a/styles.css b/styles.css
+index d9e5212..024327e 100644
+--- a/styles.css
++++ b/styles.css
+@@ -1263,3 +1263,454 @@ textarea[title] {
+ .comparison-matrix td {
+   min-width: 145px;
+ }
++
++/* ===== Etapa 6 · Multiproducto ===== */
++.mp-panel .badge-src {
++  margin-left: auto;
++  color: var(--mut, #8A90A0);
++  font-size: 12px;
++  font-weight: 500;
++}
++.mp-counter {
++  color: var(--text, #E0E4EC);
++  font-weight: 700;
++  padding-top: 6px;
++}
++.mp-grid {
++  display: grid;
++  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
++  gap: 8px;
++  margin: 10px 0 12px;
++}
++.mp-chip {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  gap: 8px;
++  border: 1px solid var(--line, #2A2E38);
++  border-radius: var(--r, 6px);
++  padding: 8px 10px;
++  background: var(--panel-alt, #1A1E26);
++  color: var(--text, #E0E4EC);
++  font-weight: 600;
++  font-size: 13px;
++  cursor: pointer;
++  text-align: left;
++}
++.mp-chip input {
++  accent-color: var(--acc, #5B8DEF);
++}
++.mp-chip.activa {
++  border-color: var(--acc, #5B8DEF);
++  box-shadow: 0 0 0 1px var(--acc-dim, rgba(91, 141, 239, 0.25));
++}
++.mp-st {
++  font-size: 11px;
++  font-weight: 700;
++  padding: 2px 7px;
++  border-radius: 99px;
++  background: var(--line, #2A2E38);
++  color: var(--mut, #8A90A0);
++  white-space: nowrap;
++}
++.mp-st.ok { background: rgba(52, 211, 153, 0.16); color: var(--good, #34D399); }
++.mp-st.err { background: rgba(248, 113, 113, 0.16); color: var(--bad, #F87171); }
++.mp-st.run { background: rgba(251, 191, 36, 0.16); color: var(--warn, #FBBF24); }
++.ctx-line {
++  color: var(--mut, #8A90A0);
++  font-size: 12.5px;
++  margin: 6px 0 2px;
++}
++.progress {
++  height: 8px;
++  border-radius: 99px;
++  background: var(--line, #2A2E38);
++  overflow: hidden;
++  margin: 8px 0;
++}
++.progress > span {
++  display: block;
++  height: 100%;
++  width: 0;
++  background: var(--acc, #5B8DEF);
++  transition: width 0.2s ease;
++}
++.tabs {
++  display: flex;
++  gap: 6px;
++  overflow-x: auto;
++  padding-bottom: 6px;
++  margin-top: 12px;
++}
++.tab {
++  border: 1px solid var(--line, #2A2E38);
++  background: var(--panel-alt, #1A1E26);
++  color: var(--text, #E0E4EC);
++  border-radius: var(--r, 6px) var(--r, 6px) 0 0;
++  padding: 7px 10px;
++  font-size: 12.5px;
++  font-weight: 700;
++  white-space: nowrap;
++  cursor: pointer;
++}
++.tab.activa {
++  border-color: var(--acc, #5B8DEF);
++  color: var(--acc, #5B8DEF);
++}
++#mpPrompt {
++  width: 100%;
++  min-height: 160px;
++  border: 1px solid var(--line, #2A2E38);
++  border-radius: var(--r, 6px);
++  padding: 10px;
++  font: 12px/1.45 ui-monospace, Consolas, monospace;
++  background: var(--panel-alt, #1A1E26);
++  color: var(--text, #E0E4EC);
++  resize: vertical;
++}
++.meta-line {
++  font-size: 12px;
++  color: var(--mut, #8A90A0);
++  margin: 8px 0;
++}
++.mp-historial {
++  margin-top: 16px;
++  border-top: 1px dashed var(--line, #2A2E38);
++  padding-top: 10px;
++}
++.hitem {
++  display: flex;
++  justify-content: space-between;
++  gap: 10px;
++  align-items: center;
++  border: 1px dashed var(--line, #2A2E38);
++  border-radius: var(--r, 6px);
++  padding: 8px 10px;
++  font-size: 12.5px;
++  margin-bottom: 6px;
++}
++.hitem .row {
++  display: flex;
++  gap: 6px;
++  flex-wrap: wrap;
++}
++@media (max-width: 1100px) {
++  .mp-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
++}
++@media (max-width: 640px) {
++  .mp-grid { grid-template-columns: 1fr 1fr; }
++  .hitem { flex-direction: column; align-items: stretch; }
++}
++/* Las acciones del panel deben envolver en pantallas estrechas: el botón de
++   exportar no puede desbordar el ancho (verificado a 390 px). */
++.mp-panel .actions-primary,
++.mp-panel .actions {
++  flex-wrap: wrap;
++}
++.mp-panel .actions-primary .btn,
++.mp-panel .actions .btn {
++  flex: 1 1 140px;
++  width: auto;
++}
++.mp-panel .actions-primary .primary {
++  width: auto;
++  padding: 10px 12px;
++  font-size: 14px;
++}
++
++/* =====================================================================
++   Etapa 8A · F0 · Fundaciones visuales (capa nueva, prefijo tp-)
++   Solo adiciones: ninguna regla anterior se modifica. Las fundaciones leen
++   los tokens ya definidos en :root y no los redefinen. Todo lo nuevo vive
++   bajo .tp-scope para no afectar a la interfaz actual hasta F1-F6.
++   ===================================================================== */
++
++.tp-scope {
++  --tp-gap: 8px;
++  --tp-pad: 16px;
++  color: var(--text, #E0E4EC);
++}
++
++/* Focus visible: solo dentro de la capa nueva, para no alterar la UI actual */
++.tp-scope :focus-visible,
++.tp-stepper:focus-visible,
++.tp-accordion summary:focus-visible,
++.tp-btn:focus-visible,
++.tp-state:focus-visible {
++  outline: 2px solid var(--acc, #5B8DEF);
++  outline-offset: 2px;
++}
++
++/* Tipografía y ritmo */
++.tp-title {
++  font-size: 20px;
++  font-weight: 700;
++  letter-spacing: -0.01em;
++  margin: 0 0 4px;
++}
++.tp-help {
++  font-size: 13px;
++  color: var(--mut, #8A90A0);
++  margin: 0;
++}
++.tp-muted {
++  font-size: 12px;
++  color: var(--mut, #8A90A0);
++}
++
++/* Stepper de fases */
++.tp-stepper {
++  display: flex;
++  align-items: center;
++  gap: 6px;
++  padding: 10px var(--tp-pad);
++  border-bottom: 1px solid var(--line, #2A2E38);
++  overflow-x: auto;
++}
++.tp-step {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  font-size: 12.5px;
++  font-weight: 600;
++  padding: 5px 10px;
++  border-radius: 99px;
++  background: var(--panel-alt, #1A1E26);
++  color: var(--mut, #8A90A0);
++  white-space: nowrap;
++  border: 1px solid transparent;
++}
++.tp-step .tp-step-n {
++  display: inline-block;
++  min-width: 18px;
++  text-align: center;
++  font-weight: 700;
++}
++.tp-step.done {
++  color: var(--good, #34D399);
++}
++.tp-step.active {
++  background: var(--acc, #5B8DEF);
++  color: #fff;
++  border-color: var(--acc, #5B8DEF);
++}
++.tp-step.pending {
++  opacity: .7;
++}
++
++/* Acordeones de configuración */
++.tp-accordion {
++  border: 1px solid var(--line, #2A2E38);
++  border-radius: 12px;
++  background: var(--panel, #161920);
++  margin-bottom: var(--tp-gap);
++  overflow: hidden;
++}
++.tp-accordion > summary {
++  list-style: none;
++  cursor: pointer;
++  padding: 12px 14px;
++  font-weight: 700;
++  font-size: 13.5px;
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 8px;
++}
++.tp-accordion > summary::-webkit-details-marker { display: none; }
++.tp-accordion > summary::after {
++  content: '▾';
++  color: var(--mut, #8A90A0);
++  transition: transform .15s ease;
++}
++.tp-accordion:not([open]) > summary::after { transform: rotate(-90deg); }
++.tp-accordion[open] > summary {
++  border-bottom: 1px dashed var(--line, #2A2E38);
++}
++.tp-accordion-body {
++  padding: 12px 14px;
++  display: flex;
++  flex-direction: column;
++  gap: var(--tp-gap);
++}
++.tp-accordion-summary-line {
++  font-size: 12px;
++  color: var(--mut, #8A90A0);
++  font-weight: 500;
++}
++
++/* Badge de estado textual (no parece un botón) */
++.tp-state {
++  display: inline-block;
++  font-size: 11px;
++  font-weight: 700;
++  padding: 2px 8px;
++  border-radius: 6px;
++  background: var(--panel-alt, #1A1E26);
++  color: var(--mut, #8A90A0);
++  border: 1px solid var(--line, #2A2E38);
++  white-space: nowrap;
++}
++.tp-state.ok { color: var(--good, #34D399); border-color: rgba(52, 211, 153, .4); }
++.tp-state.err { color: var(--bad, #F87171); border-color: rgba(248, 113, 113, .4); }
++.tp-state.run { color: var(--warn, #FBBF24); border-color: rgba(251, 191, 36, .4); }
++
++/* Botones de la capa nueva */
++.tp-btn {
++  font: inherit;
++  font-size: 13.5px;
++  font-weight: 600;
++  border-radius: 8px;
++  border: 1px solid var(--line, #2A2E38);
++  background: var(--panel-alt, #1A1E26);
++  color: var(--text, #E0E4EC);
++  padding: 9px 14px;
++  cursor: pointer;
++}
++.tp-btn.primary {
++  background: var(--acc, #5B8DEF);
++  border-color: var(--acc, #5B8DEF);
++  color: #fff;
++}
++.tp-btn[disabled] {
++  opacity: .5;
++  cursor: not-allowed;
++}
++
++/* Estado vacío con llamada a la acción */
++.tp-empty {
++  border: 1px dashed var(--line2, #3A3E48);
++  border-radius: 12px;
++  padding: 22px 16px;
++  text-align: center;
++  color: var(--mut, #8A90A0);
++  display: flex;
++  flex-direction: column;
++  align-items: center;
++  gap: 8px;
++}
++.tp-empty-icon {
++  font-size: 22px;
++  line-height: 1;
++}
++.tp-empty-title {
++  font-size: 14px;
++  font-weight: 700;
++  color: var(--text, #E0E4EC);
++}
++.tp-empty-text {
++  font-size: 13px;
++  max-width: 42ch;
++}
++
++/* Cabecera de contexto y selector de modo (se usarán en F1) */
++.tp-topbar {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++  padding: 8px var(--tp-pad);
++  border-bottom: 1px solid var(--line, #2A2E38);
++  flex-wrap: wrap;
++}
++.tp-context-chip {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  font-size: 12.5px;
++  font-weight: 600;
++  padding: 5px 10px;
++  border-radius: 99px;
++  border: 1px solid var(--line, #2A2E38);
++  background: var(--panel-alt, #1A1E26);
++  color: var(--text, #E0E4EC);
++}
++.tp-mode {
++  display: inline-flex;
++  gap: 4px;
++  padding: 3px;
++  border-radius: 10px;
++  background: var(--panel-alt, #1A1E26);
++  border: 1px solid var(--line, #2A2E38);
++}
++.tp-mode button {
++  font: inherit;
++  font-size: 13px;
++  font-weight: 600;
++  border: 0;
++  background: transparent;
++  color: var(--mut, #8A90A0);
++  padding: 6px 12px;
++  border-radius: 8px;
++  cursor: pointer;
++}
++.tp-mode button.active {
++  background: var(--acc, #5B8DEF);
++  color: #fff;
++}
++
++/* En pantallas estrechas el stepper envuelve (evita que el paso 4 quede
++   recortado con scroll interno). */
++@media (max-width: 640px) {
++  .tp-stepper {
++    flex-wrap: wrap;
++    overflow: visible;
++    row-gap: 6px;
++  }
++  .tp-step { font-size: 12px; padding: 5px 9px; }
++  .tp-topbar { gap: 6px; }
++}
++
++/* =====================================================================
++   Etapa 8A · F5/F6 · responsive y accesibilidad de la capa nueva
++   Solo adiciones.
++   ===================================================================== */
++
++/* Rail de configuración (tablet / móvil) */
++#tpRailToggle {
++  display: none;
++}
++@media (max-width: 1100px) {
++  #tpRailToggle {
++    display: inline-flex;
++    align-items: center;
++    gap: 6px;
++    font-size: 12.5px;
++    padding: 6px 10px;
++  }
++}
++body.config-cerrada #tpConfig {
++  display: none;
++}
++
++/* Navegación de herramientas: una sola fila desplazable en pantallas estrechas */
++@media (max-width: 700px) {
++  .pod-nav {
++    flex-wrap: nowrap;
++    overflow-x: auto;
++    padding: 8px 10px;
++    gap: 6px;
++    -webkit-overflow-scrolling: touch;
++  }
++  .pod-nav a { padding: 6px 9px; font-size: 12.5px; white-space: nowrap; }
++}
++
++/* Acción principal siempre alcanzable en móvil */
++@media (max-width: 640px) {
++  .actions-primary {
++    position: sticky;
++    bottom: 0;
++    z-index: 6;
++    background: var(--bg, #0E1016);
++    padding-top: 8px;
++    border-top: 1px solid var(--line, #2A2E38);
++  }
++}
++
++/* Etapa 8A-F6: foco visible también en los controles base (solo al navegar con teclado) */
++button:focus-visible,
++select:focus-visible,
++input:focus-visible,
++textarea:focus-visible {
++  outline: 2px solid var(--acc, #5B8DEF);
++  outline-offset: 1px;
++}
+
+## NUEVOS
+--- js/taller-shell.js ---
+diff --git a/js/taller-shell.js b/js/taller-shell.js
+new file mode 100644
+index 0000000..b1fe971
+--- /dev/null
++++ js/taller-shell.js
+@@ -0,0 +1,532 @@
++/* Taller POD · Etapa 8A-F1 · Estructura común: cabecera de contexto y modos.
++ *
++ * Objetivo: que el generador individual y el multiproducto se perciban como UNA
++ * aplicación con contexto compartido, no como dos bloques superpuestos.
++ *
++ * Reglas:
++ * - No crea campos nuevos: los chips de contexto son una VISTA de los campos ya
++ *   existentes (#market, #brand, #serie, #product, ...). No hay información duplicada
++ *   ni fuentes alternativas de verdad.
++ * - El selector de modo solo cambia la VISIBILIDAD del panel multiproducto; no altera
++ *   valores ni comportamiento de ninguno de los dos flujos.
++ * - El modo elegido persiste en localStorage (POD2|taller|modo).
++ * - Degradacion elegante: si falta cualquier elemento, la cabecera simplemente no se
++ *   inyecta y la aplicacion sigue funcionando como antes.
++ * - Sin dependencias externas. Usa los componentes tp-* de la F0.
++ */
++(function () {
++  'use strict';
++
++  var CLAVE_MODO = 'POD2|taller|modo';
++  var MODOS = { INDIVIDUAL: 'individual', MULTI: 'multiproducto' };
++  var IDS_CONTEXTO = ['market', 'region', 'brand', 'language', 'marketplace', 'product', 'serie'];
++
++  var modo = MODOS.INDIVIDUAL;
++  var inyectado = false;
++
++  function $(id) { return document.getElementById(id); }
++
++  function texto(id) {
++    var e = $(id);
++    if (!e) return '';
++    return String(e.value == null ? '' : e.value).trim();
++  }
++
++  /* Texto legible de la opción elegida (fuente: el propio <select>). */
++  function opcionTexto(id) {
++    var s = $(id);
++    if (!s || !s.selectedOptions || !s.selectedOptions.length) return '';
++    return String(s.selectedOptions[0].textContent || '').trim();
++  }
++
++  function leerContexto() {
++    var M = window.MOTOR_STATE || {};
++    var market = opcionTexto('market') || texto('market') || M.market || '—';
++    var brand = opcionTexto('brand') || texto('brand') || M.brand || 'auto';
++    var product = opcionTexto('product') || texto('product') || M.product || '—';
++    var language = opcionTexto('language') || texto('language') || M.language || 'auto';
++    var serie = String(M.serie || texto('serie') || '').trim();
++    var region = opcionTexto('region') || texto('region') || M.region || '';
++    return {
++      market: market,
++      brand: brand,
++      product: product,
++      language: language,
++      serie: serie,
++      region: region
++    };
++  }
++
++  function recortar(s, n) {
++    s = String(s == null ? '' : s);
++    return s.length > n ? s.slice(0, n) + '…' : s;
++  }
++
++  function pintarContexto() {
++    var c = leerContexto();
++    var chips = document.querySelectorAll('#tpContexto .tp-context-chip');
++    chips.forEach(function (chip) {
++      var clave = chip.getAttribute('data-ctx');
++      if (clave === 'market') {
++        /* Etiqueta corta del mercado (antes del " — ") + región abreviada:
++           evita chips largos truncados en móvil. */
++        var nomMarket = String(c.market || '').split(' — ')[0].trim();
++        chip.textContent = '◆ ' + recortar(nomMarket || c.market, 18) +
++          (c.region ? '  ·  ' + recortar(String(c.region).split(' ').slice(0, 2).join(' '), 16) : '');
++      } else if (clave === 'brand') {
++        var nomBrand = String(c.brand || '').split(' — ')[0].trim();
++        chip.textContent = 'Marca: ' + recortar(nomBrand || c.brand, 18);
++      } else if (clave === 'product') {
++        chip.textContent = 'Producto: ' + recortar(c.product, 22);
++      } else if (clave === 'serie') {
++        chip.textContent = c.serie ? ('Serie ' + recortar(c.serie, 18)) : 'Sin serie';
++      }
++    });
++  }
++
++  /* ---------- selector de modo ---------- */
++
++  function aplicarModo(nuevo, opciones) {
++    opciones = opciones || {};
++    modo = (nuevo === MODOS.MULTI) ? MODOS.MULTI : MODOS.INDIVIDUAL;
++
++    var mp = $('mpPanel');
++    if (mp) mp.style.display = (modo === MODOS.MULTI) ? '' : 'none';
++
++    document.querySelectorAll('#tpMode button').forEach(function (b) {
++      var es = b.getAttribute('data-modo') === modo;
++      b.classList.toggle('active', es);
++      b.setAttribute('aria-selected', es ? 'true' : 'false');
++    });
++
++    document.body.setAttribute('data-modo', modo);
++
++    if (!opciones.silencioso) {
++      try { window.localStorage.setItem(CLAVE_MODO, modo); } catch (e) { /* sin storage */ }
++    }
++    if (typeof opciones.onCambio === 'function') {
++      try { opciones.onCambio(modo); } catch (e) { console.warn('[TallerShell] onCambio falló:', e); }
++    }
++  }
++
++  function leerModoGuardado() {
++    try { return window.localStorage.getItem(CLAVE_MODO); } catch (e) { return null; }
++  }
++
++  /* ---------- stepper de fases ---------- */
++
++  var PASOS = ['configurar', 'generar', 'revisar', 'exportar'];
++
++  function fase(idx) {
++    document.querySelectorAll('#tpStepper .tp-step').forEach(function (el) {
++      var i = parseInt(el.getAttribute('data-paso'), 10);
++      el.classList.remove('done', 'active', 'pending');
++      if (i < idx) el.classList.add('done');
++      else if (i === idx) el.classList.add('active');
++      else el.classList.add('pending');
++    });
++    document.body.setAttribute('data-fase', PASOS[idx] || '');
++  }
++
++  function actualizarFase() {
++    var statusTxt = String(($('status') && $('status').textContent) || '').toLowerCase();
++    var mpTxt = String(($('mpStatus') && $('mpStatus').textContent) || '').toLowerCase();
++    var hayResultado = !!((($('out') && $('out').value) || '') ||
++                         (window.MultiproductoUI && window.MultiproductoUI._lote && window.MultiproductoUI._lote()));
++    var generando = /generando|preparando|cancelando/.test(statusTxt + ' ' + mpTxt);
++    var exportado = /zip generado|lote guardado/.test(statusTxt + ' ' + mpTxt);
++
++    if (generando) return fase(1);
++    if (exportado) return fase(3);
++    if (hayResultado) return fase(2);
++    return fase(0);
++  }
++
++  /* ---------- inyección ---------- */
++
++  function el(tag, cls, text) {
++    var e = document.createElement(tag);
++    if (cls) e.className = cls;
++    if (text != null) e.textContent = text;
++    return e;
++  }
++
++  /* Se construye con DOM API (sin innerHTML) para no introducir ninguna superficie
++     de inyección: los textos de contexto se asignan con textContent. */
++  function construir() {
++    /* La estructura real tiene dos bloques .shell: el primero envuelve la cabecera y
++       el segundo la rejilla principal. Se usa el padre real de .main-grid para no
++       depender del orden de selección. */
++    var rejilla = document.querySelector('.main-grid');
++    if (!rejilla || !rejilla.parentElement) return false;
++    var shell = rejilla.parentElement;
++
++    var wrap = el('div', 'tp-scope');
++    wrap.id = 'tpTopbar';
++
++    var topbar = el('div', 'tp-topbar');
++    topbar.appendChild(el('span', 'tp-context-chip', '⚡ Taller POD'));
++
++    var ctx = el('span');
++    ctx.id = 'tpContexto';
++    ctx.style.display = 'flex';
++    ctx.style.gap = '8px';
++    ctx.style.flexWrap = 'wrap';
++    [['market', 'Mercado'], ['brand', 'Marca'], ['product', 'Producto'], ['serie', 'Serie']].forEach(function (par) {
++      ctx.appendChild(el('span', 'tp-context-chip', ''));
++      ctx.lastChild.setAttribute('data-ctx', par[0]);
++    });
++    topbar.appendChild(ctx);
++
++    var spacer = el('span');
++    spacer.style.flex = '1';
++    topbar.appendChild(spacer);
++
++    /* Etapa 8A-F5 · rail de configuración plegable (tablet/móvil) */
++    var rail = el('button', 'tp-btn', '⚙ Configurar');
++    rail.id = 'tpRailToggle';
++    rail.type = 'button';
++    rail.setAttribute('aria-label', 'Mostrar u ocultar la configuración');
++    rail.setAttribute('aria-expanded', 'true');
++    topbar.appendChild(rail);
++
++    var mode = el('div', 'tp-mode');
++    mode.id = 'tpMode';
++    mode.setAttribute('role', 'tablist');
++    mode.setAttribute('aria-label', 'Modo de trabajo');
++    [[MODOS.INDIVIDUAL, 'Un producto'], [MODOS.MULTI, 'Multiproducto']].forEach(function (par) {
++      var b = el('button', '', par[1]);
++      b.type = 'button';
++      b.setAttribute('role', 'tab');
++      b.setAttribute('data-modo', par[0]);
++      b.setAttribute('aria-selected', 'false');
++      mode.appendChild(b);
++    });
++    topbar.appendChild(mode);
++
++    wrap.appendChild(topbar);
++
++    var stepper = el('div', 'tp-stepper');
++    stepper.id = 'tpStepper';
++    stepper.setAttribute('aria-label', 'Progreso');
++    [['Configurar', 0], ['Generar', 1], ['Revisar', 2], ['Exportar', 3]].forEach(function (par) {
++      var s = el('span', 'tp-step', '');
++      s.setAttribute('data-paso', String(par[1]));
++      var n = el('span', 'tp-step-n', String(par[1] + 1));
++      s.appendChild(n);
++      s.appendChild(document.createTextNode(' ' + par[0]));
++      stepper.appendChild(s);
++    });
++    wrap.appendChild(stepper);
++
++    shell.insertBefore(wrap, rejilla);
++    return true;
++  }
++
++  function bind() {
++    document.querySelectorAll('#tpMode button').forEach(function (b) {
++      b.addEventListener('click', function () {
++        aplicarModo(b.getAttribute('data-modo'));
++        pintarContexto();
++      });
++    });
++
++    /* Etapa 8A-F5: rail de configuración */
++    var railBtn = $('tpRailToggle');
++    if (railBtn) {
++      railBtn.addEventListener('click', function () {
++        var cerrada = document.body.classList.toggle('config-cerrada');
++        railBtn.setAttribute('aria-expanded', cerrada ? 'false' : 'true');
++        railBtn.textContent = cerrada ? '⚙ Mostrar configuración' : '⚙ Configurar';
++      });
++    }
++
++    /* Etapa 8A-F6: etiquetas accesibles en botones que carecían de ellas */
++    [
++      ['btnAI', 'Herramientas de IA'],
++      ['btnMemory', 'Memoria portable del taller'],
++      ['mpAllBtn', 'Seleccionar todos los productos'],
++      ['mpNoneBtn', 'Quitar la selección de productos'],
++      ['mpGenerate', 'Generar el lote de productos seleccionados'],
++      ['mpCancel', 'Cancelar la generación en curso'],
++      ['mpSave', 'Guardar el lote en el historial local'],
++      ['mpZip', 'Exportar el lote como ZIP'],
++      ['mpCopy', 'Copiar el prompt al portapapeles'],
++      ['mpCopyPart', 'Copiar la primera mitad del prompt'],
++      ['mpReroll', 'Regenerar solo este producto']
++    ].forEach(function (par) {
++      var b = $(par[0]);
++      if (b && !b.getAttribute('aria-label')) b.setAttribute('aria-label', par[1]);
++    });
++
++    /* La vista de contexto se actualiza con los campos reales (no al revés). */
++    IDS_CONTEXTO.forEach(function (id) {
++      var el = $(id);
++      if (!el) return;
++      el.addEventListener('change', function () { pintarContexto(); });
++      el.addEventListener('input', function () { pintarContexto(); });
++    });
++    ['concept', 'message'].forEach(function (id) {
++      var el = $(id);
++      if (el) el.addEventListener('input', function () { pintarContexto(); });
++    });
++
++    /* Stepper: observa los mensajes de estado existentes, sin tocar el motor. */
++    try {
++      var obs = new MutationObserver(function () { actualizarFase(); });
++      ['status', 'mpStatus'].forEach(function (id) {
++        var el = $(id);
++        if (el) obs.observe(el, { childList: true, characterData: true, subtree: true });
++      });
++      obs.observe(document.body, { attributes: true, attributeFilter: ['data-modo'] });
++    } catch (e) { /* navegador sin MutationObserver: el stepper queda en fase inicial */ }
++  }
++
++  /* ==================== Etapa 8A-F2 · Acordeones de configuración ====================
++     Reorganiza los controles EXISTENTES en cuatro acordeones sin tocar ningún id,
++     opción ni comportamiento: solo se mueven nodos del DOM (los listeners viajan
++     con ellos). Si algo no encaja, se conserva donde estaba (degradación segura). */
++
++  var GRUPOS_F2 = {
++    contexto: ['market', 'language', 'brand', 'region', 'serie', 'set'],
++    producto: ['product', 'marketplace', 'printMethod', 'stampSide', 'capApplication'],
++    idea: ['concept', 'message', 'support', 'audienceSet', 'audienceMulti', 'workflowMode', 'decisionMode'],
++    avanzado: ['subniche', 'dominio', 'creativeTerritory', 'visualIdentity', 'aestheticPreference']
++  };
++
++  function grupoDelId(id) {
++    for (var g in GRUPOS_F2) {
++      if (Object.prototype.hasOwnProperty.call(GRUPOS_F2, g) && GRUPOS_F2[g].indexOf(id) >= 0) return g;
++    }
++    return null;
++  }
++
++  function primerIdConocido(nodo) {
++    var ctrl = nodo.querySelector('select[id], input[id], textarea[id]');
++    return ctrl ? ctrl.id : null;
++  }
++
++  function grupoDelBloque(bloque) {
++    var propio = bloque.id ? grupoDelId(bloque.id) : null;
++    if (propio) return propio;
++    var id = primerIdConocido(bloque);
++    return id ? grupoDelId(id) : null;
++  }
++
++  function hojaDe(id) {
++    var el = $(id);
++    if (!el) return null;
++    var campo = el.closest('.field');
++    if (!campo) return el.parentElement;
++    var fila = campo.closest('.field-row');
++    if (fila) {
++      var campos = Array.from(fila.querySelectorAll(':scope > .field'));
++      var grupos = {};
++      campos.forEach(function (c) { var g = grupoDelBloque(c); if (g) grupos[g] = true; });
++      if (campos.length && Object.keys(grupos).length === 1) return fila;
++    }
++    return campo;
++  }
++
++  function organizarConfiguracion() {
++    var mp = $('mpPanel');
++    if (!mp || !mp.parentElement) return false;
++    var leftCol = mp.parentElement;
++
++    var config = document.createElement('div');
++    config.className = 'tp-scope';
++    config.id = 'tpConfig';
++
++    var titulos = {
++      contexto: 'Contexto',
++      producto: 'Producto e impresión',
++      idea: 'La idea',
++      avanzado: 'Avanzado'
++    };
++    var abiertos = { contexto: true, producto: true };
++
++    Object.keys(titulos).forEach(function (g) {
++      var det = document.createElement('details');
++      det.className = 'tp-accordion';
++      det.setAttribute('data-grupo', g);
++      if (abiertos[g]) det.open = true;
++      var sum = document.createElement('summary');
++      sum.appendChild(document.createTextNode(titulos[g]));
++      var linea = document.createElement('span');
++      linea.className = 'tp-accordion-summary-line';
++      linea.textContent = '';
++      sum.appendChild(linea);
++      det.appendChild(sum);
++      var cuerpo = document.createElement('div');
++      cuerpo.className = 'tp-accordion-body';
++      cuerpo.setAttribute('data-cuerpo', g);
++      det.appendChild(cuerpo);
++      config.appendChild(det);
++    });
++
++    leftCol.insertBefore(config, mp);
++
++    /* 1) hojas de campos por grupo */
++    Object.keys(GRUPOS_F2).forEach(function (g) {
++      GRUPOS_F2[g].forEach(function (id) {
++        var hoja = hojaDe(id);
++        if (!hoja) return;
++        var cuerpo = config.querySelector('[data-cuerpo="' + g + '"]');
++        if (cuerpo && hoja.parentElement !== cuerpo) cuerpo.appendChild(hoja);
++      });
++    });
++
++    /* 2) secciones plegables existentes -> Avanzado */
++    var cuerpoAvanzado = config.querySelector('[data-cuerpo="avanzado"]');
++    ['varPanel', 'mixPanel'].forEach(function (id) {
++      var d = $(id);
++      if (d && cuerpoAvanzado && d.parentElement !== cuerpoAvanzado) cuerpoAvanzado.appendChild(d);
++    });
++    /* 3) panel de banco de motivos (section.panel sin id) */
++    Array.from(leftCol.querySelectorAll('section.panel')).forEach(function (sec) {
++      var titulo = String((sec.querySelector('.panel-title') || {}).textContent || '');
++      if (titulo.indexOf('Banco') >= 0 && sec.querySelectorAll('.field').length && cuerpoAvanzado) {
++        cuerpoAvanzado.appendChild(sec);
++      }
++    });
++
++    /* 4) resumen por acordeón y limpieza de contenedores vacíos */
++    Object.keys(titulos).forEach(function (g) {
++      var cuerpo = config.querySelector('[data-cuerpo="' + g + '"]');
++      var det = cuerpo.parentNode;
++      var n = cuerpo.querySelectorAll('.field').length;
++      cuerpo.parentNode.querySelector('.tp-accordion-summary-line').textContent = n ? (n + ' ajustes') : 'vacío';
++    });
++    leftCol.querySelectorAll('section.panel').forEach(function (sec) {
++      if (sec.id === 'mpPanel') return;
++      if (!sec.querySelectorAll('.field, details.panel').length) sec.hidden = true;
++    });
++    leftCol.querySelectorAll('.field-group').forEach(function (grp) {
++      if (!grp.querySelectorAll('.field').length && !grp.closest('#tpConfig')) grp.hidden = true;
++    });
++
++    return true;
++  }
++
++  /* ==================== Etapa 8A-F4 · Historial global ====================
++     El historial deja de vivir solo dentro del panel multiproducto: pasa a ser
++     un bloque compartido, visible en ambos modos, y se puede guardar también el
++     resultado del generador individual. No duplica datos: reutiliza las mismas
++     claves y el mismo módulo MultiproductoHistorial. */
++
++  function guardarIndividualEnHistorial(avisa) {
++    var out = $('out');
++    var prompt = out ? String(out.value || '') : '';
++    if (!prompt) { if (avisa) avisa('No hay resultado individual para guardar.', 'warn'); return false; }
++
++    var M = window.MOTOR_STATE || {};
++    var market = M.market || texto('market') || '—';
++    var region = M.region || texto('region') || '';
++    var brand = M.brand || texto('brand') || 'auto';
++    var producto = String(M.product || texto('product') || 'PRODUCTO').trim();
++    var serie = String(M.serie || texto('serie') || '').trim();
++
++    var H = window.MultiproductoHistorial;
++    if (!H || !H.guardarLote) { if (avisa) avisa('Historial no disponible.', 'bad'); return false; }
++
++    var res = H.guardarLote({
++      ctx: { market: market, region: region, brand: brand, serie: serie, product: producto, origen: 'individual' },
++      productos: [{
++        producto: producto,
++        ok: true,
++        prompt: prompt,
++        context: { market: market, region: region, brand: brand, product: producto },
++        error: null
++      }]
++    });
++    if (!res.ok) { if (avisa) avisa('No se pudo guardar: ' + (res.error || ''), 'bad'); return false; }
++    if (avisa) avisa(res.duplicado ? ('Resultado ya existía en el historial: ' + res.id) : ('Resultado individual guardado: ' + res.id), 'good');
++    try {
++      if (window.MultiproductoUI && window.MultiproductoUI._pintarHistorial) window.MultiproductoUI._pintarHistorial();
++    } catch (e) { /* el historial se redibujará en la próxima interacción */ }
++    return true;
++  }
++
++  function avisar(msg, tipo) {
++    var st = $('tpAviso');
++    if (!st) return;
++    st.textContent = msg;
++    st.className = 'status' + (tipo ? ' ' + tipo : '');
++  }
++
++  function historialGlobal() {
++    var hist = $('mpHistorialWrap');
++    var mp = $('mpPanel');
++    if (!hist || !mp || !mp.parentElement) return false;
++    var leftCol = mp.parentElement;
++
++    if (hist.parentElement !== leftCol) leftCol.appendChild(hist);
++
++    /* Cabecera propia con acción para guardar el resultado individual. */
++    if (!$( 'tpHistAcciones' )) {
++      var barra = document.createElement('div');
++      barra.id = 'tpHistAcciones';
++      barra.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px';
++      var btn = document.createElement('button');
++      btn.type = 'button';
++      btn.className = 'tp-btn';
++      btn.setAttribute('aria-label', 'Guardar el resultado individual en el historial');
++      btn.textContent = '＋ Guardar resultado actual';
++      btn.addEventListener('click', function () { guardarIndividualEnHistorial(avisar); });
++      barra.appendChild(btn);
++      var nota = document.createElement('span');
++      nota.className = 'tp-muted';
++      nota.textContent = 'Visible en ambos modos';
++      barra.appendChild(nota);
++      hist.insertBefore(barra, hist.firstChild);
++    }
++
++    /* Aviso compartido (para mensajes del shell). */
++    if (!$('tpAviso')) {
++      var st = document.createElement('div');
++      st.id = 'tpAviso';
++      st.className = 'status';
++      st.style.marginTop = '8px';
++      leftCol.appendChild(st);
++    }
++    return true;
++  }
++
++  function init() {
++    var guardado = leerModoGuardado();
++    if (guardado === MODOS.MULTI) modo = MODOS.MULTI;
++    else if (guardado === MODOS.INDIVIDUAL) modo = MODOS.INDIVIDUAL;
++
++    if (!construir()) return;   /* degradación: sin .shell/.main-grid no se inyecta nada */
++    inyectado = true;
++
++    aplicarModo(modo, { silencioso: true });   /* persiste el modo sin reescribir storage */
++    pintarContexto();
++    bind();
++    actualizarFase();
++    /* Etapa 8A-F2: organiza los controles existentes en cuatro acordeones.
++       Es idempotente solo si se llama una vez; init lo hace una sola vez. */
++    try { organizarConfiguracion(); } catch (e) { console.warn('[TallerShell] acordeones:', e); }
++    try { historialGlobal(); } catch (e) { console.warn('[TallerShell] historial global:', e); }
++    actualizarFase();
++  }
++
++  if (document.readyState === 'loading') {
++    document.addEventListener('DOMContentLoaded', init);
++  } else {
++    init();
++  }
++
++  /* API mínima para pruebas y futuras fases (no forma parte del motor). */
++  window.TallerShell = {
++    _state: function () {
++      return {
++        modo: modo,
++        inyectado: inyectado,
++        ctx: leerContexto()
++      };
++    },
++    _setModo: function (m) { aplicarModo(m); },
++    _fase: actualizarFase
++  };
++})();
+--- js/multiproducto-ui.js ---
+diff --git a/js/multiproducto-ui.js b/js/multiproducto-ui.js
+new file mode 100644
+index 0000000..cc43e2d
+--- /dev/null
++++ js/multiproducto-ui.js
+@@ -0,0 +1,726 @@
++/* Taller POD · Etapa 6 — Interfaz de generación multiproducto.
++ *
++ * Orquesta el núcleo ya validado (OrquestadorMultiProducto), el historial local
++ * (MultiproductoHistorial) y el exportador ZIP (MultiproductoZip).
++ * No modifica el generador de producto único ni el motor creativo.
++ * Sin dependencias externas.
++ *
++ * Reglas de la interfaz:
++ * - La lista de productos se lee del <select id="product"> real (no se hardcodea).
++ * - Modo TODOS / SELECCIONADOS.
++ * - Progreso REAL por producto (la UI cede el hilo entre productos para repintar).
++ * - Anti-duplicados: el botón Generar se deshabilita mientras hay una ejecución.
++ * - Resultados independientes por producto, pestañas, copiado, regeneración individual.
++ * - Historial local: cargar sin regenerar, eliminar, exportar ZIP.
++ */
++(function () {
++  'use strict';
++
++  var ORQ = window.OrquestadorMultiProducto;
++  var HIST = window.MultiproductoHistorial;
++  var ZIP = window.MultiproductoZip;
++
++  function $(id) { return document.getElementById(id); }
++
++  var PRODUCTOS = [];
++  var seleccion = {};
++  var modo = 'all';
++  var lote = null;          /* { ctx:{...}, productos:[{producto,ok,prompt,context,error}] } */
++  var activo = null;
++  var generando = false;
++  var cancelado = false;
++
++  /* ---------- utilidades ---------- */
++
++  function val(id) {
++    var e = $(id);
++    if (!e) return '';
++    return String(e.value == null ? '' : e.value);
++  }
++
++  function truncar(s, n) {
++    s = String(s == null ? '' : s);
++    return s.length > n ? s.slice(0, n) + '…' : s;
++  }
++
++  function estado() { return $('mpStatus'); }
++
++  function setStatus(msg, tipo) {
++    var el = estado();
++    if (!el) return;
++    el.textContent = msg;
++    el.className = 'status' + (tipo ? ' ' + tipo : '');
++  }
++
++  function barra(pct) {
++    var b = $('mpBar');
++    if (b) b.style.width = Math.max(0, Math.min(100, pct)) + '%';
++  }
++
++  /* Contexto compartido: se lee del estado vivo del motor y, como respaldo,
++     de los campos del formulario. Es el mismo contexto para todos los productos. */
++  function ctxFromDom() {
++    var M = window.MOTOR_STATE || {};
++    function g(id) { return val(id); }
++    function pick(clave, id, def) {
++      var v = M[clave];
++      if (v === undefined || v === null || String(v) === '') v = g(id);
++      return String(v === undefined || v === null ? def : v);
++    }
++    return {
++      market: pick('market', 'market', 'global_es'),
++      region: pick('region', 'region', 'global'),
++      brand: pick('brand', 'brand', 'auto'),
++      language: pick('language', 'language', 'es'),
++      marketplace: pick('marketplace', 'marketplace', 'generic'),
++      subniche: pick('subniche', 'subniche', 'auto'),
++      serie: pick('serie', 'serie', ''),
++      concept: pick('concept', 'concept', ''),
++      mensaje: pick('message', 'message', ''),
++      apoyo: pick('support', 'support', ''),
++      audienceSet: pick('audienceSet', 'audienceSet', 'Auto'),
++      audienceMulti: pick('audienceMulti', 'audienceMulti', 'no'),
++      aestheticPreference: pick('aestheticPreference', 'aestheticPreference', 'auto'),
++      dominio: pick('dominio', 'dominio', 'auto'),
++      domImagen: pick('domImagen', 'domImagen', 'Auto'),
++      workflowMode: pick('workflowMode', 'workflowMode', 'explore'),
++      repeatType: pick('repeatType', 'repeatType', 'medio salto')
++    };
++  }
++
++  /* Opciones que consume OrquestadorMultiProducto.generarMuchos():
++     exactamente las claves que entendía _escribirContexto(). */
++  function ctxOpts(ctx) {
++    return {
++      concepto: ctx.concept,
++      mensaje: ctx.mensaje,
++      apoyo: ctx.apoyo,
++      serie: ctx.serie,
++      market: ctx.market,
++      region: ctx.region,
++      brand: ctx.brand,
++      language: ctx.language,
++      marketplace: ctx.marketplace,
++      subniche: ctx.subniche,
++      audienceSet: ctx.audienceSet,
++      audienceMulti: ctx.audienceMulti,
++      aestheticPreference: ctx.aestheticPreference,
++      dominio: ctx.dominio,
++      domImagen: ctx.domImagen,
++      workflowMode: ctx.workflowMode,
++      repeatType: ctx.repeatType,
++      simboloVar: ctx.simboloVar,
++      textosVar: ctx.textosVar,
++      paletaVar: ctx.paletaVar,
++      esencia: ctx.esencia,
++      capApplication: ctx.capApplication,
++      stampSide: ctx.stampSide,
++      printMethod: ctx.printMethod,
++      creativeTerritory: ctx.creativeTerritory,
++      visualIdentity: ctx.visualIdentity,
++      decisionMode: ctx.decisionMode
++    };
++  }
++
++  /* Versión completa del contexto (los campos de variación viven en el DOM). */
++  function ctxCompleto(base) {
++    var ctx = {};
++    for (var k in base) if (Object.prototype.hasOwnProperty.call(base, k)) ctx[k] = base[k];
++    ctx.simboloVar = val('simboloVar') || ctx.simboloVar || 'sustituir';
++    ctx.textosVar = val('textosVar') || 'conservar_palabras';
++    ctx.paletaVar = val('paletaVar') || 'renovar';
++    ctx.esencia = val('essence') || '';
++    ctx.capApplication = val('capApplication') || 'auto';
++    ctx.stampSide = val('stampSide') || 'auto';
++    ctx.printMethod = val('printMethod') || 'auto';
++    ctx.creativeTerritory = val('creativeTerritory') || 'auto';
++    ctx.visualIdentity = val('visualIdentity') || '';
++    ctx.decisionMode = val('decisionMode') || 'assisted';
++    return ctx;
++  }
++
++  function ctxLinea(ctx) {
++    var partes = [
++      ctx.market || '—',
++      ctx.region || '—',
++      ctx.serie ? ('serie ' + ctx.serie) : '',
++      ctx.concept ? ('«' + truncar(ctx.concept, 60) + '»') : ''
++    ].filter(Boolean);
++    return 'Contexto compartido: ' + partes.join(' · ');
++  }
++
++  function promesaCediendo() {
++    return new Promise(function (resolve) { setTimeout(resolve, 0); });
++  }
++
++  function framing() {
++    /* Ceder un pintado antes de empezar. Con requestAnimationFrame como
++       mecanismo principal, pero con tiempo límite: si la pestaña no pinta
++       (headless, segundo plano) la generación no debe quedarse colgada. */
++    return new Promise(function (resolve) {
++      var hecho = false;
++      function fin() { if (!hecho) { hecho = true; resolve(); } }
++      try {
++        if (window.requestAnimationFrame) window.requestAnimationFrame(fin);
++        else setTimeout(fin, 16);
++      } catch (e) { setTimeout(fin, 16); }
++      setTimeout(fin, 150);
++    });
++  }
++
++  /* ---------- productos y selección ---------- */
++
++  function leerProductos() {
++    var sel = $('product');
++    var out = [];
++    if (sel && sel.options) {
++      for (var i = 0; i < sel.options.length; i++) {
++        var t = String(sel.options[i].value != null && sel.options[i].value !== ''
++          ? sel.options[i].value : (sel.options[i].textContent || '')).trim();
++        if (t) out.push(t);
++      }
++    }
++    return out;
++  }
++
++  function seleccionados() {
++    if (modo === 'all') return PRODUCTOS.slice();
++    return PRODUCTOS.filter(function (p) { return !!seleccion[p]; });
++  }
++
++  function pintarGrid() {
++    var grid = $('mpGrid');
++    if (!grid) return;
++    grid.innerHTML = '';
++    PRODUCTOS.forEach(function (p) {
++      var chip = document.createElement('div');
++      chip.className = 'mp-chip';
++      chip.setAttribute('data-producto', p);
++
++      var label = document.createElement('label');
++      label.style.display = 'flex';
++      label.style.gap = '6px';
++      label.style.alignItems = 'center';
++      label.style.cursor = 'pointer';
++      label.style.flex = '1';
++
++      var cb = document.createElement('input');
++      cb.type = 'checkbox';
++      cb.checked = modo === 'all' ? true : !!seleccion[p];
++      cb.disabled = (modo === 'all');
++      cb.setAttribute('aria-label', 'Seleccionar ' + p);
++      cb.addEventListener('change', function () {
++        seleccion[p] = cb.checked;
++        actualizarSeleccion();
++      });
++
++      var nombre = document.createElement('span');
++      nombre.textContent = p;
++
++      label.appendChild(cb);
++      label.appendChild(nombre);
++
++      var st = document.createElement('span');
++      st.className = 'mp-st';
++      st.setAttribute('data-st', p);
++      st.textContent = '—';
++
++      chip.appendChild(label);
++      chip.appendChild(st);
++
++      chip.addEventListener('click', function (ev) {
++        if (ev.target && ev.target.tagName === 'INPUT') return;
++        if (resultadosPorProducto()[p]) activar(p);
++      });
++
++      grid.appendChild(chip);
++    });
++    actualizarSeleccion();
++  }
++
++  function resultadosPorProducto() {
++    var mapa = {};
++    if (lote && Array.isArray(lote.productos)) {
++      lote.productos.forEach(function (r) { if (r) mapa[r.producto] = r; });
++    }
++    return mapa;
++  }
++
++  function actualizarSeleccion() {
++    var n = seleccionados().length;
++    var contador = $('mpSelCount');
++    if (contador) contador.textContent = String(n);
++    var btn = $('mpGenerate');
++    if (btn) btn.textContent = generando ? 'Generando…' : ('Generar' + (n ? ' ' + n + (n === 1 ? ' producto' : ' productos') : ''));
++  }
++
++  function fijarEstadoChips(mapa) {
++    PRODUCTOS.forEach(function (p) {
++      var st = document.querySelector('.mp-st[data-st="' + CSS.escape(p) + '"]');
++      if (!st) return;
++      var r = mapa[p];
++      st.className = 'mp-st tp-state';
++      if (!r) { st.textContent = 'Pendiente'; return; }
++      if (r.ok) { st.className += ' ok tp-state-ok'; st.textContent = 'OK'; }
++      else { st.className += ' err tp-state-err'; st.textContent = 'Error'; }
++    });
++  }
++
++  /* ---------- pestañas y visor ---------- */
++
++  function pintarTabs() {
++    var wrap = $('mpTabs');
++    if (!wrap) return;
++    wrap.innerHTML = '';
++    var lista = lote && Array.isArray(lote.productos) ? lote.productos : [];
++    lista.forEach(function (r) {
++      if (!r) return;
++      var b = document.createElement('button');
++      b.type = 'button';
++      b.className = 'tab' + (activo === r.producto ? ' activa' : '');
++      b.textContent = r.producto + (r.ok ? '' : ' · ERROR');
++      b.addEventListener('click', function () { activar(r.producto); });
++      wrap.appendChild(b);
++    });
++  }
++
++  function activar(producto) {
++    var r = resultadosPorProducto()[producto];
++    if (!r) return;
++    activo = producto;
++    var tabs = $('mpTabs');
++    if (tabs) {
++      Array.prototype.forEach.call(tabs.querySelectorAll('.tab'), function (t) {
++        var es = t.textContent.indexOf(producto) === 0;
++        t.classList.toggle('activa', es);
++      });
++    }
++    var ta = $('mpPrompt');
++    if (ta) ta.value = r.prompt || '';
++    var meta = $('mpMeta');
++    if (meta) {
++      meta.textContent = r.producto + ' · ' + (r.ok ? 'OK' : 'ERROR')
++        + ' · ' + String(r.prompt || '').length + ' caracteres'
++        + (r.context ? (' · contexto ' + (r.context.market || '—') + '/' + (r.context.region || '—') + '/' + r.producto) : '')
++        + (r.error ? (' · ' + truncar(r.error, 80)) : '');
++    }
++    var reroll = $('mpReroll');
++    if (reroll) reroll.disabled = false;
++  }
++
++  function actualizarAcciones() {
++    var hayLote = !!(lote && Array.isArray(lote.productos) && lote.productos.length);
++    var btnSave = $('mpSave');
++    var btnZip = $('mpZip');
++    if (btnSave) btnSave.disabled = generando || !hayLote;
++    if (btnZip) btnZip.disabled = generando || !hayLote;
++    var btnGen = $('mpGenerate');
++    if (btnGen) btnGen.disabled = generando;
++    var btnCancel = $('mpCancel');
++    if (btnCancel) btnCancel.disabled = !generando;
++    var btnCopy = $('mpCopy');
++    var btnCopyPart = $('mpCopyPart');
++    var btnReroll = $('mpReroll');
++    var hayActivo = !!activo;
++    if (btnCopy) btnCopy.disabled = generando || !hayActivo;
++    if (btnCopyPart) btnCopyPart.disabled = generando || !hayActivo;
++    if (btnReroll) btnReroll.disabled = generando || !hayActivo;
++  }
++
++  /* ---------- copiado ---------- */
++
++  /* Devuelve 'clipboard' si usó la API moderna, 'fallback' si solo dejó el
++     texto seleccionado / intentó execCommand, o 'fallo'. En navegadores sin
++     activación de usuario (p.ej. automatización CDP) la API del portapapeles
++     puede denegarse: entonces el visor queda seleccionado para Ctrl+C. */
++  function copiarAlPortapapeles(texto) {
++    texto = String(texto == null ? '' : texto);
++    if (navigator.clipboard && navigator.clipboard.writeText) {
++      return navigator.clipboard.writeText(texto).then(function () {
++        ultimoMecanismoCopiado = 'clipboard';
++        return true;
++      }, function () {
++        return copiarPorSeleccion(texto);
++      });
++    }
++    return Promise.resolve(copiarPorSeleccion(texto));
++  }
++
++  var ultimoMecanismoCopiado = '';
++
++  async function pulsarCopiar(parte) {
++    var ta = $('mpPrompt');
++    var txt = ta ? ta.value : '';
++    var texto = parte ? parteDelPrompt(txt, 1, 2) : txt;
++    var ok = await copiarAlPortapapeles(texto);
++    if (ok) {
++      setStatus((parte ? 'Primera mitad copiada' : 'Prompt copiado') + ' (' + ultimoMecanismoCopiado + ').', 'good');
++    } else {
++      setStatus('No se pudo copiar automáticamente: el texto sigue en el visor; selecciónalo y usa Ctrl+C.', 'warn');
++    }
++    return ok;
++  }
++
++  function copiarPorSeleccion(texto) {
++    texto = String(texto == null ? '' : texto);
++    /* 1) Si el texto pedido es exactamente el del visor, reutilizar su selección
++       (así el usuario ve qué se copió). */
++    try {
++      var ta = $('mpPrompt');
++      if (ta && ta.setSelectionRange && texto && ta.value.indexOf(texto) === 0) {
++        /* Texto completo o una parte que coincide con el inicio del visor:
++           se deja seleccionado exactamente ese tramo para Ctrl+C. */
++        ta.focus();
++        ta.setSelectionRange(0, texto.length);
++        try {
++          if (document.execCommand && document.execCommand('copy')) { ultimoMecanismoCopiado = 'fallback-execCommand'; return true; }
++        } catch (e) { /* sin activación de usuario */ }
++        ultimoMecanismoCopiado = 'fallback-seleccion';
++        return true;
++      }
++    } catch (e) { /* se prueba el mecanismo portable */ }
++
++    /* 2) Portapapeles portable: campo temporal fuera de pantalla con el texto
++       exacto pedido (también sirve para copiar solo una parte). */
++    try {
++      var tmp = document.createElement('textarea');
++      tmp.value = texto;
++      tmp.setAttribute('readonly', '');
++      tmp.style.cssText = 'position:fixed;top:-1000px;left:-1000px;opacity:0;';
++      document.body.appendChild(tmp);
++      tmp.select();
++      var ok = document.execCommand ? document.execCommand('copy') : false;
++      if (tmp.parentNode) tmp.parentNode.removeChild(tmp);
++      ultimoMecanismoCopiado = ok ? 'fallback-temporal' : '';
++      return !!ok;
++    } catch (e) { return false; }
++  }
++
++  function parteDelPrompt(texto, parte, total) {
++    var s = String(texto || '');
++    if (total <= 1) return s;
++    var n = Math.ceil(s.length / total);
++    var desde = (parte - 1) * n;
++    return s.slice(desde, desde + n);
++  }
++
++  /* ---------- historial ---------- */
++
++  function fmtFecha(iso) {
++    var d = new Date(iso);
++    if (isNaN(d.getTime())) return String(iso || '');
++    function p(n) { return (n < 10 ? '0' : '') + n; }
++    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
++      + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
++  }
++
++  function pintarHistorial() {
++    var wrap = $('mpHistorial');
++    if (!wrap) return;
++    if (!HIST) { wrap.innerHTML = '<div class="hitem">Historial no disponible.</div>'; return; }
++    var lista = HIST.listarLotes();
++    if (!lista.length) {
++      wrap.innerHTML = '<div class="hitem">Sin lotes guardados.</div>';
++      return;
++    }
++    wrap.innerHTML = '';
++    lista.forEach(function (e) {
++      var item = document.createElement('div');
++      item.className = 'hitem';
++
++      var izq = document.createElement('span');
++      izq.textContent = fmtFecha(e.createdAt) + ' · ' + e.total + ' productos · '
++        + (e.ok ? 'COMPLETO' : ('PARCIAL (' + (e.errores == null ? '?' : e.errores) + ' errores)'));
++
++      var der = document.createElement('span');
++      der.className = 'row';
++
++      var bCargar = document.createElement('button');
++      bCargar.type = 'button';
++      bCargar.className = 'btn ghost';
++      bCargar.textContent = 'Cargar';
++      bCargar.addEventListener('click', function () { cargarLote(e.id); });
++
++      var bZip = document.createElement('button');
++      bZip.type = 'button';
++      bZip.className = 'btn ghost';
++      bZip.textContent = 'ZIP';
++      bZip.addEventListener('click', function () {
++        var l = HIST.cargarLote(e.id);
++        if (!l) { setStatus('No se pudo cargar el lote ' + e.id, 'bad'); return; }
++        exportarZip(l);
++      });
++
++      var bElim = document.createElement('button');
++      bElim.type = 'button';
++      bElim.className = 'btn ghost';
++      bElim.textContent = 'Eliminar';
++      bElim.addEventListener('click', function () {
++        var r = HIST.eliminarLote(e.id);
++        setStatus(r.ok ? ('Lote eliminado: ' + e.id) : ('No se pudo eliminar: ' + (r.error || '')), r.ok ? 'good' : 'bad');
++        pintarHistorial();
++      });
++
++      der.appendChild(bCargar);
++      der.appendChild(bZip);
++      der.appendChild(bElim);
++      item.appendChild(izq);
++      item.appendChild(der);
++      wrap.appendChild(item);
++    });
++  }
++
++  function normalizarProductos(src) {
++    var base = ctxFromDom();
++    return (src || []).map(function (r) {
++      r = r || {};
++      var ctxObj = r.context && typeof r.context === 'object' ? r.context : null;
++      var p = String(r.producto || '');
++      return {
++        producto: p,
++        ok: !!r.ok,
++        prompt: typeof r.prompt === 'string' ? r.prompt : '',
++        context: ctxObj || {
++          market: base.market, region: base.region, product: p, brand: base.brand
++        },
++        error: r.error == null ? null : String(r.error)
++      };
++    });
++  }
++
++  function guardarLote() {
++    if (!lote || !HIST) return;
++    var res = HIST.guardarLote({ ctx: lote.ctx, productos: lote.productos });
++    if (res.ok) {
++      if (res.id) lote.id = res.id;
++      setStatus(res.duplicado
++        ? ('Lote ya existía (sin duplicar): ' + res.id)
++        : ('Lote guardado: ' + res.id + (res.rotados && res.rotados.length ? (' · rotados: ' + res.rotados.length) : '')),
++        'good');
++    } else {
++      setStatus('No se pudo guardar: ' + (res.error || 'error desconocido'), 'bad');
++    }
++    pintarHistorial();
++  }
++
++  function cargarLote(id) {
++    if (!HIST) return;
++    var l = HIST.cargarLote(id);
++    if (!l) { setStatus('No se pudo cargar el lote ' + id, 'bad'); return; }
++    lote = {
++      id: id || (l && l.id) || null,
++      createdAt: (l && l.createdAt) || new Date().toISOString(),
++      ctx: l.ctx || ctxFromDom(),
++      productos: normalizarProductos(l.productos),
++      ok: (l && typeof l.ok === 'boolean') ? l.ok : true,
++      errores: (l && typeof l.errores === 'number') ? l.errores : 0
++    };
++    activo = null;
++    fijarEstadoChips(resultadosPorProducto());
++    pintarTabs();
++    var primero = lote.productos[0];
++    if (primero) activar(primero.producto);
++    var ctxEl = $('mpCtx');
++    if (ctxEl) ctxEl.textContent = ctxLinea(lote.ctx);
++    setStatus('Lote cargado sin regenerar: ' + id + ' · ' + lote.productos.length + ' productos', 'info');
++    actualizarAcciones();
++  }
++
++  function exportarZip(l) {
++    if (!ZIP) { setStatus('Exportador ZIP no disponible.', 'bad'); return; }
++    var loteAExportar = l || lote;
++    if (!loteAExportar) { setStatus('No hay lote para exportar.', 'bad'); return; }
++    var res = ZIP.generarZip(loteAExportar);
++    if (!res.ok) { setStatus('No se pudo crear el ZIP: ' + (res.error || ''), 'bad'); return; }
++    var desc = ZIP.descargarZip(loteAExportar, { nombre: res.nombre });
++    if (desc && desc.ok) {
++      setStatus('ZIP generado y descargado: ' + desc.nombre + ' · ' + desc.tamano + ' bytes', 'good');
++    } else {
++      setStatus('ZIP válido (' + res.tamano + ' bytes, ' + res.archivos.length + ' archivos) pero la descarga falló: '
++        + ((desc && desc.error) || ''), 'warn');
++    }
++  }
++
++  /* ---------- generación ---------- */
++
++  async function generar() {
++    if (generando) return;
++    if (!ORQ || !ORQ.generarMuchos) { setStatus('Orquestador multiproducto no disponible.', 'bad'); return; }
++    var lista = seleccionados();
++    if (!lista.length) { setStatus('No hay productos seleccionados.', 'warn'); return; }
++
++    generando = true;
++    cancelado = false;
++    lote = {
++      id: null,
++      createdAt: new Date().toISOString(),
++      ctx: ctxCompleto(ctxFromDom()),
++      productos: [],
++      ok: true,
++      errores: 0
++    };
++    activo = null;
++    actualizarAcciones();
++    fijarEstadoChips({});
++    pintarTabs();
++    var ta = $('mpPrompt'); if (ta) ta.value = '';
++    var meta = $('mpMeta'); if (meta) meta.textContent = '—';
++    barra(0);
++    setStatus('Preparando ' + lista.length + ' productos…', 'info');
++
++    await framing();
++
++    var exitos = 0;
++    var fallos = 0;
++
++    for (var i = 0; i < lista.length; i++) {
++      if (cancelado) { setStatus('Cancelado por el usuario con resultados parciales.', 'warn'); break; }
++      var p = lista[i];
++      marcarEjecutando(p);
++      setStatus('Generando ' + p + '… (' + (i + 1) + ' de ' + lista.length + ')', 'info');
++      await promesaCediendo();
++
++      var res = ORQ.generarMuchos(Object.assign(ctxOpts(lote.ctx), { productos: [p] }));
++
++      var r = (res && Array.isArray(res.resultados) && res.resultados[0]) || null;
++      var item = r || { ok: false, producto: p, prompt: '', result: null, error: 'sin resultado' };
++      if (!item.context) {
++        item.context = { market: lote.ctx.market, region: lote.ctx.region, product: p, brand: lote.ctx.brand };
++      }
++      lote.productos.push(item);
++      if (item.ok) exitos++; else fallos++;
++      fijarEstadoChips(resultadosPorProducto());
++      pintarTabs();
++      activar(p);
++      barra(((i + 1) / lista.length) * 100);
++    }
++
++    generando = false;
++    lote.ok = (fallos === 0 && !cancelado);
++    lote.errores = fallos;
++    actualizarAcciones();
++    var detalle = exitos + ' OK · ' + fallos + ' errores · ' + lote.productos.length + '/' + lista.length;
++    var msg = cancelado
++      ? ('Cancelado por el usuario con resultados parciales: ' + detalle)
++      : ('Lote terminado: ' + detalle);
++    setStatus(msg, (fallos || cancelado) ? 'warn' : 'good');
++    var ctxEl = $('mpCtx');
++    if (ctxEl) ctxEl.textContent = ctxLinea(lote.ctx);
++  }
++
++  function marcarEjecutando(p) {
++    var st = document.querySelector('.mp-st[data-st="' + CSS.escape(p) + '"]');
++    if (st) { st.className = 'mp-st tp-state run tp-state-run'; st.textContent = 'Generando…'; }
++  }
++
++  async function regenerarIndividual() {
++    if (generando || !activo) return;
++    if (!ORQ || !ORQ.generarMuchos) return;
++    var idx = -1;
++    for (var i = 0; i < lote.productos.length; i++) if (lote.productos[i].producto === activo) idx = i;
++    if (idx < 0) return;
++
++    generando = true;
++    cancelado = false;
++    actualizarAcciones();
++    marcarEjecutando(activo);
++    setStatus('Regenerando ' + activo + '…', 'info');
++    await promesaCediendo();
++
++    var res = ORQ.generarMuchos(Object.assign(ctxOpts(lote.ctx), {
++      productos: [activo],
++      rerollNonce: Date.now() + idx
++    }));
++    var r = (res && res.resultados && res.resultados[0]) || { ok: false, producto: activo, prompt: '', error: 'sin resultado' };
++    r.context = { market: lote.ctx.market, region: lote.ctx.region, product: activo, brand: lote.ctx.brand };
++    lote.productos[idx] = r;              /* solo este: los demás no se tocan */
++
++    generando = false;
++    fijarEstadoChips(resultadosPorProducto());
++    pintarTabs();
++    activar(activo);
++    actualizarAcciones();
++    setStatus('Regenerado ' + activo + ': ' + (r.ok ? 'OK' : ('ERROR ' + (r.error || ''))), r.ok ? 'good' : 'bad');
++  }
++
++  /* ---------- arranque ---------- */
++
++  function bind() {
++    var bAll = $('mpAllBtn');
++    var bNone = $('mpNoneBtn');
++    var bMode = $('mpMode');
++    var bGen = $('mpGenerate');
++    var bCancel = $('mpCancel');
++    var bSave = $('mpSave');
++    var bZip = $('mpZip');
++    var bCopy = $('mpCopy');
++    var bCopyPart = $('mpCopyPart');
++    var bReroll = $('mpReroll');
++
++    if (bMode) bMode.addEventListener('change', function () {
++      modo = bMode.value === 'selected' ? 'selected' : 'all';
++      /* Al cambiar de modo se conserva una selección completa: el usuario
++         puede quitar los que no quiera con «Ninguno» + marcas individuales. */
++      PRODUCTOS.forEach(function (p) { seleccion[p] = true; });
++      pintarGrid();
++      actualizarSeleccion();
++    });
++    if (bAll) bAll.addEventListener('click', function () {
++      PRODUCTOS.forEach(function (p) { seleccion[p] = true; });
++      modo = 'selected';
++      if (bMode) bMode.value = 'selected';
++      pintarGrid();
++      actualizarSeleccion();
++    });
++    if (bNone) bNone.addEventListener('click', function () {
++      PRODUCTOS.forEach(function (p) { seleccion[p] = false; });
++      modo = 'selected';
++      if (bMode) bMode.value = 'selected';
++      pintarGrid();
++      actualizarSeleccion();
++    });
++    if (bGen) bGen.addEventListener('click', generar);
++    if (bCancel) bCancel.addEventListener('click', function () {
++      if (generando) { cancelado = true; setStatus('Cancelando tras el producto en curso…', 'warn'); }
++    });
++    if (bSave) bSave.addEventListener('click', guardarLote);
++    if (bZip) bZip.addEventListener('click', function () { exportarZip(null); });
++    if (bCopy) bCopy.addEventListener('click', function () { pulsarCopiar(false); });
++    if (bCopyPart) bCopyPart.addEventListener('click', function () { pulsarCopiar(true); });
++    if (bReroll) bReroll.addEventListener('click', regenerarIndividual);
++  }
++
++  function init() {
++    PRODUCTOS = leerProductos();
++    if (!PRODUCTOS.length) {
++      setStatus('No se encontraron productos en el catálogo (#product).', 'bad');
++      return;
++    }
++    PRODUCTOS.forEach(function (p) { seleccion[p] = true; });
++    pintarGrid();
++    actualizarSeleccion();
++    var ctx = ctxFromDom();
++    var ctxEl = $('mpCtx');
++    if (ctxEl) ctxEl.textContent = ctxLinea(ctx);
++    bind();
++    actualizarAcciones();
++    pintarHistorial();
++    setStatus('Selecciona los productos y pulsa Generar.', 'info');
++  }
++
++  if (document.readyState === 'loading') {
++    document.addEventListener('DOMContentLoaded', init);
++  } else {
++    init();
++  }
++
++  /* API mínima para pruebas automatizadas (CDP) sin acoplar la UI al test. */
++  window.MultiproductoUI = {
++    _state: function () { return { generando: generando, modo: modo, activo: activo, n: PRODUCTOS.length }; },
++    _productos: function () { return PRODUCTOS.slice(); },
++    _lote: function () { return lote; },
++    _mecanismoCopiado: function () { return ultimoMecanismoCopiado; },
++    _pintarHistorial: pintarHistorial,
++    _guardarLote: guardarLote
++  };
++})();

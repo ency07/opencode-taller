@@ -1,0 +1,244 @@
+PASS aesthetic-preference-profiles (494 assertions, 0 failures)
+
+PASS  ai-slots  (23 aserciones, 0 fallos)
+
+[IA-Analisis] Inicializado correctamente.
+PASS  ai-vision-diag  (61 aserciones, 0 fallos)
+
+PASS  anti-repeticion  (805 aserciones, 0 fallos)
+
+PASS approved-directions-sync-tombstone (8 assertions, 0 failures)
+
+PASS  arbitro-selectores  (22 aserciones, 0 fallos)
+
+PASS  arquitectura-rotacion  (10 aserciones, 0 fallos)
+
+[IA-Analisis] Inicializado correctamente.
+PASS  aud-origen-label  (31 aserciones, 0 fallos)
+
+PASS (1417 checks): audience/product contracts
+
+PASS audiencia-mockup (12 aserciones, 0 fallos)
+
+PASS audiencias-auto (10 aserciones, 0 fallos)
+
+PASS  bank-named  (54 aserciones, 0 fallos)
+
+PASS  bank-sandbox  (3122 aserciones, 0 fallos)
+
+PASS brand-isolation (brand-scoped locks, identity, territory, decision mode, pattern memory, territory guard and safe legacy migration)
+
+PASS clear-all-memory-sync-tombstone (15 assertions, 0 failures)
+
+PASS  color-audit  (16 aserciones, 0 fallos)
+
+PASS contactsheet-cara (29 aserciones, 0 fallos)
+
+PASS contrato-imagen (26 aserciones, 0 fallos)
+
+PASS  copiar-prompt-partes  (28 aserciones, 0 fallos)
+
+PASS copy-contract: 21 aserciones, 0 fallos
+
+PASS copy-derivado (13 aserciones, 0 fallos)
+
+PASS copy-explore-coherencia: 42 aserciones, 0 fallos
+
+PASS copy-ia (64 aserciones, 0 fallos)
+
+PASS creative-contract-guard: reconciliation, locks, required fields, prompt brand isolation and decorative restrictions
+
+PASS creative-contract-routes: visual routes validated, duplicated routes rejected, unresolved contracts blocked
+
+PASS creative-integration: source catalogs, namespace isolation and P5 boundaries
+
+PASS creative-pipeline-contract: construction, preservation and final validation agree on the contract
+
+PASS creative-similarity-metadata (14 assertions, 0 failures). Metadata only; image-level similarity is not evaluated.
+
+PASS  dado-anti-repeticion  (26 aserciones, 0 fallos)
+
+PASS diversity-contract: structural and visual axes isolated
+
+PASS  edad-carga  (52 aserciones, 0 fallos)
+
+PASS fichas-contexto (35 aserciones, 0 fallos)
+
+PASS  figuras-mockups  (27 aserciones, 0 fallos)
+
+[IA-Analisis] Inicializado correctamente.
+PASS  fix-critico-proveedores  (30 aserciones, 0 fallos)
+
+[IA-Analisis] Inicializado correctamente.
+PASS fix2-audiencia-validador (45 aserciones, 0 fallos)
+
+[IA-Analisis] Inicializado correctamente.
+PASS fix2-escenarios-controlados (64 aserciones, 0 fallos)
+
+PASS  fix3a-territorio-resolucion  (85 aserciones, 0 fallos)
+
+PASS  fix3b-prompt-directive  (141 aserciones, 0 fallos)
+
+PASS  fix3c-visual-identity  (38 aserciones, 0 fallos)
+
+PASS  fix3d-decision-mode  (41 aserciones, 0 fallos)
+
+PASS  fix3d-fase3a  (50 aserciones, 0 fallos)
+
+=== Condición 1: mapa de dependencias ===
+
+=== Condiciones 2-6: overlay ===
+
+=== Condición 5b: mismos criterios y ponderaciones ===
+
+=== Condición 7: LAST_RESULT intacto ===
+
+=== Integración: preservación en generateSet ===
+
+=== Auto/assisted: sin preservación de derivados ===
+
+PASS  fix3d-fase3b  (50 aserciones, 0 fallos)
+
+=== Condiciones 1-2: regeneración individual ===
+[DBG gen] fitAud A=90 B=90 C=93 | estilos=Irezumi / Wabori/Photomontage / Dada/Pop art
+[DBG gen] A.tipografia=Rounded amable: formas redondeadas, peso medio, terminales suaves A.perfil=HEAVY A.forma=fragmentado en planos A.layout=Arco y cúpula: masa bajo un ar A.jer=TEXTO_DOMINANTE A.dens=Heavy A.paleta=Carbón / Gris Frío / Negro — f
+[DBG REROLl] key=A stats={"iter":1,"candNull":0,"nov":0,"clash":0,"same":0,"bestSet":0,"gateFail":0,"bestScoreFinal":-1000000000} chosenStyle=null curEstilo=Irezumi / Wabori
+[DBG REROLl] key=A bestSet=si freshEval.passed=true score={"diversity":100,"estilos":["Deportiva / Sports","Photomontage / Dada","Pop art"],"familias":["neón / cyber","tinta / ritual","noche / contraste"],"symbolStable":true,"treatmentsComplete":true,"fitAudienciaMin":83,"fitProductoMin":100,"total":341.5} detalle=[]
+[DBG] status=01A regenerada sin repetir ejes con las conservadas (10/10 verificado).
+[DBG] B.distribucionTexto=DOS BLOQUES en zigzag; alineación alterna izquierda-derecha y separación visible. | C.distribucionTexto=TEXTO ARRIBA, motivo debajo; alineación izquierda irregular; franja horizontal y separación amplia. | A.distribucionTexto=SÍMBOLO integrado en una contraforma tipográfica; sin segundo bloque de texto.
+[DBG] candidatos con distribucionTexto distinta: 59/60
+
+=== Condición 3: anti-repetición ===
+
+=== Condición 4: locks y preservación ===
+[DBG REROLl] key=A stats={"iter":600,"candNull":0,"nov":0,"clash":0,"same":0,"bestSet":0,"gateFail":0,"bestScoreFinal":-1000000000} chosenStyle="Retro 70s" curEstilo=Retro 70s
+[DBG REROLl] key=A bestSet=si freshEval.passed=true score={"diversity":100,"estilos":["Retro 70s","Collage Cut-Paper","Papercraft 3D"],"familias":["bosque / sage","papel / suave","mínimo frío"],"symbolStable":true,"treatmentsComplete":true,"fitAudienciaMin":80,"fitProductoMin":100,"total":340} detalle=[]
+
+=== Condición 5: validación antes de sobrescribir ===
+[DBG REROLl] key=A stats={"iter":600,"candNull":0,"nov":0,"clash":0,"same":0,"bestSet":0,"gateFail":0,"bestScoreFinal":-1000000000} chosenStyle="Retro 70s" curEstilo=Retro 70s
+[DBG REROLl] key=A bestSet=si freshEval.passed=true score={"diversity":100,"estilos":["Retro 70s","Collage Cut-Paper","Papercraft 3D"],"familias":["bosque / sage","papel / suave","mínimo frío"],"symbolStable":true,"treatmentsComplete":true,"fitAudienciaMin":75,"fitProductoMin":100,"total":337.5} detalle=[]
+
+=== Condición 6: aislamiento A/B/C ===
+
+=== _FIT_CTX_BY_KEY: mismos criterios y contexto correcto ===
+
+=== LAST_RESULT: aislamiento de mercado ===
+
+PASS  fix3d-fase3c  (28 aserciones, 0 fallos)
+
+Checks: 4 Failures: 0
+PASS fix3e-smoke
+
+PASS gate-axes (5 aserciones, 0 fallos)
+
+PASS  ia-client  (66 aserciones, 0 fallos)
+
+[IA-Analisis] Inicializado correctamente.
+PASS jerarquia-solo-objeto (16 aserciones, 0 fallos)
+
+[IA-Analisis] Inicializado correctamente.
+PASS  lang-reset  (27 aserciones, 0 fallos)
+
+PASS  layout-arq-compat  (114 aserciones, 0 fallos)
+
+PASS  layout-rotation  (32 aserciones, 0 fallos)
+
+PASS  layout-selector  (13 aserciones, 0 fallos)
+
+PASS legacy-personal-bank-sync-tombstone (19 assertions, 0 failures)
+
+PASS locks-persistencia (21 aserciones, 0 fallos)
+
+PASS locks-sync-tombstone (5 assertions, 0 failures)
+
+PASS market-intelligence-contract: provenance, freshness and cohort isolation
+
+PASS memoria-import-hardening (75 aserciones, 0 fallos)
+
+PASS memory-family-sync-tombstone (17 assertions, 0 failures)
+
+PASS mockup-superficie: 117 aserciones, 0 fallos
+
+PASS multiproducto-aislamiento: 63 aserciones, 0 fallos
+
+PASS multiproducto-contratos: 118 aserciones, 0 fallos (30892 ms, 10 productos)
+
+PASS multiproducto-historial: 41 aserciones, 0 fallos
+
+PASS multiproducto-zip: 61 aserciones, 0 fallos
+
+PASS  nav-sync  (67 aserciones, 0 fallos)
+
+PASS  objetos-subnicho  (503 aserciones, 0 fallos)
+
+PASS p1-motif-audience-regression: motif separation, contact-sheet semantic lock and broad Auto audience
+
+PASS  pattern-template  (79 aserciones, 0 fallos)
+
+RT-04 product fit diagnostics seed 1: {"HEAVY":{"total":400,"scores":{"100":400},"failures":{"densidad":400}},"SOFT":{"total":400,"scores":{"100":400},"failures":{}},"MODERN":{"total":400,"scores":{"100":400},"failures":{}}}
+RT-04 product fit diagnostics seed 2: {"HEAVY":{"total":400,"scores":{"100":400},"failures":{"densidad":400}},"SOFT":{"total":400,"scores":{"100":400},"failures":{}},"MODERN":{"total":400,"scores":{"100":400},"failures":{}}}
+PASS  pertinencia-gate  (19 aserciones, 0 fallos)
+
+PASS peso-tecnica (15 aserciones, 0 fallos)
+
+PASS product-contract: 101 aserciones, 0 fallos
+
+PASS RT-04 product fit (220 assertions, 0 failures)
+
+PASS profile-governs (198 aserciones)
+
+PASS  prompt-fixes  (35 aserciones, 0 fallos)
+
+PASS proposals-bank-sync-tombstone (8 assertions, 0 failures)
+
+PASS redteam-territorio-ancla: ANCLA CONCEPTO inyectado por _resolveTerritoryDirective (comportamiento real).
+
+PASS region-estilos-audiencias (16 aserciones, 0 fallos)
+
+PASS secular-prompt-contract (665 assertions, 0 failures)
+
+PASS security-browser (6 assertions)
+
+PASS security-regression (81 aserciones, 0 fallos)
+
+PASS selector-texto (13 aserciones, 0 fallos)
+
+PASS semantic-authorization-contract: concept is transported as an authorized anchor, not as an invented physical object
+
+PASS semantic-compatibility-contract: abstract dominance allowed, incompatible contracts blocked, unauthorized elements rejected
+
+PASS semantic-identity (163 aserciones, 0 fallos)
+
+PASS semantic-market-contract: Gospel and Secular accept abstract autorizado, reject invalid technology, physical injections and unrouted markets
+
+PASS similarity-history-integration (8 assertions, 0 failures; metadata only).
+
+PASS storage-unavailable (5 assertions, 0 failures)
+
+PASS  style-coverage  (370 aserciones, 0 fallos)
+
+PASS  supabase-cfg  (18 aserciones, 0 fallos)
+
+PASS sync-cas (6 aserciones, 0 fallos)
+
+PASS sync-preserve-concurrent-local-edits (5 assertions, 0 failures)
+
+PASS template-sync-tombstone (9 assertions, 0 failures)
+
+PASS territory-style-bias (5 assertions, 0 failures)
+
+PASS  umbral-qc  (20 aserciones, 0 fallos)
+
+PASS unified-banks (50 aserciones: lote sintético de 14 registros/28 strings, mercados, actividad, fusión, validación, importador enriquecido, propuestas, UI flujo banco)
+
+[IA-Analisis] Inicializado correctamente.
+PASS validador-hoja (31 aserciones, 0 fallos)
+
+PASS  validar-qa  (34 aserciones, 0 fallos)
+
+PASS  variacion-consistencia  (27 aserciones, 0 fallos)
+
+OK visual-prompt-contract: 93 comprobaciones. Contrato del prompt verificado; las imágenes reales requieren revisión visual aparte.
+
+PASS visual-route-diversity: three exclusive routes, shared semantic anchor, no unauthorized objects
+

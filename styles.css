@@ -1263,3 +1263,454 @@ textarea[title] {
 .comparison-matrix td {
   min-width: 145px;
 }
+
+/* ===== Etapa 6 · Multiproducto ===== */
+.mp-panel .badge-src {
+  margin-left: auto;
+  color: var(--mut, #8A90A0);
+  font-size: 12px;
+  font-weight: 500;
+}
+.mp-counter {
+  color: var(--text, #E0E4EC);
+  font-weight: 700;
+  padding-top: 6px;
+}
+.mp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+.mp-chip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line, #2A2E38);
+  border-radius: var(--r, 6px);
+  padding: 8px 10px;
+  background: var(--panel-alt, #1A1E26);
+  color: var(--text, #E0E4EC);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+.mp-chip input {
+  accent-color: var(--acc, #5B8DEF);
+}
+.mp-chip.activa {
+  border-color: var(--acc, #5B8DEF);
+  box-shadow: 0 0 0 1px var(--acc-dim, rgba(91, 141, 239, 0.25));
+}
+.mp-st {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: var(--line, #2A2E38);
+  color: var(--mut, #8A90A0);
+  white-space: nowrap;
+}
+.mp-st.ok { background: rgba(52, 211, 153, 0.16); color: var(--good, #34D399); }
+.mp-st.err { background: rgba(248, 113, 113, 0.16); color: var(--bad, #F87171); }
+.mp-st.run { background: rgba(251, 191, 36, 0.16); color: var(--warn, #FBBF24); }
+.ctx-line {
+  color: var(--mut, #8A90A0);
+  font-size: 12.5px;
+  margin: 6px 0 2px;
+}
+.progress {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--line, #2A2E38);
+  overflow: hidden;
+  margin: 8px 0;
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--acc, #5B8DEF);
+  transition: width 0.2s ease;
+}
+.tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-top: 12px;
+}
+.tab {
+  border: 1px solid var(--line, #2A2E38);
+  background: var(--panel-alt, #1A1E26);
+  color: var(--text, #E0E4EC);
+  border-radius: var(--r, 6px) var(--r, 6px) 0 0;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tab.activa {
+  border-color: var(--acc, #5B8DEF);
+  color: var(--acc, #5B8DEF);
+}
+#mpPrompt {
+  width: 100%;
+  min-height: 160px;
+  border: 1px solid var(--line, #2A2E38);
+  border-radius: var(--r, 6px);
+  padding: 10px;
+  font: 12px/1.45 ui-monospace, Consolas, monospace;
+  background: var(--panel-alt, #1A1E26);
+  color: var(--text, #E0E4EC);
+  resize: vertical;
+}
+.meta-line {
+  font-size: 12px;
+  color: var(--mut, #8A90A0);
+  margin: 8px 0;
+}
+.mp-historial {
+  margin-top: 16px;
+  border-top: 1px dashed var(--line, #2A2E38);
+  padding-top: 10px;
+}
+.hitem {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  border: 1px dashed var(--line, #2A2E38);
+  border-radius: var(--r, 6px);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+.hitem .row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+@media (max-width: 1100px) {
+  .mp-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}
+@media (max-width: 640px) {
+  .mp-grid { grid-template-columns: 1fr 1fr; }
+  .hitem { flex-direction: column; align-items: stretch; }
+}
+/* Las acciones del panel deben envolver en pantallas estrechas: el botón de
+   exportar no puede desbordar el ancho (verificado a 390 px). */
+.mp-panel .actions-primary,
+.mp-panel .actions {
+  flex-wrap: wrap;
+}
+.mp-panel .actions-primary .btn,
+.mp-panel .actions .btn {
+  flex: 1 1 140px;
+  width: auto;
+}
+.mp-panel .actions-primary .primary {
+  width: auto;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+/* =====================================================================
+   Etapa 8A · F0 · Fundaciones visuales (capa nueva, prefijo tp-)
+   Solo adiciones: ninguna regla anterior se modifica. Las fundaciones leen
+   los tokens ya definidos en :root y no los redefinen. Todo lo nuevo vive
+   bajo .tp-scope para no afectar a la interfaz actual hasta F1-F6.
+   ===================================================================== */
+
+.tp-scope {
+  --tp-gap: 8px;
+  --tp-pad: 16px;
+  color: var(--text, #E0E4EC);
+}
+
+/* Focus visible: solo dentro de la capa nueva, para no alterar la UI actual */
+.tp-scope :focus-visible,
+.tp-stepper:focus-visible,
+.tp-accordion summary:focus-visible,
+.tp-btn:focus-visible,
+.tp-state:focus-visible {
+  outline: 2px solid var(--acc, #5B8DEF);
+  outline-offset: 2px;
+}
+
+/* Tipografía y ritmo */
+.tp-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+.tp-help {
+  font-size: 13px;
+  color: var(--mut, #8A90A0);
+  margin: 0;
+}
+.tp-muted {
+  font-size: 12px;
+  color: var(--mut, #8A90A0);
+}
+
+/* Stepper de fases */
+.tp-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px var(--tp-pad);
+  border-bottom: 1px solid var(--line, #2A2E38);
+  overflow-x: auto;
+}
+.tp-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 99px;
+  background: var(--panel-alt, #1A1E26);
+  color: var(--mut, #8A90A0);
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.tp-step .tp-step-n {
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
+  font-weight: 700;
+}
+.tp-step.done {
+  color: var(--good, #34D399);
+}
+.tp-step.active {
+  background: var(--acc, #5B8DEF);
+  color: #fff;
+  border-color: var(--acc, #5B8DEF);
+}
+.tp-step.pending {
+  opacity: .7;
+}
+
+/* Acordeones de configuración */
+.tp-accordion {
+  border: 1px solid var(--line, #2A2E38);
+  border-radius: 12px;
+  background: var(--panel, #161920);
+  margin-bottom: var(--tp-gap);
+  overflow: hidden;
+}
+.tp-accordion > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 14px;
+  font-weight: 700;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tp-accordion > summary::-webkit-details-marker { display: none; }
+.tp-accordion > summary::after {
+  content: '▾';
+  color: var(--mut, #8A90A0);
+  transition: transform .15s ease;
+}
+.tp-accordion:not([open]) > summary::after { transform: rotate(-90deg); }
+.tp-accordion[open] > summary {
+  border-bottom: 1px dashed var(--line, #2A2E38);
+}
+.tp-accordion-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-gap);
+}
+.tp-accordion-summary-line {
+  font-size: 12px;
+  color: var(--mut, #8A90A0);
+  font-weight: 500;
+}
+
+/* Badge de estado textual (no parece un botón) */
+.tp-state {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--panel-alt, #1A1E26);
+  color: var(--mut, #8A90A0);
+  border: 1px solid var(--line, #2A2E38);
+  white-space: nowrap;
+}
+.tp-state.ok { color: var(--good, #34D399); border-color: rgba(52, 211, 153, .4); }
+.tp-state.err { color: var(--bad, #F87171); border-color: rgba(248, 113, 113, .4); }
+.tp-state.run { color: var(--warn, #FBBF24); border-color: rgba(251, 191, 36, .4); }
+
+/* Botones de la capa nueva */
+.tp-btn {
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--line, #2A2E38);
+  background: var(--panel-alt, #1A1E26);
+  color: var(--text, #E0E4EC);
+  padding: 9px 14px;
+  cursor: pointer;
+}
+.tp-btn.primary {
+  background: var(--acc, #5B8DEF);
+  border-color: var(--acc, #5B8DEF);
+  color: #fff;
+}
+.tp-btn[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* Estado vacío con llamada a la acción */
+.tp-empty {
+  border: 1px dashed var(--line2, #3A3E48);
+  border-radius: 12px;
+  padding: 22px 16px;
+  text-align: center;
+  color: var(--mut, #8A90A0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.tp-empty-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.tp-empty-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text, #E0E4EC);
+}
+.tp-empty-text {
+  font-size: 13px;
+  max-width: 42ch;
+}
+
+/* Cabecera de contexto y selector de modo (se usarán en F1) */
+.tp-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px var(--tp-pad);
+  border-bottom: 1px solid var(--line, #2A2E38);
+  flex-wrap: wrap;
+}
+.tp-context-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line, #2A2E38);
+  background: var(--panel-alt, #1A1E26);
+  color: var(--text, #E0E4EC);
+}
+.tp-mode {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--panel-alt, #1A1E26);
+  border: 1px solid var(--line, #2A2E38);
+}
+.tp-mode button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  color: var(--mut, #8A90A0);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.tp-mode button.active {
+  background: var(--acc, #5B8DEF);
+  color: #fff;
+}
+
+/* En pantallas estrechas el stepper envuelve (evita que el paso 4 quede
+   recortado con scroll interno). */
+@media (max-width: 640px) {
+  .tp-stepper {
+    flex-wrap: wrap;
+    overflow: visible;
+    row-gap: 6px;
+  }
+  .tp-step { font-size: 12px; padding: 5px 9px; }
+  .tp-topbar { gap: 6px; }
+}
+
+/* =====================================================================
+   Etapa 8A · F5/F6 · responsive y accesibilidad de la capa nueva
+   Solo adiciones.
+   ===================================================================== */
+
+/* Rail de configuración (tablet / móvil) */
+#tpRailToggle {
+  display: none;
+}
+@media (max-width: 1100px) {
+  #tpRailToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    padding: 6px 10px;
+  }
+}
+body.config-cerrada #tpConfig {
+  display: none;
+}
+
+/* Navegación de herramientas: una sola fila desplazable en pantallas estrechas */
+@media (max-width: 700px) {
+  .pod-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px 10px;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pod-nav a { padding: 6px 9px; font-size: 12.5px; white-space: nowrap; }
+}
+
+/* Acción principal siempre alcanzable en móvil */
+@media (max-width: 640px) {
+  .actions-primary {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    background: var(--bg, #0E1016);
+    padding-top: 8px;
+    border-top: 1px solid var(--line, #2A2E38);
+  }
+}
+
+/* Etapa 8A-F6: foco visible también en los controles base (solo al navegar con teclado) */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--acc, #5B8DEF);
+  outline-offset: 1px;
+}

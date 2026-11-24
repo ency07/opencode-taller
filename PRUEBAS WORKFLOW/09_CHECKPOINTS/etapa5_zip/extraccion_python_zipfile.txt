@@ -1,0 +1,18 @@
+Extracción real con Python zipfile
+Archivo: C:/Users/Administrator/Desktop/POD/Taller-pod-copia opencode/PRUEBAS WORKFLOW/09_CHECKPOINTS/etapa5_zip/muestra_10.zip
+Entradas: 12
+  - 00_LOTE.txt | bytes=296 | crc_zip=71694000 | crc_recalculado=71694000 | coincide=True | flags_utf8=0x0800
+  - 01_CAMISETA_SOFT_OK.txt | bytes=307 | crc_zip=887018151 | crc_recalculado=887018151 | coincide=True | flags_utf8=0x0800
+  - 02_CAMISETA_APPAREL_OK.txt | bytes=313 | crc_zip=2205940951 | crc_recalculado=2205940951 | coincide=True | flags_utf8=0x0800
+  - 03_HOODIE_OK.txt | bytes=293 | crc_zip=3883273918 | crc_recalculado=3883273918 | coincide=True | flags_utf8=0x0800
+  - 04_GORRA_OK.txt | bytes=291 | crc_zip=2253092601 | crc_recalculado=2253092601 | coincide=True | flags_utf8=0x0800
+  - 05_MUG_OK.txt | bytes=287 | crc_zip=822579335 | crc_recalculado=822579335 | coincide=True | flags_utf8=0x0800
+  - 06_MOCHILA_OK.txt | bytes=295 | crc_zip=3953915808 | crc_recalculado=3953915808 | coincide=True | flags_utf8=0x0800
+  - 07_TOTE_BAG_OK.txt | bytes=297 | crc_zip=4013551249 | crc_recalculado=4013551249 | coincide=True | flags_utf8=0x0800
+  - 08_FUNDA_MOVIL_OK.txt | bytes=305 | crc_zip=691681361 | crc_recalculado=691681361 | coincide=True | flags_utf8=0x0800
+  - 09_ILUSTRACION_PREMIUM_APPAREL_OK.txt | bytes=335 | crc_zip=2788020507 | crc_recalculado=2788020507 | coincide=True | flags_utf8=0x0800
+  - 10_DISPLATE_OK.txt | bytes=298 | crc_zip=2563864707 | crc_recalculado=2563864707 | coincide=True | flags_utf8=0x0800
+  - 99_RESUMEN.txt | bytes=394 | crc_zip=730234285 | crc_recalculado=730234285 | coincide=True | flags_utf8=0x0800
+testzip() (None = todos los CRC correctos): None
+Primera línea del producto 01: === PRODUCTO: CAMISETA SOFT · ESTADO: OK ===
+Contiene ñ/tildes/«»/·: True

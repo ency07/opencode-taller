@@ -1,0 +1,230 @@
+{
+  "fecha": "2026-11-23T22:35:38.015Z",
+  "url": "http://127.0.0.1:8080/",
+  "orquestador": [
+    "generarProducto",
+    "generar",
+    "generarAislado"
+  ],
+  "contexto": {
+    "concepto": "farolito de papel iluminando la noche",
+    "mensaje": "Que tu luz alumbre el camino",
+    "apoyo": "",
+    "serie": "POC-AISLAMIENTO-2026-11",
+    "market": "colombia",
+    "region": "global",
+    "language": "es",
+    "marketplace": "generic",
+    "subniche": "auto",
+    "audienceSet": "Auto",
+    "audienceMulti": "no",
+    "aestheticPreference": "auto",
+    "dominio": "auto",
+    "domImagen": "Auto",
+    "workflowMode": "explore",
+    "decisionMode": "assisted",
+    "printMethod": "auto",
+    "capApplication": "auto",
+    "stampSide": "auto",
+    "creativeTerritory": "auto",
+    "visualIdentity": null,
+    "brand": "auto"
+  },
+  "duracionMs": 27961,
+  "prompts": {
+    "CAMISETA SOFT": {
+      "len": 38671,
+      "hash": "e97c9ddf"
+    },
+    "DISPLATE": {
+      "len": 37867,
+      "hash": "2949f0e0"
+    }
+  },
+  "rendimientoMs": {
+    "camiseta": 4631,
+    "displate": 4480
+  },
+  "pruebas": [
+    {
+      "id": "P1",
+      "nombre": "Mismo concepto y mensaje para ambos productos",
+      "ok": true,
+      "detalle": {
+        "camiseta": {
+          "concepto": "farolito de papel iluminando la noche",
+          "mensaje": "Que tu luz alumbre el camino"
+        },
+        "displate": {
+          "concepto": "farolito de papel iluminando la noche",
+          "mensaje": "Que tu luz alumbre el camino"
+        },
+        "esperado": {
+          "concepto": "farolito de papel iluminando la noche",
+          "mensaje": "Que tu luz alumbre el camino"
+        }
+      }
+    },
+    {
+      "id": "P2",
+      "nombre": "Set A/B/C independiente para cada producto",
+      "ok": true,
+      "detalle": {
+        "camiseta": [
+          "Cómic / Halftone · TEXTO_DOMINANTE · HEAVY: contornos gruesos y masas sólidas dominantes; contraste alto; textura marcada solo en áreas amplias; conserva huecos abiertos y letras grandes legibles · Arco y cúpula: masa bajo un arco; textos siguiendo la curva superior",
+          "Stencil Urbano · BALANCEADO · SOFT: formas abiertas, aire y textura ligera; transiciones suaves solo en áreas amplias; conserva contraste suficiente para separar símbolo y texto al imprimir · Editorial asimétrica: masa a dos tercios; texto en columna lateral con aire; firma en el margen",
+          "Superflat · OBJETO_DOMINANTE · MODERN: geometría limpia, bordes nítidos y tintas planas; paleta controlada; silueta clara y sin ruido que compita con el mensaje · Diagonal descendente: masa y texto caen de arriba-izq a abajo-der; vacío en esquina superior derecha"
+        ],
+        "displate": [
+          "Foil Stamp / Metallic · TEXTO_DOMINANTE · HEAVY: contornos gruesos y masas sólidas dominantes; contraste alto; textura marcada solo en áreas amplias; conserva huecos abiertos y letras grandes legibles · Arco y cúpula: masa bajo un arco; textos siguiendo la curva superior",
+          "Pop art · BALANCEADO · SOFT: formas abiertas, aire y textura ligera; transiciones suaves solo en áreas amplias; conserva contraste suficiente para separar símbolo y texto al imprimir · Editorial asimétrica: masa a dos tercios; texto en columna lateral con aire; firma en el margen",
+          "Line art minimalista · OBJETO_DOMINANTE · MODERN: geometría limpia, bordes nítidos y tintas planas; paleta controlada; silueta clara y sin ruido que compita con el mensaje · Tarjeta interior: todo dentro de un marco con margen generoso; el fondo respira"
+        ],
+        "ternasIdenticas": false
+      }
+    },
+    {
+      "id": "P3",
+      "nombre": "Reglas textiles presentes en CAMISETA SOFT",
+      "ok": true,
+      "detalle": {
+        "productRulePresente": true,
+        "placementPresente": true,
+        "costuras": true
+      }
+    },
+    {
+      "id": "P4",
+      "nombre": "Reglas de arte mural presentes en DISPLATE",
+      "ok": true,
+      "detalle": {
+        "productRulePresente": true,
+        "obraMural": true,
+        "margen5": true,
+        "mockupMetal": true
+      }
+    },
+    {
+      "id": "P5",
+      "nombre": "Ausencia de instrucciones textiles en DISPLATE",
+      "ok": true,
+      "detalle": {
+        "reglaCamisetaPresente": false,
+        "pechoCentrado": false,
+        "costuras": false,
+        "negacionExplícita": true
+      }
+    },
+    {
+      "id": "P6",
+      "nombre": "Ausencia de contaminación entre locks y memorias",
+      "ok": true,
+      "detalle": {
+        "locksActivosNulos": true,
+        "avisosLocksSinCambio": true,
+        "clavesMemoriaNuevas": {
+          "POD2|archRecentSets|colombia|todas|CAMISETA SOFT": "NUEVA",
+          "POD2|archRecentSets|colombia|todas|DISPLATE": "NUEVA",
+          "POD2|history|colombia|todas|VIAJE|auto|CAMISETA SOFT|explore|POC-AISLAMIENTO-2026-11|FAROLITO DE PAPEL ILUMINANDO LA NOCHE": "NUEVA",
+          "POD2|history|colombia|todas|VIAJE|auto|DISPLATE|explore|POC-AISLAMIENTO-2026-11|FAROLITO DE PAPEL ILUMINANDO LA NOCHE": "NUEVA",
+          "POD2|layoutRecentSets|colombia|todas|CAMISETA SOFT": "NUEVA",
+          "POD2|layoutRecentSets|colombia|todas|DISPLATE": "NUEVA",
+          "POD2|patterns|BERESHITH_CO|colombia|todas|VIAJE|CAMISETA SOFT": "NUEVA",
+          "POD2|patterns|BERESHITH_CO|colombia|todas|VIAJE|DISPLATE": "NUEVA",
+          "POD2|styleRecentSets|BERESHITH_CO|colombia|todas|CAMISETA SOFT": "NUEVA",
+          "POD2|styleRecentSets|BERESHITH_CO|colombia|todas|DISPLATE": "NUEVA",
+          "POD2|styleUsage|colombia|todas|CAMISETA SOFT": "NUEVA",
+          "POD2|styleUsage|colombia|todas|DISPLATE": "NUEVA"
+        },
+        "clavesMemoriaModificadas": [],
+        "mezclaDetectada": [],
+        "memoriaPorProducto": [
+          {
+            "producto": "CAMISETA SOFT",
+            "clavesTotales": 6,
+            "clavesNuevas": 6
+          },
+          {
+            "producto": "DISPLATE",
+            "clavesTotales": 6,
+            "clavesNuevas": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "P7",
+      "nombre": "Restauración completa del estado original",
+      "ok": true,
+      "detalle": {
+        "motorDifiereEn": [],
+        "domDifiereEn": [],
+        "lastResultIgual": true
+      }
+    },
+    {
+      "id": "P8",
+      "nombre": "Recuperación independiente de ambos resultados",
+      "ok": true,
+      "detalle": {
+        "camiseta": {
+          "market": "colombia",
+          "region": "todas",
+          "product": "CAMISETA SOFT",
+          "brand": "BERESHITH_CO"
+        },
+        "displate": {
+          "market": "colombia",
+          "region": "todas",
+          "product": "DISPLATE",
+          "brand": "BERESHITH_CO"
+        },
+        "resultadosGuardados": 2
+      }
+    },
+    {
+      "id": "P9",
+      "nombre": "Fallo de un producto sin pérdida del resultado del otro",
+      "ok": true,
+      "detalle": {
+        "inyectado": true,
+        "estadoOk": true,
+        "camisetaOk": true,
+        "displateFallo": true,
+        "locksPostFallo": true,
+        "errorReportado": "FALLO_INYECTADO_POC"
+      }
+    },
+    {
+      "id": "P10",
+      "nombre": "Regeneración de un producto sin modificar el otro",
+      "ok": true,
+      "detalle": {
+        "camiseta1Hash": "3ae67543",
+        "camiseta1Len": 38395,
+        "displateOk": true,
+        "displateHash": "2971a2cc",
+        "camiseta2Hash": "628f547d",
+        "camiseta2Len": 38316,
+        "regeneradaDistinta": true,
+        "registroMuralEnCamiseta": false
+      }
+    }
+  ],
+  "estadoOriginal": {
+    "product": "CAMISETA SOFT",
+    "lastResult": null,
+    "clavesMemoria": 0
+  },
+  "restauracionFinal": {
+    "motorDifiereEn": [],
+    "domDifiereEn": [],
+    "lastResultIgual": true,
+    "locksNulos": true,
+    "clavesMemoriaAntes": 0,
+    "clavesMemoriaDespues": 12
+  },
+  "avisos": [],
+  "totalOk": 10,
+  "totalPruebas": 10
+}

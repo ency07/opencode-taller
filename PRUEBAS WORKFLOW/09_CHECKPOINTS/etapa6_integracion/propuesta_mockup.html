@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propuesta UI · Generación multiproducto</title>
+<style>
+  :root { --bg:#f6f6f4; --card:#fff; --line:#e2e2de; --ink:#1c1c1a; --muted:#6b6b66; --accent:#b3541e; --ok:#1e7a46; --err:#b3261e; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 18px; }
+  .panel { background: var(--card); border:1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .panel-title { display:flex; align-items:center; gap:10px; font-weight:700; margin-bottom: 12px; }
+  .badge-src { font-weight:500; font-size:12px; color:var(--muted); }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:8px; }
+  .chip { display:flex; justify-content:space-between; align-items:center; gap:8px; border:1px solid var(--line); border-radius:10px; padding:9px 10px; background:#fbfbfa; font-weight:600; }
+  .st { font-size:11px; font-weight:700; padding:2px 7px; border-radius:99px; background:#ececea; color:var(--muted); }
+  .st.ok { background:#e3f4ea; color:var(--ok); } .st.err { background:#fbe6e5; color:var(--err); } .st.run { background:#fdeede; color:var(--accent); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  button { font:inherit; border-radius:10px; border:1px solid var(--line); background:#fff; padding:8px 12px; cursor:pointer; }
+  button.primary { background:var(--accent); border-color: var(--accent); color:#fff; font-weight:700; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .ctx { color: var(--muted); font-size: 12.5px; margin: 10px 0; }
+  .progress { height:8px; border-radius:99px; background:#ececea; overflow:hidden; margin-top:10px; }
+  .progress > span { display:block; height:100%; width:70%; background:var(--accent); }
+  .tabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; }
+  .tab { border:1px solid var(--line); background:#fff; border-radius:10px 10px 0 0; padding:7px 10px; font-size:12.5px; font-weight:700; white-space:nowrap; }
+  .tab.activa { border-color: var(--accent); color: var(--accent); }
+  textarea { width:100%; min-height:120px; border:1px solid var(--line); border-radius:10px; padding:10px; font:12px/1.4 ui-monospace,Consolas,monospace; background:#fbfbfa; }
+  .meta { font-size:12px; color:var(--muted); margin:8px 0; }
+  .historial { display:flex; flex-direction:column; gap:6px; }
+  .hitem { display:flex; justify-content:space-between; gap:10px; align-items:center; border:1px dashed var(--line); border-radius:10px; padding:8px 10px; font-size:12.5px; }
+  h1 { font-size:18px; margin:0 0 4px; } .sub { color:var(--muted); font-size:12.5px; margin-bottom:14px; }
+  .pill { font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; background:#e3f4ea; color:var(--ok); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Generación multiproducto · propuesta visual</h1>
+  <div class="sub">Mockup de la etapa 6 — panel adicional sobre el Taller POD actual (el flujo de un producto no cambia).</div>
+
+  <section class="panel">
+    <div class="panel-title">⚡ Generación multiproducto
+      <span class="badge-src">usa el mercado, la serie y la idea ya configurados</span>
+    </div>
+
+    <div class="row" style="margin-bottom:10px">
+      <button>Todos</button><button>Ninguno</button>
+      <span class="meta" style="margin:0">10 seleccionados</span>
+    </div>
+
+    <div class="grid">
+      <div class="chip">CAMISETA SOFT <span class="st ok">OK</span></div>
+      <div class="chip">CAMISETA APPAREL <span class="st ok">OK</span></div>
+      <div class="chip">HOODIE <span class="st ok">OK</span></div>
+      <div class="chip">GORRA <span class="st ok">OK</span></div>
+      <div class="chip">MUG <span class="st ok">OK</span></div>
+      <div class="chip">MOCHILA <span class="st ok">OK</span></div>
+      <div class="chip">TOTE BAG <span class="st ok">OK</span></div>
+      <div class="chip">FUNDA MÓVIL <span class="st ok">OK</span></div>
+      <div class="chip">ILUSTR. PREMIUM <span class="st ok">OK</span></div>
+      <div class="chip">DISPLATE <span class="st run">7/10…</span></div>
+    </div>
+
+    <p class="ctx">Contexto compartido: colombia · serie ETAPA-6 · «farolito de papel iluminando la noche» → «Que tu luz alumbre el camino».</p>
+
+    <div class="row">
+      <button class="primary" disabled>Generar 10 productos…</button>
+      <button>Cancelar</button>
+    </div>
+    <div class="progress"><span></span></div>
+    <div class="meta">Generando DISPLATE… (7 de 10) · 1 error pendiente de regeneración</div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">Resultados por producto</div>
+    <div class="tabs">
+      <button class="tab">CAMISETA SOFT</button>
+      <button class="tab activa">DISPLATE</button>
+      <button class="tab">HOODIE</button>
+      <button class="tab">GORRA <span class="pill" style="background:#fbe6e5;color:var(--err)">ERROR</span></button>
+      <button class="tab">…</button>
+    </div>
+    <textarea readonly>/EXPLORACIÓN — 3 DIRECCIONES DEL MISMO CONCEPTO
+MERCADO: colombia | PRODUCTO: DISPLATE
+CONCEPTO: farolito de papel iluminando la noche | MENSAJE EXACTO: Que tu luz alumbre el camino
+PRODUCTO / UBICACION / ESCALA: DISPLATE; lienzo rectangular completo con margen de marco; pieza de pared, no prenda…</textarea>
+    <div class="meta">DISPLATE · OK · 38.671 caracteres · contexto colombia/global/DISPLATE</div>
+    <div class="row">
+      <button>Copiar</button><button>Copiar parte 1/2</button>
+      <button>Regenerar solo este</button><button class="primary">Exportar ZIP del lote</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">Historial local <span class="badge-src">máx. 20 lotes · rotación automática</span></div>
+    <div class="historial">
+      <div class="hitem"><span>2026-11-24 12:03 · 10 productos · <b>COMPLETO</b></span><span class="row"><button>Cargar</button><button>ZIP</button><button>Eliminar</button></span></div>
+      <div class="hitem"><span>2026-11-24 11:47 · 10 productos · <b>PARCIAL</b> (1 error)</span><span class="row"><button>Cargar</button><button>ZIP</button><button>Eliminar</button></span></div>
+      <div class="hitem"><span>2026-11-24 11:20 · 3 productos · <b>COMPLETO</b></span><span class="row"><button>Cargar</button><button>ZIP</button><button>Eliminar</button></span></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

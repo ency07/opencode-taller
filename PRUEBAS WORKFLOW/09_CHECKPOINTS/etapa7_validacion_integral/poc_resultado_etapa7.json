@@ -1,0 +1,37 @@
+{
+  "etapa": 7,
+  "fecha": "2026-11-24",
+  "rama": "feat/multiproducto-definitivo-2026-11",
+  "head": "33df81d5823850767a28f9ec54f64104cd5547ce",
+  "harness": "PRUEBAS WORKFLOW/09_CHECKPOINTS/poc_multiproducto_harness.js",
+  "sha256_harness": "9a13a103bbe5653fbcea7a4120e08e283d2c5c09c09ac1e890f1cf69de4f116a",
+  "entorno": {
+    "navegador": "Edge Edg/158.0.4370.33",
+    "cdp": "1.3",
+    "app": "http://127.0.0.1:8080/index.html"
+  },
+  "duracionMs": 42953,
+  "totalOk": 10,
+  "totalPruebas": 10,
+  "pruebas": [
+    { "id": "P1", "ok": true }, { "id": "P2", "ok": true }, { "id": "P3", "ok": true },
+    { "id": "P4", "ok": true }, { "id": "P5", "ok": true }, { "id": "P6", "ok": true },
+    { "id": "P7", "ok": true }, { "id": "P8", "ok": true }, { "id": "P9", "ok": true },
+    { "id": "P10", "ok": true }
+  ],
+  "restauracionFinal": {
+    "motorDifiereEn": [],
+    "domDifiereEn": [],
+    "lastResultIgual": true,
+    "locksNulos": true,
+    "clavesMemoriaAntes": 133,
+    "clavesMemoriaDespues": 135
+  },
+  "avisos": [],
+  "prompts": {
+    "CAMISETA SOFT": { "len": 38853, "hashFNV1a": "010c24db" },
+    "DISPLATE": { "len": 37498, "hashFNV1a": "bef1968f" }
+  },
+  "rendimientoMs": { "camiseta": 7401, "displate": 6370 },
+  "nota": "Hashes por corrida; no comparar entre corridas distintas. Las 2 claves POD2| nuevas corresponden a memoria que el motor escribe al generar."
+}

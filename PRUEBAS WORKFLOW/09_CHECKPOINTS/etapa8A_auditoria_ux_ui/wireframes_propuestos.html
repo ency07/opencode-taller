@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Etapa 8A · Wireframes del Taller POD</title>
+<style>
+  :root { --ink:#1c1c1a; --muted:#6b6b66; --line:#e2e2de; --card:#fff; --bg:#f6f6f4; --acc:#b3541e; --ok:#1e7a46; --err:#b3261e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:varbg); color:var(--ink); font:14px/1.4 system-ui,"Segoe UI",sans-serif; }
+  nav { background:var(--card); border-bottom:1px solid var(--line); padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap; }
+  nav a { padding:6px 12px; border-radius:99px; text-decoration:none; color:var(--ink); border:1px solid var(--line); background:#fff; }
+  nav a.activo { background:var(--ink); color:#fff; border-color:var(--ink); }
+  h1 { font-size:18px; margin:18px 16px 4px; }
+  .nota { color:var(--muted); font-size:12.5px; margin:0 16px 14px; max-width:900px; }
+  .wf { display:none; padding:0 16px 40px; }
+  .wf.visible { display:block; }
+  /* --- lienzo wireframe --- */
+  .marco { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .barra { height:44px; display:flex; align-items:center; gap:10px; padding:0 14px; border-bottom:1px dashed var(--line); background:#fafafa; }
+  .barra .spacer { flex:1; }
+  .chip { border:1px solid var(--line); border-radius:8px; padding:4px 10px; background:#fff; font-size:12px; white-space:nowrap; }
+  .chip.on { border-color:var(--acc); color:var(--acc); font-weight:700; }
+  .pasos { display:flex; gap:6px; padding:10px 14px; border-bottom:1px dashed var(--line); flex-wrap:wrap; }
+  .paso { font-size:12px; padding:4px 10px; border-radius:99px; background:#eee; color:var(--muted); }
+  .paso.on { background:var(--ink); color:#fff; }
+  .grid { display:grid; grid-template-columns: 340px 1fr; }
+  .col { padding:14px; }
+  .col.der { border-left:1px dashed var(--line); background:#fdfdfc; }
+  details { border:1px solid var(--line); border-radius:10px; margin-bottom:8px; background:#fff; }
+  summary { padding:10px 12px; font-weight:700; cursor:pointer; font-size:13px; }
+  details[open] summary { border-bottom:1px dashed var(--line); }
+  .campos { padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+  .campo { border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px; color:var(--muted); background:#fbfbfb; }
+  .bloque { border:1px dashed #cfcfc9; border-radius:10px; padding:10px; margin-bottom:10px; background:#fff; }
+  .titulo-bloque { font-size:12px; font-weight:700; margin-bottom:8px; color:var(--muted); letter-spacing:.02em; }
+  .btn { display:inline-block; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:13px; font-weight:600; }
+  .btn.pri { background:var(--acc); border-color:var(--acc); color:#fff; }
+  .btn.dis { opacity:.45; }
+  .tabs { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+  .tab { font-size:12px; font-weight:700; padding:6px 10px; border-radius:8px; border:1px solid var(--line); }
+  .tab.on { border-color:var(--acc); color:var(--acc); }
+  .area { border:1px solid var(--line); border-radius:10px; min-height:120px; padding:12px; font-size:12px; color:var(--muted); background:#fbfbfb; }
+  .vacio { text-align:center; padding:22px 12px; color:var(--muted); }
+  .vacio .gran { font-size:22px; margin-bottom:6px; }
+  .progreso { height:8px; border-radius:99px; background:#ececea; overflow:hidden; margin:8px 0 4px; }
+  .progreso > span { display:block; height:100%; width:45%; background:var(--acc); }
+  .historial { border-top:1px dashed var(--line); padding:10px 14px; background:#fafafa; }
+  .hitem { display:flex; justify-content:space-between; gap:8px; font-size:12px; padding:6px 0; border-bottom:1px dotted var(--line); }
+  .mp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
+  .prod { border:1px solid var(--line); border-radius:10px; padding:8px; font-size:12px; display:flex; justify-content:space-between; gap:6px; align-items:flex-start; }
+  .badge { font-size:10px; font-weight:700; padding:2px 6px; border-radius:99px; background:#ececea; color:var(--muted); }
+  .badge.ok { background:#e3f4ea; color:var(--ok); }
+  .badge.err { background:#fbe6e5; color:var(--err); }
+  .mini { font-size:11px; color:var(--muted); }
+  @media (max-width:900px){
+    .grid { grid-template-columns:1fr; }
+    .col.der { border-left:0; border-top:1px dashed var(--line); }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="#desktop" class="activo" onclick="ir('desktop',this)">Escritorio · 1440</a>
+  <a href="#tablet" onclick="ir('tablet',this)">Tablet · 768</a>
+  <a href="#movil" onclick="ir('movil',this)">Móvil · 390</a>
+</nav>
+
+<h1>Wireframes propuestos — Taller POD (etapa 8A)</h1>
+<p class="nota">Maquetación de trabajo, no implementación: muestra organización y jerarquía, no el diseño final. Ver también <code>propuesta_visual.md</code>.</p>
+
+<!-- ============ ESCRITORIO ============ -->
+<section id="desktop" class="wf visible">
+<div class="marco">
+  <div class="barra">
+    <span class="chip on">Taller POD</span>
+    <span class="chip">Un producto</span><span class="chip on">Multiproducto</span>
+    <span class="spacer"></span>
+    <span class="chip">Colombia · ES</span><span class="chip">Serie ETAPA 8</span>
+    <span class="chip">⚙</span>
+  </div>
+  <div class="pasos"><span class="paso on">1 · Configurar</span><span class="paso">2 · Generar</span><span class="paso">3 · Revisar</span><span class="paso">4 · Exportar</span></div>
+  <div class="grid">
+    <div class="col">
+      <details open><summary>Contexto</summary><div class="campos">
+        <div class="campo">Mercado / Idioma</div><div class="campo">Marca activa</div>
+        <div class="campo">Región</div><div class="campo">Serie</div>
+      </div></details>
+      <details open><summary>Producto e impresión</summary><div class="campos">
+        <div class="campo">Producto</div><div class="campo">Marketplace / Uso</div>
+        <div class="campo">Método de impresión</div><div class="campo">Cara / Acabado</div>
+      </div></details>
+      <details><summary>La idea</summary><div class="campos">
+        <div class="campo">Concepto central</div><div class="campo">Mensaje visible</div>
+        <div class="campo">Apoyo / dato extra</div><div class="campo">Audiencia del set</div>
+      </div></details>
+      <details><summary>Avanzado</summary><div class="campos mini">
+        Territorio, dominio, estética, variación, mezclas y banco — plegado por defecto.
+      </div></details>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <span class="btn pri">Crear los 3 diseños</span><span class="btn">Nuevo set</span>
+      </div>
+    </div>
+    <div class="col der">
+      <div class="bloque">
+        <div class="titulo-bloque">SELECCIÓN DE PRODUCTOS (modo multiproducto)</div>
+        <div class="tabs"><span class="tab on">Todos</span><span class="tab">Seleccionados</span><span class="mini">10 seleccionados</span></div>
+        <div class="mp-grid">
+          <div class="prod"><span>CAMISETA SOFT</span><span class="badge ok">OK</span></div>
+          <div class="prod"><span>MUG</span><span class="badge">Pendiente</span></div>
+          <div class="prod"><span>DISPLATE</span><span class="badge err">Error</span></div>
+          <div class="prod"><span>HOODIE</span><span class="badge">Generando…</span></div>
+          <div class="mini">Rejilla de 10 productos, estado textual (no botón).</div>
+        </div>
+        <div class="progreso"><span></span></div>
+        <div class="mini">Generando DISPLATE… (8 de 10) · 45%</div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <span class="btn pri">Generar lote</span><span class="btn">Cancelar</span>
+          <span class="btn">Guardar</span><span class="btn">Exportar ZIP</span>
+        </div>
+      </div>
+      <div class="bloque">
+        <div class="titulo-bloque">RESULTADO</div>
+        <div class="tabs"><span class="tab on">CAMISETA SOFT</span><span class="tab">MUG</span><span class="tab">DISPLATE</span></div>
+        <div class="area">Prompt del producto activo · metadatos visibles (contexto, caracteres, estado).<br>
+          Acciones: Copiar · Copiar 1/2 · Regenerar solo este.</div>
+      </div>
+      <div class="historial">
+        <div class="titulo-bloque">HISTORIAL LOCAL</div>
+        <div class="hitem"><span>Hoy 12:03 · 10 productos · COMPLETO</span><span><span class="btn">Cargar</span> <span class="btn">ZIP</span></span></div>
+        <div class="hitem"><span>Ayer 18:41 · 3 productos · PARCIAL</span><span><span class="btn">Cargar</span> <span class="btn">ZIP</span></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============ TABLET ============ -->
+<section id="tablet" class="wf">
+<div class="marco">
+  <div class="barra">
+    <span class="chip on">Taller POD</span>
+    <span class="chip on">Un producto</span><span class="chip">Multiproducto</span>
+    <span class="spacer"></span><span class="chip">Colombia · ES</span><span class="chip">☰</span>
+  </div>
+  <div class="pasos"><span class="paso on">1 · Configurar</span><span class="paso">2 · Generar</span><span class="paso">3 · Revisar</span><span class="paso">4 · Exportar</span></div>
+  <div class="grid">
+    <div class="col" style="background:#fafafa">
+      <div class="mini" style="margin-bottom:8px">Configuración (rail plegable · se abre al pulsar “Configurar”)</div>
+      <details open><summary>Contexto</summary><div class="campos"><div class="campo">Mercado / Idioma</div><div class="campo">Región</div><div class="campo">Serie</div></div></details>
+      <details><summary>Producto e impresión</summary><div class="campos"><div class="campo">Producto</div><div class="campo">Método de impresión</div></div></details>
+      <details><summary>La idea</summary><div class="campos"><div class="campo">Concepto</div><div class="campo">Mensaje visible</div></div></details>
+      <span class="btn pri">Crear los 3 diseños</span>
+    </div>
+    <div class="col der">
+      <div class="bloque">
+        <div class="titulo-bloque">PRODUCTOS</div>
+        <div class="mp-grid">
+          <div class="prod"><span>CAMISETA SOFT</span><span class="badge ok">OK</span></div>
+          <div class="prod"><span>DISPLATE</span><span class="badge err">Error</span></div>
+          <div class="mini">Rejilla a 5 columnas en tablet horizontal; 2 en vertical.</div>
+        </div>
+        <div class="progreso"><span></span></div>
+        <div class="mini">45% · Generando DISPLATE…</div>
+      </div>
+      <div class="bloque">
+        <div class="titulo-bloque">RESULTADO</div>
+        <div class="tabs"><span class="tab on">CAMISETA SOFT</span><span class="tab">DISPLATE</span></div>
+        <div class="area">Prompt y acciones de copiado.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============ MÓVIL ============ -->
+<section id="movil" class="wf">
+<div class="marco">
+  <div class="barra">
+    <span class="chip on">Taller POD</span>
+    <span class="spacer"></span>
+    <span class="chip">Un producto</span><span class="chip on">Multi</span>
+    <span class="chip">☰</span>
+  </div>
+  <div class="pasos"><span class="paso on">1 Configurar</span><span class="paso">2 Generar</span><span class="paso">3 Revisar</span><span class="paso">4 Exportar</span></div>
+  <div class="grid">
+    <div class="col">
+      <details open><summary>Contexto</summary><div class="campos"><div class="campo">Mercado / Idioma</div><div class="campo">Región</div><div class="campo">Serie</div></div></details>
+      <details><summary>Producto e impresión</summary><div class="campos"><div class="campo">Producto</div><div class="campo">Método</div></div></details>
+      <details><summary>La idea</summary><div class="campos"><div class="campo">Concepto</div><div class="campo">Mensaje</div></div></details>
+      <details><summary>Avanzado</summary><div class="campos mini">Territorio, dominio, estética, variación.</div></details>
+    </div>
+    <div class="col der">
+      <div class="bloque">
+        <div class="titulo-bloque">PRODUCTOS · 10 seleccionados</div>
+        <div class="mp-grid" style="grid-template-columns:1fr 1fr">
+          <div class="prod"><span>CAMISETA SOFT</span><span class="badge ok">OK</span></div>
+          <div class="prod"><span>MUG</span><span class="badge">Pend.</span></div>
+        </div>
+        <div class="vacio" style="margin-top:8px"><div class="gran">✓</div>Lote completo · listo para exportar</div>
+      </div>
+      <div class="bloque">
+        <div class="titulo-bloque">RESULTADO · CAMISETA SOFT</div>
+        <div class="area">Prompt visible con Copiar y Regenerar.</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:10px 14px;position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line)">
+    <span class="btn pri" style="width:100%">Generar lote</span>
+  </div>
+</div>
+</section>
+
+<script>
+  function ir(id, enlace){
+    document.querySelectorAll('.wf').forEach(function(s){ s.classList.remove('visible'); });
+    document.getElementById(id).classList.add('visible');
+    document.querySelectorAll('nav a').forEach(function(a){ a.classList.remove('activo'); });
+    enlace.classList.add('activo');
+    window.scrollTo(0,0);
+    return false;
+  }
+</script>
+</body>
+</html>

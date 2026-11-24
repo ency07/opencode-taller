@@ -4290,7 +4290,9 @@ function formatPrompt(result) {
     } else if (isExplore) {
       o += sharedExploreCopy
         ? 'COPY CANÓNICO: «' + sharedExploreCopy + '». Repetirlo literalmente en A/B/C cuando la jerarquía admita texto; SOLO_OBJETO permanece sin letras.\n'
-        : 'COPY: no hay texto autorizado. No generar letras, frases, citas, versículos ni microtexto.\n';
+        : (typedMessage
+          ? 'COPY: conserva literalmente el mensaje del usuario: «' + typedMessage + '». Es el único copy autorizado; repítelo igual en A/B/C donde la jerarquía admita texto; SOLO_OBJETO permanece sin letras.\n'
+          : 'COPY: no hay texto autorizado. No generar letras, frases, citas, versículos ni microtexto.\n');
     } else if (contactDNA) {
       o += contactMainText
         ? 'COPY: conservar literalmente «' + contactMainText + '»; apoyo: ' + (contactSupportText ? 'literal «' + contactSupportText + '»' : 'NINGUNO; no imprimir texto secundario') + '; no añadir ningún otro mensaje.\n'
@@ -4302,7 +4304,9 @@ function formatPrompt(result) {
   } else if (isSecular) {
     o += sharedDerivedCopy
       ? 'COPY CANÓNICO SECULAR: «' + sharedDerivedCopy + '». Usar exactamente esta frase en A/B/C; no inventar versiones, apoyos, sellos, citas, cifras ni microtexto.\n'
-      : 'COPY: no hay mensaje ni concepto autorizado para derivarlo. No generar letras, frases, cifras, sellos ni microtexto.\n';
+      : (isExplore && typedMessage
+        ? 'COPY: conserva literalmente el mensaje del usuario: «' + typedMessage + '». Único copy autorizado; idéntico en A/B/C; sin añadir apoyos, citas, cifras ni microtexto.\n'
+        : 'COPY: no hay mensaje ni concepto autorizado para derivarlo. No generar letras, frases, cifras, sellos ni microtexto.\n');
     o += 'La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
   } else {
     o += 'COPY: conserva literalmente el texto proporcionado. Si no hay texto fijado y se permite copy, escribe el texto final exacto en el idioma del mercado; sin placeholders ni microtexto. La frase no autoriza por sí sola a introducir objetos ni a alterar el concepto.\n';
@@ -4332,8 +4336,31 @@ function formatPrompt(result) {
   if (printPrepRule) o += 'ACABADO / PREPARACION TECNICA (' + printMethodName + '): ' + printPrepRule + '\n';
   if (mockupRule) {
     const colsByAudience = MOTOR_STATE.audienceMulti === 'si';
-    o += 'REGLAS DEL MOCKUP COMERCIAL (el modelo que lleva la prenda — NO el arte estampado): ' + mockupRule + '\n';
-    o += 'IMPORTANTE: la prohibición de figuras humanas del bloque de arte (CONTROL DE ELEMENTOS / FIGURAS HUMANAS) NO aplica aquí. El mockup DEBE mostrar una persona acorde a la audiencia de la columna. MOCKUP OBLIGATORIO POR AUDIENCIA: infantil = niño o niña de apariencia inequívocamente infantil (proporciones corporales infantiles: cabeza grande, extremidades cortas; rostro y anatomía de niño, no de adulto joven; camiseta de corte y talla infantil; un adulto de baja estatura NO cumple). femenino = mujer con corte y talla femeninos. masculino = hombre con corte y talla masculinos. unisex = modelo acorde al perfil sin forzar género. Un modelo adulto en una ficha infantil invalida la hoja. Prohibido usar adultos como sustitutos.\n';
+    /* FIX superficie (etapa 1 multiproducto): el lenguaje del mockup debe
+       corresponder a la naturaleza del producto. Un texto único imponía "el
+       modelo que lleva la prenda" y "camiseta de corte y talla" a DISPLATE,
+       GORRA, MUG, MOCHILA, TOTE BAG y FUNDA MÓVIL. No cambia reglas de producto,
+       contratos, bancos ni umbrales: solo el envoltorio del bloque de mockup. */
+    const surface = typeof getProductSurface === 'function' ? getProductSurface(MOTOR_STATE.product) : 'objeto';
+    const mockupHeader = surface === 'prenda'
+      ? 'REGLAS DEL MOCKUP COMERCIAL (el modelo que lleva la prenda — NO el arte estampado): '
+      : (surface === 'pared'
+        ? 'REGLAS DEL MOCKUP COMERCIAL (la pieza de pared en su ambiente — NO el arte): '
+        : 'REGLAS DEL MOCKUP COMERCIAL (el objeto en uso o en escena — NO el arte): ');
+    o += mockupHeader + mockupRule + '\n';
+    if (surface === 'pared') {
+      o += 'IMPORTANTE: la prohibición de figuras humanas del bloque de arte (CONTROL DE ELEMENTOS / FIGURAS HUMANAS) NO aplica a la lámina. Excepción de pared: la pieza se presenta en pared, habitación o setup, NUNCA sobre cuerpo humano ni con modelos/personas; el bloque de audiencia orienta el ambiente y la escala de presentación, no un portador.\n';
+    } else {
+      const mockupPerson = surface === 'prenda'
+        ? ' El mockup DEBE mostrar una persona acorde a la audiencia de la columna.'
+        : ' El mockup DEBE mostrar el objeto en uso o en escena, con presentación acorde a la audiencia de la columna.';
+      const audienceInfantil = surface === 'prenda'
+        ? 'niño o niña con apariencia inequívocamente infantil (proporciones corporales infantiles: cabeza grande, extremidades cortas; rostro y anatomía de niño, no de adulto joven; camiseta de corte y talla infantil; un adulto de baja estatura NO cumple)'
+        : 'escena o referencia de escala infantil (un adulto como sustituto NO cumple)';
+      const audienceFem = surface === 'prenda' ? 'mujer con corte y talla femeninos' : 'presentación acorde al perfil femenino';
+      const audienceMasc = surface === 'prenda' ? 'hombre con corte y talla masculinos' : 'presentación acorde al perfil masculino';
+      o += 'IMPORTANTE: la prohibición de figuras humanas del bloque de arte (CONTROL DE ELEMENTOS / FIGURAS HUMANAS) NO aplica aquí.' + mockupPerson + ' MOCKUP OBLIGATORIO POR AUDIENCIA: infantil = ' + audienceInfantil + '. femenino = ' + audienceFem + '. masculino = ' + audienceMasc + '. unisex = modelo acorde al perfil sin forzar género. Un modelo adulto en una ficha infantil invalida la hoja. Prohibido usar adultos como sustitutos.\n';
+    }
     o += 'EJE DE COLUMNAS: ' + (colsByAudience
       ? 'las 3 columnas se encabezan por AUDIENCIA, en palabras simples del idioma del mercado.'
       : 'las 3 columnas se encabezan por FICHA (01A · 01B · 01C) con su estilo.') + '\n';
