@@ -71,8 +71,14 @@
         /* Etiqueta corta del mercado (antes del " — ") + región abreviada:
            evita chips largos truncados en móvil. */
         var nomMarket = String(c.market || '').split(' — ')[0].trim();
+        var reg = String(c.region || '').trim();
+        if (/^todas\b/i.test(reg)) {
+          reg = 'Todas';
+        } else {
+          reg = recortar(reg.split(' ').slice(0, 2).join(' '), 16);
+        }
         chip.textContent = '◆ ' + recortar(nomMarket || c.market, 18) +
-          (c.region ? '  ·  ' + recortar(String(c.region).split(' ').slice(0, 2).join(' '), 16) : '');
+          (reg ? '  ·  ' + reg : '');
       } else if (clave === 'brand') {
         var nomBrand = String(c.brand || '').split(' — ')[0].trim();
         chip.textContent = 'Marca: ' + recortar(nomBrand || c.brand, 18);
@@ -92,6 +98,17 @@
 
     var mp = $('mpPanel');
     if (mp) mp.style.display = (modo === MODOS.MULTI) ? '' : 'none';
+
+    /* Con los laterales plegados por pestañas, el modo también selecciona la
+       sección visible: Lote en multiproducto, Ajustes en individual. */
+    var tabLote = document.querySelector('.tp-sidenav .tp-tab-btn[data-tab="lote"]');
+    if (tabLote) {
+      tabLote.disabled = (modo !== MODOS.MULTI);
+      tabLote.classList.toggle('deshabilitada', modo !== MODOS.MULTI);
+    }
+    if (!opciones.silencioso) {
+      activarTab(modo === MODOS.MULTI ? 'lote' : 'ajustes');
+    }
 
     document.querySelectorAll('#tpMode button').forEach(function (b) {
       var es = b.getAttribute('data-modo') === modo;
@@ -179,6 +196,7 @@
     topbar.appendChild(ctx);
 
     var spacer = el('span');
+    spacer.id = 'tpSpacer';
     spacer.style.flex = '1';
     topbar.appendChild(spacer);
 
@@ -492,6 +510,329 @@
     return true;
   }
 
+  /* ==================== Etapa "referencia visual" · Laterales con pestañas ====================
+     Reagrupa los tres bloques ya existentes (configuración+acciones, lote multiproducto,
+     historial) bajo pestañas laterales. No crea ni elimina funcionalidad. */
+
+  function tabBtn(nombre, texto, extra) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tp-tab-btn';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('data-tab', nombre);
+    b.setAttribute('aria-selected', 'false');
+    b.textContent = texto;
+    if (extra) {
+      var c = document.createElement('span');
+      c.className = 'tp-count';
+      c.setAttribute('data-count', extra);
+      c.textContent = '';
+      b.appendChild(c);
+    }
+    return b;
+  }
+
+  function paneDe(nombre) {
+    var s = document.createElement('section');
+    s.className = 'tp-pane';
+    s.setAttribute('data-pane', nombre);
+    s.setAttribute('role', 'tabpanel');
+    return s;
+  }
+
+  function activarTab(nombre) {
+    document.querySelectorAll('.tp-sidenav .tp-tab-btn').forEach(function (b) {
+      var es = b.getAttribute('data-tab') === nombre;
+      b.classList.toggle('active', es);
+      b.setAttribute('aria-selected', es ? 'true' : 'false');
+    });
+    document.querySelectorAll('.tp-pane').forEach(function (p) {
+      p.classList.toggle('active', p.getAttribute('data-pane') === nombre);
+    });
+    document.body.setAttribute('data-pane-activo', nombre);
+  }
+
+  function actualizarContadorLote() {
+    var c = document.querySelector('.tp-tab-btn[data-tab="lote"] .tp-count');
+    if (!c) return;
+    var n = 0;
+    try {
+      if (window.MultiproductoUI && window.MultiproductoUI._productos) n = window.MultiproductoUI._productos().length;
+    } catch (e) { n = 0; }
+    c.textContent = String(n);
+  }
+
+  function organizarLaterales() {
+    var lc = document.querySelector('.left-col');
+    if (!lc || lc.querySelector('.tp-sidenav')) return false;
+    var config = $('tpConfig'), mp = $('mpPanel'), hist = $('mpHistorialWrap');
+    if (!config || !mp || !hist) return false;
+
+    var accPrimaria = lc.querySelector('.actions-primary');
+    var accSecundaria = lc.querySelector('.actions');
+
+    var wrap = document.createElement('div');
+    wrap.className = 'tp-laterales tp-scope';
+
+    var nav = document.createElement('div');
+    nav.className = 'tp-sidenav';
+    nav.setAttribute('role', 'tablist');
+    nav.setAttribute('aria-label', 'Secciones del taller');
+    nav.appendChild(tabBtn('ajustes', 'Ajustes'));
+    nav.appendChild(tabBtn('lote', 'Lote', 'lote'));
+    nav.appendChild(tabBtn('historial', 'Historial'));
+
+    var pAjustes = paneDe('ajustes');
+    var pLote = paneDe('lote');
+    var pHist = paneDe('historial');
+
+    pAjustes.appendChild(config);
+    pLote.appendChild(mp);
+    pHist.appendChild(hist);
+
+    /* Las acciones se reparten: las del lote van al pane Lote y las individuales,
+       al pane Ajustes. Así el modo individual no muestra botones de multiproducto. */
+    Array.from(lc.querySelectorAll(':scope > .actions-primary, :scope > .actions')).forEach(function (sec) {
+      if (!sec) return;
+      var esLote = !!sec.querySelector('#mpGenerate, #mpZip');
+      (esLote ? pLote : pAjustes).appendChild(sec);
+    });
+
+    wrap.appendChild(nav);
+    wrap.appendChild(pAjustes);
+    wrap.appendChild(pLote);
+    wrap.appendChild(pHist);
+
+    lc.insertBefore(wrap, lc.firstChild);
+
+    /* Secciones residuales vacías: se retiran para no dejar huecos. */
+    Array.from(lc.querySelectorAll(':scope > section.panel')).forEach(function (s) {
+      if (!s.querySelector('.field, details.panel') && !s.id) s.remove();
+    });
+
+    var aviso = $('tpAviso');
+    if (aviso && aviso.parentElement === lc) lc.appendChild(aviso);
+
+    nav.addEventListener('click', function (ev) {
+      var b = ev.target.closest('.tp-tab-btn');
+      if (!b || b.disabled) return;
+      activarTab(b.getAttribute('data-tab'));
+    });
+
+    actualizarContadorLote();
+    var inicial = (modo === MODOS.MULTI) ? 'lote' : 'ajustes';
+    activarTab(inicial);
+    aplicarModo(modo, { silencioso: true });
+    return true;
+  }
+
+  /* ==================== Etapa "referencia visual" · Vistas de la zona principal ====================
+     Agrupa los paneles existentes (Fichas, Matriz, Árbitro+Validador, Prompt) bajo
+     pestañas y añade una barra de indicadores derivada del estado real. */
+
+  function chipIndicador(clave, texto) {
+    var s = document.createElement('span');
+    s.className = 'tp-ind';
+    s.setAttribute('data-ind', clave);
+    s.textContent = texto;
+    return s;
+  }
+
+  function actualizarIndicadores() {
+    var barra = $('tpIndicadores');
+    if (!barra) return;
+    var statusTxt = String(($('status') && $('status').textContent) || '');
+    var aud = (statusTxt.match(/audiencia\s+(\d+)\s*\/\s*100/i) || [])[1];
+    var prod = (statusTxt.match(/producto\s+(\d+)\s*\/\s*100/i) || [])[1];
+    var arbTxt = String(($('arbitroEstado') && $('arbitroEstado').textContent) || '').trim();
+    var qaTxt = String(($('qaEstado') && $('qaEstado').textContent) || '').trim();
+
+    var datos = {
+      audiencia: aud ? ('Audiencia ' + aud + '/100') : 'Audiencia —',
+      producto: prod ? ('Producto ' + prod + '/100') : 'Producto —',
+      arbitro: arbTxt ? ('Árbitro: ' + arbTxt.replace(/^Árbitro:\s*/i, '')) : 'Árbitro: sin datos',
+      qa: qaTxt ? ('QA visual: ' + qaTxt.replace(/^Revisión visual:\s*/i, '')) : 'QA visual: —'
+    };
+    Object.keys(datos).forEach(function (k) {
+      var el = barra.querySelector('[data-ind="' + k + '"]');
+      if (el) el.textContent = datos[k];
+    });
+    var pAud = barra.querySelector('[data-ind="audiencia"]');
+    if (pAud) pAud.classList.toggle('ok', !!aud);
+  }
+
+  function organizarVistas() {
+    var rc = document.querySelector('.right-col');
+    if (!rc || rc.querySelector('.tp-vistas')) return false;
+
+    var panels = Array.from(rc.querySelectorAll(':scope > section.panel'));
+    function grupoDe(p) {
+      if (p.contains($('cards')) || p.contains($('qaVisual'))) return 'fichas';
+      if (p.contains($('matrix'))) return 'matriz';
+      if (p.contains($('arbitro'))) return 'arbitro';
+      if (p.contains($('out'))) return 'prompt';
+      if (/Validador/i.test(p.textContent || '')) return 'arbitro';
+      return null;
+    }
+    var grupos = { fichas: [], matriz: [], arbitro: [], prompt: [] };
+    panels.forEach(function (p) { var g = grupoDe(p); if (g) grupos[g].push(p); });
+
+    var wrap = document.createElement('div');
+    wrap.className = 'tp-vistas tp-scope';
+
+    var nav = document.createElement('div');
+    nav.className = 'tp-tabs';
+    nav.setAttribute('role', 'tablist');
+    nav.setAttribute('aria-label', 'Vistas de resultados');
+    [['fichas', 'Fichas 01A · 01B · 01C'], ['matriz', 'Matriz comparativa'],
+     ['arbitro', 'Árbitro y Validador'], ['prompt', 'Prompt final']].forEach(function (par) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tp-tab-btn';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('data-vista', par[0]);
+      b.setAttribute('aria-selected', 'false');
+      b.textContent = par[1];
+      nav.appendChild(b);
+    });
+    wrap.appendChild(nav);
+
+    [['fichas'], ['matriz'], ['arbitro'], ['prompt']].forEach(function (par) {
+      var pane = document.createElement('section');
+      pane.className = 'tp-vpane';
+      pane.setAttribute('data-vpane', par[0]);
+      pane.setAttribute('role', 'tabpanel');
+      grupos[par[0]].forEach(function (p) { pane.appendChild(p); });
+      wrap.appendChild(pane);
+    });
+
+    /* Insertar tras #status/#colorAudit para conservar la barra superior. */
+    var status = $('status');
+    if (status && status.parentElement === rc) rc.insertBefore(wrap, status.nextSibling);
+    else rc.appendChild(wrap);
+
+    nav.addEventListener('click', function (ev) {
+      var b = ev.target.closest('.tp-tab-btn');
+      if (!b) return;
+      nav.querySelectorAll('.tp-tab-btn').forEach(function (x) {
+        var es = x === b;
+        x.classList.toggle('active', es);
+        x.setAttribute('aria-selected', es ? 'true' : 'false');
+      });
+      wrap.querySelectorAll('.tp-vpane').forEach(function (p) {
+        p.classList.toggle('active', p.getAttribute('data-vpane') === b.getAttribute('data-vista'));
+      });
+      document.body.setAttribute('data-vista-activa', b.getAttribute('data-vista'));
+    });
+
+    /* Activa la primera vista con contenido; si hay resultado, Fichas. */
+    var first = nav.querySelector('.tp-tab-btn[data-vista="fichas"]') || nav.querySelector('.tp-tab-btn');
+    if (first) first.click();
+    return true;
+  }
+
+  function construirIndicadores() {
+    var rc = document.querySelector('.right-col');
+    if (!rc || $('tpIndicadores')) return false;
+    var barra = document.createElement('div');
+    barra.className = 'tp-scope tp-indicadores';
+    barra.id = 'tpIndicadores';
+    barra.setAttribute('aria-label', 'Indicadores de calidad');
+    ['audiencia', 'producto', 'arbitro', 'qa'].forEach(function (k) {
+      barra.appendChild(chipIndicador(k, '—'));
+    });
+    var status = $('status');
+    if (status && status.parentElement === rc) rc.insertBefore(barra, status.nextSibling);
+    else rc.appendChild(barra);
+    return true;
+  }
+
+  /* Referencia visual: el stepper pasa a la misma barra de contexto (al centro). */
+  function reordenarCabecera() {
+    var topbar = document.querySelector('#tpTopbar .tp-topbar');
+    var stepper = $('tpStepper');
+    if (!topbar || !stepper) return false;
+    if (stepper.parentElement !== topbar) {
+      var spacer = $('tpSpacer') || null;
+      topbar.insertBefore(stepper, spacer || null);
+    }
+    stepper.classList.add('tp-stepper-inline');
+    return true;
+  }
+
+  /* Referencia visual: títulos de acordeón alineados con la captura. */
+  function renombrarAcordes() {
+    var mapa = { idea: 'La idea y audiencia', avanzado: 'Avanzado y bancos' };
+    Object.keys(mapa).forEach(function (g) {
+      var det = document.querySelector('.tp-accordion[data-grupo="' + g + '"]');
+      if (!det) return;
+      var s = det.querySelector('summary');
+      if (s && s.firstChild && s.firstChild.nodeType === 3) s.firstChild.textContent = mapa[g];
+    });
+  }
+
+  /* Referencia visual: zona de previsualización por tarjeta.
+     Estado vacío claro cuando no hay imagen; nunca simula una generación inexistente. */
+  function construirPreviews() {
+    document.querySelectorAll('#cards .vcard').forEach(function (v) {
+      if (v.querySelector('.vc-preview')) return;
+      var box = document.createElement('div');
+      box.className = 'vc-preview';
+
+      var estado = document.createElement('span');
+      estado.className = 'vc-estado';
+      box.appendChild(estado);
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'Ampliar';
+      btn.setAttribute('aria-label', 'Ampliar previsualización de la tarjeta');
+      btn.addEventListener('click', function () {
+        var ampliada = box.classList.toggle('ampliar');
+        btn.textContent = ampliada ? 'Reducir' : 'Ampliar';
+      });
+      box.appendChild(btn);
+
+      var body = v.querySelector('.vbody');
+      if (body) v.insertBefore(box, body);
+      else v.appendChild(box);
+
+      pintarPreview(box);
+    });
+  }
+
+  function pintarPreview(box) {
+    if (!box) return;
+    var img = $('imagePreview');
+    var hay = !!(img && img.src && img.src.indexOf('data:') === 0);
+    var estado = box.querySelector('.vc-estado');
+    box.querySelectorAll('img').forEach(function (i) { i.remove(); });
+    if (hay) {
+      var nueva = document.createElement('img');
+      nueva.alt = 'Vista previa del arte generado';
+      nueva.src = img.src;
+      box.appendChild(nueva);
+      if (estado) estado.textContent = 'Vista previa del arte';
+    } else if (estado) {
+      estado.textContent = 'Vista previa: aparecerá aquí cuando se genere la imagen';
+    }
+  }
+
+  function pintarPreviews() {
+    document.querySelectorAll('.vc-preview').forEach(pintarPreview);
+  }
+
+  /* Referencia visual: tooltips con el valor completo en selects truncados,
+     para que ningún control quede ilegible por elipsis. */
+  function fijarTitulosSelects() {
+    document.querySelectorAll('#tpConfig select').forEach(function (s) {
+      if (!s.title) {
+        var op = s.options && s.selectedIndex >= 0 ? s.options[s.selectedIndex] : null;
+        if (op) s.title = op.textContent || '';
+      }
+    });
+  }
+
   function init() {
     var guardado = leerModoGuardado();
     if (guardado === MODOS.MULTI) modo = MODOS.MULTI;
@@ -508,7 +849,42 @@
        Es idempotente solo si se llama una vez; init lo hace una sola vez. */
     try { organizarConfiguracion(); } catch (e) { console.warn('[TallerShell] acordeones:', e); }
     try { historialGlobal(); } catch (e) { console.warn('[TallerShell] historial global:', e); }
+    /* Referencia visual: cabecera en una sola barra, laterales con pestañas,
+       indicadores y vistas de resultados. */
+    try { reordenarCabecera(); } catch (e) { console.warn('[TallerShell] cabecera:', e); }
+    try { organizarLaterales(); } catch (e) { console.warn('[TallerShell] laterales:', e); }
+    try { renombrarAcordes(); } catch (e) { /* títulos: no crítico */ }
+    try { fijarTitulosSelects(); } catch (e) { /* tooltips: no crítico */ }
+    try { construirIndicadores(); } catch (e) { console.warn('[TallerShell] indicadores:', e); }
+    try { organizarVistas(); } catch (e) { console.warn('[TallerShell] vistas:', e); }
+    try { construirPreviews(); } catch (e) { /* previews: no crítico */ }
+    actualizarIndicadores();
     actualizarFase();
+    /* Previews: se construyen UNA sola vez por render de resultados, detectado
+       desde el mensaje de estado (nunca observando #cards, para no alimentar
+       un bucle de mutaciones). */
+    try {
+      if (!window.__previewsHechas) window.__previewsHechas = false;
+      var obsStatus = new MutationObserver(function () {
+        var txt = String(($('status') && $('status').textContent) || '');
+        if (!window.__previewsHechas && /verificad|complet|listo/i.test(txt)) {
+          window.__previewsHechas = true;
+          construirPreviews();
+          pintarPreviews();
+        }
+        if (/preparado|sin diseños/i.test(txt)) window.__previewsHechas = false;
+      });
+      var st = $('status');
+      if (st) obsStatus.observe(st, { childList: true, characterData: true, subtree: true });
+    } catch (e) { /* sin observer */ }
+    /* Los indicadores siguen al mensaje de estado real. */
+    try {
+      var obsInd = new MutationObserver(function () { actualizarIndicadores(); });
+      ['status', 'arbitroEstado', 'qaEstado'].forEach(function (id) {
+        var el = $(id);
+        if (el) obsInd.observe(el, { childList: true, characterData: true, subtree: true });
+      });
+    } catch (e) { /* sin observer */ }
   }
 
   if (document.readyState === 'loading') {

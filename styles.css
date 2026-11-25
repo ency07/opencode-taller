@@ -1,18 +1,24 @@
 :root {
-  --bg: #0E1016;
-  --panel: #161920;
-  --panel-alt: #1A1E26;
-  --line: #2A2E38;
-  --line2: #3A3E48;
-  --text: #E0E4EC;
-  --mut: #8A90A0;
-  --mut2: #5A6070;
-  --acc: #5B8DEF;
-  --acc-dim: rgba(91, 141, 239, 0.12);
-  --good: #34D399;
-  --bad: #F87171;
+  /* Warm Graphite & Amber Studio (design system del Taller POD) */
+  --bg: #131311;              /* background / surface */
+  --panel: #1C1C19;           /* surface-container-low */
+  --panel-alt: #20201D;       /* surface-container */
+  --surface-high: #2A2A28;    /* surface-container-high */
+  --surface-highest: #353532; /* surface-container-highest */
+  --surface-lowest: #0E0E0C;  /* surface-container-lowest */
+  --line: #3D3B37;            /* outline-variant */
+  --line2: #897366;           /* outline */
+  --text: #E5E2DE;            /* on-surface */
+  --mut: #ADABA7;             /* on-surface-variant */
+  --mut2: #7A7873;
+  --acc: #A4C9FF;             /* secondary (cielo): info, chips, pestanas activas */
+  --acc-dim: rgba(164, 201, 255, 0.14);
+  --acc-ink: #00315D;         /* on-secondary */
+  --good: #4EDEA3;            /* tertiary (esmeralda): verificados */
+  --bad: #FFB4AB;             /* error (coral) */
+  --bad-bg: #93000A;
   --warn: #FBBF24;
-  --r: 6px;
+  --r: 8px;
   --shadow: none;
 }
 
@@ -1490,9 +1496,9 @@ textarea[title] {
   color: var(--good, #34D399);
 }
 .tp-step.active {
-  background: var(--acc, #5B8DEF);
-  color: #fff;
-  border-color: var(--acc, #5B8DEF);
+  background: var(--tp-cta, #E07A2B);
+  color: var(--tp-cta-ink, #4C2200);
+  border-color: var(--tp-cta, #E07A2B);
 }
 .tp-step.pending {
   opacity: .7;
@@ -1644,8 +1650,8 @@ textarea[title] {
   cursor: pointer;
 }
 .tp-mode button.active {
-  background: var(--acc, #5B8DEF);
-  color: #fff;
+  background: var(--tp-cta, #E07A2B);
+  color: var(--tp-cta-ink, #4C2200);
 }
 
 /* En pantallas estrechas el stepper envuelve (evita que el paso 4 quede
@@ -1713,4 +1719,198 @@ input:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--acc, #5B8DEF);
   outline-offset: 1px;
+}
+
+/* =====================================================================
+   Etapa "referencia visual" · presentación según la captura de referencia
+   Solo adiciones (capa tp-).
+   ===================================================================== */
+
+:root {
+  --tp-cta: #E07A2B;        /* primary-container: accion principal */
+  --tp-cta-ink: #4C2200;    /* on-primary-container */
+  --tp-amber: #FFB688;      /* primary (ambar claro) */
+  --tp-sky: #A4C9FF;        /* secondary */
+  --tp-emerald: #4EDEA3;    /* tertiary */
+}
+
+/* Barra de contexto en una sola fila: chips · stepper · controles */
+.tp-topbar { align-items: center; flex-wrap: wrap; }
+.tp-stepper-inline {
+  border-bottom: 0;
+  padding: 6px 12px;
+  flex: 1 1 320px;
+  min-width: 260px;
+  overflow-x: auto;
+}
+
+/* Laterales con pestañas (Ajustes / Lote / Historial) */
+.tp-laterales { display: flex; flex-direction: column; gap: 8px; }
+.tp-sidenav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line, #2A2E38);
+  padding-bottom: 8px;
+}
+.tp-tab-btn {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--mut, #8A90A0);
+  background: var(--panel-alt, #1A1E26);
+  border: 1px solid var(--line, #2A2E38);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.tp-tab-btn.active {
+  color: var(--acc-ink, #00315D);
+  border-color: var(--acc, #A4C9FF);
+  background: var(--acc, #A4C9FF);
+}
+.tp-tab-btn:disabled { opacity: .45; cursor: not-allowed; }
+.tp-count {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: var(--line, #2A2E38);
+  color: var(--mut, #8A90A0);
+}
+.tp-pane { display: none; }
+.tp-pane.active { display: block; }
+#tpConfig { margin-top: 8px; }
+
+/* Acción principal en naranja (no cambia su comportamiento) */
+#btnDirector.primary,
+button#btnDirector {
+  background: var(--tp-cta);
+  border-color: var(--tp-cta);
+  color: var(--tp-cta-ink);
+}
+
+/* Zona principal: indicadores y pestañas de vista */
+.tp-indicadores {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line, #2A2E38);
+  background: var(--panel, #161920);
+  border-radius: var(--r, 6px) var(--r, 6px) 0 0;
+}
+.tp-ind {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mut, #8A90A0);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--panel-alt, #1A1E26);
+  border: 1px solid var(--line, #2A2E38);
+  white-space: nowrap;
+}
+.tp-ind.ok { color: var(--good, #34D399); border-color: rgba(52, 211, 153, .45); }
+.tp-ind.warn { color: var(--warn, #FBBF24); border-color: rgba(251, 191, 36, .45); }
+
+.tp-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid var(--line, #2A2E38);
+}
+.tp-vistas {
+  border: 1px solid var(--line, #2A2E38);
+  border-top: 0;
+  border-radius: 0 0 var(--r, 6px) var(--r, 6px);
+  background: var(--panel, #161920);
+  margin-bottom: 12px;
+}
+.tp-vpane { display: none; }
+.tp-vpane.active { display: block; }
+.tp-vpane > .panel { border: 0; border-radius: 0; margin-bottom: 0; }
+
+/* Tarjetas A/B/C en tres columnas */
+.card-grid {
+  grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+  gap: 10px;
+}
+.vcard { min-width: 0; }
+.vsws, .sws { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
+.sw {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,.18);
+}
+.fit-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--mut, #8A90A0);
+  margin-top: 6px;
+}
+.fit-bar .good { color: var(--good, #34D399); font-weight: 700; }
+.fit-bar .val { color: var(--text, #E0E4EC); font-weight: 700; }
+
+/* Previsualización ampliable */
+.vc-preview {
+  border: 1px dashed var(--line2, #3A3E48);
+  border-radius: 8px;
+  margin: 6px 0;
+  padding: 8px;
+  text-align: center;
+  color: var(--mut, #8A90A0);
+  font-size: 12px;
+  background: var(--panel-alt, #1A1E26);
+}
+.vc-preview img {
+  max-width: 100%;
+  border-radius: 6px;
+  display: block;
+  margin: 6px auto 0;
+}
+.vc-preview.ampliar { outline: 1px solid var(--acc, #5B8DEF); }
+.vc-preview button {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--acc, #5B8DEF);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+@media (max-width: 1100px) {
+  .card-grid { grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); }
+}
+@media (max-width: 700px) {
+  .card-grid { grid-template-columns: 1fr; }
+  .tp-sidenav { flex-wrap: nowrap; overflow-x: auto; }
+  .tp-tab-btn { white-space: nowrap; }
+  .left-col { padding-bottom: 72px; }
+}
+
+/* =====================================================================
+   Warm Graphite & Amber · acciones primarias de generacion en ambar
+   (coherente con el design system; no cambia comportamiento)
+   ===================================================================== */
+#mpGenerate,
+#mpZip {
+  background: var(--tp-cta, #E07A2B);
+  border-color: var(--tp-cta, #E07A2B);
+  color: var(--tp-cta-ink, #4C2200);
+}
+#mpGenerate:disabled,
+#mpZip:disabled {
+  background: var(--surface-high, #2A2A28);
+  border-color: var(--line, #3D3B37);
+  color: var(--mut, #ADABA7);
+  opacity: .65;
+  cursor: not-allowed;
 }
