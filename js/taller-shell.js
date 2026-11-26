@@ -308,7 +308,7 @@
   var GRUPOS_F2 = {
     contexto: ['market', 'language', 'brand', 'region', 'serie', 'set'],
     producto: ['product', 'marketplace', 'printMethod', 'stampSide', 'capApplication'],
-    idea: ['concept', 'message', 'support', 'audienceSet', 'audienceMulti', 'workflowMode', 'decisionMode'],
+    idea: ['concept', 'message', 'support', 'audienceSet', 'audienceMulti', 'workflowMode', 'decisionMode', 'motivoVisualA', 'motivoVisualB', 'motivoVisualC', 'motivoVisualCustomA', 'motivoVisualCustomB', 'motivoVisualCustomC'],
     avanzado: ['subniche', 'dominio', 'creativeTerritory', 'visualIdentity', 'aestheticPreference']
   };
 

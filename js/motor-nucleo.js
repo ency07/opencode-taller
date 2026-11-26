@@ -169,7 +169,10 @@ let MOTOR_STATE = {
   /* --- Territorio creativo (P3) --- */
   creativeTerritory: 'auto',
   visualIdentity: null,
-  decisionMode: 'assisted'
+  decisionMode: 'assisted',
+  /* --- Motivo visual principal por ficha (AUTO / PERSONALIZAR) --- */
+  motivoVisual: { A: 'auto', B: 'auto', C: 'auto' },
+  motivoVisualPersonalizado: { A: '', B: '', C: '' }
 };
 
 const K = ['A', 'B', 'C'];
@@ -244,6 +247,11 @@ function readStateFromDOM() {
      Es independiente del territorio: define quién controla las decisiones. */
   var _dmDom = String(v('decisionMode', '') || '').trim();
   MOTOR_STATE.decisionMode = _dmDom ? _normalizeDecisionMode(_dmDom) : loadDecisionMode();
+  ['A','B','C'].forEach(function (k) {
+    MOTOR_STATE.motivoVisual[k] = String(v('motivoVisual' + k, 'auto') || 'auto');
+    MOTOR_STATE.motivoVisualPersonalizado[k] = String(v('motivoVisualCustom' + k, '') || '').trim();
+    try { if (typeof setJSON === 'function') setJSON(_memKey(['motivoVisual', MOTOR_STATE.market, MOTOR_STATE.region, MOTOR_STATE.product]), { value: MOTOR_STATE.motivoVisual, custom: MOTOR_STATE.motivoVisualPersonalizado, updatedAt: new Date().toISOString() }); } catch (e) {}
+  });
   if (imageFile && imageInput.dataset && imageInput.dataset.analysisSignature === MOTOR_STATE.imageReference.signature) {
     try { MOTOR_STATE.imageAnalysis = JSON.parse(imageInput.dataset.analysisSummary || 'null'); }
     catch (e) { MOTOR_STATE.imageAnalysis = null; }
@@ -1072,6 +1080,29 @@ function _visualExpressionRoute(key) {
 }
 /* Diversidad de motivos en exploración: una representación distinta por ficha,
    derivada del concepto y sin iconografía o escenarios añadidos por asociación. */
+/* --- FIX Fase2: motivo visual principal por ficha (AUTO / PERSONALIZAR) ----
+   Independiente por ficha (A/B/C) y por producto (aislamiento en memoria).
+   - auto: comportamiento actual del motor (deriva del concepto).
+   - personalizar: el usuario fija el motivo; el motor lo desarrolla artísticamente
+     (no lo sustituye) y la instrucción llega inequívoca al prompt final. */
+function _motivoVisualDe(k) {
+  const m = MOTOR_STATE && MOTOR_STATE.motivoVisual;
+  return String((m && m[k]) || 'auto');
+}
+function _motivoVisualCustomDe(k) {
+  const m = MOTOR_STATE && MOTOR_STATE.motivoVisualPersonalizado;
+  return String((m && m[k]) || '').trim();
+}
+function _motivoVisualDirectoriva(k) {
+  const modo = _motivoVisualDe(k);
+  const valor = _motivoVisualCustomDe(k);
+  if (modo === 'personalizar' && valor) {
+    const route = (typeof _visualExpressionRoute === 'function') ? _visualExpressionRoute(k) : '';
+    const routeTxt = route ? ' Ruta de representación: ' + route + '.' : '';
+    return 'MOTIVO VISUAL PRINCIPAL (ESCRITO POR EL USUARIO): «' + valor + '». MOTIVO ÚNICO: desarrolla artísticamente la representación de este motivo dentro del estilo, la ruta y la jerarquía de la ficha, sin sustituir el motivo por otro.' + routeTxt + ' El motivo principal NO puede cambiarse por otro diferente en esta generación.';
+  }
+  return _motifExpressionDirective(k, MOTOR_STATE.concept || '');
+}
 function _motifExpressionDirective(key, concept) {
   const source = String(concept || '').toLowerCase();
   const walking = /\b(walk|walking|caminar|camino|andar|andando|paso|pasos|footstep|footsteps)\b/.test(source);
@@ -2655,7 +2686,7 @@ function buildCandidate(audsPerKey, fixedIdentity, preservation) {
     v.jerarquiaVisual = hierarchyPerKey[k];
     // Mismo ancla semántica; distinta ruta de representación por ficha.
     v.rutaVisual = (!isVar && !_isPatternModeActive()) ? _visualExpressionRoute(k) : '';
-    v.motivoVisual = (!isVar && !_isPatternModeActive()) ? _motifExpressionDirective(k, MOTOR_STATE.concept || '') : '';
+    v.motivoVisual = (!isVar && !_isPatternModeActive()) ? _motivoVisualDirectoriva(k) : '';
 
     // En un contactsheet nuevo, el símbolo se decide una vez para A/B/C.
     // Variación desde imagen conserva su propia lógica y sus selectores.
@@ -3893,6 +3924,35 @@ function setDecisionMode(value) {
   MOTOR_STATE.decisionMode = v;
   try { if (typeof setJSON === 'function') setJSON(_memKey(['decisionMode', MOTOR_STATE.market, MOTOR_STATE.region, MOTOR_STATE.product]), { value: v, updatedAt: new Date().toISOString() }); } catch (e) {}
   return v;
+}
+
+/* --- FIX Fase2: motivo visual principal por ficha (AUTO / PERSONALIZAR) --- */
+function _loadMotivoVisual() {
+  try {
+    var stored = _memGetJSON(_memKey(['motivoVisual', MOTOR_STATE.market, MOTOR_STATE.region, MOTOR_STATE.product]), null);
+    var raw = stored && typeof stored === 'object' ? stored.value : stored;
+    var out = { A: 'auto', B: 'auto', C: 'auto' };
+    ['A','B','C'].forEach(function (k) { out[k] = String((raw && raw[k]) || 'auto'); });
+    MOTOR_STATE.motivoVisual = out;
+    MOTOR_STATE.motivoVisualPersonalizado = { A: '', B: '', C: '' };
+    var rawC = stored && typeof stored === 'object' ? stored.custom : null;
+    if (rawC && typeof rawC === 'object') {
+      ['A','B','C'].forEach(function (k) { MOTOR_STATE.motivoVisualPersonalizado[k] = String(rawC[k] || ''); });
+    }
+  } catch (e) { MOTOR_STATE.motivoVisual = { A: 'auto', B: 'auto', C: 'auto' }; MOTOR_STATE.motivoVisualPersonalizado = { A: '', B: '', C: '' }; }
+  return MOTOR_STATE.motivoVisual;
+}
+function _saveMotivoVisual() {
+  try { if (typeof setJSON === 'function') setJSON(_memKey(['motivoVisual', MOTOR_STATE.market, MOTOR_STATE.region, MOTOR_STATE.product]), { value: MOTOR_STATE.motivoVisual, custom: MOTOR_STATE.motivoVisualPersonalizado, updatedAt: new Date().toISOString() }); } catch (e) {}
+}
+function _setMotivoVisual(k, modo, valor) {
+  var key = String(k || '');
+  var m = String(modo || '').toLowerCase();
+  if (m !== 'auto' && m !== 'personalizar') return _motivoVisualDe(key);
+  MOTOR_STATE.motivoVisual[key] = m;
+  MOTOR_STATE.motivoVisualPersonalizado[key] = String(valor == null ? '' : valor).trim();
+  _saveMotivoVisual();
+  return MOTOR_STATE.motivoVisual[key];
 }
 
 /* Preferencia estética independiente, persistida por mercado y producto.
